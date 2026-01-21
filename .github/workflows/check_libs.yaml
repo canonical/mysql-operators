@@ -9,19 +9,28 @@ concurrency:
 on:
   pull_request:
     paths-ignore:
-      - '.gitignore'
-      - '.jujuignore'
+      - 'kubernetes/.gitignore'
+      - 'kubernetes/.jujuignore'
+      - 'kubernetes/docs/**'
+      - 'machines/.gitignore'
+      - 'machines/.jujuignore'
+      - 'machines/docs/**'
       - 'LICENSE'
       - '**.md'
-      - 'renovate.json'
-      - 'docs/**'
+      - '.github/renovate.json5'
+      - '.github/workflows/*.yaml'
 
 jobs:
   lib-check:
     name: Check libraries
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: ${{ github.event.pull_request.head.repo.full_name == 'canonical/mysql-k8s-operator' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == 'canonical/mysql-operators' }}
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -30,5 +39,6 @@ jobs:
       - name: Check libs
         uses: canonical/charming-actions/check-libraries@2.7.0
         with:
+          charm-path: ${{ matrix.path }}
           credentials: "${{ secrets.CHARMHUB_TOKEN }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"

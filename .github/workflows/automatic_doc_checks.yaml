@@ -1,15 +1,17 @@
-#
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
 name: Automatic doc checks
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - '8.0/edge'
   pull_request:
     paths:
-      - 'docs/**'   # Only run on changes to the docs directory
-
+      - 'kubernetes/docs/**'
+      - 'machines/docs/**'
   workflow_dispatch:
-    # Manual trigger
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +19,12 @@ concurrency:
 
 jobs:
   documentation-checks:
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@main
     with:
-      working-directory: "docs"
+      working-directory: ${{ matrix.path }}/docs
       fetch-depth: 0

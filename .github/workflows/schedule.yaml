@@ -12,25 +12,44 @@ on:
 
 jobs:
   build:
-    name: Build charm
+    name: Build charm | ${{ matrix.path }}
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v40.0.0
+    with:
+      path-to-charm-directory: ${{ matrix.path }}
 
   integration-test:
-    name: Integration test charm
+    name: Integration tests
     needs:
       - build
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: ./.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+      path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
 
   release-test:
-    name: Release test charm
+    name: Release tests
     needs:
       - build
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: ./.github/workflows/release_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+      path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
 
   allure-report:
