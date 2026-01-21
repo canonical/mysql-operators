@@ -1,0 +1,74 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+options:
+  cluster-name:
+    description: Optional - Name of the MySQL InnoDB cluster, set once at deployment
+    type: string
+  cluster-set-name:
+    description: |
+      Optional - Name for async replication cluster set, set once at deployment.
+      On `recreate-clster` action call, the cluster set name will be re-generated automatically.
+    type: string
+  profile:
+    description: |
+      Profile representing the scope of deployment, and used to be able to enable high-level
+      customisation of sysconfigs, resource checks/allocation, warning levels, etc.
+      Allowed values are: “production” and “testing”.
+    type: string
+    default: production
+  profile-limit-memory:
+    type: int
+    description: |
+      Amount of memory in Megabytes to limit MySQL and associated process to.
+      If unset, this will be decided according to the default memory limit in the selected profile.
+      Only comes into effect when the `production` profile is selected.
+  # Config options for the legacy 'mysql' interface
+  mysql-interface-user:
+    description: The database username for the legacy 'mysql' interface
+    type: string
+  mysql-interface-database:
+    description: The database name for the legacy 'mysql' interface
+    type: string
+  mysql-root-interface-user:
+    description: The database username for the legacy 'mysql' interface (root level access)
+    type: string
+  mysql-root-interface-database:
+    description: The database name for the legacy 'mysql' interface (root level access)
+    type: string
+  plugin-audit-enabled:
+    description: |
+      Audit log plugin state. When the plugin is enabled (default, audit logs will be enabled).
+    type: boolean
+    default: true
+  plugin-audit-strategy:
+    description: |
+      Audit log plugin strategy. Allowed values are: "semi-async" and "async".
+      Ref. at https://docs.percona.com/percona-server/8.0/audit-log-plugin.html#audit_log_strategy
+    type: string
+    default: async
+  binlog_retention_days:
+    description: Number of days for binary logs retention
+    type: int
+    default: 7
+  logs_audit_policy:
+    description: |
+      Audit log policy. Allowed values are: "all", "logins" (default), "queries".
+      Ref. at https://docs.percona.com/percona-server/8.0/audit-log-plugin.html#audit_log_policy
+    type: string
+    default: logins
+  logs_retention_period:
+    description: |
+      Specifies the retention period for rotated logs, in days. Accepts an integer value of 3 or
+      greater, or the special value "auto". When set to "auto" (default), the retention period is
+      3 days, except when COS-related, where it is 1 day
+    type: string
+    default: auto
+  # Experimental features
+  experimental-max-connections:
+    type: int
+    description: |
+      Maximum number of connections allowed to the MySQL server.
+      When set max-connections value take precedence over the memory utilizations
+      againts innodb_buffer_pool_size.
+      This is an experimental feature and may be removed in future releases.
