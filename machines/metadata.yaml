@@ -1,0 +1,80 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: mysql
+display-name: Charmed MySQL
+summary: Charmed MySQL VM operator
+description: |
+  MySQL is a widely used, open-source relational database management system
+  (RDBMS). MySQL InnoDB cluster provides a complete high availability solution
+  for MySQL via Group Replication.
+
+  This charm supports MySQL 8.0 in bare-metal/virtual-machines.
+docs: https://discourse.charmhub.io/t/charmed-mysql-documentation/9925
+source: https://github.com/canonical/mysql-operator
+issues: https://github.com/canonical/mysql-operator/issues
+website:
+  - https://ubuntu.com/data/mysql
+  - https://charmhub.io/mysql
+  - https://github.com/canonical/mysql-operator
+  - https://chat.charmhub.io/charmhub/channels/data-platform
+maintainers:
+  - Canonical Data Platform <data-platform@lists.launchpad.net>
+
+peers:
+  database-peers:
+    interface: mysql_peers
+  upgrade:
+    interface: upgrade
+  restart:
+    interface: rolling_op
+
+provides:
+  database:
+    interface: mysql_client
+  mysql:
+    interface: mysql
+  db-router:
+    interface: mysql-router
+  shared-db:
+    interface: mysql-shared
+  cos-agent:
+    interface: cos_agent
+    limit: 1
+  replication-offer:
+    interface: mysql_async
+    limit: 1
+
+requires:
+  certificates:
+    interface: tls-certificates
+    limit: 1
+    optional: true
+  s3-parameters:
+    interface: s3
+    limit: 1
+    optional: true
+  replication:
+    interface: mysql_async
+    limit: 1
+    optional: true
+  tracing:
+    interface: tracing
+    limit: 1
+    optional: true
+
+storage:
+  database:
+    type: filesystem
+    description: Persistent storage for data
+    location: /var/snap/charmed-mysql/common
+
+assumes:
+  - juju
+  - any-of:
+      - all-of:
+          - juju >= 2.9.44
+          - juju < 3
+      - all-of:
+          - juju >= 3.4.3
+          - juju < 4

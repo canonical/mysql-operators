@@ -1,0 +1,343 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Dependency model for MySQL."""
+
+import bisect
+import json
+import logging
+import pathlib
+import subprocess
+from typing import TYPE_CHECKING
+
+from charms.data_platform_libs.v0.upgrade import (
+    ClusterNotReadyError,
+    DataUpgrade,
+    DependencyModel,
+    UpgradeGrantedEvent,
+    VersionError,
+)
+from charms.mysql.v0.mysql import (
+    MySQLGetMySQLVersionError,
+    MySQLPluginInstallError,
+    MySQLSetClusterPrimaryError,
+    MySQLSetVariableError,
+    MySQLStartMySQLDError,
+    MySQLStopMySQLDError,
+)
+from mysql_shell import InstanceState
+from ops import RelationDataContent
+from ops.model import BlockedStatus, MaintenanceStatus, Unit
+from pydantic import BaseModel
+from typing_extensions import override
+
+from constants import CHARMED_MYSQL_COMMON_DIRECTORY, MYSQL_DATA_DIR, MYSQL_SYSTEM_USER, PEER
+
+if TYPE_CHECKING:
+    from charm import MySQLOperatorCharm
+
+logger = logging.getLogger(__name__)
+
+
+class MySQLVMDependenciesModel(BaseModel):
+    """MySQL dependencies model."""
+
+    charm: DependencyModel
+    snap: DependencyModel
+
+
+def get_mysql_dependencies_model() -> MySQLVMDependenciesModel:
+    """Return the MySQL dependencies model."""
+    with open("src/dependency.json") as dependency_file:
+        _deps = json.load(dependency_file)
+    return MySQLVMDependenciesModel(**_deps)
+
+
+def set_cron_daemon(action: str) -> None:
+    """Start/stop the cron daemon."""
+    logger.debug(f"{action}ing cron daemon")
+    # Subprocess call is hardcoded in the charm
+    subprocess.run(["/usr/bin/systemctl", action, "cron"], check=True)  # noqa: S603
+
+
+class MySQLVMUpgrade(DataUpgrade):
+    """MySQL upgrade class."""
+
+    def __init__(self, charm: "MySQLOperatorCharm", **kwargs) -> None:
+        """Initialize the class."""
+        super().__init__(charm, **kwargs)
+        self.charm = charm
+        self.framework.observe(
+            self.charm.on[self.relation_name].relation_changed, self._on_upgrade_changed
+        )
+        self.framework.observe(self.charm.on.upgrade_charm, self._on_upgrade_charm_check_legacy)
+
+    @property
+    def app_upgrade_data(self) -> RelationDataContent:
+        """Return the application upgrade data."""
+        return self.peer_relation.data[self.charm.app]
+
+    @property
+    def unit_upgrade_data(self) -> RelationDataContent:
+        """Return the application upgrade data."""
+        return self.peer_relation.data[self.charm.unit]
+
+    @override
+    def build_upgrade_stack(self) -> list[int]:
+        """Build the upgrade stack.
+
+        This/leader/primary will be the last.
+        Others will be ordered by unit number ascending.
+        Higher unit number will be upgraded first.
+        """
+
+        def unit_number(unit: Unit) -> int:
+            """Return the unit number."""
+            return int(unit.name.split("/")[1])
+
+        upgrade_stack = []
+        for unit in self.peer_relation.units:
+            bisect.insort(upgrade_stack, unit_number(unit))
+
+        upgrade_stack.insert(0, unit_number(self.charm.unit))
+        return upgrade_stack
+
+    @override
+    def pre_upgrade_check(self) -> None:
+        """Run pre-upgrade checks."""
+        fail_message = "Pre-upgrade check failed. Cannot upgrade."
+
+        status = self.charm._mysql.get_cluster_status(extended=True)
+        if not status:
+            # case cluster status is not available
+            # it may be due to the refresh being ran before
+            # the pre-upgrade-check action
+            raise ClusterNotReadyError(
+                message=fail_message,
+                cause="Failed to retrieve cluster status",
+                resolution="Ensure that mysqld is running for this unit",
+            )
+
+        num_online = self.charm._mysql.get_cluster_node_count(node_status=InstanceState.ONLINE)
+        if num_online < self.charm.app.planned_units():
+            # case any not fully online unit is found
+            raise ClusterNotReadyError(
+                message=fail_message,
+                cause="Not all units are online",
+                resolution="Ensure all units are online in the cluster",
+            )
+
+        try:
+            self._pre_upgrade_prepare()
+        except MySQLSetClusterPrimaryError as e:
+            raise ClusterNotReadyError(
+                message=fail_message,
+                cause="Failed to set primary",
+                resolution="Check the cluster status",
+            ) from e
+        except MySQLSetVariableError as e:
+            raise ClusterNotReadyError(
+                message=fail_message,
+                cause="Failed to set slow shutdown",
+                resolution="Check the cluster status",
+            ) from e
+
+    def _on_upgrade_charm_check_legacy(self, event) -> None:
+        if not self.peer_relation or len(self.app_units) < len(self.charm.app_units):
+            # defer case relation not ready or not all units joined it
+            event.defer()
+            logger.debug("Wait all units join the upgrade relation")
+            return
+
+        if self.state:
+            # Do nothing - if state set, upgrade is supported
+            return
+
+        if not self.charm.unit.is_leader():
+            # set ready state on non-leader units
+            self.unit_upgrade_data.update({"state": "ready"})
+            return
+
+        peers_state = list(filter(lambda state: state != "", self.unit_states))
+        if len(peers_state) == len(self.peer_relation.units) and set(peers_state) == {"ready"}:
+            # All peers have set the state to ready
+            self.unit_upgrade_data.update({"state": "ready"})
+            self._prepare_upgrade_from_legacy()
+        else:
+            logger.debug("Wait until all peers have set upgrade state to ready")
+            event.defer()
+
+    @override
+    def _on_upgrade_granted(self, event: UpgradeGrantedEvent) -> None:  # noqa: C901
+        """Handle the upgrade granted event."""
+        try:
+            self.charm.unit.status = MaintenanceStatus("stopping services..")
+            self.charm._mysql.stop_mysqld()
+            self._ensure_for_installed_by_file()
+
+            self.charm.unit.status = MaintenanceStatus("upgrading snap...")
+            if not self.charm.install_workload():
+                logger.error("Failed to install workload snap")
+                self.set_unit_failed()
+                return
+
+            # override config, avoid restart
+            self.charm._on_config_changed(None)
+            self.charm.unit.status = MaintenanceStatus("starting services...")
+            # stop cron daemon to be able to query `error.log`
+            set_cron_daemon("stop")
+            self.charm._mysql.start_mysqld()
+            if self.charm.config.plugin_audit_enabled:
+                self.charm._mysql.install_plugins(["audit_log"])
+            self.charm._mysql.install_plugins(["binlog_utils_udf"])
+        except VersionError:
+            logger.exception("Failed to upgrade MySQL dependencies")
+            self.set_unit_failed()
+            return
+        except MySQLStartMySQLDError:
+            # failed to start - check for a unsupported downgrade
+            if not self._check_server_unsupported_downgrade():
+                logger.error("Failed to start MySQL server after snap refresh")
+                self.set_unit_failed()
+                return
+
+            # on incompatible downgrade, a workload reset is required,
+            # but only if there's more then one unit, so SST can take place
+            if self.charm.app.planned_units() == 1:
+                logger.error("Downgrade is incompatible. Restore from backup is required.")
+                self.set_unit_failed()
+                return
+
+            logger.warning("Downgrade is incompatible. Resetting workload")
+            self._reset_on_unsupported_downgrade()
+        except MySQLStopMySQLDError:
+            logger.exception("Failed to stop MySQL server")
+            self.set_unit_failed()
+            return
+        except MySQLPluginInstallError:
+            logger.exception("Failed to install MySQL plugins")
+            self.set_unit_failed()
+            return
+        finally:
+            set_cron_daemon("start")
+
+        try:
+            self.charm.unit.set_workload_version(self.charm._mysql.get_mysql_version() or "unset")
+        except MySQLGetMySQLVersionError:
+            # don't fail on this, just log it
+            logger.warning("Failed to get MySQL version")
+
+        self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
+
+        try:
+            self.charm.recover_unit_after_restart()
+
+            logger.debug("Upgraded unit is healthy. Set upgrade state to `completed`")
+            self.set_unit_completed()
+            # ensures leader gets it's own relation-changed when it upgrades
+            if self.charm.unit.is_leader():
+                logger.debug("Re-emitting upgrade-changed on leader...")
+                self.on_upgrade_changed(event)
+        except Exception:
+            logger.debug("Upgraded unit is not healthy")
+            self.set_unit_failed()
+            self.charm.unit.status = BlockedStatus(
+                "upgrade failed. Check logs for rollback instruction"
+            )
+
+    def _on_upgrade_changed(self, _) -> None:
+        """Handle the upgrade changed event.
+
+        Run update status for every unit when the upgrade is completed.
+        """
+        if not self.upgrade_stack and self.idle:
+            self.charm._on_update_status(None)
+
+    @override
+    def log_rollback_instructions(self) -> None:
+        """Log rollback instructions."""
+        logger.critical(
+            "\n".join((
+                "Upgrade failed, follow the instructions below to rollback:",
+                "    1. Re-run `pre-upgrade-check` action on the leader unit to enter 'recovery' state",
+                "    2. Run `juju refresh` to the previously deployed charm revision or local charm file",
+            ))
+        )
+
+    def _pre_upgrade_prepare(self) -> None:
+        """Pre upgrade routine for MySQL.
+
+        Set primary to the leader (this) unit to mitigate switchover during upgrade,
+        and set slow shutdown to all instances.
+        """
+        if self.charm._mysql.get_primary_label() != self.charm.unit_label:
+            # set the primary to the leader unit for switchover mitigation
+            self.charm._mysql.set_cluster_primary(self.charm.unit_address)
+
+        # set slow shutdown on all instances
+        for unit in self.app_units:
+            unit_address = self.charm.get_unit_address(unit, PEER)
+            self.charm._mysql.set_dynamic_variable(
+                variable="innodb_fast_shutdown", value=0, instance_address=unit_address
+            )
+
+    def _check_server_unsupported_downgrade(self) -> bool:
+        """Check error log for unsupported downgrade.
+
+        https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
+        """
+        if log_content := self.charm._mysql.fetch_error_log():
+            return "MY-013171" in log_content
+
+        return False
+
+    def _reset_on_unsupported_downgrade(self) -> None:
+        """Reset the server if unsupported downgrade is detected."""
+        self.charm._mysql.reset_data_dir()
+        logger.debug("Initialize datadir after resetting it")
+        subprocess.check_call(  # noqa: S603
+            [
+                "/usr/bin/snap",
+                "run",
+                "charmed-mysql.mysqld",
+                "--initialize",
+                f"--datadir={MYSQL_DATA_DIR}",
+                f"--user={MYSQL_SYSTEM_USER}",
+            ],
+        )
+        self.charm.workload_initialise()
+        # reset flags
+        self.charm.unit_peer_data["member-role"] = "secondary"
+        self.charm.unit_peer_data["member-state"] = "waiting"
+
+        # rescan is needed to remove the instance old incarnation from the cluster
+        leader = self.charm._get_primary_from_online_peer()
+        self.charm._mysql.rescan_cluster(from_instance=leader, remove_instances=True)
+        # rejoin after
+        self.charm.join_unit_to_cluster()
+
+    def _prepare_upgrade_from_legacy(self) -> None:
+        """Prepare upgrade from legacy charm without upgrade support.
+
+        Assumes run on leader unit only.
+        """
+        logger.warning("Upgrading from unsupported version")
+
+        # Populate app upgrade databag to allow upgrade procedure
+        logger.debug("Building upgrade stack")
+        upgrade_stack = self.build_upgrade_stack()
+        logger.debug(f"Upgrade stack: {upgrade_stack}")
+        self.upgrade_stack = upgrade_stack
+        logger.debug("Persisting dependencies to upgrade relation data...")
+        self.peer_relation.data[self.charm.app].update({
+            "dependencies": json.dumps(self.dependency_model.dict())
+        })
+
+    @staticmethod
+    def _ensure_for_installed_by_file() -> None:
+        """Ensure snap mark file to allow refresh."""
+        installed_by_mysql_server_file = pathlib.Path(
+            CHARMED_MYSQL_COMMON_DIRECTORY, "installed_by_mysql_server_charm"
+        )
+        if not installed_by_mysql_server_file.exists():
+            installed_by_mysql_server_file.touch()

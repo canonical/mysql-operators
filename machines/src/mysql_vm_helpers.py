@@ -1,0 +1,936 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Helper class to manage the MySQL InnoDB cluster lifecycle with MySQL Shell."""
+
+import json
+import logging
+import os
+import pathlib
+import platform
+import shutil
+import subprocess
+import tempfile
+import typing
+from collections.abc import Iterable
+
+import jinja2
+from charms.mysql.v0.mysql import (
+    BYTES_1MB,
+    Error,
+    MySQLBase,
+    MySQLExecError,
+    MySQLGetAutoTuningParametersError,
+    MySQLGetAvailableMemoryError,
+    MySQLKillSessionError,
+    MySQLRestoreBackupError,
+    MySQLServiceNotRunningError,
+    MySQLStartMySQLDError,
+    MySQLStopMySQLDError,
+)
+from charms.operator_libs_linux.v2 import snap
+from mysql_shell.executors import LocalExecutor
+from mysql_shell.executors.errors import ExecutionError
+from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
+from typing_extensions import override
+
+from constants import (
+    CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE,
+    CHARMED_MYSQL_COMMON_DIRECTORY,
+    CHARMED_MYSQL_SNAP_NAME,
+    CHARMED_MYSQL_XBCLOUD_LOCATION,
+    CHARMED_MYSQL_XBSTREAM_LOCATION,
+    CHARMED_MYSQL_XTRABACKUP_LOCATION,
+    CHARMED_MYSQLD_EXPORTER_SERVICE,
+    CHARMED_MYSQLD_SERVICE,
+    CHARMED_MYSQLSH,
+    MYSQL_DATA_DIR,
+    MYSQL_SYSTEM_USER,
+    MYSQLD_CONFIG_DIRECTORY,
+    MYSQLD_CUSTOM_CONFIG_FILE,
+    MYSQLD_DEFAULTS_CONFIG_FILE,
+    MYSQLD_SOCK_FILE,
+    ROOT_SYSTEM_USER,
+    XTRABACKUP_PLUGIN_DIR,
+)
+
+logger = logging.getLogger(__name__)
+
+if typing.TYPE_CHECKING:
+    from charm import MySQLOperatorCharm
+
+
+class MySQLResetRootPasswordAndStartMySQLDError(Error):
+    """Exception raised when there's an error resetting root password and starting mysqld."""
+
+
+class MySQLCreateCustomMySQLDConfigError(Error):
+    """Exception raised when there's an error creating custom mysqld config."""
+
+
+class SnapServiceOperationError(Error):
+    """Exception raised when there's an error running an operation on a snap service."""
+
+
+class MySQLExporterConnectError(Error):
+    """Exception raised when there's an error setting up MySQL exporter."""
+
+
+class MySQLFlushHostCacheError(Error):
+    """Exception raised when there's an error flushing the MySQL host cache."""
+
+
+class MySQLInstallError(Error):
+    """Exception raised when there's an error installing MySQL."""
+
+
+class MySQLUninstallError(Error):
+    """Exception raised when there's an error installing MySQL."""
+
+
+class MySQL(MySQLBase):
+    """Class to encapsulate all operations related to the MySQL instance and cluster.
+
+    This class handles the configuration of MySQL instances, and also the
+    creation and configuration of MySQL InnoDB clusters via Group Replication.
+    """
+
+    def __init__(
+        self,
+        instance_address: str,
+        socket_path: str,
+        cluster_name: str,
+        cluster_set_name: str,
+        root_password: str,
+        server_config_user: str,
+        server_config_password: str,
+        cluster_admin_user: str,
+        cluster_admin_password: str,
+        monitoring_user: str,
+        monitoring_password: str,
+        backups_user: str,
+        backups_password: str,
+        charm: "MySQLOperatorCharm",
+    ):
+        """Initialize the MySQL class.
+
+        Args:
+            instance_address: address of the targeted instance
+            socket_path: path to the MySQL socket
+            cluster_name: cluster name
+            cluster_set_name: cluster set domain name
+            root_password: password for the 'root' user
+            server_config_user: user name for the server config user
+            server_config_password: password for the server config user
+            cluster_admin_user: user name for the cluster admin user
+            cluster_admin_password: password for the cluster admin user
+            monitoring_user: user name for the mysql exporter
+            monitoring_password: password for the monitoring user
+            backups_user: user name used to create backups
+            backups_password: password for the backups user
+            charm: The charm object
+        """
+        super().__init__(
+            instance_address=instance_address,
+            socket_path=socket_path,
+            cluster_name=cluster_name,
+            cluster_set_name=cluster_set_name,
+            root_password=root_password,
+            server_config_user=server_config_user,
+            server_config_password=server_config_password,
+            cluster_admin_user=cluster_admin_user,
+            cluster_admin_password=cluster_admin_password,
+            monitoring_user=monitoring_user,
+            monitoring_password=monitoring_password,
+            backups_user=backups_user,
+            backups_password=backups_password,
+            mysqlsh_path=CHARMED_MYSQLSH,
+            executor_class=LocalExecutor,
+        )
+
+        self.charm = charm
+
+    @staticmethod
+    def install_and_configure_mysql_dependencies() -> None:
+        """Install and configure MySQL dependencies.
+
+        Raises:
+            subprocess.CalledProcessError: if issue creating mysqlsh common dir
+            snap.SnapNotFoundError, snap.SnapError: if issue installing charmed-mysql snap
+        """
+        logger.debug("Retrieving snap cache")
+        cache = snap.SnapCache()
+        charmed_mysql = cache[CHARMED_MYSQL_SNAP_NAME]
+        # This charm can override/use an existing snap installation only if the snap was previously
+        # installed by this charm.
+        # Otherwise, the snap could be in use by another charm (e.g. MySQL Router charm).
+        installed_by_mysql_server_file = pathlib.Path(
+            CHARMED_MYSQL_COMMON_DIRECTORY, "installed_by_mysql_server_charm"
+        )
+        if charmed_mysql.present and not installed_by_mysql_server_file.exists():
+            logger.error(
+                f"{CHARMED_MYSQL_SNAP_NAME} snap already installed on machine. Installation aborted"
+            )
+            raise Exception(
+                f"Multiple {CHARMED_MYSQL_SNAP_NAME} snap installs not supported on one machine"
+            )
+
+        try:
+            # install the charmed-mysql snap
+            with pathlib.Path("snap_revisions.json").open("r") as file:
+                revision = json.load(file)[platform.machine()]
+            logger.info(f"Installing {CHARMED_MYSQL_SNAP_NAME} {revision=}")
+            charmed_mysql.ensure(snap.SnapState.Present, revision=revision)
+            if not charmed_mysql.held:
+                # hold the snap in charm determined revision
+                charmed_mysql.hold()
+
+            # ensure creation of mysql shell common directory by running 'mysqlsh --help'
+            common_path = pathlib.Path(CHARMED_MYSQL_COMMON_DIRECTORY)
+            if not common_path.exists():
+                logger.debug("Creating charmed-mysql common directory")
+                subprocess.check_call(
+                    ["/snap/bin/charmed-mysql.mysqlsh", "--help"], stderr=subprocess.PIPE
+                )
+
+            # fix ownership necessary for upgrades from 8/stable@r151
+            # TODO: remove once snap post-refresh fixes the permission
+            if common_path.owner() != MYSQL_SYSTEM_USER:
+                logger.debug("Updating charmed-mysql common directory ownership")
+                # Parameters are generated by the charm
+                os.system(f"chown -R {MYSQL_SYSTEM_USER} {CHARMED_MYSQL_COMMON_DIRECTORY}")  # noqa: S605
+
+            for alias in [
+                "mysql",
+                "mysqlrouter",
+                "mysqlsh",
+                "xbcloud",
+                "xbstream",
+                "mysqlbinlog",
+                "xtrabackup",
+            ]:
+                try:
+                    # TODO: remove try-except once there is a newer incompatible version bump
+                    charmed_mysql.alias(alias)
+                except snap.SnapError:
+                    # CI test uses old snap rev (69) without mysqlbinlog
+                    if alias == "mysqlbinlog":
+                        continue
+                    else:
+                        raise
+
+            installed_by_mysql_server_file.touch(exist_ok=True)
+        except snap.SnapError:
+            logger.exception("Failed to install snaps")
+            # reraise SnapError exception so the caller can retry
+            raise
+        except (subprocess.CalledProcessError, snap.SnapNotFoundError, Exception) as e:
+            logger.exception("Failed to install and configure MySQL dependencies")
+            # other exceptions are not retried
+            raise MySQLInstallError from e
+
+    @override
+    def get_available_memory(self) -> int:
+        """Retrieves the total memory of the server where mysql is running."""
+        try:
+            logger.debug("Querying system total memory")
+            with open("/proc/meminfo") as meminfo:
+                for line in meminfo:
+                    if "MemTotal" in line:
+                        return int(line.split()[1]) * 1024
+
+            raise MySQLGetAvailableMemoryError
+        except OSError as e:
+            logger.error("Failed to query system memory")
+            raise MySQLGetAvailableMemoryError from e
+
+    def write_mysqld_config(self) -> dict:
+        """Create custom mysql config file.
+
+        Raises: MySQLCreateCustomMySQLDConfigError if there is an error creating the
+            custom mysqld config
+        """
+        logger.info("Writing mysql configuration file")
+        memory_limit = None
+        if self.charm.config.profile_limit_memory:
+            # Convert from config value in MB to bytes
+            memory_limit = self.charm.config.profile_limit_memory * BYTES_1MB
+        try:
+            content_str, content_dict = self.render_mysqld_configuration(
+                profile=self.charm.config.profile,
+                audit_log_enabled=self.charm.config.plugin_audit_enabled,
+                audit_log_strategy=self.charm.config.plugin_audit_strategy,
+                audit_log_policy=self.charm.config.logs_audit_policy,
+                snap_common=CHARMED_MYSQL_COMMON_DIRECTORY,
+                memory_limit=memory_limit,
+                binlog_retention_days=self.charm.config.binlog_retention_days,
+                experimental_max_connections=self.charm.config.experimental_max_connections,
+            )
+        except (MySQLGetAvailableMemoryError, MySQLGetAutoTuningParametersError) as e:
+            logger.exception("Failed to get available memory or auto tuning parameters")
+            raise MySQLCreateCustomMySQLDConfigError from e
+
+        # create the mysqld config directory if it does not exist
+        pathlib.Path(MYSQLD_CONFIG_DIRECTORY).mkdir(mode=0o755, parents=True, exist_ok=True)
+
+        self.write_content_to_file(
+            path=MYSQLD_CUSTOM_CONFIG_FILE,
+            content=content_str,
+        )
+
+        return content_dict
+
+    def setup_logrotate_and_cron(
+        self,
+        logs_retention_period: int,
+        enabled_log_files: Iterable,
+        logs_compression: bool = True,
+    ) -> None:
+        """Setup log rotation configuration for text files.
+
+        Args:
+            logs_retention_period: logs retention period in days
+            enabled_log_files: a iterable of enabled text logs
+            logs_compression: whether logs should be compressed after rotation
+        """
+        logger.debug("Creating logrotate config file")
+        config_path = "/etc/logrotate.d/flush_mysql_logs"
+        script_path = f"{self.charm.charm_dir}/logrotation.sh"
+        cron_path = "/etc/cron.d/flush_mysql_logs"
+        logs_dir = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
+
+        # days * minutes/day = amount of rotated files to keep
+        logs_rotations = logs_retention_period * 1440
+
+        with open("templates/logrotate.j2") as file:
+            template = jinja2.Template(file.read())
+
+        logrotate_conf_content = template.render(
+            system_user=MYSQL_SYSTEM_USER,
+            log_dir=logs_dir,
+            charm_directory=self.charm.charm_dir,
+            unit_name=self.charm.unit.name,
+            enabled_log_files=enabled_log_files,
+            logs_retention_period=logs_retention_period,
+            logs_rotations=logs_rotations,
+            logs_compression=logs_compression,
+        )
+
+        self.write_content_to_file(
+            config_path, logrotate_conf_content, owner="root", permission=0o644
+        )
+
+        with open("templates/run_log_rotation.sh.j2") as file:
+            template = jinja2.Template(file.read())
+
+        logrotation_script_content = template.render(
+            log_path=f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql",
+            enabled_log_files=enabled_log_files,
+            logrotate_conf=config_path,
+            owner=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_USER,
+        )
+
+        self.write_content_to_file(script_path, logrotation_script_content, permission=0o550)
+
+        cron_content = f"* 1-23 * * * root {script_path}\n1-59 0 * * * root {script_path}\n"
+        self.write_content_to_file(cron_path, cron_content, owner="root")
+
+    def reset_root_password_and_start_mysqld(self) -> None:
+        """Reset the root user password and start mysqld."""
+        logger.debug("Resetting root user password and starting mysqld")
+        with (
+            tempfile.NamedTemporaryFile(
+                dir=MYSQLD_CONFIG_DIRECTORY,
+                prefix="z-custom-init-file.",
+                suffix=".cnf",
+                mode="w+",
+                encoding="utf-8",
+            ) as _custom_config_file,
+            tempfile.NamedTemporaryFile(
+                dir=CHARMED_MYSQL_COMMON_DIRECTORY,
+                prefix="alter-root-user.",
+                suffix=".sql",
+                mode="w",
+                encoding="utf-8",
+            ) as _sql_file,
+        ):
+            try:
+                # Input generated by the charm
+                subprocess.check_output([  # noqa: S603
+                    "/usr/bin/sudo",
+                    "chown",
+                    f"{MYSQL_SYSTEM_USER}:{ROOT_SYSTEM_USER}",
+                    _sql_file.name,
+                ])
+            except subprocess.CalledProcessError as e:
+                raise MySQLResetRootPasswordAndStartMySQLDError(
+                    "Failed to change permissions for temp SQL file"
+                ) from e
+
+            _sql_file.write(
+                f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{self.root_password}';\n"
+                "FLUSH PRIVILEGES;"
+            )
+            _sql_file.flush()
+
+            _custom_config_file.write(f"[mysqld]\ninit_file = {_sql_file.name}")
+            _custom_config_file.flush()
+
+            try:
+                # Input generated by the charm
+                subprocess.check_output([  # noqa: S603
+                    "/usr/bin/sudo",
+                    "chown",
+                    f"{MYSQL_SYSTEM_USER}:{ROOT_SYSTEM_USER}",
+                    _custom_config_file.name,
+                ])
+            except subprocess.CalledProcessError as e:
+                raise MySQLResetRootPasswordAndStartMySQLDError(
+                    "Failed to change permissions for custom mysql config"
+                ) from e
+
+            try:
+                snap_service_operation(CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "start")
+            except SnapServiceOperationError as e:
+                raise MySQLResetRootPasswordAndStartMySQLDError("Failed to restart mysqld") from e
+
+            try:
+                # Do not try to connect over port as we may not have configured user/passwords
+                self.wait_until_mysql_connection(check_port=False)
+            except MySQLServiceNotRunningError as e:
+                raise MySQLResetRootPasswordAndStartMySQLDError(
+                    "mysqld service not running"
+                ) from e
+
+    @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(5))
+    def wait_until_mysql_connection(self, check_port: bool = True) -> None:
+        """Wait until a connection to MySQL has been obtained.
+
+        Retry every 5 seconds for 120 seconds if there is an issue obtaining a connection.
+        """
+        logger.debug("Waiting for MySQL connection")
+
+        if not os.path.exists(MYSQLD_SOCK_FILE):
+            raise MySQLServiceNotRunningError("MySQL socket file not found")
+
+        if check_port and not self.check_mysqlsh_connection():
+            raise MySQLServiceNotRunningError("Connection with mysqlsh not possible")
+
+        logger.debug("MySQL connection possible")
+
+    def execute_backup_commands(  # type: ignore
+        self,
+        s3_directory: str,
+        s3_parameters: dict[str, str],
+    ) -> tuple[str, str]:
+        """Executes commands to create a backup."""
+        return super().execute_backup_commands(
+            s3_directory,
+            s3_parameters,
+            CHARMED_MYSQL_XTRABACKUP_LOCATION,
+            CHARMED_MYSQL_XBCLOUD_LOCATION,
+            XTRABACKUP_PLUGIN_DIR,
+            MYSQLD_SOCK_FILE,
+            CHARMED_MYSQL_COMMON_DIRECTORY,
+            MYSQLD_DEFAULTS_CONFIG_FILE,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+    def delete_temp_backup_directory(  # type: ignore
+        self, from_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY
+    ) -> None:
+        """Delete the temp backup directory."""
+        super().delete_temp_backup_directory(
+            from_directory,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+    def retrieve_backup_with_xbcloud(  # type: ignore
+        self,
+        backup_id: str,
+        s3_parameters: dict[str, str],
+        temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
+        xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
+        user=ROOT_SYSTEM_USER,
+        group=ROOT_SYSTEM_USER,
+    ) -> tuple[str, str, str]:
+        """Retrieve the provided backup with xbcloud."""
+        return super().retrieve_backup_with_xbcloud(
+            backup_id,
+            s3_parameters,
+            temp_restore_directory,
+            xbcloud_location,
+            xbstream_location,
+            user,
+            group,
+        )
+
+    def prepare_backup_for_restore(self, backup_location: str) -> tuple[str, str]:
+        """Prepare the download backup for restore with xtrabackup --prepare."""
+        return super().prepare_backup_for_restore(
+            backup_location,
+            CHARMED_MYSQL_XTRABACKUP_LOCATION,
+            XTRABACKUP_PLUGIN_DIR,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+    def empty_data_files(self) -> None:
+        """Empty the mysql data directory in preparation of the restore."""
+        super().empty_data_files(
+            MYSQL_DATA_DIR,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+    def restore_backup(
+        self,
+        backup_location: str,
+    ) -> tuple[str, str]:
+        """Restore the provided prepared backup."""
+        # TODO: remove workaround for changing permissions and ownership of data
+        # files once restore backup commands can be run with snap_daemon user
+        try:
+            # provide write permissions to root (group owner of the data directory)
+            # so the root user can move back files into the data directory
+            # Input generated by the charm
+            subprocess.run(  # noqa: S603
+                ["/usr/bin/chmod", "770", MYSQL_DATA_DIR],
+                user=ROOT_SYSTEM_USER,
+                group=ROOT_SYSTEM_USER,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception("Failed to change data directory permissions before restoring")
+            raise MySQLRestoreBackupError from e
+
+        stdout, stderr = super().restore_backup(
+            backup_location,
+            CHARMED_MYSQL_XTRABACKUP_LOCATION,
+            MYSQLD_DEFAULTS_CONFIG_FILE,
+            MYSQL_DATA_DIR,
+            XTRABACKUP_PLUGIN_DIR,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+        try:
+            # Revert permissions for the data directory
+            # Input generated by the charm
+            subprocess.run(  # noqa: S603
+                ["/usr/bin/chmod", "750", MYSQL_DATA_DIR],
+                user=ROOT_SYSTEM_USER,
+                group=ROOT_SYSTEM_USER,
+                capture_output=True,
+                text=True,
+            )
+
+            # Change ownership to the snap_daemon user since the restore files
+            # are owned by root
+            # Input generated by the charm
+            subprocess.run(  # noqa: S603
+                [
+                    "/usr/bin/chown",
+                    "-R",
+                    f"{MYSQL_SYSTEM_USER}:{ROOT_SYSTEM_USER}",
+                    MYSQL_DATA_DIR,
+                ],
+                user=ROOT_SYSTEM_USER,
+                group=ROOT_SYSTEM_USER,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception(
+                "Failed to change data directory permissions or ownership after restoring"
+            )
+            raise MySQLRestoreBackupError from e
+
+        return (stdout, stderr)
+
+    def delete_temp_restore_directory(self) -> None:
+        """Delete the temp restore directory from the mysql data directory."""
+        super().delete_temp_restore_directory(
+            CHARMED_MYSQL_COMMON_DIRECTORY,
+            user=ROOT_SYSTEM_USER,
+            group=ROOT_SYSTEM_USER,
+        )
+
+    def _execute_commands(
+        self,
+        commands: list[str],
+        bash: bool = False,
+        user: str | None = None,
+        group: str | None = None,
+        env_extra: dict | None = None,
+        stream_output: str | None = None,
+    ) -> tuple[str, str]:
+        """Execute commands on the server where mysql is running.
+
+        Args:
+            commands: a list containing the commands to execute
+            bash: whether to run the commands with bash
+            user: the user with which to execute the commands
+            group: the group with which to execute the commands
+            env_extra: the environment variables to add to the current process' environment
+            stream_output: whether to stream the output to stdout, stderr or None
+
+        Returns: tuple of (stdout, stderr)
+
+        Raises: MySQLExecError if there was an error executing the commands
+        """
+        env_extra = env_extra if env_extra else {}
+        stdout = stderr = ""
+        env = os.environ.copy()
+        if env_extra:
+            env.update(env_extra)
+        if bash:
+            commands = ["bash", "-c", "set -o pipefail; " + " ".join(commands)]
+
+        # Input generated by the charm
+        process = subprocess.Popen(  # noqa: S603
+            commands,
+            user=user,
+            group=group,
+            env=env,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        if stream_output == "stderr":
+            while process.stderr and (line := process.stderr.readline()):
+                logger.debug(line.strip())
+                stderr += line
+        elif stream_output == "stdout":
+            while process.stdout and (line := process.stdout.readline()):
+                logger.debug(line.strip())
+                stdout += line
+
+        return_code = process.wait()
+        if return_code != 0:
+            message = (
+                "Failed command: "
+                f"{self.strip_off_passwords(' '.join(commands))};"
+                f" {user=}; {group=}"
+            )
+            logger.error(message)
+            raise MySQLExecError from None
+
+        if not stdout and process.stdout:
+            stdout = process.stdout.read()
+        if not stderr and process.stderr:
+            stderr = process.stderr.read()
+
+        return (stdout.strip(), stderr.strip())
+
+    def _file_exists(self, path: str) -> bool:
+        """Check if file exists."""
+        return os.path.exists(path)
+
+    def is_mysqld_running(self) -> bool:
+        """Returns whether mysqld is running."""
+        return os.path.exists(MYSQLD_SOCK_FILE)
+
+    def is_server_connectable(self) -> bool:
+        """Returns whether the server is connectable."""
+        # Always true since the charm runs on the same server as mysqld
+        return True
+
+    def stop_mysqld(self) -> None:
+        """Stops the mysqld process."""
+        logger.info(
+            f"Stopping service snap={CHARMED_MYSQL_SNAP_NAME}, service={CHARMED_MYSQLD_SERVICE}"
+        )
+
+        try:
+            snap_service_operation(CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "stop")
+        except (SnapServiceOperationError, MySQLKillSessionError) as e:
+            raise MySQLStopMySQLDError(e.message) from e
+
+    def start_mysqld(self) -> None:
+        """Starts the mysqld process."""
+        logger.info(
+            f"Starting service snap={CHARMED_MYSQL_SNAP_NAME}, service={CHARMED_MYSQLD_SERVICE}"
+        )
+
+        try:
+            snap_service_operation(CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "start")
+            self.wait_until_mysql_connection()
+        except (
+            MySQLServiceNotRunningError,
+            SnapServiceOperationError,
+        ) as e:
+            if isinstance(e, MySQLServiceNotRunningError):
+                logger.exception("Failed to start mysqld")
+
+            raise MySQLStartMySQLDError(e.message) from e
+
+    def restart_mysqld(self) -> None:
+        """Restarts the mysqld process."""
+        self.stop_mysqld()
+        self.start_mysqld()
+
+    def flush_host_cache(self) -> None:
+        """Flush the MySQL in-memory host cache."""
+        if not self.is_mysqld_running():
+            logger.warning("mysqld is not running, skipping flush host cache")
+            return
+
+        executor = self._build_instance_tcp_executor(self.instance_address)
+
+        try:
+            logger.debug("Truncating the MySQL host cache")
+            executor.execute_sql("TRUNCATE TABLE performance_schema.host_cache")
+        except ExecutionError as e:
+            logger.error("Failed to truncate the MySQL host cache")
+            raise MySQLFlushHostCacheError() from e
+
+    def connect_mysql_exporter(self) -> None:
+        """Set up mysqld-exporter config options.
+
+        Raises:
+            snap.SnapError: if an issue occurs during config setting or restart
+        """
+        cache = snap.SnapCache()
+        mysqld_snap = cache[CHARMED_MYSQL_SNAP_NAME]
+
+        try:
+            # Set up exporter credentials
+            mysqld_snap.set({
+                "exporter.user": self.monitoring_user,
+                "exporter.password": self.monitoring_password,
+            })
+            snap_service_operation(
+                CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_EXPORTER_SERVICE, "start"
+            )
+        except snap.SnapError as e:
+            logger.exception("An exception occurred when setting up mysqld-exporter.")
+            raise MySQLExporterConnectError("Error setting up mysqld-exporter") from e
+
+    def stop_mysql_exporter(self) -> None:
+        """Stop the mysqld exporter."""
+        try:
+            snap_service_operation(
+                CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_EXPORTER_SERVICE, "stop"
+            )
+        except snap.SnapError as e:
+            logger.exception("An exception occurred when stopping mysqld-exporter")
+            raise MySQLExporterConnectError("Error stopping mysqld-exporter") from e
+
+    def restart_mysql_exporter(self) -> None:
+        """Restart the mysqld exporter."""
+        self.stop_mysql_exporter()
+        self.connect_mysql_exporter()
+
+    def is_data_dir_initialised(self) -> bool:
+        """Check if data dir is initialised.
+
+        Returns:
+            A bool for an initialised and integral data dir.
+        """
+        try:
+            content = os.listdir(MYSQL_DATA_DIR)
+
+            # minimal expected content for an integral mysqld data-dir
+            expected_content = {
+                "mysql",
+                "public_key.pem",
+                "sys",
+                "ca.pem",
+                "client-key.pem",
+                "mysql.ibd",
+                "auto.cnf",
+                "server-cert.pem",
+                "ib_buffer_pool",
+                "server-key.pem",
+                "undo_002",
+                "#innodb_redo",
+                "undo_001",
+                "#innodb_temp",
+                "private_key.pem",
+                "client-cert.pem",
+                "ca-key.pem",
+                "performance_schema",
+            }
+
+            return expected_content <= set(content)
+        except FileNotFoundError:
+            return False
+
+    def reconcile_binlogs_collection(
+        self, force_restart: bool = False, ignore_inactive_error: bool = False
+    ) -> bool:
+        """Start or stop binlogs collecting service.
+
+        Based on the "binlogs-collecting" app peer data value and unit leadership.
+
+        Args:
+            force_restart: whether to restart service even if it's already running.
+            ignore_inactive_error: whether to not log an error when the service should be enabled but not active right now.
+
+        Returns: whether the operation was successful.
+        """
+        cache = snap.SnapCache()
+        selected_snap = cache[CHARMED_MYSQL_SNAP_NAME]
+        if not selected_snap.present:
+            raise SnapServiceOperationError(f"Snap {CHARMED_MYSQL_SNAP_NAME} not installed")
+
+        try:
+            # TODO: remove try-except once there is a newer incompatible version bump
+            is_enabled = selected_snap.services[CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE]["enabled"]
+        except KeyError:
+            return False
+        is_active = selected_snap.services[CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE]["active"]
+        supposed_to_run = (
+            self.charm.unit.is_leader() and "binlogs-collecting" in self.charm.app_peer_data
+        )
+
+        if supposed_to_run:
+            selected_snap.set({
+                f"mysql-pitr-helper-collector.{k.lower().replace('_', '-')}": v
+                for k, v in self.charm.backups.get_binlogs_collector_config().items()
+            })
+        else:
+            selected_snap.unset("mysql-pitr-helper-collector")
+
+        if supposed_to_run and is_enabled and not is_active and not ignore_inactive_error:
+            logger.error("Binlogs collector is enabled but not running")
+            if force_restart:
+                logger.error("Binlogs collector will be restarted due to force_restart option")
+            else:
+                logger.error("Restarting binlogs collector to reanimate unhealthy service")
+
+        if supposed_to_run and is_enabled and not is_active and not force_restart:
+            selected_snap.restart([CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE])
+
+        if is_enabled and (force_restart or not supposed_to_run):
+            logger.debug("Disabling binlogs collector")
+            selected_snap.stop([CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE], disable=True)
+
+        if supposed_to_run and (force_restart or not is_enabled):
+            logger.debug("Enabling binlogs collector")
+            selected_snap.start([CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE], enable=True)
+
+        return True
+
+    def get_cluster_members(self) -> list[str]:
+        """Get cluster members in MySQL MEMBER_HOST format.
+
+        Returns: list of cluster members in MySQL MEMBER_HOST format.
+        """
+        return [host.names[1] for host in self.charm.hostname_resolution._get_host_details()]
+
+    @staticmethod
+    def write_content_to_file(
+        path: str,
+        content: str,
+        owner: str = MYSQL_SYSTEM_USER,
+        group: str = "root",
+        permission: int = 0o640,
+    ) -> None:
+        """Write content to file.
+
+        Args:
+            path: filesystem full path (with filename)
+            content: string content to write
+            owner: file owner
+            group: file group
+            permission: file permission
+        """
+        with open(path, "w", encoding="utf-8") as fd:
+            fd.write(content)
+
+        shutil.chown(path, owner, group)
+        os.chmod(path, mode=permission)
+
+    @staticmethod
+    def fetch_error_log() -> str | None:
+        """Fetch the mysqld error log."""
+        if os.path.exists(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log"):
+            # can be empty if just rotated
+            with open(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log") as fd:
+                return fd.read()
+
+    @staticmethod
+    def reset_data_dir() -> None:
+        """Reset the data directory."""
+        logger.warning(f"Resetting data directory: {MYSQL_DATA_DIR}")
+
+        # Remove the data directory
+        shutil.rmtree(MYSQL_DATA_DIR, ignore_errors=False)
+
+        # Recreate the data directory
+        os.makedirs(MYSQL_DATA_DIR)
+
+        # Change ownership of the data directory
+        shutil.chown(MYSQL_DATA_DIR, user=MYSQL_SYSTEM_USER, group="root")
+
+
+def is_volume_mounted() -> bool:
+    """Returns if data directory is attached."""
+    try:
+        for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(12)):
+            with attempt:
+                # Parameters are hardcoded by the charm
+                subprocess.check_call([  # noqa: S603
+                    "/usr/bin/mountpoint",
+                    "-q",
+                    CHARMED_MYSQL_COMMON_DIRECTORY,
+                ])
+    except RetryError:
+        return False
+    return True
+
+
+def instance_hostname():
+    """Retrieve machine hostname."""
+    try:
+        raw_hostname = subprocess.check_output(["/usr/bin/hostname"])
+
+        return raw_hostname.decode("utf8").strip()
+    except subprocess.CalledProcessError as e:
+        logger.exception("Failed to retrieve hostname", e)
+        return None
+
+
+def snap_service_operation(snapname: str, service: str, operation: str) -> bool:
+    """Helper function to run an operation on a snap service.
+
+    Args:
+        snapname: The name of the snap
+        service: The name of the service
+        operation: The name of the operation (restart, start, stop)
+        enable: (optional) A bool indicating if the service should be enabled or disabled on start
+
+    Returns:
+        a bool indicating if the operation was successful.
+    """
+    if operation not in ["restart", "start", "stop"]:
+        raise SnapServiceOperationError(f"Invalid snap service operation {operation}")
+
+    try:
+        cache = snap.SnapCache()
+        selected_snap = cache[snapname]
+
+        if not selected_snap.present:
+            raise SnapServiceOperationError(f"Snap {snapname} not installed")
+
+        if operation == "restart":
+            selected_snap.restart(services=[service])
+            return selected_snap.services[service]["active"]
+        elif operation == "start":
+            selected_snap.start(services=[service], enable=True)
+            return selected_snap.services[service]["active"]
+        else:
+            selected_snap.stop(services=[service], disable=True)
+            return not selected_snap.services[service]["active"]
+    except snap.SnapError as e:
+        error_message = f"Failed to run snap service operation, snap={snapname}, service={service}, operation={operation}"
+        logger.exception(error_message)
+        raise SnapServiceOperationError(error_message) from e
