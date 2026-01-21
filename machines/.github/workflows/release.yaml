@@ -1,0 +1,77 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Release to Charmhub
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '.github/renovate.json5'
+      - '.github/workflows/automatic-doc-checks.yml'
+      - '.github/workflows/ci.yaml'
+      - '.github/workflows/check_libs.yaml'
+      - '.github/workflows/check_pr.yaml'
+      - '.github/workflows/schedule.yaml'
+      - '.github/workflows/tiobe_scan.yaml'
+
+jobs:
+  build:
+    name: Build charm
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v40.0.0
+
+  integration-tests:
+    name: Integration tests
+    needs:
+      - build
+    uses: ./.github/workflows/integration_test.yaml
+    with:
+      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+    secrets: inherit
+
+  release-tests:
+    name: Release tests
+    needs:
+      - build
+    uses: ./.github/workflows/release_test.yaml
+    with:
+      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+    secrets: inherit
+
+  release-libraries:
+    name: Release libraries
+    needs:
+      - build
+      - integration-tests
+      - release-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - run: |
+          # Workaround for https://github.com/canonical/charmcraft/issues/1389#issuecomment-1880921728
+          touch requirements.txt
+      - name: Release charm libraries
+        uses: canonical/charming-actions/release-libraries@2.7.0
+        with:
+          credentials: ${{ secrets.CHARMHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Release charm
+    needs:
+      - build
+      - integration-tests
+      - release-tests
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v40.0.0
+    with:
+      track: '8.0'
+      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      contents: write  # Needed to create git tags
