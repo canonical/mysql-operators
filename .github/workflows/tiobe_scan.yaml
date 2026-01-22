@@ -1,9 +1,6 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-
-# Usage documentation: static-code-analysis.md
-
-name: TICS run self-hosted test (github-action)
+name: TICS self-hosted run
 
 on:
   schedule:
@@ -19,34 +16,27 @@ jobs:
     steps:
       - name: Checkout the project
         uses: actions/checkout@v5
-
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-venv
-
       - name: Install pipx
         run: python3 -m pip install --user pipx && python3 -m pipx ensurepath
-
       - name: Add pipx to PATH
         run: echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-
       - name: Install tox and poetry using pipx
         run: |
           pipx install tox
           pipx install poetry
-
       - name: Run tox tests to create coverage.xml
         run: tox run -e unit
-
       - name: Move results to necessary folder for TICS
         run: |
           mkdir -p .cover
           mv coverage.xml .cover/cobertura.xml
-
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
         with:
           mode: qserver
-          project: mysql-operator
+          project: mysql-operators
           branchdir: .
           viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
           ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}

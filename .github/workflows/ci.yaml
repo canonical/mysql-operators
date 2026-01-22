@@ -9,15 +9,21 @@ concurrency:
 on:
   pull_request:
     paths-ignore:
+      - 'kubernetes/docs/**'
+      - 'machines/docs/**'
       - '**.md'
       - '.github/renovate.json5'
-      - 'docs/**'
 
 jobs:
   lint:
-    name: Lint
+    name: Lint | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -29,14 +35,20 @@ jobs:
           pipx install tox
           pipx install poetry
       - name: Run linters
+        working-directory: ${{ matrix.path }}
         run: |
           tox run -e lint
           tox run -e lint-terraform
 
   unit-test:
-    name: Unit test charm
+    name: Unit test | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -45,27 +57,44 @@ jobs:
           pipx install tox
           pipx install poetry
       - name: Run tests
+        working-directory: ${{ matrix.path }}
         run: tox run -e unit
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          directory: ${{ matrix.path }}
 
   alert-test:
-    name: Test Prometheus Alert Rules
+    name: Test Alert Rules | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
       - name: Install prometheus snap
         run: sudo snap install prometheus
       - name: Check validity of prometheus alert rules
+        working-directory: ${{ matrix.path }}
         run: promtool check rules src/alert_rules/prometheus/*
       - name: Run unit tests for prometheus alert rules
+        working-directory: ${{ matrix.path }}
         run: promtool test rules tests/alerts/*.yaml
 
   build:
-    name: Build charm
+    name: Build charm | ${{ matrix.path }}
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v40.0.0
+    with:
+      path-to-charm-directory: ${{ matrix.path }}
 
   integration-test:
     name: Integration tests
@@ -73,7 +102,13 @@ jobs:
       - lint
       - unit-test
       - build
+    strategy:
+      matrix:
+        path:
+          - kubernetes
+          - machines
     uses: ./.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+      path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
