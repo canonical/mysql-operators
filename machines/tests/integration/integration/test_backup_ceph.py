@@ -10,13 +10,12 @@ import socket
 import subprocess
 import time
 from pathlib import Path
-from time import sleep
 
 import boto3
 import botocore.exceptions
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
 
@@ -173,13 +172,16 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    # but it is enough to deploy another application in the meantime
-    juju.deploy(S3_INTEGRATOR, channel="1/stable", base="ubuntu@22.04")
+
+    juju.deploy(
+        S3_INTEGRATOR,
+        channel="1/stable",
+        base="ubuntu@22.04",
+        num_units=1,
+    )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -247,9 +249,7 @@ def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, DATABASE_APP_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -315,9 +315,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, DATABASE_APP_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -376,7 +374,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
 
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, DATABASE_APP_NAME),
+            jubilant.all_agents_idle(status, DATABASE_APP_NAME),
             *(
                 wait_for_unit_status(DATABASE_APP_NAME, unit_name, "active")(status)
                 for unit_name in status.get_units(DATABASE_APP_NAME)
@@ -424,12 +422,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
         num_units=1,
     )
 
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    sleep(5)
-
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, new_mysql_application_name),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name),
         timeout=TIMEOUT,
     )
 
@@ -437,9 +431,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     juju.integrate(new_mysql_application_name, S3_INTEGRATOR)
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, new_mysql_application_name, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -471,16 +463,16 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, new_mysql_application_name, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
     logger.info("Waiting for blocked application status with another cluster S3 repository")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
+        ),
         timeout=TIMEOUT,
     )
 
@@ -532,7 +524,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
 
     logger.info("Waiting for blocked application status after restore")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
+        ),
         timeout=TIMEOUT,
     )

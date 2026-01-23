@@ -3,8 +3,8 @@
 # See LICENSE file for licensing details.
 
 
-import jubilant_backports
-from jubilant_backports import Juju
+import jubilant
+from jubilant import Juju
 
 from .. import markers
 
@@ -24,7 +24,7 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
         base="ubuntu@22.04",
     )
 
-    juju.wait(ready=jubilant_backports.all_error, timeout=300)
+    juju.wait(ready=jubilant.all_error, timeout=300)
 
 
 @markers.arm64_only
@@ -40,7 +40,7 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
         base="ubuntu@22.04",
     )
 
-    juju.wait(ready=jubilant_backports.all_error, timeout=300)
+    juju.wait(ready=jubilant.all_error, timeout=300)
 
 
 # TODO: add s390x test

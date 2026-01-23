@@ -5,9 +5,9 @@ import logging
 from subprocess import run
 from time import sleep
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ..helpers_ha import MINUTE_SECS, get_app_units, get_unit_machine
 
@@ -33,11 +33,8 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         trust=True,
     )
 
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    sleep(SLEEP_WAIT)
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )
 
@@ -54,9 +51,10 @@ def test_reboot_1_of_3_units(juju: Juju) -> None:
 
     logger.info("Sleep to allow juju status change")
     sleep(SLEEP_WAIT)
+
     logger.info("Waiting for the application to become idle")
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )
 
@@ -73,9 +71,10 @@ def test_reboot_2_of_3_units(juju: Juju) -> None:
 
     logger.info("Sleep to allow juju status change")
     sleep(SLEEP_WAIT)
+
     logger.info("Waiting for the application to become idle")
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )
 
@@ -92,9 +91,10 @@ def test_reboot_3_of_3_units(juju: Juju) -> None:
 
     logger.info("Sleep to allow juju status change")
     sleep(SLEEP_WAIT)
+
     logger.info("Waiting for the application to become idle")
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )
 

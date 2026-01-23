@@ -6,8 +6,8 @@
 import logging
 import os
 
-import jubilant_backports
-from jubilant_backports import Juju
+import jubilant
+from jubilant import Juju
 
 from .relations.test_database import APPLICATION_APP_NAME, CLUSTER_NAME, DATABASE_APP_NAME, TIMEOUT
 
@@ -43,7 +43,7 @@ def test_ubuntu_pro(juju: Juju, charm):
     juju.integrate(DATABASE_APP_NAME, UBUNTU_PRO_APP_NAME)
 
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )
 
@@ -63,6 +63,6 @@ def test_landscape_client(juju: Juju):
     juju.integrate(DATABASE_APP_NAME, LANDSCAPE_CLIENT_APP_NAME)
 
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=TIMEOUT,
     )

@@ -7,9 +7,9 @@ import shutil
 import zipfile
 from pathlib import Path
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
@@ -54,10 +54,8 @@ def test_deploy_latest(juju: Juju) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
-        ),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -92,13 +90,13 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
 
     logging.info("Wait for upgrade to start")
     juju.wait(
-        ready=lambda status: jubilant_backports.any_maintenance(status, MYSQL_APP_NAME),
+        ready=lambda status: jubilant.any_maintenance(status, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
-        ready=lambda status: jubilant_backports.all_active(status, MYSQL_APP_NAME),
+        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 
@@ -129,7 +127,7 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
 
     logging.info("Wait for upgrade to fail on leader")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_blocked, MYSQL_APP_NAME),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
@@ -144,13 +142,13 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
 
     logging.info("Wait for upgrade to start")
     juju.wait(
-        ready=lambda status: jubilant_backports.any_maintenance(status, MYSQL_APP_NAME),
+        ready=lambda status: jubilant.any_maintenance(status, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
-        ready=lambda status: jubilant_backports.all_active(status, MYSQL_APP_NAME),
+        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 

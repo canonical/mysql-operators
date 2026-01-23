@@ -6,7 +6,7 @@ import os
 import subprocess
 
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 DEFAULT_LXD_NETWORK = "lxdbr0"
 RAW_DNSMASQ = """

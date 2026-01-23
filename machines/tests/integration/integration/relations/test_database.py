@@ -5,14 +5,13 @@
 import json
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
-from constants import DB_RELATION_NAME, PASSWORD_LENGTH, ROOT_USERNAME, SERVER_CONFIG_USERNAME
+from constants import DB_RELATION_NAME, PASSWORD_LENGTH, ROOT_USERNAME
 from utils import generate_random_password
 
-from ... import markers
 from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
@@ -22,6 +21,7 @@ from ...helpers_ha import (
     get_relation_data,
     get_unit_ip,
     remove_leader_unit,
+    rotate_mysql_server_credentials,
     scale_app_units,
     wait_for_apps_status,
 )
@@ -58,13 +58,13 @@ def test_build_and_deploy(juju: Juju, charm):
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=TIMEOUT,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=TIMEOUT,
     )
 
@@ -138,35 +138,13 @@ def test_password_rotation_root_user(juju: Juju):
 
 
 @pytest.mark.abort_on_fail
-@markers.only_without_juju_secrets
-def test_relation_creation_databag(juju: Juju):
-    """Relate charms and wait for the expected changes in status."""
-    juju.integrate(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")
-
-    juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
-        timeout=TIMEOUT,
-    )
-    juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
-        timeout=TIMEOUT,
-    )
-
-    relation_data = get_relation_data(juju, APPLICATION_APP_NAME, DB_RELATION_NAME)
-    assert {"password", "username"} <= set(relation_data[0]["application-data"])
-
-
-@pytest.mark.abort_on_fail
-@markers.only_with_juju_secrets
 def test_relation_creation(juju: Juju):
     """Relate charms and wait for the expected changes in status (using juju secrets)."""
     juju.integrate(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, *APPS),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, *APPS),
+        error=jubilant.any_blocked,
         timeout=TIMEOUT,
     )
 
@@ -219,13 +197,13 @@ def test_relation_broken(juju: Juju):
     juju.remove_relation(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=TIMEOUT,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=TIMEOUT,
     )
 
@@ -296,28 +274,3 @@ def get_read_only_endpoint_ips(relation_data: list) -> list[str]:
             raise ValueError("Malformed endpoint")
 
     return read_only_endpoint_hostnames
-
-
-def rotate_mysql_server_credentials(
-    juju: Juju,
-    unit_name: str,
-    username: str = SERVER_CONFIG_USERNAME,
-    password: str | None = None,
-) -> None:
-    """Helper to run an action to rotate server config credentials.
-
-    Args:
-        juju: The Juju model
-        unit_name: The juju unit on which to run the rotate-password action for server-config credentials
-        username: The username to rotate the password for
-        password: The new password to set
-    """
-    params = {"username": username}
-    if password is not None:
-        params["password"] = password
-
-    juju.run(
-        unit=unit_name,
-        action="set-password",
-        params=params,
-    )

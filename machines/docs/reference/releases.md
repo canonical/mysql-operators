@@ -11,7 +11,6 @@ To see all releases and commits, check the [Charmed MySQL Releases page on GitHu
 For a given release, this table shows:
 * The MySQL version packaged inside
 * The minimum Juju version required to reliably operate **all** features of the release
-   > This charm still supports older versions of Juju down to 2.9. See the [Juju section of the system requirements](/reference/system-requirements) for more details.
 * Support for specific features
 
 | Release | MySQL version | Juju version | [TLS encryption](/how-to/enable-tls)* | [COS monitoring](/how-to/monitoring-cos/enable-monitoring) | [In-place upgrades](/how-to/refresh/single-cluster/refresh-single-cluster) | [Cluster-cluster replication](/how-to/cluster-cluster-replication/deploy) |
@@ -20,7 +19,6 @@ For a given release, this table shows:
 | [312], [313] | 8.0.39 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [240] | 8.0.36 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [196] | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  |
-| [151] | 8.0.32 | `2.9.32+` |  | ![check] | ![check] |  |
 
 \* **TLS encryption**: Support for **`v2` or higher** of the [`tls-certificates` interface](https://charmhub.io/tls-certificates-interface/libraries/tls_certificates). This means that you can integrate with [modern TLS charms](https://charmhub.io/topics/security-with-x-509-certificates).
 
@@ -28,7 +26,7 @@ For a given release, this table shows:
 For more details about each feature/interface, refer to the documentation linked in the column headers.
 
 ## Architecture and base
-Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#charm-revision) are released simultaneously for different [bases/series](https://juju.is/docs/juju/base) using the same charm code. In other words, one release contains multiple revisions.
+Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#charm-revision) are released simultaneously for different [bases](https://juju.is/docs/juju/base) using the same charm code. In other words, one release contains multiple revisions.
 
 > If you do not specify a revision on deploy time, Juju will automatically choose the revision that matches your base and architecture.
 
@@ -64,12 +62,6 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 |:--------:|:-----:|:-----:|:-----:|
 |[196] |![check]| | ![check]   |
 
-### Release 151
-
-| Revision | amd64 | arm64 | Ubuntu 22.04 LTS
-|:--------:|:-----:|:-----:|:-----:|
-|[151] |![check]| | ![check]   |
-
 [/details]
 
 ```{note}
@@ -84,8 +76,6 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 [312]: https://github.com/canonical/mysql-operator/releases/tag/rev312
 [240]: https://github.com/canonical/mysql-operator/releases/tag/rev240
 [196]: https://github.com/canonical/mysql-operator/releases/tag/rev196
-[151]: https://github.com/canonical/mysql-operator/releases/tag/rev151
 
 <!--BADGES-->
 [check]: https://img.icons8.com/color/20/checkmark--v1.png
-

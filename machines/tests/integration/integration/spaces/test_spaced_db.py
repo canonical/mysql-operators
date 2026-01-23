@@ -3,9 +3,9 @@
 # See LICENSE file for licensing details.
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     MINUTE_SECS,
@@ -33,9 +33,7 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
         num_units=3,
         base="ubuntu@22.04",
     )
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    # but it is enough to deploy another application in the meantime
+
     juju.deploy(
         APPLICATION_APP_NAME,
         APPLICATION_APP_NAME,
@@ -47,11 +45,11 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=TIMEOUT,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
         timeout=TIMEOUT,
     )
 
@@ -63,7 +61,7 @@ def test_integrate_with_spaces(juju: Juju):
         f"{APPLICATION_APP_NAME}:database",
     )
     juju.wait(
-        ready=jubilant_backports.all_active,
+        ready=jubilant.all_active,
         timeout=TIMEOUT,
     )
 
@@ -98,7 +96,7 @@ def test_integrate_with_isolated_space(juju: Juju):
         channel="latest/edge",
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, isolated_app_name),
+        ready=wait_for_apps_status(jubilant.all_waiting, isolated_app_name),
         timeout=TIMEOUT,
     )
 
@@ -108,9 +106,7 @@ def test_integrate_with_isolated_space(juju: Juju):
         f"{isolated_app_name}:database",
     )
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, DATABASE_APP_NAME, isolated_app_name
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, isolated_app_name),
         timeout=TIMEOUT,
     )
 
