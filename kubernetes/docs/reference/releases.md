@@ -16,7 +16,6 @@ To see all releases and commits, check the [Charmed MySQL K8s Releases page on G
 | [127] | 8.0.35 | `3.1.6+` |  | ![check] | ![check] |  | |
 | [113] | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  | |
 | [99] | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  | |
-| [75] | 8.0.32 | `2.9.32+` |  | ![check] | ![check] |  | |
 
 \* **TLS encryption**: Support for **`v2` or higher** of the [`tls-certificates` interface](https://charmhub.io/tls-certificates-interface/libraries/tls_certificates). This means that you can integrate with [modern TLS charms](https://charmhub.io/topics/security-with-x-509-certificates).
 
@@ -24,7 +23,7 @@ To see all releases and commits, check the [Charmed MySQL K8s Releases page on G
 For more details about each feature/interface, refer to the documentation linked in the column headers.
 
 ## Architecture and base
-Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#charm-revision) are released simultaneously for different [bases/series](https://juju.is/docs/juju/base) using the same charm code. In other words, one release contains multiple revisions.
+Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#charm-revision) are released simultaneously for different [bases](https://juju.is/docs/juju/base) using the same charm code. In other words, one release contains multiple revisions.
 
 > If you do not specify a revision on deploy time, Juju will automatically choose the revision that matches your base and architecture. 
 > 
@@ -83,12 +82,6 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 | Revision | amd64 | arm64 | Ubuntu 22.04 LTS
 |:--------:|:-----:|:-----:|:-----:|
 |[99] |![check]| | ![check]   |
-
-### Release 75
-
-| Revision | amd64 | arm64 | Ubuntu 22.04 LTS
-|:--------:|:-----:|:-----:|:-----:|
-|[75] |![check]| | ![check]   |
 [/details]
 
 <!-- LINKS -->
@@ -104,8 +97,6 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 [127]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev127
 [113]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev113
 [99]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev99
-[75]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev75
 
 <!-- BADGES -->
 [check]: https://img.icons8.com/color/20/checkmark--v1.png
-

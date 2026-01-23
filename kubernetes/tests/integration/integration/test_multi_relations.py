@@ -2,9 +2,9 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import CLIError, Juju
+from jubilant import CLIError, Juju
 from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, wait_for_apps_status, wait_for_unit_status
@@ -51,7 +51,7 @@ def test_build_and_deploy(juju: Juju, charm):
     retry_if_cli_error(
         lambda: juju.wait(
             wait_for_apps_status(
-                jubilant_backports.all_active,
+                jubilant.all_active,
                 MYSQL_APP_NAME,
             ),
             delay=5.0,
@@ -61,7 +61,7 @@ def test_build_and_deploy(juju: Juju, charm):
     retry_if_cli_error(
         lambda: juju.wait(
             wait_for_apps_status(
-                jubilant_backports.all_waiting,
+                jubilant.all_waiting,
                 *(f"app{idx}" for idx in range(SCALE_APPS)),
             ),
             delay=5.0,
@@ -98,7 +98,7 @@ def test_relate_all(juju: Juju):
 
     retry_if_cli_error(
         lambda: juju.wait(
-            jubilant_backports.all_active,
+            jubilant.all_active,
             delay=5.0,
             timeout=25 * MINUTE_SECS,
         )
@@ -116,7 +116,7 @@ def test_scale_out(juju: Juju):
 
     retry_if_cli_error(
         lambda: juju.wait(
-            jubilant_backports.all_active,
+            jubilant.all_active,
             delay=5.0,
             timeout=30 * MINUTE_SECS,
         )
@@ -134,7 +134,7 @@ def test_scale_in(juju: Juju):
 
     retry_if_cli_error(
         lambda: juju.wait(
-            jubilant_backports.all_active,
+            jubilant.all_active,
             delay=5.0,
             timeout=15 * MINUTE_SECS,
         )

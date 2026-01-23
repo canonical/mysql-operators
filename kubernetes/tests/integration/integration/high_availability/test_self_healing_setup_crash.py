@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     CHARM_METADATA,
@@ -34,8 +34,8 @@ def test_deploy_single_unit_cluster(juju: Juju, charm: str) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -51,8 +51,8 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
     logging.info("Scaling to 3 units")
     juju.add_unit(MYSQL_APP_NAME, num_units=2)
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.any_waiting, MYSQL_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -62,6 +62,6 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
     with update_interval(juju, "60s"):
         logging.info("Waiting until cluster is fully active")
         juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+            ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
             timeout=20 * MINUTE_SECS,
         )

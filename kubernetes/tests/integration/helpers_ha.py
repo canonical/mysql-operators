@@ -8,11 +8,11 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-import jubilant_backports
+import jubilant
 import kubernetes
 import yaml
-from jubilant_backports import CLIError, Juju
-from jubilant_backports.statustypes import Status
+from jubilant import CLIError, Juju
+from jubilant.statustypes import Status
 from lightkube.core.client import Client
 from lightkube.resources.apps_v1 import StatefulSet
 from lightkube.resources.core_v1 import Endpoints, PersistentVolume, PersistentVolumeClaim, Pod
@@ -269,8 +269,8 @@ def scale_app_units(juju: Juju, app_name: str, num_units: int) -> None:
         timeout=20 * MINUTE_SECS,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, app_name),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, app_name),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -655,7 +655,7 @@ def wait_for_apps_status(jubilant_status_func: JujuAppsStatusFn, *apps: str) -> 
         Juju model status function.
     """
     return lambda status: all((
-        jubilant_backports.all_agents_idle(status, *apps),
+        jubilant.all_agents_idle(status, *apps),
         jubilant_status_func(status, *apps),
     ))
 

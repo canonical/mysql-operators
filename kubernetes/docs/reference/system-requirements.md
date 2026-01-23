@@ -9,7 +9,7 @@ The following are the minimum software and hardware requirements to run Charmed 
 
 ### Juju
 
-The charm supports several Juju releases from [2.9 LTS](https://documentation.ubuntu.com/juju/3.6/reference/juju/juju-roadmap-and-releases/#juju-3-3) onwards. The table below shows which minor versions of each major Juju release are supported by the stable Charmhub releases of MySQL K8s. 
+The table below shows which minor versions of each major Juju release are supported by the stable Charmhub releases of MySQL K8s. 
 
 | Juju major release | Supported minor versions | Compatible charm revisions |Comment |
 |:--------|:-----|:-----|:-----|
@@ -17,7 +17,6 @@ The charm supports several Juju releases from [2.9 LTS](https://documentation.ub
 | ![3.5] | `3.5.2+` | [153]+ |     |
 | ![3.4] | `3.4.3+` | [153]+ | Known issues with `3.4.2`: [bug #1](https://bugs.launchpad.net/juju/+bug/2065284), [bug #2](https://bugs.launchpad.net/juju/+bug/2064772)   |
 | ![3.1] | `3.1.6+` | [99]+ |     |
-| ![2.9 LTS] | `2.9.32+` | [75 ]+ |     |
 
 ### MySQL Group Replication requirements
 
@@ -46,12 +45,9 @@ The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/
 <!-- LINKS -->
 [153]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev153
 [99]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev99
-[75]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev75
 
 <!-- BADGES -->
-[2.9 LTS]: https://img.shields.io/badge/2.9_LTS-%23E95420?label=Juju
 [3.1]: https://img.shields.io/badge/3.1-%23E95420?label=Juju
 [3.4]: https://img.shields.io/badge/3.4-%23E95420?label=Juju
 [3.5]: https://img.shields.io/badge/3.5-%23E95420?label=Juju
 [3.6 LTS]: https://img.shields.io/badge/3.6_LTS-%23E95420?label=Juju
-

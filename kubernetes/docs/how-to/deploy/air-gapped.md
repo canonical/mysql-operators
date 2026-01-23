@@ -32,13 +32,13 @@ Canonical does not prescribe how you should set up your specific air-gapped envi
 
 At the moment, the store-admin exports (and includes into the blob) all the OCI resources metadata only:
 ```shell
-store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --series=jammy --arch=amd64
+store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --base=ubuntu@22.04 --arch=amd64
 ```
 
 [details="Example output"]
 
 ```shell
-> store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --series=jammy --arch=amd64
+> store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --base=ubuntu@22.04 --arch=amd64
 Downloading mysql-k8s-bundle revision 45 (8.0/edge)
   [####################################]  100%
 Downloading data-integrator revision 71 (edge)
@@ -110,4 +110,3 @@ juju deploy mysql-k8s --trust
 * https://documentation.ubuntu.com/enterprise-store/main/how-to/airgap-charmhub
 * https://ubuntu.com/kubernetes/docs/install-offline
 * https://documentation.ubuntu.com/charmed-kubeflow/how-to/install/install-air-gapped/
-

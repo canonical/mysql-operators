@@ -4,11 +4,10 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
-from ... import markers
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -60,37 +59,23 @@ def test_relation_creation_eager(juju: Juju):
 
     logging.info("Waiting for application app to be waiting...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
 
 
 @pytest.mark.abort_on_fail
-@markers.only_without_juju_secrets
-def test_relation_creation_databag(juju: Juju):
-    """Relate charms and wait for the expected changes in status."""
-    juju.wait(
-        ready=jubilant_backports.all_active,
-        timeout=15 * MINUTE_SECS,
-    )
-
-    relation_data = get_relation_data(juju, APPLICATION_APP_NAME, "database")
-    assert {"password", "username"} <= set(relation_data[0]["application-data"])
-
-
-@pytest.mark.abort_on_fail
-@markers.only_with_juju_secrets
 def test_relation_creation(juju: Juju):
     """Relate charms and wait for the expected changes in status."""
     juju.wait(
-        ready=jubilant_backports.all_active,
+        ready=jubilant.all_active,
         timeout=15 * MINUTE_SECS,
     )
 
@@ -108,12 +93,12 @@ def test_relation_broken(juju: Juju):
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )

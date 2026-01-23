@@ -5,7 +5,7 @@ import logging
 import os
 import uuid
 
-import jubilant_backports
+import jubilant
 import pytest
 
 from . import architecture
@@ -61,11 +61,11 @@ def juju(request: pytest.FixtureRequest):
     keep_models = bool(request.config.getoption("--keep-models"))
 
     if model:
-        juju = jubilant_backports.Juju(model=model)  # type: ignore
+        juju = jubilant.Juju(model=model)  # type: ignore
         yield juju
         log = juju.debug_log(limit=1000)
     else:
-        with jubilant_backports.temp_model(keep=keep_models) as juju:
+        with jubilant.temp_model(keep=keep_models) as juju:
             yield juju
             log = juju.debug_log(limit=1000)
 

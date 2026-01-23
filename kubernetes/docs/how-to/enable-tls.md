@@ -36,16 +36,16 @@ openssl genrsa -out internal-key.pem 3072
 
 Apply the newly generated internal key on each `juju` unit:
 ```shell
-juju run-action mysql-k8s/0 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
-juju run-action mysql-k8s/1 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
-juju run-action mysql-k8s/2 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
+juju run mysql-k8s/0 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
+juju run mysql-k8s/1 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
+juju run mysql-k8s/2 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)" --wait
 ```
 
 Updates can also be done with auto-generated keys:
 ```shell
-juju run-action mysql-k8s/0 set-tls-private-key --wait
-juju run-action mysql-k8s/1 set-tls-private-key --wait
-juju run-action mysql-k8s/2 set-tls-private-key --wait
+juju run mysql-k8s/0 set-tls-private-key --wait
+juju run mysql-k8s/1 set-tls-private-key --wait
+juju run mysql-k8s/2 set-tls-private-key --wait
 ```
 
 ## Disable TLS
@@ -53,4 +53,3 @@ Disable TLS by removing the integration:
 ```shell
 juju remove-relation tls-certificates-operator mysql-k8s
 ```
-

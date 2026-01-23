@@ -60,14 +60,14 @@ In order to trigger the restart, a human operator would execute the following co
 the CLI:
 
 ```
-juju run-action some-charm/0 some-charm/1 <... some-charm/n> restart
+juju run some-charm/0 some-charm/1 <... some-charm/n> restart
 ```
 
 Note that all units that plan to restart must receive the action and emit the aquire
 event. Any units that do not run their acquire handler will be left out of the rolling
 restart. (An operator might take advantage of this fact to recover from a failed rolling
 operation without restarting workloads that were able to successfully restart -- simply
-omit the successful units from a subsequent run-action call.)
+omit the successful units from a subsequent run call.)
 
 """
 import logging

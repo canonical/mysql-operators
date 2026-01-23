@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from constants import CONTAINER_NAME
 
@@ -53,10 +53,8 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
-        ),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -83,7 +81,7 @@ async def test_graceful_crash_of_primary(juju: Juju, continuous_writes) -> None:
 
     logging.info("Waiting until there are 3 online mysql instances again")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 

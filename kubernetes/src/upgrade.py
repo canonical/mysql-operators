@@ -24,7 +24,7 @@ from charms.mysql.v0.mysql import (
     MySQLSetVariableError,
 )
 from mysql_shell import InstanceState
-from ops import Container, JujuVersion
+from ops import Container
 from ops.model import BlockedStatus, MaintenanceStatus, RelationDataContent
 from ops.pebble import ChangeError
 from pydantic import BaseModel
@@ -138,19 +138,12 @@ class MySQLK8sUpgrade(DataUpgrade):
     @override
     def log_rollback_instructions(self) -> None:
         """Log rollback instructions."""
-        juju_version = JujuVersion.from_environ()
-        if juju_version.major > 2:
-            run_action = "run"
-            wait = ""
-        else:
-            run_action = "run-action"
-            wait = " --wait"
         logger.critical(
             "\n".join((
                 "Upgrade failed, follow the instructions below to rollback:",
-                f"  1 - Run `juju {run_action} {self.charm.app.name}/leader pre-upgrade-check{wait}` to configure rollback",
+                f"  1 - Run `juju run {self.charm.app.name}/leader pre-upgrade-check` to configure rollback",
                 f"  2 - Run `juju refresh --revision <previous-revision> {self.charm.app.name}` to initiate the rollback",
-                f"  3 - Run `juju {run_action} {self.charm.app.name}/leader resume-upgrade{wait}` to resume the rollback",
+                f"  3 - Run `juju run {self.charm.app.name}/leader resume-upgrade` to resume the rollback",
             ))
         )
 

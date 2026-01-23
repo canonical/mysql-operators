@@ -7,9 +7,9 @@ import tempfile
 from contextlib import suppress
 from pathlib import Path
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import CLIError, Juju
+from jubilant import CLIError, Juju
 from tenacity import (
     Retrying,
     stop_after_attempt,
@@ -60,10 +60,8 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
-        ),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 

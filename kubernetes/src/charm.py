@@ -386,13 +386,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         return self._is_cluster_blocked()
 
     def _create_cluster(self) -> None:
-        juju_version = ops.JujuVersion.from_environ()
-
         try:
             # Create the cluster when is the leader unit
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
-            self.unit.set_ports(3306, 33060) if juju_version.supports_open_port_on_k8s else None
+            self.unit.set_ports(3306, 33060)
             self.unit.status = ops.ActiveStatus(self.active_status_message)
         except (
             MySQLCreateClusterError,
