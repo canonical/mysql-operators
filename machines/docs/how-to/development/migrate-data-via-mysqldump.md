@@ -152,16 +152,10 @@ mysql \
 
 ## Integrate with modern charm
 
-Integrate your application and new MySQL database charm (using the `database` or `mysql` endpoint):
+Integrate your application and new MySQL database charm (using the `database` endpoint):
 
 ```shell
 juju integrate <your_application> mysql:database
-```
-
-If the `mysql_client` interface is not yet supported, use the legacy mysql interface:
-
-```shell
-juju integrate <your_application> mysql:mysql
 ```
 
 ## Verify database migration
@@ -242,4 +236,3 @@ Test your application and if you are happy with a data migration, do not forget 
 ```shell
 juju remove-application --destroy-storage < mariadb | percona-cluster | mysql-innodb-cluster >
 ```
-

@@ -64,8 +64,6 @@ class CharmConfig(BaseConfigModel):
     cluster_name: str | None
     cluster_set_name: str | None
     profile_limit_memory: int | None
-    mysql_interface_user: str | None
-    mysql_interface_database: str | None
     experimental_max_connections: int | None
     binlog_retention_days: int
     plugin_audit_enabled: bool

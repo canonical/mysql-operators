@@ -9,13 +9,12 @@ from unittest.mock import MagicMock, call, patch
 
 import tenacity
 from charms.mysql.v0.mysql import (
-    LEGACY_ROLE_ROUTER,
-    MODERN_ROLE_ROUTER,
     ROLE_BACKUP,
     ROLE_DBA,
     ROLE_DDL,
     ROLE_DML,
     ROLE_READ,
+    ROLE_ROUTER,
     ROLE_STATS,
     UNIT_ADD_LOCKNAME,
     Error,
@@ -26,7 +25,6 @@ from charms.mysql.v0.mysql import (
     MySQLConfigureInstanceError,
     MySQLConfigureMySQLRolesError,
     MySQLConfigureMySQLUsersError,
-    MySQLConfigureRouterUserError,
     MySQLCreateApplicationDatabaseError,
     MySQLCreateApplicationScopedUserError,
     MySQLCreateClusterError,
@@ -161,8 +159,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mysql.configure_mysql_router_roles()
         self.mock_executor.execute_sql.assert_has_calls([
             call(search_query.format(role="%router")),
-            call(create_query.format(role=LEGACY_ROLE_ROUTER)),
-            call(create_query.format(role=MODERN_ROLE_ROUTER)),
+            call(create_query.format(role=ROLE_ROUTER)),
         ])
 
     def test_configure_mysql_router_roles_fail(self):
@@ -256,35 +253,6 @@ class TestMySQLBase(unittest.TestCase):
 
         with self.assertRaises(MySQLCheckUserExistenceError):
             self.mysql.does_mysql_user_exist("test_username", "1.1.1.1")
-
-    @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_primary_address")
-    def test_configure_mysqlrouter_user(self, _get_cluster_primary_address):
-        """Test the successful execution of configure_mysqlrouter_user."""
-        commands = ";".join((
-            "CREATE USER 'test_username'@'1.1.1.1' IDENTIFIED BY 'test_password' ATTRIBUTE '{\\\"unit_name\\\": \\\"app/0\\\"}'",
-            "GRANT CREATE USER ON *.* TO 'test_username'@'1.1.1.1' WITH GRANT OPTION",
-            "GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON mysql_innodb_cluster_metadata.* TO 'test_username'@'1.1.1.1'",
-            "GRANT SELECT ON mysql.user TO 'test_username'@'1.1.1.1'",
-            "GRANT SELECT ON performance_schema.replication_group_members TO 'test_username'@'1.1.1.1'",
-            "GRANT SELECT ON performance_schema.replication_group_member_stats TO 'test_username'@'1.1.1.1'",
-            "GRANT SELECT ON performance_schema.global_variables TO 'test_username'@'1.1.1.1'",
-        ))
-
-        self.mysql.configure_mysqlrouter_user("test_username", "test_password", "1.1.1.1", "app/0")
-        self.mock_executor.execute_sql.assert_called_once_with(commands)
-
-    @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_primary_address")
-    def test_configure_mysqlrouter_user_failure(self, _get_cluster_primary_address):
-        """Test failure to configure the MySQLRouter user."""
-        self.mock_executor.execute_sql.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLConfigureRouterUserError):
-            self.mysql.configure_mysqlrouter_user(
-                "test_username",
-                "test_password",
-                "1.1.1.1",
-                "app/0",
-            )
 
     @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_primary_address")
     @patch("charms.mysql.v0.mysql.MySQLBase.get_non_system_databases")

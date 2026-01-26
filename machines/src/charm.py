@@ -112,10 +112,7 @@ from mysql_vm_helpers import (
     snap,
     snap_service_operation,
 )
-from relations.db_router import DBRouterRelation
-from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
-from relations.shared_db import SharedDBRelation
 from upgrade import MySQLVMUpgrade, get_mysql_dependencies_model
 from utils import compare_dictionaries, generate_random_password
 
@@ -138,7 +135,6 @@ class MySQLCustomCharmEvents(FlushMySQLLogsCharmEvents, IPAddressChangeCharmEven
     tracing_endpoint="tracing_endpoint",
     extra_types=(
         COSAgentProvider,
-        DBRouterRelation,
         MySQL,
         MySQLAsyncReplicationConsumer,
         MySQLAsyncReplicationOffer,
@@ -147,12 +143,10 @@ class MySQLCustomCharmEvents(FlushMySQLLogsCharmEvents, IPAddressChangeCharmEven
         MySQLLogs,
         MySQLMachineHostnameResolution,
         MySQLProvider,
-        MySQLRelation,
         MySQLTLS,
         MySQLVMUpgrade,
         RollingOpsManager,
         S3Requirer,
-        SharedDBRelation,
     ),
 )
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
@@ -178,10 +172,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
         self.mysql_config = MySQLConfig(MYSQLD_CUSTOM_CONFIG_FILE)
-        self.shared_db_relation = SharedDBRelation(self)
-        self.db_router_relation = DBRouterRelation(self)
         self.database_relation = MySQLProvider(self)
-        self.mysql_relation = MySQLRelation(self)
         self.tls = MySQLTLS(self)
         self._grafana_agent = COSAgentProvider(
             self,

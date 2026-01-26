@@ -136,7 +136,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 100
+LIBPATCH = 101
 
 PYDEPS = ["mysql_shell_client ~= 0.6"]
 
@@ -164,13 +164,8 @@ ROLE_DML = "charmed_dml"
 ROLE_READ = "charmed_read"
 ROLE_STATS = "charmed_stats"
 ROLE_BACKUP = "charmed_backup"
+ROLE_ROUTER = "charmed_router"
 ROLE_MAX_LENGTH = 32
-
-# TODO:
-#   Remove legacy role when migrating to MySQL 8.4
-#   (when breaking changes are allowed)
-LEGACY_ROLE_ROUTER = "mysqlrouter"
-MODERN_ROLE_ROUTER = "charmed_router"
 
 FORBIDDEN_EXTRA_ROLES = {
     ROLE_BACKUP,
@@ -1248,30 +1243,29 @@ class MySQLBase(ABC):
         except ExecutionError as e:
             raise MySQLConfigureMySQLRolesError() from e
 
+        if ROLE_ROUTER in router_roles:
+            return
+
+        logger.debug(f"Missing MySQL role {ROLE_ROUTER}")
+        configure_role_commands = ";".join([
+            f"CREATE ROLE {ROLE_ROUTER}",
+            f"GRANT CREATE ON *.* TO {ROLE_ROUTER}",
+            f"GRANT CREATE USER ON *.* TO {ROLE_ROUTER}",
+            # The granting of all privileges to the MySQL Router role
+            # can only be restricted when the privileges to the users
+            # created by such role are restricted as well
+            # https://github.com/canonical/mysql-router-operator/blob/main/src/mysql_shell/__init__.py#L134-L136
+            f"GRANT ALL ON *.* TO {ROLE_ROUTER} WITH GRANT OPTION",
+        ])
+
         executor = self._build_instance_sock_executor()
 
-        for role in (LEGACY_ROLE_ROUTER, MODERN_ROLE_ROUTER):
-            if role in router_roles:
-                continue
-
-            logger.debug(f"Missing MySQL role {role}")
-            configure_role_commands = ";".join([
-                f"CREATE ROLE {role}",
-                f"GRANT CREATE ON *.* TO {role}",
-                f"GRANT CREATE USER ON *.* TO {role}",
-                # The granting of all privileges to the MySQL Router role
-                # can only be restricted when the privileges to the users
-                # created by such role are restricted as well
-                # https://github.com/canonical/mysql-router-operator/blob/main/src/mysql_shell/__init__.py#L134-L136
-                f"GRANT ALL ON *.* TO {role} WITH GRANT OPTION",
-            ])
-
-            try:
-                logger.debug(f"Configuring Router role for {self.instance_address}")
-                executor.execute_sql(configure_role_commands)
-            except ExecutionError as e:
-                logger.error(f"Failed to configure Router role for {self.instance_address}")
-                raise MySQLConfigureMySQLRolesError() from e
+        try:
+            logger.debug(f"Configuring Router role for {self.instance_address}")
+            executor.execute_sql(configure_role_commands)
+        except ExecutionError as e:
+            logger.error(f"Failed to configure Router role for {self.instance_address}")
+            raise MySQLConfigureMySQLRolesError() from e
 
     def configure_mysql_system_roles(self) -> None:
         """Configure the MySQL system roles for the instance."""
@@ -1394,35 +1388,6 @@ class MySQLBase(ABC):
                 return True
 
         return False
-
-    def configure_mysqlrouter_user(
-        self,
-        username: str,
-        password: str,
-        hostname: str,
-        unit_name: str,
-    ) -> None:
-        """Configure a mysqlrouter user and grant the appropriate permissions to the user."""
-        primary_address = self.get_cluster_primary_address()
-        primary_executor = self._build_instance_tcp_executor(primary_address)
-
-        escaped_user_attributes = json.dumps({"unit_name": unit_name}).replace('"', r"\"")
-        queries = ";".join([
-            f"CREATE USER '{username}'@'{hostname}' IDENTIFIED BY '{password}' ATTRIBUTE '{escaped_user_attributes}'",
-            f"GRANT CREATE USER ON *.* TO '{username}'@'{hostname}' WITH GRANT OPTION",
-            f"GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON mysql_innodb_cluster_metadata.* TO '{username}'@'{hostname}'",
-            f"GRANT SELECT ON mysql.user TO '{username}'@'{hostname}'",
-            f"GRANT SELECT ON performance_schema.replication_group_members TO '{username}'@'{hostname}'",
-            f"GRANT SELECT ON performance_schema.replication_group_member_stats TO '{username}'@'{hostname}'",
-            f"GRANT SELECT ON performance_schema.global_variables TO '{username}'@'{hostname}'",
-        ])
-
-        try:
-            logger.debug(f"Configuring MySQLRouter {username=}")
-            primary_executor.execute_sql(queries)
-        except ExecutionError as e:
-            logger.error(f"Failed to configure mysqlrouter {username=}")
-            raise MySQLConfigureRouterUserError() from e
 
     @retry(
         reraise=True,

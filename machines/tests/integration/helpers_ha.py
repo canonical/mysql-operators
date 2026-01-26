@@ -20,7 +20,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import ROOT_USERNAME, SERVER_CONFIG_USERNAME
+from constants import SERVER_CONFIG_USERNAME
 
 from .helpers import execute_queries_on_unit
 
@@ -337,30 +337,6 @@ def rotate_mysql_server_credentials(
         action="set-password",
         params=params,
     )
-
-
-def get_legacy_mysql_credentials(
-    juju: Juju,
-    unit_name: str,
-    username: str = ROOT_USERNAME,
-) -> dict[str, str]:
-    """Helper that runs an action to retrieve legacy credentials for given username on mysql-test-app.
-
-    Args:
-        juju: The Juju model
-        unit_name: The juju unit on which to run the get-password action for server-config credentials
-        username: The username to use
-
-    Returns:
-        A dictionary with the server config username and password
-    """
-    credentials_task = juju.run(
-        unit=unit_name,
-        action="get-legacy-mysql-credentials",
-        params={"username": username},
-    )
-
-    return credentials_task.results
 
 
 def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str) -> int:

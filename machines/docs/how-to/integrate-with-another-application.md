@@ -8,7 +8,7 @@ This guide shows how to integrate Charmed MySQL with both charmed and non-charme
 
 ## Integrate with a charmed application
 
-Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface, and the legacy `mysql` interface.
+Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface.
 
 ### Modern `mysql_client` interface
 
@@ -20,22 +20,6 @@ juju integrate mysql <charm>
 To remove the integration, run
 ```shell
 juju remove-relation mysql <charm>
-```
-
-### Legacy `mysql` interface
-```{caution}
-Note that this interface is **deprecated**.
-See more information in [Explanation > Legacy charm](/explanation/legacy-charm).
-```
-
-To integrate via the legacy interface, run
- ```shell
-juju integrate mysql:mysql <charm>
-```
-
-Extended permissions can be requested using `mysql-root` endpoint:
-```shell
-juju integrate mysql:mysql-root <charm>
 ```
 
 ## Integrate with a non-charmed application
@@ -81,4 +65,3 @@ To randomly generate a password for the `operator` user, run
 ```shell
 juju run mysql/leader set-password
 ```
-
