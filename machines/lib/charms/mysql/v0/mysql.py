@@ -1965,7 +1965,7 @@ class MySQLBase(ABC):
             from_instance = self.instance_address
 
         client = MySQLClusterClient(
-            executor=self._build_cluster_tcp_executor(from_instance),
+            executor=self._build_instance_tcp_executor(from_instance),
         )
 
         try:
@@ -1983,7 +1983,7 @@ class MySQLBase(ABC):
             from_instance = self.instance_address
 
         client = MySQLClusterClient(
-            executor=self._build_cluster_tcp_executor(from_instance),
+            executor=self._build_instance_tcp_executor(from_instance),
         )
 
         try:
