@@ -4,7 +4,6 @@
 
 """Helper class to manage the MySQL InnoDB cluster lifecycle with MySQL Shell."""
 
-import json
 import logging
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
@@ -67,22 +66,6 @@ class MySQLResetRootPasswordAndStartMySQLDError(Error):
 
 class MySQLInitialiseMySQLDError(Error):
     """Exception raised when there is an issue initialising an instance."""
-
-
-class MySQLCreateDatabaseError(Error):
-    """Exception raised when there is an issue creating a database."""
-
-
-class MySQLCreateUserError(Error):
-    """Exception raised when there is an issue creating a user."""
-
-
-class MySQLEscalateUserPrivilegesError(Error):
-    """Exception raised when there is an issue escalating user privileges."""
-
-
-class MySQLDeleteUsersWithLabelError(Error):
-    """Exception raised when there is an issue deleting users with a label."""
 
 
 class MySQLWaitUntilUnitRemovedFromClusterError(Error):
@@ -463,146 +446,6 @@ class MySQL(MySQLBase):
 
         if unit_address in members_in_cluster:
             raise MySQLWaitUntilUnitRemovedFromClusterError("Remove member still in cluster")
-
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
-    def create_database_legacy(self, database_name: str) -> None:
-        """Creates a database.
-
-        Args:
-            database_name: Name of database to create
-
-        Raises:
-            MySQLCreateDatabaseError if there is an issue creating specified database
-        """
-        executor = self._build_instance_tcp_executor(self.instance_address)
-
-        try:
-            executor.execute_py(
-                "\n".join([
-                    "shell.connect_to_primary()",
-                    f"session.run_sql('CREATE DATABASE IF NOT EXISTS `{database_name}`;')",
-                ]),
-            )
-        except ExecutionError as e:
-            logger.exception(f"Failed to create database {database_name}", exc_info=e)
-            raise MySQLCreateDatabaseError() from None
-
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
-    def create_user_legacy(
-        self, username: str, password: str, label: str, hostname: str = "%"
-    ) -> None:
-        """Creates a new user.
-
-        Args:
-            username: The username of the user to create
-            password: THe user's password
-            label: The label to tag the user with (to be able to delete it later)
-            hostname: (Optional) The hostname of the new user to create (% by default)
-
-        Raises:
-            MySQLCreateUserError if there is an issue creating specified user
-        """
-        executor = self._build_instance_tcp_executor(self.instance_address)
-
-        try:
-            escaped_user_attributes = json.dumps({"label": label}).replace('"', r"\"")
-            executor.execute_py(
-                "\n".join([
-                    "shell.connect_to_primary()",
-                    f"session.run_sql('CREATE USER `{username}`@`{hostname}` IDENTIFIED BY \\'{password}\\' ATTRIBUTE \\'{escaped_user_attributes}\\';')",
-                ]),
-            )
-        except ExecutionError:
-            logger.exception(f"Failed to create user {username}@{hostname}")
-            raise MySQLCreateUserError() from None
-
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
-    def escalate_user_privileges(self, username: str, hostname: str = "%") -> None:
-        """Escalates the provided user's privileges.
-
-        Args:
-            username: The username of the user to escalate privileges for
-            hostname: The hostname of the user to escalate privileges for
-
-        Raises:
-            MySQLEscalateUserPrivilegesError if there is an error escalating user privileges
-        """
-        executor = self._build_instance_tcp_executor(self.instance_address)
-
-        super_privileges_to_revoke = ", ".join([
-            "SYSTEM_USER",
-            "SYSTEM_VARIABLES_ADMIN",
-            "SUPER",
-            "REPLICATION_SLAVE_ADMIN",
-            "GROUP_REPLICATION_ADMIN",
-            "BINLOG_ADMIN",
-            "SET_USER_ID",
-            "ENCRYPTION_KEY_ADMIN",
-            "VERSION_TOKEN_ADMIN",
-            "CONNECTION_ADMIN",
-        ])
-
-        try:
-            executor.execute_py(
-                "\n".join([
-                    "shell.connect_to_primary()",
-                    f"session.run_sql('GRANT ALL ON *.* TO `{username}`@`{hostname}` WITH GRANT OPTION;')",
-                    f"session.run_sql('REVOKE {super_privileges_to_revoke} ON *.* FROM `{username}`@`{hostname}`;')",
-                    "session.run_sql('FLUSH PRIVILEGES;')",
-                ]),
-            )
-        except ExecutionError:
-            logger.exception(f"Failed to escalate user privileges for {username}@{hostname}")
-            raise MySQLEscalateUserPrivilegesError() from None
-
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
-    def delete_users_with_label(self, label_name: str, label_value: str) -> None:
-        """Delete users with the provided label.
-
-        Args:
-            label_name: The name of the label for users to be deleted
-            label_value: The value of the label for users to be deleted
-
-        Raises:
-            MySQLDeleteUsersWIthLabelError if there is an error deleting users for the label
-        """
-        executor = self._build_instance_tcp_executor(self.instance_address)
-
-        get_label_users_selector = f'%"{label_name}": "{label_value}"%'
-        get_label_users_query = (
-            "SELECT user.user, user.host"
-            "FROM mysql.user AS user "
-            "JOIN information_schema.user_attributes AS attributes "
-            "   ON (user.user = attributes.user AND user.host = attributes.host) "
-            f"WHERE attributes.attribute LIKE '{get_label_users_selector}'"
-        )
-
-        try:
-            rows = executor.execute_sql(get_label_users_query)
-            users = [f"\\'{row['user']}\\'@\\'{row['host']}\\'" for row in rows]
-
-            if len(users) == 0:
-                logger.debug(f"There are no users to drop for label {label_name}={label_value}")
-                return
-
-            users = ", ".join(users)
-            executor.execute_py(
-                "\n".join([
-                    "shell.connect_to_primary()",
-                    f"session.run_sql('DROP USER IF EXISTS {users};')",
-                ]),
-            )
-        except ExecutionError:
-            logger.exception(f"Failed to query and delete users for {label_name}={label_value}")
-            raise MySQLDeleteUsersWithLabelError() from None
 
     def drop_group_replication_metadata_schema(self) -> None:
         """Drop the group replication metadata schema from current unit."""

@@ -9,8 +9,7 @@ import typing
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseProvides, DatabaseRequestedEvent
 from charms.mysql.v0.mysql import (
-    LEGACY_ROLE_ROUTER,
-    MODERN_ROLE_ROUTER,
+    ROLE_ROUTER,
     MySQLCreateApplicationDatabaseError,
     MySQLCreateApplicationScopedUserError,
     MySQLDeleteUserError,
@@ -74,18 +73,15 @@ class MySQLProvider(Object):
         self.database.update_relation_data(relation.id, {"password": password})
         return password
 
-    def _get_username(self, relation_id: int, legacy: bool = False) -> str:
+    def _get_username(self, relation_id: int) -> str:
         """Generate a unique username for the relation using the model uuid and the relation id.
 
         Args:
             relation_id (int): The relation id.
-            legacy (bool): If True, generate a username without the model uuid.
 
         Returns:
             str: A valid unique username (limited to 26 characters)
         """
-        if legacy:
-            return f"relation-{relation_id}"
         return f"relation-{relation_id}_{self.model.uuid.replace('-', '')}"[:26]
 
     # =============
@@ -135,10 +131,7 @@ class MySQLProvider(Object):
             # wait for endpoints to be ready
             self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
 
-            if not any([
-                LEGACY_ROLE_ROUTER in extra_user_roles,
-                MODERN_ROLE_ROUTER in extra_user_roles,
-            ]):
+            if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
 
             self.charm._mysql.create_scoped_user(
@@ -276,12 +269,6 @@ class MySQLProvider(Object):
         try:
             if self.charm._mysql.does_mysql_user_exist(self._get_username(relation_id), "%"):
                 self.charm._mysql.delete_users_for_relation(self._get_username(relation_id))
-            elif self.charm._mysql.does_mysql_user_exist(
-                self._get_username(relation_id, legacy=True), "%"
-            ):
-                self.charm._mysql.delete_users_for_relation(
-                    self._get_username(relation_id, legacy=True)
-                )
             else:
                 logger.warning(f"User(s) not found for relation {relation_id}")
                 return

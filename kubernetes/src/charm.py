@@ -100,9 +100,7 @@ from constants import (
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
-from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
-from relations.mysql_root import MySQLRootRelation
 from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
 from upgrade import MySQLK8sUpgrade, get_mysql_k8s_dependencies_model
 from utils import compare_dictionaries, dotappend, generate_random_password
@@ -125,8 +123,6 @@ logger = logging.getLogger(__name__)
         MySQLConfig,
         MySQLK8sUpgrade,
         MySQLProvider,
-        MySQLRelation,
-        MySQLRootRelation,
         MySQLTLS,
         RollingOpsManager,
         RotateMySQLLogs,
@@ -167,9 +163,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
-        self.mysql_relation = MySQLRelation(self)
         self.database_relation = MySQLProvider(self)
-        self.mysql_root_relation = MySQLRootRelation(self)
         self.tls = MySQLTLS(self)
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)

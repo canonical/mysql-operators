@@ -153,16 +153,10 @@ mysql \
 
 ## Integrate with modern charm
 
-Integrate your application and new MySQL database charm (using the `database` or `mysql` endpoint):
+Integrate your application and new MySQL database charm (using the `database` endpoint):
 
 ```shell
 juju integrate <your_application> mysql-k8s:database
-```
-
-If the `mysql_client` interface is not yet supported, use the legacy mysql interface:
-
-```shell
-juju integrate <your_application> mysql-k8s:mysql
 ```
 
 ## Verify database migration

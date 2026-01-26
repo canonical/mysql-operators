@@ -20,22 +20,7 @@ The track `latest` is closed to avoid confusion.
 
 ## How to migrate from legacy to modern charm
 
-The modern charm provides temporary support for legacy interfaces
-
-**Quick try**: Relate the current application with new charm using endpoint `mysql` (set the channel to `8.0/stable`). No extra changes are necessary:
-
-```yaml
-  mysql:
-    charm: mysql-k8s
-    channel: 8.0/stable
-    trust: true
-```
-
-```{note}
-The `trust` option must be enabled if [Role Based Access Control (RBAC)](https://kubernetes.io/docs/concepts/security/rbac-good-practices/) is in use in your Kubernetes.
-```
-
-**Proper migration**: Migrate the application to the new interface [`mysql_client`](https://github.com/canonical/charm-relation-interfaces). 
+Migrate the application to the new interface [`mysql_client`](https://github.com/canonical/charm-relation-interfaces). 
 
 The application will connect MySQL using [`data_interfaces`](https://charmhub.io/data-platform-libs/libraries/data_interfaces) library from [`data-platform-libs`](https://github.com/canonical/data-platform-libs/) via the `database` endpoint.
 
@@ -76,4 +61,3 @@ See: [](/reference/system-requirements)
 The modern charm (from `8.0/stable`) is stored on [GitHub](https://github.com/canonical/mysql-k8s-operator), here is the link to report [modern charm issues](https://github.com/canonical/mysql-k8s-operator/issues/new/choose).
 
 Do you have questions? [Contact us](/reference/contacts)!
-
