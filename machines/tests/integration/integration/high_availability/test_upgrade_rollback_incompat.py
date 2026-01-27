@@ -34,7 +34,7 @@ MINUTE_SECS = 60
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(juju: Juju, charm: str) -> None:
+def test_build_and_deploy(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     snap_revisions = Path("snap_revisions.json")
     with snap_revisions.open("r") as file:
@@ -87,7 +87,7 @@ async def test_build_and_deploy(juju: Juju, charm: str) -> None:
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
 @pytest.mark.abort_on_fail
-async def test_pre_upgrade_check(juju: Juju) -> None:
+def test_pre_upgrade_check(juju: Juju) -> None:
     """Test that the pre-upgrade-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
 
@@ -99,9 +99,9 @@ async def test_pre_upgrade_check(juju: Juju) -> None:
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
 @pytest.mark.abort_on_fail
-async def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
+def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
     logging.info("Ensure continuous_writes")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     with InjectFailure(
         path="src/upgrade.py",
@@ -136,7 +136,7 @@ async def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> 
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
 @pytest.mark.abort_on_fail
-async def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
+def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     """Test upgrade rollback to a healthy revision."""
     relation_data = get_relation_data(juju, MYSQL_APP_NAME, "upgrade")
     upgrade_stack = relation_data[0]["application-data"]["upgrade-stack"]
@@ -192,7 +192,7 @@ async def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     assert upgrade_complete_index is not None
 
     logging.info("Ensure continuous writes after rollback procedure")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
 
 class InjectFailure:

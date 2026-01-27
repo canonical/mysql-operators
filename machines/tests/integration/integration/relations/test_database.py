@@ -2,6 +2,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import json
 import logging
 
 import jubilant_backports
@@ -12,7 +13,7 @@ from constants import DB_RELATION_NAME, PASSWORD_LENGTH, ROOT_USERNAME, SERVER_C
 from utils import generate_random_password
 
 from ... import markers
-from ...helpers import execute_queries_on_unit, get_read_only_endpoint_ips
+from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
     get_app_units,
@@ -69,7 +70,7 @@ def test_build_and_deploy(juju: Juju, charm):
 
 
 @pytest.mark.abort_on_fail
-async def test_password_rotation(juju: Juju):
+def test_password_rotation(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -87,7 +88,7 @@ async def test_password_rotation(juju: Juju):
 
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         primary_unit_address,
         updated_credentials["username"],
         updated_credentials["password"],
@@ -97,7 +98,7 @@ async def test_password_rotation(juju: Juju):
 
 
 @pytest.mark.abort_on_fail
-async def test_password_rotation_silent(juju: Juju):
+def test_password_rotation_silent(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -112,7 +113,7 @@ async def test_password_rotation_silent(juju: Juju):
 
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         primary_unit_address,
         updated_credentials["username"],
         updated_credentials["password"],
@@ -247,6 +248,54 @@ def check_read_only_endpoints(juju: Juju, app_name: str, relation_name: str) -> 
     ]
     # check that endpoints are the one of the application
     return all(read_endpoint_ip in unit_ips for read_endpoint_ip in read_only_endpoint_ips)
+
+
+def get_read_only_endpoints(relation_data: list) -> set[str]:
+    """Returns the read-only-endpoints from the relation data.
+
+    Args:
+        relation_data: The dictionary that contains the info
+    Returns:
+        a set that contains the read-only-endpoints
+    """
+    related_units = relation_data[0]["related-units"]
+    read_only_endpoints = set()
+    for _, relation_data in related_units.items():
+        assert "data" in relation_data
+        data = relation_data["data"]["data"]
+
+        try:
+            j_data = json.loads(data)
+            if "read-only-endpoints" in j_data:
+                read_only_endpoint_field = j_data["read-only-endpoints"]
+                if read_only_endpoint_field.strip() == "":
+                    continue
+                for ep in read_only_endpoint_field.split(","):
+                    read_only_endpoints.add(ep)
+        except json.JSONDecodeError as e:
+            raise ValueError("Relation data are not valid JSON.") from e
+
+    return read_only_endpoints
+
+
+def get_read_only_endpoint_ips(relation_data: list) -> list[str]:
+    """Returns the read-only-endpoint hostnames from the relation data.
+
+    Args:
+        relation_data: The dictionary that contains the info
+    Returns:
+        a set that contains the read-only-endpoint hostnames
+    """
+    read_only_endpoints = get_read_only_endpoints(relation_data)
+    read_only_endpoint_hostnames = []
+
+    for read_only_endpoint in read_only_endpoints:
+        if ":" in read_only_endpoint:
+            read_only_endpoint_hostnames.append(read_only_endpoint.split(":")[0])
+        else:
+            raise ValueError("Malformed endpoint")
+
+    return read_only_endpoint_hostnames
 
 
 def rotate_mysql_server_credentials(

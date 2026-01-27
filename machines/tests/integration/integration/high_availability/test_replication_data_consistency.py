@@ -58,13 +58,13 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_consistent_data_replication_across_cluster(juju: Juju) -> None:
+def test_consistent_data_replication_across_cluster(juju: Juju) -> None:
     """Confirm that data is replicated from the primary node to all the replicas."""
     table_name = "data"
     table_value = generate_random_string(255)
 
-    await insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
 
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)

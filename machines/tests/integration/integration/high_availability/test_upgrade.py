@@ -63,7 +63,7 @@ def test_deploy_latest(juju: Juju) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_pre_upgrade_check(juju: Juju) -> None:
+def test_pre_upgrade_check(juju: Juju) -> None:
     """Test that the pre-upgrade-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
@@ -73,9 +73,7 @@ async def test_pre_upgrade_check(juju: Juju) -> None:
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in mysql_units:
-        value = await get_mysql_variable_value(
-            juju, MYSQL_APP_NAME, unit_name, "innodb_fast_shutdown"
-        )
+        value = get_mysql_variable_value(juju, MYSQL_APP_NAME, unit_name, "innodb_fast_shutdown")
         assert value == 0
 
     logging.info("Assert primary is set to leader")
@@ -84,10 +82,10 @@ async def test_pre_upgrade_check(juju: Juju) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
+def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     """Update the second cluster."""
     logging.info("Ensure continuous writes are incrementing")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=charm)
@@ -105,11 +103,11 @@ async def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> N
     )
 
     logging.info("Ensure continuous writes are incrementing")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
 
 @pytest.mark.abort_on_fail
-async def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
+def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     """Test an upgrade failure and its rollback."""
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_app_units = get_app_units(juju, MYSQL_APP_NAME)
@@ -136,7 +134,7 @@ async def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> N
     )
 
     logging.info("Ensure continuous writes on all units")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
 
     logging.info("Re-run pre-upgrade-check action")
     juju.run(unit=mysql_app_leader, action="pre-upgrade-check")
@@ -157,7 +155,7 @@ async def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> N
     )
 
     logging.info("Ensure continuous writes after rollback procedure")
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
 
     # Remove fault charm file
     tmp_folder_charm.unlink()

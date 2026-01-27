@@ -57,7 +57,7 @@ def test_deploy_stable(juju: Juju) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_refresh_without_pre_upgrade_check(juju: Juju, charm: str) -> None:
+def test_refresh_without_pre_upgrade_check(juju: Juju, charm: str) -> None:
     """Test updating from stable channel."""
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=charm)
@@ -72,11 +72,11 @@ async def test_refresh_without_pre_upgrade_check(juju: Juju, charm: str) -> None
         successes=1,
     )
 
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
 
 @pytest.mark.abort_on_fail
-async def test_rollback_without_pre_upgrade_check(juju: Juju, charm: str) -> None:
+def test_rollback_without_pre_upgrade_check(juju: Juju, charm: str) -> None:
     """Test refresh back to stable channel."""
     # Early Jubilant 1.X.Y versions do not support the `switch` option
     logging.info("Refresh the charm to stable channel")
@@ -92,4 +92,4 @@ async def test_rollback_without_pre_upgrade_check(juju: Juju, charm: str) -> Non
         successes=1,
     )
 
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)

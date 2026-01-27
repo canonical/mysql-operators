@@ -60,9 +60,9 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_kill_primary_check_reelection(juju: Juju) -> None:
+def test_kill_primary_check_reelection(juju: Juju) -> None:
     """Confirm that a new primary is elected when the current primary is tear down."""
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_old_primary = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
 
@@ -93,6 +93,6 @@ async def test_kill_primary_check_reelection(juju: Juju) -> None:
 
     table_name = "data"
     table_value = generate_random_string(255)
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-    await insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)

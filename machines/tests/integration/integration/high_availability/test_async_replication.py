@@ -200,10 +200,10 @@ def test_create_replication(first_model: str, second_model: str) -> None:
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
+def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
     """Test to write to primary, and read the same data back from replicas."""
     logging.info("Testing data replication")
-    results = await get_mysql_max_written_values(first_model, second_model)
+    results = get_mysql_max_written_values(first_model, second_model)
 
     assert len(results) == 6
     assert all(results[0] == x for x in results), "Data is not consistent across units"
@@ -212,7 +212,7 @@ async def test_data_replication(first_model: str, second_model: str, continuous_
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_standby_promotion(first_model: str, second_model: str, continuous_writes) -> None:
+def test_standby_promotion(first_model: str, second_model: str, continuous_writes) -> None:
     """Test graceful promotion of a standby cluster to primary."""
     model_2 = Juju(model=second_model)
     model_2_mysql_leader = get_app_leader(model_2, MYSQL_APP_2)
@@ -224,7 +224,7 @@ async def test_standby_promotion(first_model: str, second_model: str, continuous
         params={"scope": "cluster"},
     )
 
-    results = await get_mysql_max_written_values(first_model, second_model)
+    results = get_mysql_max_written_values(first_model, second_model)
     assert len(results) == 6
     assert all(results[0] == x for x in results), "Data is not consistent across units"
     assert results[0] > 1, "No data was written to the database"
@@ -285,7 +285,7 @@ def test_failover(first_model: str, second_model: str) -> None:
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_rejoin_invalidated_cluster(
+def test_rejoin_invalidated_cluster(
     first_model: str, second_model: str, continuous_writes
 ) -> None:
     """Test rejoin invalidated cluster with."""
@@ -297,7 +297,7 @@ async def test_rejoin_invalidated_cluster(
         wait=5 * MINUTE_SECS,
     )
 
-    results = await get_mysql_max_written_values(first_model, second_model)
+    results = get_mysql_max_written_values(first_model, second_model)
     assert len(results) == 6
     assert all(results[0] == x for x in results), "Data is not consistent across units"
     assert results[0] > 1, "No data was written to the database"
@@ -305,7 +305,7 @@ async def test_rejoin_invalidated_cluster(
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_unrelate_and_relate(first_model: str, second_model: str, continuous_writes) -> None:
+def test_unrelate_and_relate(first_model: str, second_model: str, continuous_writes) -> None:
     """Test removing and re-relating the two mysql clusters."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
@@ -353,13 +353,13 @@ async def test_unrelate_and_relate(first_model: str, second_model: str, continuo
         timeout=10 * MINUTE_SECS,
     )
 
-    results = await get_mysql_max_written_values(first_model, second_model)
+    results = get_mysql_max_written_values(first_model, second_model)
     assert len(results) == 6
     assert all(results[0] == x for x in results), "Data is not consistent across units"
     assert results[0] > 1, "No data was written to the database"
 
 
-async def get_mysql_max_written_values(first_model: str, second_model: str) -> list[int]:
+def get_mysql_max_written_values(first_model: str, second_model: str) -> list[int]:
     """Return list with max written value from all units."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
@@ -376,12 +376,12 @@ async def get_mysql_max_written_values(first_model: str, second_model: str) -> l
 
     logging.info(f"Querying max value on all {MYSQL_APP_1} units")
     for unit_name in get_app_units(model_1, MYSQL_APP_1):
-        unit_max_value = await get_mysql_max_written_value(model_1, MYSQL_APP_1, unit_name)
+        unit_max_value = get_mysql_max_written_value(model_1, MYSQL_APP_1, unit_name)
         results.append(unit_max_value)
 
     logging.info(f"Querying max value on all {MYSQL_APP_2} units")
     for unit_name in get_app_units(model_2, MYSQL_APP_2):
-        unit_max_value = await get_mysql_max_written_value(model_2, MYSQL_APP_2, unit_name)
+        unit_max_value = get_mysql_max_written_value(model_2, MYSQL_APP_2, unit_name)
         results.append(unit_max_value)
 
     return results

@@ -20,8 +20,6 @@ def test_build_and_deploy_gcp(
     )
 
 
-async def test_pitr_gcp(
-    juju: Juju, cloud_configs_gcp: tuple[dict[str, str], dict[str, str]]
-) -> None:
+def test_pitr_gcp(juju: Juju, cloud_configs_gcp: tuple[dict[str, str], dict[str, str]]) -> None:
     """Pitr tests."""
-    await pitr_operations(juju, cloud_configs_gcp[0], cloud_configs_gcp[1])
+    pitr_operations(juju, cloud_configs_gcp[0], cloud_configs_gcp[1])

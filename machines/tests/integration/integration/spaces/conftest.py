@@ -93,7 +93,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest.fixture(scope="module")
-async def lxd_spaces(juju: Juju):
+def lxd_spaces(juju: Juju):
     juju.cli("reload-spaces")
     juju.cli("add-space", "client", "10.0.0.0/24")
     juju.cli("add-space", "peers", "10.10.10.0/24")

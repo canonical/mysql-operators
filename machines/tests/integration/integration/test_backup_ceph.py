@@ -208,7 +208,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_backup(juju: Juju, cloud_configs_ceph) -> None:
+def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     """Test to create a backup and list backups."""
     global backup_id, value_before_backup, value_after_backup
 
@@ -223,13 +223,13 @@ async def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     # insert data into cluster before backup
     logger.info("Inserting value before backup")
     value_before_backup = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
         value_before_backup,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
@@ -278,13 +278,13 @@ async def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     # insert data into cluster after backup
     logger.info("Inserting value after backup")
     value_after_backup = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
         value_after_backup,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
@@ -293,7 +293,7 @@ async def test_backup(juju: Juju, cloud_configs_ceph) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
+def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     """Test to restore a backup to the same mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_ceph
 
@@ -336,7 +336,7 @@ async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     primary_unit_name = get_app_units(juju, DATABASE_APP_NAME)[0]
     credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
-    values = await execute_queries_on_unit(
+    values = execute_queries_on_unit(
         mysql_unit_address,
         credentials["username"],
         credentials["password"],
@@ -347,13 +347,13 @@ async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
         value_after_restore,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         DATABASE_APP_NAME,
         TABLE_NAME,
@@ -362,7 +362,7 @@ async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
 
-    values = await execute_queries_on_unit(
+    values = execute_queries_on_unit(
         mysql_unit_address,
         credentials["username"],
         credentials["password"],
@@ -389,7 +389,7 @@ async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     for unit_name in get_app_units(juju, DATABASE_APP_NAME):
         unit_address = get_unit_ip(juju, DATABASE_APP_NAME, unit_name)
 
-        values = await execute_queries_on_unit(
+        values = execute_queries_on_unit(
             unit_address,
             credentials["username"],
             credentials["password"],
@@ -408,7 +408,7 @@ async def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
+def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     """Test to restore a backup on a new mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_ceph
 
@@ -495,7 +495,7 @@ async def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> 
     )
     select_values_sql = [f"SELECT id FROM `{DATABASE_NAME}`.`{TABLE_NAME}`"]
 
-    values = await execute_queries_on_unit(
+    values = execute_queries_on_unit(
         primary_unit_address,
         server_config_credentials["username"],
         server_config_credentials["password"],
@@ -506,13 +506,13 @@ async def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> 
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         new_mysql_application_name,
         TABLE_NAME,
         value_after_restore,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         new_mysql_application_name,
         TABLE_NAME,
@@ -521,7 +521,7 @@ async def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> 
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
 
-    values = await execute_queries_on_unit(
+    values = execute_queries_on_unit(
         primary_unit_address,
         server_config_credentials["username"],
         server_config_credentials["password"],

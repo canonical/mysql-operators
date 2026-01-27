@@ -71,10 +71,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
+def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
     """Stop server, write data, start and validate replication."""
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
@@ -113,7 +113,7 @@ async def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
         logging.info("Write to new primary")
         table_name = "data"
         table_value = generate_random_string(255)
-        await insert_mysql_test_data(
+        insert_mysql_test_data(
             juju, MYSQL_APP_NAME, new_mysql_primary_unit, table_name, table_value
         )
 
@@ -123,11 +123,11 @@ async def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
     # Verify that connection is possible
     assert is_connection_possible(config, retry_if_not_possible=True)
 
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
 
 
-async def insert_mysql_test_data(
+def insert_mysql_test_data(
     juju: Juju,
     app_name: str,
     unit_name: str,
@@ -155,7 +155,7 @@ async def insert_mysql_test_data(
         f"INSERT INTO `{TEST_DATABASE_NAME}`.`{table_name}` (id) VALUES ('{table_value}')",
     ]
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         get_unit_ip(juju, app_name, unit_name),
         credentials_task.results["username"],
         credentials_task.results["password"],

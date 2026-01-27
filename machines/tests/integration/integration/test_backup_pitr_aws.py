@@ -20,8 +20,6 @@ def test_build_and_deploy_aws(
     )
 
 
-async def test_pitr_aws(
-    juju: Juju, cloud_configs_aws: tuple[dict[str, str], dict[str, str]]
-) -> None:
+def test_pitr_aws(juju: Juju, cloud_configs_aws: tuple[dict[str, str], dict[str, str]]) -> None:
     """Pitr tests."""
-    await pitr_operations(juju, cloud_configs_aws[0], cloud_configs_aws[1])
+    pitr_operations(juju, cloud_configs_aws[0], cloud_configs_aws[1])

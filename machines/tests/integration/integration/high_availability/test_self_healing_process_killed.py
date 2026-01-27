@@ -62,10 +62,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_kill_db_process(juju: Juju, continuous_writes) -> None:
+def test_kill_db_process(juju: Juju, continuous_writes) -> None:
     """Kill mysqld process and check for auto cluster recovery."""
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
@@ -78,12 +78,12 @@ async def test_kill_db_process(juju: Juju, continuous_writes) -> None:
 
     # Ensure continuous writes still incrementing for all units
     with update_interval(juju, "10s"):
-        await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+        check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     # Ensure that we are able to insert data into the primary
     table_name = "data"
     table_value = generate_random_string(255)
 
-    await insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)

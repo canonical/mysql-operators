@@ -56,7 +56,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-async def test_cluster_data_isolation(juju: Juju, charm: str) -> None:
+def test_cluster_data_isolation(juju: Juju, charm: str) -> None:
     """Test for cluster data isolation.
 
     This test creates a new cluster, create a new table on both cluster, write a single record with
@@ -87,10 +87,10 @@ async def test_cluster_data_isolation(juju: Juju, charm: str) -> None:
     table_name = "cluster_isolation_table"
 
     for app_name in (mysql_main_app_name, mysql_other_app_name):
-        await insert_mysql_test_data(juju, app_name, table_name, f"{app_name}-value")
+        insert_mysql_test_data(juju, app_name, table_name, f"{app_name}-value")
     for app_name in (mysql_main_app_name, mysql_other_app_name):
-        await verify_mysql_test_data(juju, app_name, table_name, f"{app_name}-value")
+        verify_mysql_test_data(juju, app_name, table_name, f"{app_name}-value")
     for app_name in (mysql_main_app_name, mysql_other_app_name):
-        await remove_mysql_test_data(juju, app_name, table_name)
+        remove_mysql_test_data(juju, app_name, table_name)
 
     juju.remove_application(mysql_other_app_name, destroy_storage=True, force=True)

@@ -63,14 +63,14 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
+def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     """The cluster manual re-join test.
 
     A graceful restart is performed in one of the instances (choosing Primary to make it painful).
     In order to verify that the instance can come back ONLINE, after disabling automatic re-join
     """
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
 
@@ -86,7 +86,7 @@ async def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
         "host": get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit),
     }
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         unit_address=config["host"],
         username=config["username"],
         password=config["password"],
@@ -110,4 +110,4 @@ async def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     )
 
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)

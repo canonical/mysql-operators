@@ -182,8 +182,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.grafana_dashboards = GrafanaDashboardProvider(self)
         self.metrics_endpoint = MetricsEndpointProvider(
             self,
-            refresh_event=self.on.start,
             jobs=[{"static_configs": [{"targets": [f"*:{MYSQLD_EXPORTER_PORT}"]}]}],
+            alert_rules_path="./src/alert_rules/prometheus",
+            refresh_event=self.on.start,
         )
         self.loki_push = LogProxyConsumer(
             self,

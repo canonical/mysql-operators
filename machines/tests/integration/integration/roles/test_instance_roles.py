@@ -64,7 +64,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_charmed_read_role(juju: Juju):
+def test_charmed_read_role(juju: Juju):
     """Test the instance-level charmed_read role."""
     juju.config(
         f"{INTEGRATOR_APP_NAME}1",
@@ -84,7 +84,7 @@ async def test_charmed_read_role(juju: Juju):
     primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
     server_config_credentials = get_mysql_server_credentials(juju, mysql_units[0])
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         server_config_credentials["username"],
         server_config_credentials["password"],
@@ -99,7 +99,7 @@ async def test_charmed_read_role(juju: Juju):
     task = juju.run(unit=data_integrator_unit, action="get-credentials")
 
     logger.info("Checking that the charmed_read role can read from an existing table")
-    rows = await execute_queries_on_unit(
+    rows = execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -114,7 +114,7 @@ async def test_charmed_read_role(juju: Juju):
 
     logger.info("Checking that the charmed_read role cannot write into an existing table")
     with pytest.raises(ProgrammingError):
-        await execute_queries_on_unit(
+        execute_queries_on_unit(
             primary_unit_address,
             task.results["mysql"]["username"],
             task.results["mysql"]["password"],
@@ -126,7 +126,7 @@ async def test_charmed_read_role(juju: Juju):
 
     logger.info("Checking that the charmed_read role cannot create a new table")
     with pytest.raises(ProgrammingError):
-        await execute_queries_on_unit(
+        execute_queries_on_unit(
             primary_unit_address,
             task.results["mysql"]["username"],
             task.results["mysql"]["password"],
@@ -144,7 +144,7 @@ async def test_charmed_read_role(juju: Juju):
 
 
 @pytest.mark.abort_on_fail
-async def test_charmed_dml_role(juju: Juju):
+def test_charmed_dml_role(juju: Juju):
     """Test the instance-level charmed_dml role."""
     juju.config(
         f"{INTEGRATOR_APP_NAME}1", {"database-name": "charmed_dml_db", "extra-user-roles": ""}
@@ -177,7 +177,7 @@ async def test_charmed_dml_role(juju: Juju):
     task = juju.run(unit=data_integrator_1_unit, action="get-credentials")
 
     logger.info("Checking that when no role is specified the created user can do everything")
-    rows = await execute_queries_on_unit(
+    rows = execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -196,7 +196,7 @@ async def test_charmed_dml_role(juju: Juju):
     task2 = juju.run(unit=data_integrator_2_unit, action="get-credentials")
 
     logger.info("Checking that the charmed_dml role can read from an existing table")
-    rows = await execute_queries_on_unit(
+    rows = execute_queries_on_unit(
         primary_unit_address,
         task2.results["mysql"]["username"],
         task2.results["mysql"]["password"],
@@ -210,7 +210,7 @@ async def test_charmed_dml_role(juju: Juju):
     )
 
     logger.info("Checking that the charmed_dml role can write into an existing table")
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         task2.results["mysql"]["username"],
         task2.results["mysql"]["password"],
@@ -222,7 +222,7 @@ async def test_charmed_dml_role(juju: Juju):
 
     logger.info("Checking that the charmed_dml role cannot create a new table")
     with pytest.raises(ProgrammingError):
-        await execute_queries_on_unit(
+        execute_queries_on_unit(
             primary_unit_address,
             task2.results["mysql"]["username"],
             task2.results["mysql"]["password"],
