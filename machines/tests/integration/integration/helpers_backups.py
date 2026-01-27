@@ -112,7 +112,7 @@ def build_and_deploy_operations(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
-    juju.integrate(MYSQL_APPLICATION_NAME, S3_INTEGRATOR)
+    juju.integrate(f"{MYSQL_APPLICATION_NAME}:database", f"{S3_INTEGRATOR}:database")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
