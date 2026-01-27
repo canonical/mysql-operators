@@ -56,7 +56,7 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
     )
 
 
-async def test_integrate_with_spaces(juju: Juju):
+def test_integrate_with_spaces(juju: Juju):
     """Relate the database to the application."""
     juju.integrate(
         f"{DATABASE_APP_NAME}",
@@ -77,7 +77,7 @@ async def test_integrate_with_spaces(juju: Juju):
     juju.run(unit, "start-continuous-writes")
 
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, DATABASE_APP_NAME)
+    check_mysql_units_writes_increment(juju, DATABASE_APP_NAME)
 
     juju.remove_application(APPLICATION_APP_NAME)
     juju.wait(
@@ -86,7 +86,7 @@ async def test_integrate_with_spaces(juju: Juju):
     )
 
 
-async def test_integrate_with_isolated_space(juju: Juju):
+def test_integrate_with_isolated_space(juju: Juju):
     """Relate the database to the application."""
     isolated_app_name = "isolated-test-app"
 
@@ -134,7 +134,7 @@ async def test_integrate_with_isolated_space(juju: Juju):
 
     # Ensure continuous writes do not increment for all units
     with pytest.raises(AssertionError):
-        await check_mysql_units_writes_increment(juju, DATABASE_APP_NAME)
+        check_mysql_units_writes_increment(juju, DATABASE_APP_NAME)
 
     juju.remove_application(isolated_app_name)
     juju.wait(

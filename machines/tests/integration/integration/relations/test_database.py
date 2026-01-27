@@ -70,7 +70,7 @@ def test_build_and_deploy(juju: Juju, charm):
 
 
 @pytest.mark.abort_on_fail
-async def test_password_rotation(juju: Juju):
+def test_password_rotation(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -88,7 +88,7 @@ async def test_password_rotation(juju: Juju):
 
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         primary_unit_address,
         updated_credentials["username"],
         updated_credentials["password"],
@@ -98,7 +98,7 @@ async def test_password_rotation(juju: Juju):
 
 
 @pytest.mark.abort_on_fail
-async def test_password_rotation_silent(juju: Juju):
+def test_password_rotation_silent(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -113,7 +113,7 @@ async def test_password_rotation_silent(juju: Juju):
 
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         primary_unit_address,
         updated_credentials["username"],
         updated_credentials["password"],

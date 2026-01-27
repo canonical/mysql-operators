@@ -188,33 +188,33 @@ def test_create_replication(first_model: str, second_model: str) -> None:
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_upgrade_from_edge(
+def test_upgrade_from_edge(
     first_model: str, second_model: str, charm: str, continuous_writes
 ) -> None:
     """Upgrade the two MySQL clusters."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
 
-    await run_pre_upgrade_checks(model_1, MYSQL_APP_1)
-    await run_upgrade_from_edge(model_1, MYSQL_APP_1, charm)
+    run_pre_upgrade_checks(model_1, MYSQL_APP_1)
+    run_upgrade_from_edge(model_1, MYSQL_APP_1, charm)
 
-    await run_pre_upgrade_checks(model_2, MYSQL_APP_2)
-    await run_upgrade_from_edge(model_2, MYSQL_APP_2, charm)
+    run_pre_upgrade_checks(model_2, MYSQL_APP_2)
+    run_upgrade_from_edge(model_2, MYSQL_APP_2, charm)
 
 
 @juju3
 @pytest.mark.abort_on_fail
-async def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
+def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
     """Test to write to primary, and read the same data back from replicas."""
     logging.info("Testing data replication")
-    results = await get_mysql_max_written_values(first_model, second_model)
+    results = get_mysql_max_written_values(first_model, second_model)
 
     assert len(results) == 6
     assert all(results[0] == x for x in results), "Data is not consistent across units"
     assert results[0] > 1, "No data was written to the database"
 
 
-async def get_mysql_max_written_values(first_model: str, second_model: str) -> list[int]:
+def get_mysql_max_written_values(first_model: str, second_model: str) -> list[int]:
     """Return list with max written value from all units."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
@@ -231,18 +231,18 @@ async def get_mysql_max_written_values(first_model: str, second_model: str) -> l
 
     logging.info(f"Querying max value on all {MYSQL_APP_1} units")
     for unit_name in get_app_units(model_1, MYSQL_APP_1):
-        unit_max_value = await get_mysql_max_written_value(model_1, MYSQL_APP_1, unit_name)
+        unit_max_value = get_mysql_max_written_value(model_1, MYSQL_APP_1, unit_name)
         results.append(unit_max_value)
 
     logging.info(f"Querying max value on all {MYSQL_APP_2} units")
     for unit_name in get_app_units(model_2, MYSQL_APP_2):
-        unit_max_value = await get_mysql_max_written_value(model_2, MYSQL_APP_2, unit_name)
+        unit_max_value = get_mysql_max_written_value(model_2, MYSQL_APP_2, unit_name)
         results.append(unit_max_value)
 
     return results
 
 
-async def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
+def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
     """Run the pre-upgrade-check actions."""
     app_leader = get_app_leader(juju, app_name)
     app_units = get_app_units(juju, app_name)
@@ -252,7 +252,7 @@ async def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in app_units:
-        value = await get_mysql_variable_value(juju, app_name, unit_name, "innodb_fast_shutdown")
+        value = get_mysql_variable_value(juju, app_name, unit_name, "innodb_fast_shutdown")
         assert value == 0
 
     logging.info("Assert primary is set to leader")
@@ -260,10 +260,10 @@ async def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
     assert mysql_primary == app_leader, "Primary unit not set to leader"
 
 
-async def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
+def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     """Update the second cluster."""
     logging.info("Ensure continuous writes are incrementing")
-    await check_mysql_units_writes_increment(juju, app_name)
+    check_mysql_units_writes_increment(juju, app_name)
 
     logging.info("Refresh the charm")
     juju.refresh(app=app_name, path=charm)
@@ -281,4 +281,4 @@ async def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     )
 
     logging.info("Ensure continuous writes are incrementing")
-    await check_mysql_units_writes_increment(juju, app_name)
+    check_mysql_units_writes_increment(juju, app_name)

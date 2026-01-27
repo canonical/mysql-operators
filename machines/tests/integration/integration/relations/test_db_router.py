@@ -33,7 +33,7 @@ FAST_WAIT_TIMEOUT = 30 * 60
 
 
 @pytest.mark.abort_on_fail
-async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
+def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     """Deploy the keystone bundle to test the 'db-router' relation."""
     juju.deploy(
         charm,
@@ -93,7 +93,7 @@ async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     random_unit = random.choice(mysql_units)
 
     for unit_name in mysql_units:
-        unit_tables = await get_mysql_tables(juju, APP_NAME, unit_name, "keystone")
+        unit_tables = get_mysql_tables(juju, APP_NAME, unit_name, "keystone")
         assert len(unit_tables) > 0
 
     keystone_users = []
@@ -103,7 +103,7 @@ async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
         keystone_users.append(f"keystone@{unit_address}")
         keystone_users.append(f"mysqlrouteruser@{unit_address}")
 
-    db_users = await get_mysql_users(juju, APP_NAME, random_unit)
+    db_users = get_mysql_users(juju, APP_NAME, random_unit)
     for user in keystone_users:
         assert user in db_users
 
@@ -141,7 +141,7 @@ async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     )
 
     for unit_name in mysql_units:
-        unit_tables = await get_mysql_tables(juju, APP_NAME, unit_name, "keystone")
+        unit_tables = get_mysql_tables(juju, APP_NAME, unit_name, "keystone")
         assert len(unit_tables) > 0
 
     another_keystone_users = []
@@ -151,7 +151,7 @@ async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
         another_keystone_users.append(f"keystone@{unit_address}")
         another_keystone_users.append(f"mysqlrouteruser@{unit_address}")
 
-    db_users = await get_mysql_users(juju, APP_NAME, random_unit)
+    db_users = get_mysql_users(juju, APP_NAME, random_unit)
     for user in keystone_users + another_keystone_users:
         assert user in db_users
 
@@ -162,7 +162,7 @@ async def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     juju.remove_application(ANOTHER_KEYSTONE_APP_NAME)
     juju.remove_application(ANOTHER_KEYSTONE_MYSQLROUTER_APP_NAME)
 
-    db_users = await get_mysql_users(juju, APP_NAME, random_unit)
+    db_users = get_mysql_users(juju, APP_NAME, random_unit)
     for user in keystone_users:
         assert user in db_users
     for user in another_keystone_users:

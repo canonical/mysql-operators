@@ -53,7 +53,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_charmed_dba_role(juju: Juju):
+def test_charmed_dba_role(juju: Juju):
     """Test the instance-level DBA role."""
     # configure integrator and relate
     juju.config(
@@ -76,7 +76,7 @@ async def test_charmed_dba_role(juju: Juju):
     task = juju.run(unit=data_integrator_unit, action="get-credentials")
 
     logger.info("Checking that the instance-level DBA role can create new databases")
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -88,7 +88,7 @@ async def test_charmed_dba_role(juju: Juju):
     task = juju.run(unit=data_integrator_unit, action="get-credentials")
 
     logger.info("Checking that the instance-level DBA role can see all databases")
-    rows = await execute_queries_on_unit(
+    rows = execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],

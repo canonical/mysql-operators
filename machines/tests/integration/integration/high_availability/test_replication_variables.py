@@ -55,11 +55,11 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_custom_variables(juju: Juju) -> None:
+def test_custom_variables(juju: Juju) -> None:
     """Query database for custom variables."""
     for unit in get_app_units(juju, MYSQL_APP_NAME):
         custom_vars = {"max_connections": 100}
 
         for k, v in custom_vars.items():
             logging.info(f"Checking that {k} is set to {v} on {unit}")
-            assert await get_mysql_variable_value(juju, MYSQL_APP_NAME, unit, k) == v
+            assert get_mysql_variable_value(juju, MYSQL_APP_NAME, unit, k) == v

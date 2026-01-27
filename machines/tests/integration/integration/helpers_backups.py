@@ -125,7 +125,7 @@ def build_and_deploy_operations(
     )
 
 
-async def pitr_operations(
+def pitr_operations(
     juju: Juju,
     cloud_configs: dict[str, str],
     cloud_credentials: dict[str, str],
@@ -148,20 +148,20 @@ async def pitr_operations(
 
     logger.info("Creating test data 1")
     td1 = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         MYSQL_APPLICATION_NAME,
         TABLE_NAME,
         td1,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         MYSQL_APPLICATION_NAME,
         TABLE_NAME,
         td1,
     )
 
-    ts = await execute_queries_on_unit(
+    ts = execute_queries_on_unit(
         primary_ip,
         SERVER_CONFIG_USERNAME,
         SERVER_CONFIG_PASSWORD,
@@ -175,20 +175,20 @@ async def pitr_operations(
 
     logger.info("Creating test data 2")
     td2 = generate_random_string(255)
-    await insert_mysql_test_data(
+    insert_mysql_test_data(
         juju,
         MYSQL_APPLICATION_NAME,
         TABLE_NAME,
         td2,
     )
-    await verify_mysql_test_data(
+    verify_mysql_test_data(
         juju,
         MYSQL_APPLICATION_NAME,
         TABLE_NAME,
         td2,
     )
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_ip,
         SERVER_CONFIG_USERNAME,
         SERVER_CONFIG_PASSWORD,
@@ -221,7 +221,7 @@ async def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert await check_test_data_existence(first_mysql_ip, should_not_exist=[td1, td2]), (
+    assert check_test_data_existence(first_mysql_ip, should_not_exist=[td1, td2]), (
         "test data should not exist"
     )
 
@@ -237,7 +237,7 @@ async def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert await check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
+    assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"
     )
 
@@ -253,9 +253,9 @@ async def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert await check_test_data_existence(
-        first_mysql_ip, should_exist=[td1], should_not_exist=[td2]
-    ), "only first test data should exist"
+    assert check_test_data_existence(first_mysql_ip, should_exist=[td1], should_not_exist=[td2]), (
+        "only first test data should exist"
+    )
 
     logger.info(f"Restoring backup {backup_id} with restore-to-time=latest parameter")
     juju.run(
@@ -269,13 +269,13 @@ async def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert await check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
+    assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"
     )
     clean_backups_from_buckets(cloud_configs, cloud_credentials)
 
 
-async def check_test_data_existence(
+def check_test_data_existence(
     unit_address: str,
     should_exist: list[str] | None = None,
     should_not_exist: list[str] | None = None,
@@ -284,7 +284,7 @@ async def check_test_data_existence(
         should_exist = []
     if should_not_exist is None:
         should_not_exist = []
-    res = await execute_queries_on_unit(
+    res = execute_queries_on_unit(
         unit_address,
         SERVER_CONFIG_USERNAME,
         SERVER_CONFIG_PASSWORD,

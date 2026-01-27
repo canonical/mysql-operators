@@ -59,19 +59,19 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_scaling_without_data_loss(juju: Juju) -> None:
+def test_scaling_without_data_loss(juju: Juju) -> None:
     """Test that data is preserved during scale up and scale down."""
     table_name = "instance_state_replication"
     table_value = generate_random_string(255)
 
-    await insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
 
     mysql_app_old_units = set(get_app_units(juju, MYSQL_APP_NAME))
     scale_app_units(juju, MYSQL_APP_NAME, 4)
     mysql_app_new_units = set(get_app_units(juju, MYSQL_APP_NAME))
 
     # Ensure that all units have the above inserted data
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
 
     mysql_app_added_unit = (mysql_app_new_units - mysql_app_old_units).pop()
     juju.remove_unit(mysql_app_added_unit)
@@ -86,5 +86,5 @@ async def test_scaling_without_data_loss(juju: Juju) -> None:
     )
 
     # Ensure that the data still exists in all the units
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)

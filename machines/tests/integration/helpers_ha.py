@@ -59,8 +59,10 @@ def check_mysql_instances_online(
     return True
 
 
-async def check_mysql_units_writes_increment(
-    juju: Juju, app_name: str, app_units: list[str] | None = None
+def check_mysql_units_writes_increment(
+    juju: Juju,
+    app_name: str,
+    app_units: list[str] | None = None,
 ) -> None:
     """Ensure that continuous writes is incrementing on all units.
 
@@ -71,7 +73,7 @@ async def check_mysql_units_writes_increment(
         app_units = get_app_units(juju, app_name)
 
     app_primary = get_mysql_primary_unit(juju, app_name, app_units[0])
-    app_max_value = await get_mysql_max_written_value(juju, app_name, app_primary)
+    app_max_value = get_mysql_max_written_value(juju, app_name, app_primary)
 
     for unit_name in app_units:
         for attempt in Retrying(
@@ -80,7 +82,7 @@ async def check_mysql_units_writes_increment(
             wait=wait_fixed(10),
         ):
             with attempt:
-                unit_max_value = await get_mysql_max_written_value(juju, app_name, unit_name)
+                unit_max_value = get_mysql_max_written_value(juju, app_name, unit_name)
                 assert unit_max_value > app_max_value, "Writes not incrementing"
                 app_max_value = unit_max_value
 
@@ -289,7 +291,9 @@ def get_mysql_primary_unit(juju: Juju, app_name: str, unit_name: str | None = No
 
 
 def get_mysql_server_credentials(
-    juju: Juju, unit_name: str, username: str = SERVER_CONFIG_USERNAME
+    juju: Juju,
+    unit_name: str,
+    username: str = SERVER_CONFIG_USERNAME,
 ) -> dict[str, str]:
     """Helper that runs an action to retrieve credentials for given username on mysql-test-app.
 
@@ -336,7 +340,9 @@ def rotate_mysql_server_credentials(
 
 
 def get_legacy_mysql_credentials(
-    juju: Juju, unit_name: str, username: str = ROOT_USERNAME
+    juju: Juju,
+    unit_name: str,
+    username: str = ROOT_USERNAME,
 ) -> dict[str, str]:
     """Helper that runs an action to retrieve legacy credentials for given username on mysql-test-app.
 
@@ -357,7 +363,7 @@ def get_legacy_mysql_credentials(
     return credentials_task.results
 
 
-async def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str) -> int:
+def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str) -> int:
     """Retrieve the max written value in the MySQL database.
 
     Args:
@@ -367,7 +373,7 @@ async def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str)
     """
     credentials = get_mysql_server_credentials(juju, unit_name)
 
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         get_unit_ip(juju, app_name, unit_name),
         credentials["username"],
         credentials["password"],
@@ -376,7 +382,7 @@ async def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str)
     return output[0]
 
 
-async def get_mysql_tables(juju: Juju, app_name: str, unit_name: str, db_name: str) -> list:
+def get_mysql_tables(juju: Juju, app_name: str, unit_name: str, db_name: str) -> list:
     """Retrieve the tables within a specific MySQL database.
 
     Args:
@@ -387,7 +393,7 @@ async def get_mysql_tables(juju: Juju, app_name: str, unit_name: str, db_name: s
     """
     credentials = get_mysql_server_credentials(juju, unit_name)
 
-    return await execute_queries_on_unit(
+    return execute_queries_on_unit(
         get_unit_ip(juju, app_name, unit_name),
         credentials["username"],
         credentials["password"],
@@ -395,7 +401,7 @@ async def get_mysql_tables(juju: Juju, app_name: str, unit_name: str, db_name: s
     )
 
 
-async def get_mysql_users(juju: Juju, app_name: str, unit_name: str) -> list:
+def get_mysql_users(juju: Juju, app_name: str, unit_name: str) -> list:
     """Retrieve the users within the MySQL database.
 
     Args:
@@ -405,7 +411,7 @@ async def get_mysql_users(juju: Juju, app_name: str, unit_name: str) -> list:
     """
     credentials = get_mysql_server_credentials(juju, unit_name)
 
-    return await execute_queries_on_unit(
+    return execute_queries_on_unit(
         get_unit_ip(juju, app_name, unit_name),
         credentials["username"],
         credentials["password"],
@@ -413,9 +419,7 @@ async def get_mysql_users(juju: Juju, app_name: str, unit_name: str) -> list:
     )
 
 
-async def get_mysql_variable_value(
-    juju: Juju, app_name: str, unit_name: str, variable_name: str
-) -> str:
+def get_mysql_variable_value(juju: Juju, app_name: str, unit_name: str, variable_name: str) -> str:
     """Retrieve a database variable value as a string.
 
     Args:
@@ -426,7 +430,7 @@ async def get_mysql_variable_value(
     """
     credentials = get_mysql_server_credentials(juju, unit_name)
 
-    output = await execute_queries_on_unit(
+    output = execute_queries_on_unit(
         get_unit_ip(juju, app_name, unit_name),
         credentials["username"],
         credentials["password"],
@@ -476,7 +480,7 @@ def update_interval(juju: Juju, interval: str) -> Generator:
         juju.model_config({update_interval_key: update_interval_val})
 
 
-async def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: str) -> None:
+def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: str) -> None:
     """Insert data into the MySQL database.
 
     Args:
@@ -496,7 +500,7 @@ async def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, val
         f"INSERT INTO `{TEST_DATABASE_NAME}`.`{table_name}` (id) VALUES ('{value}')",
     ]
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         get_unit_ip(juju, app_name, mysql_primary),
         credentials["username"],
         credentials["password"],
@@ -505,7 +509,7 @@ async def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, val
     )
 
 
-async def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> None:
+def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> None:
     """Remove data into the MySQL database.
 
     Args:
@@ -523,7 +527,7 @@ async def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> 
         f"DROP DATABASE IF EXISTS `{TEST_DATABASE_NAME}`",
     ]
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         get_unit_ip(juju, app_name, mysql_primary),
         credentials["username"],
         credentials["password"],
@@ -532,7 +536,7 @@ async def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> 
     )
 
 
-async def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: str) -> None:
+def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: str) -> None:
     """Verifies data into the MySQL database.
 
     Args:
@@ -557,7 +561,7 @@ async def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, val
             wait=wait_fixed(10),
         ):
             with attempt:
-                output = await execute_queries_on_unit(
+                output = execute_queries_on_unit(
                     get_unit_ip(juju, app_name, unit_name),
                     credentials["username"],
                     credentials["password"],

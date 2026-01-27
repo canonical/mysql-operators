@@ -63,7 +63,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_charmed_dba_role(juju: Juju):
+def test_charmed_dba_role(juju: Juju):
     """Test the database-level DBA role."""
     juju.config(f"{INTEGRATOR_APP_NAME}1", {"database-name": "preserved", "extra-user-roles": ""})
     juju.integrate(f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME)
@@ -95,7 +95,7 @@ async def test_charmed_dba_role(juju: Juju):
 
     logger.info("Checking that the database-level DBA role cannot create new databases")
     with pytest.raises(ProgrammingError):
-        await execute_queries_on_unit(
+        execute_queries_on_unit(
             primary_unit_address,
             task.results["mysql"]["username"],
             task.results["mysql"]["password"],
@@ -104,7 +104,7 @@ async def test_charmed_dba_role(juju: Juju):
         )
 
     logger.info("Checking that the database-level DBA role can see all databases")
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -113,7 +113,7 @@ async def test_charmed_dba_role(juju: Juju):
     )
 
     logger.info("Checking that the database-level DBA role can create a new table")
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -124,7 +124,7 @@ async def test_charmed_dba_role(juju: Juju):
     )
 
     logger.info("Checking that the database-level DBA role can write into an existing table")
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
@@ -135,7 +135,7 @@ async def test_charmed_dba_role(juju: Juju):
     )
 
     logger.info("Checking that the database-level DBA role can read from an existing table")
-    rows = await execute_queries_on_unit(
+    rows = execute_queries_on_unit(
         primary_unit_address,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],

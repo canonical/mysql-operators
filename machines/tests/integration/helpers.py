@@ -32,7 +32,7 @@ def generate_random_string(length: int) -> str:
     return "".join([secrets.choice(choices) for i in range(length)])
 
 
-async def execute_queries_on_unit(
+def execute_queries_on_unit(
     unit_address: str,
     username: str,
     password: str,

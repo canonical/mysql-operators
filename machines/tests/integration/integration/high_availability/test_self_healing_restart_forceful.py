@@ -69,10 +69,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 @pytest.mark.abort_on_fail
-async def test_sst_test(juju: Juju, continuous_writes):
+def test_sst_test(juju: Juju, continuous_writes):
     """Test a forceful restart with deleted data and without transaction logs (forced clone)."""
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
@@ -93,7 +93,7 @@ async def test_sst_test(juju: Juju, continuous_writes):
     for unit_name in mysql_units:
         if unit_name != mysql_primary_unit:
             logging.info(f"Purge binary logs on unit {unit_name}")
-            await purge_mysql_binary_logs(juju, MYSQL_APP_NAME, unit_name)
+            purge_mysql_binary_logs(juju, MYSQL_APP_NAME, unit_name)
 
     with update_interval(juju, "10s"):
         logging.info("Waiting unit to enter maintenance")
@@ -116,18 +116,18 @@ async def test_sst_test(juju: Juju, continuous_writes):
     assert check_mysql_instances_online(juju, MYSQL_APP_NAME, [new_mysql_primary_unit])
 
     # Ensure continuous writes still incrementing for all units
-    await check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     # Ensure that we are able to insert data into the primary
     table_name = "data"
     table_value = generate_random_string(255)
 
-    await insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
-    await remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
+    insert_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
+    remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
 
 
-async def purge_mysql_binary_logs(juju: Juju, app_name: str, unit_name: str) -> None:
+def purge_mysql_binary_logs(juju: Juju, app_name: str, unit_name: str) -> None:
     """Purge MySQL instance binary logs.
 
     Args:
@@ -141,7 +141,7 @@ async def purge_mysql_binary_logs(juju: Juju, app_name: str, unit_name: str) -> 
         params={"username": SERVER_CONFIG_USERNAME},
     )
 
-    await execute_queries_on_unit(
+    execute_queries_on_unit(
         unit_address=get_unit_ip(juju, app_name, unit_name),
         username=credentials_task.results["username"],
         password=credentials_task.results["password"],
