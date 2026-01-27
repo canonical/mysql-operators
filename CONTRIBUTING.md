@@ -40,13 +40,24 @@ You can create an environment for development:
 (cd kubernetes && tox run -e format)
 (cd kubernetes && tox run -e lint)
 (cd kubernetes && tox run -e unit)
-(cd kubernetes && charmcraft test lxd-vm)
 
 (cd machines && tox run -e format)
 (cd machines && tox run -e lint)
 (cd machines && tox run -e unit)
-(cd machines && charmcraft test lxd-vm)
 ```
+
+To run integration tests, you can run `tox run -e integration`,
+but you will need a full local setup depending on the substrate.
+Alternatively, you can use [spread], which will take care of that for you.
+For example, to run a single test with spread, do
+
+```
+~/go/bin/spread lxd-vm:ubuntu-24.04:tests/spread/integration/test_database.py:juju36
+```
+
+See the [spread] repository for more information.
+
+[spread]: https://github.com/canonical/spread/
 
 ## Build charm
 
