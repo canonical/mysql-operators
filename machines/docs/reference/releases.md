@@ -19,6 +19,7 @@ For a given release, this table shows:
 | [312], [313] | 8.0.39 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [240] | 8.0.36 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [196] | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  |
+| [151] | 8.0.32 | `2.9.32+` |  | ![check] | ![check] |  |
 
 \* **TLS encryption**: Support for **`v2` or higher** of the [`tls-certificates` interface](https://charmhub.io/tls-certificates-interface/libraries/tls_certificates). This means that you can integrate with [modern TLS charms](https://charmhub.io/topics/security-with-x-509-certificates).
 
@@ -62,6 +63,12 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 |:--------:|:-----:|:-----:|:-----:|
 |[196] |![check]| | ![check]   |
 
+### Release 151
+
+| Revision | amd64 | arm64 | Ubuntu 22.04 LTS
+|:--------:|:-----:|:-----:|:-----:|
+|[151] |![check]| | ![check]   |
+
 [/details]
 
 ```{note}
@@ -76,6 +83,7 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 [312]: https://github.com/canonical/mysql-operator/releases/tag/rev312
 [240]: https://github.com/canonical/mysql-operator/releases/tag/rev240
 [196]: https://github.com/canonical/mysql-operator/releases/tag/rev196
+[151]: https://github.com/canonical/mysql-operator/releases/tag/rev151
 
 <!--BADGES-->
 [check]: https://img.icons8.com/color/20/checkmark--v1.png
