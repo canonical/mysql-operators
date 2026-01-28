@@ -109,7 +109,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     logger.info("Deploying s3-integrator")
 
     juju.deploy(S3_INTEGRATOR, channel="1/stable", base="ubuntu@22.04")
-    juju.integrate(f"{DATABASE_APP_NAME}:database", f"{S3_INTEGRATOR}:database")
+    juju.integrate(f"{DATABASE_APP_NAME}:s3-parameters", f"{S3_INTEGRATOR}:s3-credentials")
 
     juju.wait(
         ready=lambda status: all((
