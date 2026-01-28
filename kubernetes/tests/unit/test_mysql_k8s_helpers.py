@@ -1,7 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -10,12 +9,7 @@ from ops.pebble import ExecError, PathError
 
 from constants import PEER
 from mysql_k8s_helpers import (
-    ExecutionError,
     MySQL,
-    MySQLCreateDatabaseError,
-    MySQLCreateUserError,
-    MySQLDeleteUsersWithLabelError,
-    MySQLEscalateUserPrivilegesError,
     MySQLInitialiseMySQLDError,
     MySQLServiceNotRunningError,
     MySQLWaitUntilUnitRemovedFromClusterError,
@@ -104,111 +98,6 @@ class TestMySQL(unittest.TestCase):
         self.mysql.container = _container
 
         self.assertTrue(not self.mysql.wait_until_mysql_connection(check_port=False))
-
-    def test_create_database_legacy(self):
-        """Test successful execution of create_database_legacy."""
-        commands = [
-            "shell.connect_to_primary()",
-            "session.run_sql('CREATE DATABASE IF NOT EXISTS `test_database`;')",
-        ]
-
-        self.mysql.create_database_legacy("test_database")
-        self.mock_executor.execute_py.assert_called_once_with("\n".join(commands))
-
-    def test_create_database_legacy_exception(self):
-        """Test exception while executing create_database_legacy."""
-        self.mock_executor.execute_py.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLCreateDatabaseError):
-            self.mysql.create_database_legacy("test_database")
-
-    def test_create_user_legacy(self):
-        """Test successful execution of create_user_legacy."""
-        _escaped_attributes = json.dumps({"label": "test_label"}).replace('"', r"\"")
-
-        commands = [
-            "shell.connect_to_primary()",
-            f"session.run_sql('CREATE USER `test_user`@`%` IDENTIFIED BY \\'test_password\\' ATTRIBUTE \\'{_escaped_attributes}\\';')",
-        ]
-
-        self.mysql.create_user_legacy("test_user", "test_password", "test_label")
-        self.mock_executor.execute_py.assert_called_once_with("\n".join(commands))
-
-    def test_create_user_legacy_exception(self):
-        """Test exception while executing create_user_legacy."""
-        self.mock_executor.execute_py.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLCreateUserError):
-            self.mysql.create_user_legacy("test_user", "test_password", "test_label")
-
-    def test_escalate_user_privileges(self):
-        """Test successful execution of escalate_user_privileges."""
-        super_privileges_to_revoke = [
-            "SYSTEM_USER",
-            "SYSTEM_VARIABLES_ADMIN",
-            "SUPER",
-            "REPLICATION_SLAVE_ADMIN",
-            "GROUP_REPLICATION_ADMIN",
-            "BINLOG_ADMIN",
-            "SET_USER_ID",
-            "ENCRYPTION_KEY_ADMIN",
-            "VERSION_TOKEN_ADMIN",
-            "CONNECTION_ADMIN",
-        ]
-
-        commands = [
-            "shell.connect_to_primary()",
-            "session.run_sql('GRANT ALL ON *.* TO `test_user`@`%` WITH GRANT OPTION;')",
-            f"session.run_sql('REVOKE {', '.join(super_privileges_to_revoke)} ON *.* FROM `test_user`@`%`;')",
-            "session.run_sql('FLUSH PRIVILEGES;')",
-        ]
-
-        self.mysql.escalate_user_privileges("test_user")
-        self.mock_executor.execute_py.assert_called_once_with("\n".join(commands))
-
-    def test_escalate_user_privileges_exception(self):
-        """Test exception while executing escalate_user_privileges."""
-        self.mock_executor.execute_py.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLEscalateUserPrivilegesError):
-            self.mysql.escalate_user_privileges("test_user")
-
-    def test_delete_users_with_label(self):
-        """Test successful execution of delete_users_with_label."""
-        search_query = (
-            "SELECT user.user, user.host"
-            "FROM mysql.user AS user "
-            "JOIN information_schema.user_attributes AS attributes "
-            "   ON (user.user = attributes.user AND user.host = attributes.host) "
-            'WHERE attributes.attribute LIKE \'%"test_label_name": "test_label_value"%\''
-        )
-
-        drop_commands = [
-            "shell.connect_to_primary()",
-            "session.run_sql('DROP USER IF EXISTS \\'test_user\\'@\\'%\\', \\'test_user_2\\'@\\'localhost\\';')",
-        ]
-
-        self.mock_executor.execute_sql.return_value = [
-            {"user": "test_user", "host": "%"},
-            {"user": "test_user_2", "host": "localhost"},
-        ]
-
-        self.mysql.delete_users_with_label("test_label_name", "test_label_value")
-        self.mock_executor.execute_sql.assert_called_once_with(search_query)
-        self.mock_executor.execute_py.assert_called_once_with("\n".join(drop_commands))
-
-    def test_delete_users_with_label_exception(self):
-        """Test exception while executing delete_users_with_label."""
-        self.mock_executor.execute_sql.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLDeleteUsersWithLabelError):
-            self.mysql.delete_users_with_label("test_label_name", "test_label_value")
-
-        self.mock_executor.execute_sql.reset_mock()
-        self.mock_executor.execute_py.side_effect = ExecutionError
-
-        with self.assertRaises(MySQLDeleteUsersWithLabelError):
-            self.mysql.delete_users_with_label("test_label_name", "test_label_value")
 
     @patch("mysql_k8s_helpers.MySQL.get_cluster_status", return_value=GET_CLUSTER_STATUS_RETURN)
     def test_wait_until_unit_removed_from_cluster(self, _get_cluster_status):

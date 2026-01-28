@@ -9,7 +9,7 @@ This guide shows how to integrate Charmed MySQL K8s with both charmed and non-ch
 
 ## Integrate with a charmed application
 
-Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface, and the legacy `mysql` interface.
+Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface.
 
 ### Modern `mysql_client` interface
 
@@ -21,22 +21,6 @@ juju integrate mysql-k8s <charm>
 To remove the integration, run
 ```shell
 juju remove-relation mysql-k8s <charm>
-```
-
-### Legacy `mysql` interface
-```{caution}
-Note that this interface is **deprecated**.
-See more information in [Explanation > Legacy charm](/explanation/legacy-charm).
-```
-
-To integrate via the legacy interface, run
- ```shell
-juju integrate mysql-k8s:mysql <charm>
-```
-
-Extended permissions can be requested using `mysql-root` endpoint:
-```shell
-juju integrate mysql-k8s:mysql-root <charm>
 ```
 
 ## Integrate with a non-charmed application
@@ -82,4 +66,3 @@ To randomly generate a password for the `operator` user, run
 ```shell
 juju run mysql-k8s/leader set-password
 ```
-

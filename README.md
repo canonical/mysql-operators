@@ -53,17 +53,9 @@ juju deploy mysql-test-app
 juju relate mysql:database mysql-test-app:database
 ```
 
-#### Modern interfaces:
+#### Interfaces:
 
 - `mysql_client`: standard interface to connect to the database.
-
-### Legacy interfaces
-
-- `mysql`: popular interface used by some legacy charms.
-- `mysql-router`: interface that once used the MySQL Router charm.
-- `mysql-shared`: interface that allow direct access to the database cluster.
-
-**Note:** Legacy interfaces are deprecated and will be discontinued on future releases. Usage should be avoided.
 
 ## Contributing
 

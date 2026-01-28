@@ -54,10 +54,6 @@ class CharmConfig(BaseConfigModel):
     cluster_name: Optional[str]
     cluster_set_name: Optional[str]
     profile_limit_memory: Optional[int]
-    mysql_interface_user: Optional[str]
-    mysql_interface_database: Optional[str]
-    mysql_root_interface_user: Optional[str]
-    mysql_root_interface_database: Optional[str]
     experimental_max_connections: Optional[int]
     binlog_retention_days: int
     plugin_audit_enabled: bool
@@ -104,27 +100,6 @@ class CharmConfig(BaseConfigModel):
             raise ValueError("MySQL Charm requires at least 600MB for bootstrapping")
         if value > 9999999:
             raise ValueError("`profile-limit-memory` limited to 7 digits (9999999MB)")
-
-        return value
-
-    @validator("mysql_interface_user", "mysql_root_interface_user")
-    @classmethod
-    def user_name_validator(cls, value: str) -> Optional[str]:
-        """Check user name is valid."""
-        if len(value) > 32:
-            raise ValueError("User name constrained to 32 characters")
-
-        return value
-
-    @validator("mysql_interface_database", "mysql_root_interface_database")
-    @classmethod
-    def database_name_validator(cls, value: str) -> Optional[str]:
-        """Check database name is valid."""
-        if not re.match(r"^[^\\\/?%*:|\"<>.]{1,64}$", value):
-            raise ValueError(
-                "Database name cannot contain slashes, dots or characters not"
-                " allowed for directories, and are limited to 64 characters"
-            )
 
         return value
 
