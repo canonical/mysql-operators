@@ -3,7 +3,6 @@
 
 import logging
 import os
-import subprocess
 import uuid
 
 import jubilant
@@ -72,15 +71,3 @@ def juju(request: pytest.FixtureRequest):
 
     if request.session.testsfailed:
         print(log, end="")
-        # Capture controller debug logs
-        try:
-            controller_log = subprocess.check_output(
-                ["juju", "debug-log", "-m", "controller", "--replay", "--no-tail", "--limit", "1000"],
-                stderr=subprocess.STDOUT,
-                text=True,
-                timeout=30,
-            )
-            print("\n=== Controller Debug Logs ===\n")
-            print(controller_log, end="")
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
-            print(f"\n=== Failed to retrieve controller logs: {e} ===\n")
