@@ -51,7 +51,7 @@ but you will need a full local setup depending on the substrate.
 Alternatively, you can use [spread], which will take care of that for you.
 For example, to run a single test with spread, do
 
-```
+```shell
 ~/go/bin/spread lxd-vm:ubuntu-24.04:tests/spread/integration/test_database.py:juju36
 ```
 
