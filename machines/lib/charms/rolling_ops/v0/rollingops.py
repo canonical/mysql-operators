@@ -60,7 +60,7 @@ In order to trigger the restart, a human operator would execute the following co
 the CLI:
 
 ```
-juju run-action some-charm/0 some-charm/1 <... some-charm/n> restart
+juju run some-charm/0 some-charm/1 <... some-charm/n> restart
 ```
 
 Note that all units that plan to restart must receive the action and emit the aquire

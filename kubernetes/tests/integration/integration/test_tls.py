@@ -5,16 +5,13 @@ import json
 import logging
 from time import sleep
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from constants import CLUSTER_ADMIN_USERNAME, CONTAINER_NAME, TLS_SSL_CERT_FILE
 
-from .. import architecture, juju_
-from ..helpers import (
-    is_connection_possible,
-)
+from ..helpers import is_connection_possible
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -28,21 +25,12 @@ from ..helpers_ha import (
 logger = logging.getLogger(__name__)
 
 APP_NAME = CHARM_METADATA["name"]
+TLS_APP_NAME = "self-signed-certificates"
+
 CLUSTER_NAME = "test_cluster"
 MODEL_CONFIG = {"logging-config": "<root>=INFO;unit=DEBUG"}
 TLS_SETUP_SLEEP_TIME = 30
 TIMEOUT = 15 * MINUTE_SECS
-
-if juju_.has_secrets:
-    tls_app_name = "self-signed-certificates"
-    tls_channel = "1/stable"
-    tls_config = {"ca-common-name": "Test CA"}
-    tls_base = "ubuntu@24.04"
-else:
-    tls_app_name = "tls-certificates-operator"
-    tls_channel = "legacy/edge" if architecture.architecture == "arm64" else "legacy/stable"
-    tls_config = {"generate-self-signed-certificates": "true", "ca-common-name": "Test CA"}
-    tls_base = "ubuntu@22.04"
 
 # Global config dictionary for connection testing
 config = {}
@@ -67,7 +55,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME),
         timeout=TIMEOUT,
     )
 
@@ -108,19 +96,19 @@ def test_enable_tls(juju: Juju) -> None:
     # Deploy TLS Certificates operator.
     logger.info("Deploy TLS operator")
     juju.deploy(
-        tls_app_name,
-        channel=tls_channel,
-        config=tls_config,
-        base=tls_base,
+        TLS_APP_NAME,
+        channel="1/stable",
+        config={"ca-common-name": "Test CA"},
+        base="ubuntu@24.04",
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, tls_app_name),
+        ready=wait_for_apps_status(jubilant.all_active, TLS_APP_NAME),
         timeout=TIMEOUT,
     )
 
     # Relate with TLS charm
     logger.info("Relate to TLS operator")
-    juju.integrate(APP_NAME, tls_app_name)
+    juju.integrate(APP_NAME, TLS_APP_NAME)
 
     # allow time for TLS enablement
     sleep(TLS_SETUP_SLEEP_TIME)
@@ -199,7 +187,7 @@ def test_disable_tls(juju: Juju) -> None:
     app_units = get_app_units(juju, APP_NAME)
 
     logger.info("Removing relation")
-    juju.remove_relation(f"{APP_NAME}:certificates", f"{tls_app_name}:certificates")
+    juju.remove_relation(f"{APP_NAME}:certificates", f"{TLS_APP_NAME}:certificates")
 
     # Allow time for reconfigure
     sleep(TLS_SETUP_SLEEP_TIME)

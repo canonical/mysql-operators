@@ -6,9 +6,9 @@ import logging
 import time
 from collections.abc import Generator
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ... import architecture
 from ...helpers_ha import (
@@ -20,7 +20,6 @@ from ...helpers_ha import (
     get_mysql_variable_value,
     wait_for_apps_status,
 )
-from ...markers import juju3
 
 MYSQL_APP_1 = "db1"
 MYSQL_APP_2 = "db2"
@@ -68,7 +67,6 @@ def continuous_writes(first_model: str) -> Generator:
     model_1.run(model_1_test_app_leader, "clear-continuous-writes")
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> None:
     """Simple test to ensure that the MySQL application charms get deployed."""
@@ -97,16 +95,15 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=10 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
         timeout=10 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_async_relate(first_model: str, second_model: str) -> None:
     """Relate the two MySQL clusters."""
@@ -126,16 +123,15 @@ def test_async_relate(first_model: str, second_model: str) -> None:
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_blocked, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_1),
         timeout=5 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.any_waiting, MYSQL_APP_2),
         timeout=5 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_deploy_test_app(first_model: str) -> None:
     """Deploy the test application."""
@@ -156,12 +152,11 @@ def test_deploy_test_app(first_model: str) -> None:
     )
 
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_TEST_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_create_replication(first_model: str, second_model: str) -> None:
     """Run the create-replication action and wait for the applications to settle."""
@@ -177,16 +172,15 @@ def test_create_replication(first_model: str, second_model: str) -> None:
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=5 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
         timeout=5 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_upgrade_from_edge(
     first_model: str, second_model: str, charm: str, continuous_writes
@@ -202,7 +196,6 @@ def test_upgrade_from_edge(
     run_upgrade_from_edge(model_2, MYSQL_APP_2, charm)
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
     """Test to write to primary, and read the same data back from replicas."""
@@ -270,13 +263,13 @@ def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
 
     logging.info("Wait for upgrade to start")
     juju.wait(
-        ready=lambda status: jubilant_backports.any_maintenance(status, app_name),
+        ready=lambda status: jubilant.any_maintenance(status, app_name),
         timeout=10 * MINUTE_SECS,
     )
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
-        ready=lambda status: jubilant_backports.all_active(status, app_name),
+        ready=lambda status: jubilant.all_active(status, app_name),
         timeout=20 * MINUTE_SECS,
     )
 

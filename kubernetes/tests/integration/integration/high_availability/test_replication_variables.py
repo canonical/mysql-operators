@@ -4,9 +4,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     CHARM_METADATA,
@@ -39,7 +39,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME),
         timeout=TIMEOUT,
     )
 

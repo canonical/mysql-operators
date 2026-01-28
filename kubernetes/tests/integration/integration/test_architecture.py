@@ -3,7 +3,7 @@
 # See LICENSE file for licensing details.
 
 
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from .. import markers
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, wait_for_unit_status

@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
@@ -48,10 +48,8 @@ def test_deploy_stable(juju: Juju) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
-        ),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 

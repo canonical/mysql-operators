@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 LIBID = "eb73947deedd4380a3a90d527e0878eb"
 LIBAPI = 0
-LIBPATCH = 11
+LIBPATCH = 12
 
 PYDEPS = ["mysql_shell_client ~= 0.6"]
 
@@ -170,14 +170,7 @@ class MySQLTLS(Object):
         if self.charm.removing_unit:
             logger.debug("Unit is being removed, skipping TLS cleanup.")
             return
-        try:
-            if not ops.jujuversion.JujuVersion.from_environ().has_secrets:
-                self.charm.set_secret(SCOPE, "certificate-authority", None)
-                self.charm.set_secret(SCOPE, "certificate", None)
-                self.charm.set_secret(SCOPE, "chain", None)
-        except KeyError:
-            # ignore key error for unit teardown
-            pass
+
         try:
             self.charm._mysql.tls_setup()
             self.charm.unit_peer_data.pop("tls")

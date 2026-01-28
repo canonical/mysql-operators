@@ -155,11 +155,6 @@ mysql:upgrade                          mysql:upgrade                          up
 
 Once deployed, request the credentials for your newly bootstrapped MySQL database.
 
-For Juju 2.9 use:
-```shell
-juju run-action --wait data-integrator/leader get-credentials
-```
-and for newer Juju 3+ use:
 ```shell
 juju run data-integrator/leader get-credentials
 ```
@@ -273,4 +268,3 @@ Finally, remove the GCloud json file user credentials (to avoid forgetting and l
 ```shell
 rm -f /var/snap/juju/common/sa-private-key.json
 ```
-

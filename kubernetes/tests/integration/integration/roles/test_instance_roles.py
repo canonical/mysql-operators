@@ -4,9 +4,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from mysql.connector.errors import ProgrammingError
 
 from ...helpers_ha import (
@@ -50,7 +50,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
@@ -78,7 +78,7 @@ def test_charmed_read_role(juju: Juju):
     juju.integrate(f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME)
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
+            jubilant.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
     )
@@ -144,7 +144,7 @@ def test_charmed_read_role(juju: Juju):
     juju.wait(
         ready=lambda status: all((
             # wait for relation to be fully removed before adding it again in the following test
-            jubilant_backports.all_agents_idle(status, f"{INTEGRATOR_APP_NAME}1"),
+            jubilant.all_agents_idle(status, f"{INTEGRATOR_APP_NAME}1"),
             *(
                 wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")
                 for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
@@ -163,7 +163,7 @@ def test_charmed_dml_role(juju: Juju):
     juju.integrate(f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME)
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
+            jubilant.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
     )
@@ -175,7 +175,7 @@ def test_charmed_dml_role(juju: Juju):
     juju.integrate(f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME)
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME
+            jubilant.all_active, f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
     )

@@ -8,7 +8,7 @@ import subprocess
 from collections.abc import Generator
 
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from tenacity import RetryError, Retrying, stop_after_delay, wait_fixed
 
 from ...helpers_ha import get_app_leader

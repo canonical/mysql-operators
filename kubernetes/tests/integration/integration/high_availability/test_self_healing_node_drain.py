@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from lightkube.core.client import Client
 from lightkube.models.meta_v1 import ObjectMeta
 from lightkube.resources.core_v1 import PersistentVolume, PersistentVolumeClaim, Pod
@@ -55,10 +55,8 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
     logging.info("Wait for applications to become active")
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
-        ),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 
@@ -82,8 +80,8 @@ def test_pod_eviction_and_pvc_deletion(juju: Juju, continuous_writes) -> None:
     with update_interval(juju, "90s"):
         logging.info("Waiting for evicted primary pod to be rescheduled")
         juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
-            error=jubilant_backports.any_blocked,
+            ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
+            error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
 

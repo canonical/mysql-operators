@@ -8,10 +8,10 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-import jubilant_backports
+import jubilant
 import yaml
-from jubilant_backports import Juju
-from jubilant_backports.statustypes import Status
+from jubilant import Juju
+from jubilant.statustypes import Status
 from tenacity import (
     Retrying,
     retry,
@@ -146,7 +146,7 @@ def scale_app_units(juju: Juju, app_name: str, num_units: int) -> None:
 
     if num_units > 0:
         juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, app_name),
+            ready=wait_for_apps_status(jubilant.all_active, app_name),
             timeout=20 * MINUTE_SECS,
         )
 
@@ -557,14 +557,14 @@ def wait_for_apps_status(jubilant_status_func: JujuAppsStatusFn, *apps: str) -> 
         Juju model status function.
     """
     return lambda status: all((
-        jubilant_backports.all_agents_idle(status, *apps),
+        jubilant.all_agents_idle(status, *apps),
         jubilant_status_func(status, *apps),
     ))
 
 
 def wait_for_app_status(app_name: str, app_status: str) -> JujuModelStatusFn:
     """Returns whether a Juju app has a specific status."""
-    return lambda status: (status.apps[app_name].app_status.current == app_status)
+    return lambda status: status.apps[app_name].app_status.current == app_status
 
 
 def wait_for_unit_status(app_name: str, unit_name: str, unit_status: str) -> JujuModelStatusFn:

@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from mysql.connector.errors import OperationalError
 
 from ..connector import create_db_connections
@@ -49,7 +49,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
 
     logger.info("Waiting all to be active")
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=10 * MINUTE_SECS,
     )
 

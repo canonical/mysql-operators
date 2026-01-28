@@ -4,9 +4,9 @@
 import logging
 
 import boto3
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju, TaskError
+from jubilant import Juju, TaskError
 
 from constants import SERVER_CONFIG_USERNAME
 
@@ -70,9 +70,7 @@ def build_and_deploy_operations(
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    # but it is enough to deploy another application in the meantime
+
     logger.info("Deploying s3 integrator")
     juju.deploy(
         S3_INTEGRATOR,
@@ -82,7 +80,7 @@ def build_and_deploy_operations(
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APPLICATION_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -111,16 +109,12 @@ def build_and_deploy_operations(
         params=cloud_credentials,
     )
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
     juju.integrate(MYSQL_APPLICATION_NAME, S3_INTEGRATOR)
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -217,7 +211,7 @@ def pitr_operations(
     )
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
+            jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
     )
@@ -233,7 +227,7 @@ def pitr_operations(
     )
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
+            jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
     )
@@ -249,7 +243,7 @@ def pitr_operations(
     )
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
+            jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
     )
@@ -265,7 +259,7 @@ def pitr_operations(
     )
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
+            jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
     )

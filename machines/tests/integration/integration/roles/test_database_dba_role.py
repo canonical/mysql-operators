@@ -4,9 +4,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from mysql.connector.errors import ProgrammingError
 
 from ...helpers import execute_queries_on_unit
@@ -51,12 +51,12 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=TIMEOUT,
     )
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_blocked, f"{INTEGRATOR_APP_NAME}1", f"{INTEGRATOR_APP_NAME}2"
+            jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1", f"{INTEGRATOR_APP_NAME}2"
         ),
         timeout=TIMEOUT,
     )
@@ -69,7 +69,7 @@ def test_charmed_dba_role(juju: Juju):
     juju.integrate(f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME)
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
+            jubilant.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
         ),
         timeout=TIMEOUT,
     )
@@ -81,7 +81,7 @@ def test_charmed_dba_role(juju: Juju):
     juju.integrate(f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME)
     juju.wait(
         ready=wait_for_apps_status(
-            jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME
+            jubilant.all_active, f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME
         ),
         timeout=TIMEOUT,
     )

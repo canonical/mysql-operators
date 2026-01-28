@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from .helpers_backups import build_and_deploy_operations, pitr_operations
 

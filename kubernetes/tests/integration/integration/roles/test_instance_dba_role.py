@@ -2,9 +2,9 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ...helpers_ha import (
     CHARM_METADATA,
@@ -40,7 +40,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
@@ -63,9 +63,7 @@ def test_charmed_dba_role(juju: Juju):
     )
     juju.integrate(INTEGRATOR_APP_NAME, DATABASE_APP_NAME)
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, INTEGRATOR_APP_NAME, DATABASE_APP_NAME
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, INTEGRATOR_APP_NAME, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
 

@@ -6,9 +6,9 @@ import pathlib
 import tempfile
 
 import jinja2
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ..helpers_ha import CHARM_METADATA, wait_for_apps_status
 
@@ -44,6 +44,6 @@ def test_deploy_bundle_with_cos_integrations(juju: Juju, charm) -> None:
 
     logger.info("Waiting until mysql-k8s becomes active")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, "mysql-k8s"),
+        ready=wait_for_apps_status(jubilant.all_active, "mysql-k8s"),
         timeout=TIMEOUT,
     )

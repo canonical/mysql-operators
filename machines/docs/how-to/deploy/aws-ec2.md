@@ -123,11 +123,6 @@ mysql:upgrade                          mysql:upgrade                          up
 
 Once deployed, request the credentials for your newly bootstrapped MySQL database.
 
-For Juju 2.9 use:
-```shell
-juju run-action --wait data-integrator/leader get-credentials
-```
-and for newer Juju 3+ use:
 ```shell
 juju run data-integrator/leader get-credentials
 ```
@@ -247,4 +242,3 @@ Finally, remove AWS CLI user credentials (to avoid forgetting and leaking):
 ```shell
 rm -f ~/.aws/credentials.yaml
 ```
-

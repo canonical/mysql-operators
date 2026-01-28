@@ -3,9 +3,9 @@
 
 import logging
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 from mysql.connector.errors import OperationalError
 
 from ..connector import create_db_connections
@@ -50,7 +50,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
 
     logger.info("Waiting all to be active")
     juju.wait(
-        jubilant_backports.all_active,
+        jubilant.all_active,
         timeout=10 * MINUTE_SECS,
     )
 
@@ -64,11 +64,8 @@ def test_saturate_max_connections(juju: Juju) -> None:
 
     logger.info("Running action to get app connection data")
     credentials = juju.run(app_unit_name, "get-client-connection-data").results
-    if "return-code" in credentials:
-        # juju 2.9 dont have the return-code key
-        del credentials["return-code"]
-    if "Code" in credentials:
-        del credentials["Code"]
+
+    del credentials["return-code"]
     credentials["host"] = host_ip
 
     logger.info(f"Creating {CONNECTIONS} connections")

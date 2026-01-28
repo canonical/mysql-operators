@@ -6,9 +6,9 @@ import logging
 import time
 from collections.abc import Generator
 
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from ... import architecture
 from ...helpers_ha import (
@@ -18,7 +18,6 @@ from ...helpers_ha import (
     get_mysql_max_written_value,
     wait_for_apps_status,
 )
-from ...markers import juju3
 
 MYSQL_APP_1 = "db1"
 MYSQL_APP_2 = "db2"
@@ -67,7 +66,6 @@ def continuous_writes(first_model: str) -> Generator:
     model_1.run(model_1_test_app_leader, "clear-continuous-writes")
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> None:
     """Simple test to ensure that the MySQL application charms get deployed."""
@@ -96,16 +94,15 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=10 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
         timeout=10 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_async_relate(first_model: str, second_model: str) -> None:
     """Relate the two MySQL clusters."""
@@ -125,16 +122,15 @@ def test_async_relate(first_model: str, second_model: str) -> None:
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_blocked, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_1),
         timeout=5 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.any_waiting, MYSQL_APP_2),
         timeout=5 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_deploy_router_and_app(first_model: str) -> None:
     """Deploy the router and the test application."""
@@ -168,12 +164,11 @@ def test_deploy_router_and_app(first_model: str) -> None:
     )
 
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_TEST_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_create_replication(first_model: str, second_model: str) -> None:
     """Run the create-replication action and wait for the applications to settle."""
@@ -189,16 +184,15 @@ def test_create_replication(first_model: str, second_model: str) -> None:
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=5 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
         timeout=5 * MINUTE_SECS,
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
     """Test to write to primary, and read the same data back from replicas."""
@@ -210,7 +204,6 @@ def test_data_replication(first_model: str, second_model: str, continuous_writes
     assert results[0] > 1, "No data was written to the database"
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_standby_promotion(first_model: str, second_model: str, continuous_writes) -> None:
     """Test graceful promotion of a standby cluster to primary."""
@@ -240,7 +233,6 @@ def test_standby_promotion(first_model: str, second_model: str, continuous_write
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_failover(first_model: str, second_model: str) -> None:
     """Test switchover on primary cluster fail."""
@@ -283,7 +275,6 @@ def test_failover(first_model: str, second_model: str) -> None:
     )
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_rejoin_invalidated_cluster(
     first_model: str, second_model: str, continuous_writes
@@ -303,7 +294,6 @@ def test_rejoin_invalidated_cluster(
     assert results[0] > 1, "No data was written to the database"
 
 
-@juju3
 @pytest.mark.abort_on_fail
 def test_unrelate_and_relate(first_model: str, second_model: str, continuous_writes) -> None:
     """Test removing and re-relating the two mysql clusters."""
@@ -318,11 +308,11 @@ def test_unrelate_and_relate(first_model: str, second_model: str, continuous_wri
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=10 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_blocked, MYSQL_APP_2),
         timeout=10 * MINUTE_SECS,
     )
 
@@ -332,7 +322,7 @@ def test_unrelate_and_relate(first_model: str, second_model: str, continuous_wri
         f"{MYSQL_APP_2}:replication",
     )
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_blocked, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_1),
         timeout=5 * MINUTE_SECS,
     )
 
@@ -345,11 +335,11 @@ def test_unrelate_and_relate(first_model: str, second_model: str, continuous_wri
 
     logging.info("Waiting for the applications to settle")
     model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
         timeout=10 * MINUTE_SECS,
     )
     model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
         timeout=10 * MINUTE_SECS,
     )
 

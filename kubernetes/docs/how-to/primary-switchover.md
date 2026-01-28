@@ -8,7 +8,7 @@ On a healthy cluster, the primary can be changed by running the `promote-to-prim
 parameter `scope` set to `unit` on the unit that should become the new primary.
 
 ```shell
-juju run-action mysql/1 promote-to-primary scope=unit
+juju run mysql/1 promote-to-primary scope=unit
 ```
 
 In this example, the unit `mysql/1` will become the new primary. The previous primary will become a

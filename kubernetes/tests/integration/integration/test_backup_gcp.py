@@ -7,9 +7,9 @@ import socket
 from pathlib import Path
 
 import boto3
-import jubilant_backports
+import jubilant
 import pytest
-from jubilant_backports import Juju
+from jubilant import Juju
 
 from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
 
@@ -89,8 +89,8 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
 
@@ -161,9 +161,7 @@ def test_backup(juju: Juju, cloud_configs_gcp) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, DATABASE_APP_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -229,9 +227,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_gcp) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, DATABASE_APP_NAME, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -290,7 +286,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_gcp) -> None:
 
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, DATABASE_APP_NAME),
+            jubilant.all_agents_idle(status, DATABASE_APP_NAME),
             *(
                 wait_for_unit_status(DATABASE_APP_NAME, unit_name, "active")(status)
                 for unit_name in status.get_units(DATABASE_APP_NAME)
@@ -337,7 +333,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, new_mysql_application_name),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name),
         timeout=TIMEOUT,
     )
 
@@ -345,9 +341,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     juju.integrate(new_mysql_application_name, S3_INTEGRATOR)
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, new_mysql_application_name, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -379,9 +373,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     )
 
     juju.wait(
-        ready=wait_for_apps_status(
-            jubilant_backports.all_active, new_mysql_application_name, S3_INTEGRATOR
-        ),
+        ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
     )
 
@@ -442,7 +434,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     juju.add_unit(new_mysql_application_name, num_units=2)
     juju.wait(
         ready=lambda status: all((
-            jubilant_backports.all_agents_idle(status, new_mysql_application_name),
+            jubilant.all_agents_idle(status, new_mysql_application_name),
             *(
                 wait_for_unit_status(new_mysql_application_name, unit_name, "active")(status)
                 for unit_name in status.get_units(new_mysql_application_name)
