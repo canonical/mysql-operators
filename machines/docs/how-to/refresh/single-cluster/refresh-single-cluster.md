@@ -35,23 +35,23 @@ The first step is to record the revision of the running application as a safety 
 
 ```shell
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
-default  vmc         localhost/localhost  3.5.2    unsupported  17:58:37Z
+default  vmc         localhost/localhost  3.6.13   unsupported  17:58:37Z
 
-App    Version          Status  Scale  Charm  Channel  Rev  Exposed  Message
-mysql  8.0.39-0ubun...  active      3  mysql           182  no       
+App    Version  Status  Scale  Charm  Channel  Rev  Exposed  Message
+mysql  8.4.7    active      3  mysql           XXX  no       
 
 Unit       Workload  Agent  Machine  Public address  Ports               Message
 mysql/9    active    idle   13       10.169.158.70   3306/tcp,33060/tcp  
 mysql/10*  active    idle   11       10.169.158.14   3306/tcp,33060/tcp  Primary
 mysql/11   active    idle   12       10.169.158.217  3306/tcp,33060/tcp  
 
-Machine  State    Address         Inst id         Series  AZ  Message
-11       started  10.169.158.14   juju-b72e25-11  jammy       Running
-12       started  10.169.158.217  juju-b72e25-12  jammy       Running
-13       started  10.169.158.70   juju-b72e25-13  jammy       Running
+Machine  State    Address         Inst id         Base          AZ  Message
+11       started  10.169.158.14   juju-b72e25-11  ubuntu@24.04      Running
+12       started  10.169.158.217  juju-b72e25-12  ubuntu@24.04      Running
+13       started  10.169.158.70   juju-b72e25-13  ubuntu@24.04      Running
 ```
 
-For this example, the current revision is `182`. Store it safely to use in case of rollback!
+For this example, the current revision is `XXX`. Store it safely to use in case of rollback!
 
 (step-2-prepare)=
 ## Step 2: Prepare
@@ -84,19 +84,19 @@ Use the [`juju refresh`](https://juju.is/docs/juju/juju-refresh) command to trig
 Example with channel selection:
 
 ```shell
-juju refresh mysql --channel 8.0/stable
+juju refresh mysql --channel 8.4/edge
 ```
 
 Example with specific revision selection:
 
 ```shell
-juju refresh mysql --revision=366
+juju refresh mysql --revision=YYY
 ```
 
 Example with a local charm file:
 
 ```shell
-juju refresh mysql --path ./mysql_ubuntu-22.04-amd64.charm
+juju refresh mysql --path ./mysql_ubuntu-24.04-amd64.charm
 ```
 
 ```{admonition} During an ongoing refresh
@@ -122,20 +122,20 @@ Once the `refresh` command is executed, all units will receive new charm content
 
 ```shell
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
-default  vmc         localhost/localhost  3.5.2    unsupported  18:10:30Z
+default  vmc         localhost/localhost  3.6.13   unsupported  18:10:30Z
 
-App    Version          Status  Scale  Charm  Channel  Rev  Exposed  Message
-mysql  8.0.39-0ubun...  active      3  mysql             7  no       
+App    Version  Status  Scale  Charm  Channel  Rev  Exposed  Message
+mysql  8.4.7    active      3  mysql           YYY  no       
 
 Unit       Workload     Agent      Machine  Public address  Ports               Message
 mysql/9    waiting      idle       13       10.169.158.70   3306/tcp,33060/tcp  other units upgrading first...
 mysql/10*  waiting      idle       11       10.169.158.14   3306/tcp,33060/tcp  other units upgrading first...
 mysql/11   maintenance  executing  12       10.169.158.217  3306/tcp,33060/tcp  stopping services..
 
-Machine  State    Address         Inst id         Series  AZ  Message
-11       started  10.169.158.14   juju-b72e25-11  jammy       Running
-12       started  10.169.158.217  juju-b72e25-12  jammy       Running
-13       started  10.169.158.70   juju-b72e25-13  jammy       Running
+Machine  State    Address         Inst id         Base          AZ  Message
+11       started  10.169.158.14   juju-b72e25-11  ubuntu@24.04      Running
+12       started  10.169.158.217  juju-b72e25-12  ubuntu@24.04      Running
+13       started  10.169.158.70   juju-b72e25-13  ubuntu@24.04      Running
 ```
 
 After each unit completes the refresh, the message `refresh completed` is displayed, and the next unit follows.
@@ -144,20 +144,20 @@ Example `juju status` during an refresh:
 
 ```shell
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
-default  vmc         localhost/localhost  3.5.2    unsupported  18:11:21Z
+default  vmc         localhost/localhost  3.6.13   unsupported  18:11:21Z
 
-App    Version          Status  Scale  Charm  Channel  Rev  Exposed  Message
-mysql  8.0.39-0ubun...  active      3  mysql             7  no       
+App    Version  Status  Scale  Charm  Channel  Rev  Exposed  Message
+mysql  8.4.7    active      3  mysql           YYY  no       
 
 Unit       Workload     Agent      Machine  Public address  Ports               Message
 mysql/9    maintenance  executing  13       10.169.158.70   3306/tcp,33060/tcp  upgrading snap...
 mysql/10*  waiting      idle       11       10.169.158.14   3306/tcp,33060/tcp  other units upgrading first...
 mysql/11   maintenance  idle       12       10.169.158.217  3306/tcp,33060/tcp  upgrade completed
 
-Machine  State    Address         Inst id         Series  AZ  Message
-11       started  10.169.158.14   juju-b72e25-11  jammy       Running
-12       started  10.169.158.217  juju-b72e25-12  jammy       Running
-13       started  10.169.158.70   juju-b72e25-13  jammy       Running
+Machine  State    Address         Inst id         Base          AZ  Message
+11       started  10.169.158.14   juju-b72e25-11  ubuntu@24.04      Running
+12       started  10.169.158.217  juju-b72e25-12  ubuntu@24.04      Running
+13       started  10.169.158.70   juju-b72e25-13  ubuntu@24.04      Running
 ```
 
 **Please be patient during huge installations.**
@@ -184,5 +184,3 @@ See: [](/how-to/refresh/single-cluster/roll-back-single-cluster)
 -->
 
 Use `juju status` to make sure the cluster [state](/reference/charm-statuses) is OK.
-
-

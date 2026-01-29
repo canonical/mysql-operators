@@ -8,8 +8,6 @@ This is feature is in development. It is **not recommended** for production envi
 
 ## Prerequisites
 
-* Charmed MySQL revision 237 or higher 
-  * See [](/how-to/refresh/index)
 * `cos-lite` bundle deployed in a Kubernetes environment
   * See the [COS Microk8s tutorial](https://charmhub.io/topics/canonical-observability-stack/tutorials/install-microk8s)
 
@@ -93,9 +91,9 @@ database  lxd         localhost/localhost  3.5.4    unsupported  19:15:55Z
 SAAS   Status  Store       URL
 tempo  active  k8s         admin/cos.tempo
 
-App            Version          Status   Scale  Charm          Channel      Rev  Exposed  Message
-grafana-agent                   blocked      1  grafana-agent  1/stable     452  no       Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
-mysql          8.0.37-0ubun...  active       1  mysql                         0  no       
+App            Version  Status   Scale  Charm          Channel      Rev  Exposed  Message
+grafana-agent           blocked      1  grafana-agent  1/stable     452  no       Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
+mysql          8.4.7    active       1  mysql                         0  no       
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*            active    idle   0        10.205.193.32   3306,33060/tcp  Primary
@@ -128,4 +126,3 @@ The Tempo traces will be accessible from Grafana under the `Explore` section wit
 </details>
 
 Feel free to read through the [Tempo HA documentation](https://discourse.charmhub.io/t/charmed-tempo-ha/15531) at your leisure to explore its deployment and its integrations.
-

@@ -92,23 +92,23 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 ```shell
 ubuntu@localhost:~$ juju status
 Model      Controller  Cloud/Region         Version  SLA          Timestamp
-vmmodel    local       localhost/localhost  3.1.6    unsupported  00:12:18+02:00
+vmmodel    local       localhost/localhost  3.5.3    unsupported  00:12:18+02:00
 
 SAAS         Status  Store    URL
 grafana      active  k8s      admin/cos.grafana
 loki         active  k8s      admin/cos.loki
 prometheus   active  k8s      admin/cos.prometheus
 
-App                   Version      Status  Scale  Charm               Channel   Rev  Exposed  Message
-grafana-agent                      active      1  grafana-agent       edge        5  no
-mysql                 8.0.32       active      1  mysql               8.0/edge  144  no       Primary
+App            Version  Status  Scale  Charm               Channel   Rev  Exposed  Message
+grafana-agent           active      1  grafana-agent       edge        5  no
+mysql          8.4.7    active      1  mysql               8.4/edge  XXX  no       Primary
 
 Unit                          Workload  Agent  Machine  Public address  Ports               Message
 mysql/3*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
   grafana-agent/0*            active    idle            10.85.186.140
 
-Machine  State    Address        Inst id        Series  AZ  Message
-4        started  10.85.186.140  juju-fcde9e-4  jammy       Running
+Machine  State    Address        Inst id        Base          AZ  Message
+4        started  10.85.186.140  juju-fcde9e-4  ubuntu@24.04      Running
 ```
 
 ````
@@ -118,7 +118,7 @@ Machine  State    Address        Inst id        Series  AZ  Message
 ```shell
 ubuntu@localhost:~$ juju status
 Model  Controller   Cloud/Region        Version  SLA          Timestamp
-cos    k8s          microk8s/localhost  3.1.6    unsupported  00:15:31+02:00
+cos    k8s          microk8s/localhost  3.5.3    unsupported  00:15:31+02:00
 
 App           Version  Status  Scale  Charm             Channel  Rev  Address         Exposed  Message
 alertmanager  0.23.0   active      1  alertmanager-k8s  stable    47  10.152.183.206  no
@@ -155,4 +155,3 @@ juju run grafana/leader get-admin-password --model <k8s_controller>:<cos_model_n
 ## Full example of COS integration (MySQL K8s)
 
 [![asciicast](https://asciinema.org/a/580608.svg)](https://asciinema.org/a/580608)
-

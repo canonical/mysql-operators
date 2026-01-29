@@ -173,7 +173,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_leader(False)
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, WaitingStatus))
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
+        self.assertEqual(self.charm.unit_peer_data["member-role"], "SECONDARY")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
     @patch("charm.MySQLOperatorCharm._can_start", return_value=True)

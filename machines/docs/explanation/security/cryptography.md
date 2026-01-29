@@ -7,7 +7,7 @@ This document describes the cryptography used by Charmed MySQL.
 
 Charmed MySQL and Charmed MySQL Router operators use pinned revisions of the [Charmed MySQL snap](https://github.com/canonical/charmed-mysql-snap) to provide reproducible and secure environments.
 
-The Charmed MySQL snap packages the MySQL workload along with the necessary dependencies and utilities required for the operators’ lifecycle. For more details, see the snap contents in the [snapcraft.yaml file](https://github.com/canonical/charmed-mysql-snap/blob/8.0/edge/snap/snapcraft.yaml).
+The Charmed MySQL snap packages the MySQL workload along with the necessary dependencies and utilities required for the operators’ lifecycle. For more details, see the snap contents in the [snapcraft.yaml file](https://github.com/canonical/charmed-mysql-snap/blob/8.4/edge/snap/snapcraft.yaml).
 
 Every artifact bundled into the Charmed MySQL snap is verified against its MD5, SHA256, or SHA512 checksum after download. The installation of certified snap into the rock is ensured by snap primitives that verify their squashfs filesystems images GPG signature. For more information on the snap verification process, refer to the [snapcraft.io documentation](https://snapcraft.io/docs/assertions).
 
@@ -45,19 +45,18 @@ In Charmed MySQL, authentication layers can be enabled for:
 
 ### MySQL Router authentication to MySQL
 
-Authentication to MySQL Router is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html).
+Authentication to MySQL Router is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html).
 
 Credentials are exchanged via [Juju secrets](https://canonical-juju.readthedocs-hosted.com/en/latest/user/howto/manage-secrets/).
 
 ### MySQL cluster authentication
 
-Authentication among members of a MySQL cluster is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html).
+Authentication among members of a MySQL cluster is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html).
 
 An internal user is used for this authentication with its hashed password stored in a system metadata database.
 
 ### Client authentication to MySQL
 
-Authentication to MySQL Router is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html).
+Authentication to MySQL Router is based on the [caching_sha2_password auth plugin](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html).
 
 Credentials are exchanged via [Juju secrets](https://canonical-juju.readthedocs-hosted.com/en/latest/user/howto/manage-secrets/).
-

@@ -63,14 +63,14 @@ Sample output:
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
 my-model  lxd-controller  localhost/localhost  3.5.3    unsupported  12:49:34Z
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.41-0ubun...  active      1  mysql  8.0/stable  366  no
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql  8.4.7    active      1  mysql  8.4/edge  XXX  no
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        10.101.248.220  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-0        started  10.101.248.220  juju-c4a403-0  ubuntu@22.04      Running
+0        started  10.101.248.220  juju-c4a403-0  ubuntu@24.04      Running
 ```
 
 Continue to operate the charm as usual from here or apply further Terraform changes.

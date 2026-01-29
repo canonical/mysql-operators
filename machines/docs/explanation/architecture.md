@@ -1,6 +1,6 @@
 # Architecture
 
-[MySQL](https://www.mysql.com/) is the world’s most popular open source database. The "[Charmed MySQL](https://charmhub.io/mysql)" is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/), it is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.0/en/innodb-clusterset.html).
+[MySQL](https://www.mysql.com/) is the world’s most popular open source database. The "[Charmed MySQL](https://charmhub.io/mysql)" is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/), it is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-clusterset.html).
 
 ## HLD (High Level Design)
 
@@ -10,15 +10,15 @@ The charm design leverages on the SNAP “[charmed-mysql](https://snapcraft.io/c
 > juju ssh mysql/0
 > snap list charmed-mysql
 Name           Version  Rev  Tracking       Publisher        Notes
-charmed-mysql  8.0.34   69   latest/stable  dataplatformbot  held
+charmed-mysql  8.4.7    69   latest/stable  dataplatformbot  held
 ```
 
 The SNAP ships the following components:
 
-* MySQL Community Edition (based on Ubuntu APT package "[mysql-server-8.0](https://packages.ubuntu.com/jammy/mysql-server-8.0)") 
+* MySQL Community Edition.
 * MySQL Router (based on Ubuntu APT package "[mysql-router](https://packages.ubuntu.com/jammy/mysql-router)")
-* MySQL Shell (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysql-shell))
-* Percona XtraBackup (based on Canonical  [backport](https://launchpad.net/~data-platform/+archive/ubuntu/xtrabackup))
+* MySQL Shell (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysql-shell-8.4))
+* Percona XtraBackup (based on Canonical  [backport](https://launchpad.net/~data-platform/+archive/ubuntu/percona-xtrabackup-8.4))
 * Prometheus MySQLd Exporter (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysqld-exporter))
 * Prometheus MySQL Router Exporter (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysqlrouter-exporter))
 * Prometheus Grafana dashboards and Loki alert rules are part of the charm revision and missing in SNAP.
@@ -48,7 +48,7 @@ All `exporter` services are activated after the relation with [COS Monitoring](/
 
 The snap "charmed-mysql" also ships list of tools used by charm:
 * `charmed-mysql.mysql` (alias `mysql`) - mysql client to connect `mysqld`.
-* `charmed-mysql.mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) client to configure MySQL cluster.
+* `charmed-mysql.mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.4/en/) client to configure MySQL cluster.
 * `charmed-mysql.xbcloud` - a tool to download and upload full or part of xbstream archive from/to the cloud.
 * `charmed-mysql.xbstream` - a tool to support simultaneous compression and streaming.
 * `charmed-mysql.xtrabackup` - a tool to backup/restore MySQL DB.
@@ -60,7 +60,7 @@ The `xtrabackup (xbcloud+xbstream)` used for [MySQL Backups](/how-to/back-up-and
 
 ### MySQL Router
 
-[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.0/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The "[Charmed MySQL Router](https://charmhub.io/mysql-router)" is an independent charm "Charmed MySQL" can be related with.
+[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.4/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The "[Charmed MySQL Router](https://charmhub.io/mysql-router)" is an independent charm "Charmed MySQL" can be related with.
 
 ### TLS Certificates Operator
 
@@ -130,4 +130,3 @@ mysql           0      45
 s3_helpers      0      4                                                                                                                                                                                                                              
 tls             0      2                                     
 ```
-

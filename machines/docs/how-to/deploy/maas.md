@@ -110,21 +110,22 @@ juju bootstrap --constraints tags=juju maas-cloud maas-controller
 ## Deploy Charmed MySQL on MAAS
 ```shell
 juju add-model mysql maas-cloud
-juju deploy mysql --channel 8.0/candidate # MAAS supported since charm revision 234+
+juju deploy mysql --channel 8.4/edge
 ```
+
 Sample `juju status` output:
 ```shell
 Model  Controller       Cloud/Region        Version  SLA          Timestamp
-mysql  maas-controller  maas-cloud/default  3.1.8    unsupported  12:57:06+02:00
+mysql  maas-controller  maas-cloud/default  3.5.3    unsupported  12:57:06+02:00
 
-App    Version          Status  Scale  Charm  Channel        Rev  Exposed  Message
-mysql  8.0.36-0ubun...  active      1  mysql  8.0/candidate  234  no       
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql  8.4.7    active      1  mysql  8.4/edge  XXX  no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/1*  active    idle   1        10.10.10.7      3306,33060/tcp  Primary
 
 Machine  State    Address     Inst id       Base          AZ       Message
-1        started  10.10.10.7  pumped-racer  ubuntu@22.04  default  Deployed
+1        started  10.10.10.7  pumped-racer  ubuntu@24.04  default  Deployed
 ```
 
 ## Test your Charmed MySQL deployment
@@ -136,6 +137,7 @@ To stop your VM, run:
 ```shell
 multipass stop maas
 ```
+
 If you're done with testing and would like to free up resources on your machine, you can remove the VM entirely.
 
 ```{caution}
@@ -148,4 +150,3 @@ To completely delete your VM and all its data, run:
 ```shell
 multipass delete --purge maas
 ```
-

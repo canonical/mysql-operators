@@ -28,8 +28,6 @@ from ...helpers_ha import (
 logger = logging.getLogger(__name__)
 
 DATABASE_APP_NAME = "mysql"
-CLUSTER_NAME = "test_cluster"
-
 APPLICATION_APP_NAME = "mysql-test-app"
 
 APPS = [DATABASE_APP_NAME, APPLICATION_APP_NAME]
@@ -43,9 +41,9 @@ def test_build_and_deploy(juju: Juju, charm):
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
-        config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
+        config={"cluster-name": "test_cluster", "profile": "testing"},
         num_units=3,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
     )
     juju.deploy(
         APPLICATION_APP_NAME,

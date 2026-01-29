@@ -24,7 +24,7 @@ Create a Juju model for testing, deploy a database with a test application and s
 ```shell
 juju add-model smoke-test
 
-juju deploy mysql --channel 8.0/edge --config profile=testing
+juju deploy mysql --channel 8.4/edge --config profile=testing
 juju add-unit mysql -n 2 # (optional)
 
 juju deploy mysql-test-app --channel latest/edge
@@ -69,4 +69,3 @@ Please check/deploy the charm [mysql-bundle](https://charmhub.io/mysql-bundle) (
 ## Performance test
 
 Refer to the [sysbench documentation](https://discourse.charmhub.io/t/charmed-sysbench-documentation-home/13945).
-

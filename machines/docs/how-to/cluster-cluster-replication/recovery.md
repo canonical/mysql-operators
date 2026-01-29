@@ -19,8 +19,8 @@ A cluster in the cluster-set gets invalidated when async replication auto-recove
 If the invalidated cluster connections is restored, it's status will be displayed in `juju status` as:
 
 ```text
-App  Version                  Status  Scale  Charm  Channel   Rev  Address         Exposed  Message
-db2  8.0.36-0ubuntu0.22.04.1  active      3  mysql  8.0/edge  234  10.152.183.241  no
+App  Version  Status  Scale  Charm  Channel   Rev  Address         Exposed  Message
+db2  8.4.7    active      3  mysql  8.4/edge  XXX  10.152.183.241  no
 
 Unit    Workload  Agent  Address       Ports  Message
 db2/0   active    idle   10.1.124.208      
@@ -37,4 +37,3 @@ juju run db2/leader rejoin-cluster cluster-name=rome
 ```
 
 Where `rome` is the name of the invalidated cluster.
-
