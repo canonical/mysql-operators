@@ -412,9 +412,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _get_primary_from_online_peer(self) -> Optional[str]:
         """Get the primary address from an online peer."""
         for unit in self.peers.units:
-            # TODO:
-            #  Remove `.lower()` when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
             if self.peers.data[unit].get("member-state") == InstanceState.ONLINE.lower():
                 try:
                     return self._mysql.get_cluster_primary_address(
@@ -521,9 +518,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info("waiting: failed to acquire lock when adding instance to cluster")
                 return
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.lower()
         self.unit.status = ActiveStatus(self.active_status_message)
         logger.info(f"Instance {instance_label} added to cluster")
@@ -905,9 +899,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         self.unit_peer_data["member-state"] = state.lower()
         self.unit_peer_data["member-role"] = role.lower()
 
@@ -927,9 +918,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
             }
 
-            # TODO:
-            #  Use InstanceState.OFFLINE when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
             # Add state 'offline' for this unit (self.peers.unit does not include this unit)
             if (all_states | {"offline"} == {"offline"} and self.unit.is_leader()) or (
                 only_single_uninitialized_node_across_cluster and all_states == {"waiting"}

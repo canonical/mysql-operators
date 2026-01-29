@@ -166,9 +166,6 @@ ROLE_STATS = "charmed_stats"
 ROLE_BACKUP = "charmed_backup"
 ROLE_MAX_LENGTH = 32
 
-# TODO:
-#   Remove legacy role when migrating to MySQL 8.4
-#   (when breaking changes are allowed)
 LEGACY_ROLE_ROUTER = "mysqlrouter"
 MODERN_ROLE_ROUTER = "charmed_router"
 
@@ -583,9 +580,6 @@ class MySQLCharmBase(CharmBase, ABC):
                 event.fail("Failed to read cluster status. See logs for more information.")
                 return
 
-            # TODO:
-            #   Remove `.lower()` when migrating to MySQL 8.4
-            #   (when breaking changes are allowed)
             status = json.dumps(status)
             status = status.lower()
             status = json.loads(status)
@@ -677,9 +671,6 @@ class MySQLCharmBase(CharmBase, ABC):
         role = self._mysql.get_member_role()
         state = self._mysql.get_member_state()
 
-        # TODO:
-        #   Remove `.lower()` when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
         self.unit_peer_data.update({
             "member-state": state.lower(),
             "member-role": role.lower(),
@@ -1340,9 +1331,6 @@ class MySQLBase(ABC):
 
     def install_plugins(self, plugins: list[str]) -> None:
         """Install extra plugins."""
-        # TODO:
-        #   Remove this context-manager when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
         with self._read_only_disabled():
             installed_plugins = self._instance_client_tcp.search_instance_plugins("%")
 
@@ -1366,9 +1354,6 @@ class MySQLBase(ABC):
 
     def uninstall_plugins(self, plugins: list[str]) -> None:
         """Uninstall plugins."""
-        # TODO:
-        #   Remove this context-manager when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
         with self._read_only_disabled():
             installed_plugins = self._instance_client_tcp.search_instance_plugins("%")
 
