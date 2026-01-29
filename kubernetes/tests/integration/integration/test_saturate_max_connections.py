@@ -46,7 +46,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
     )
 
     logger.info("Relating test app to mysql")
-    juju.integrate(MYSQL_APP_NAME, f"{TEST_APP_NAME}:database")
+    juju.integrate(f"{MYSQL_APP_NAME}:database", f"{TEST_APP_NAME}:database")
 
     logger.info("Waiting all to be active")
     juju.wait(

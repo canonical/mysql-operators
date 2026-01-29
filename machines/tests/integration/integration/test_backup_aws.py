@@ -102,7 +102,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
 
     logger.info("Configuring s3 integrator and integrating it with mysql")
-    juju.integrate(DATABASE_APP_NAME, S3_INTEGRATOR)
+    juju.integrate(f"{DATABASE_APP_NAME}:s3-parameters", f"{S3_INTEGRATOR}:s3-credentials")
     juju.wait(
         ready=lambda status: all((
             *(
