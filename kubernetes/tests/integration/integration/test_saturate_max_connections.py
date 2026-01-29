@@ -64,8 +64,6 @@ def test_saturate_max_connections(juju: Juju) -> None:
 
     logger.info("Running action to get app connection data")
     credentials = juju.run(app_unit_name, "get-client-connection-data").results
-
-    del credentials["return-code"]
     credentials["host"] = host_ip
 
     logger.info(f"Creating {CONNECTIONS} connections")
