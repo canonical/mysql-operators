@@ -441,9 +441,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
             }
 
-            # TODO:
-            #  Remove `.lower()` when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
             all_states.add(InstanceState.OFFLINE.lower())
 
             if all_states == {InstanceState.OFFLINE.lower()} and self.unit.is_leader():
@@ -584,10 +581,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             state = "UNREACHABLE"
 
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
-
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         self.unit_peer_data["member-role"] = role.lower()
         self.unit_peer_data["member-state"] = state.lower()
 
@@ -906,9 +899,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _get_primary_from_online_peer(self) -> str | None:
         """Get the primary address from an online peer."""
         for unit in self.peers.units:
-            # TODO:
-            #  Remove `.lower()` when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
             if self.peers.data[unit].get("member-state") == InstanceState.ONLINE.lower():
                 try:
                     return self._mysql.get_cluster_primary_address(
@@ -984,9 +974,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info("Waiting to join the cluster, failed to acquire lock.")
                 return
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.lower()
         self.unit.status = ActiveStatus(self.active_status_message)
         logger.info(f"Instance {instance_label} added to cluster")
