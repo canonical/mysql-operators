@@ -10,10 +10,6 @@ Most existing charms currently use [ops-lib-pgsql](https://github.com/canonical/
 
 For new charms, **Canonical recommends using [data-platform-libs](https://github.com/canonical/data-platform-libs).**
 
-```{seealso}
-[MySQL K8s legacy charm explanation](/explanation/legacy-charm)
-```
-
 ## Integrate your charm with MySQL
 
 Refer to [mysql-test-app](https://github.com/canonical/mysql-test-app) as a practical example of implementing data-platform-libs interfaces to integrate a charm with Charmed MySQL K8s.

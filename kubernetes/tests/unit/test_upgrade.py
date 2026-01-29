@@ -155,13 +155,13 @@ class TestUpgrade(unittest.TestCase):
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("charm.MySQLOperatorCharm.recover_unit_after_restart")
-    @patch("mysql_k8s_helpers.MySQL.install_plugins")
+    @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
     @patch("mysql_k8s_helpers.MySQL.setup_logrotate_config")
     @patch("charm.MySQLOperatorCharm._reconcile_pebble_layer")
     @patch("charm.MySQLOperatorCharm._write_mysqld_configuration")
     @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
-    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.0.33")
+    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.4.0")
     def test_pebble_ready(
         self,
         mock_get_mysql_version,
@@ -170,7 +170,7 @@ class TestUpgrade(unittest.TestCase):
         mock_reconcile_pebble_layer,
         mock_setup_logrotate_config,
         mock_cluster_metadata_exists,
-        mock_install_plugins,
+        mock_install_components,
         mock_recover_unit_after_restart,
         mock_get_unit_address,
     ):

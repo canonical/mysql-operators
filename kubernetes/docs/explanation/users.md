@@ -15,7 +15,7 @@ The operator uses the following internal database users:
 * `serverconfig` - the user that operates MySQL instances.
 * `monitoring` - the user for [COS integration](/how-to/monitoring-cos/enable-monitoring).
 * `backups` - the user to [perform/list/restore backups](/how-to/back-up-and-restore/create-a-backup).
-* `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.0/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
+* `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
 * `mysql_innodb_cs_#######` - the internal recovery user which enable connections between MySQl InnoDB Clusters in ClusterSet. One user is created for entire MySQL ClusterSet.
 
 The full list of internal users is available in charm [source code](https://github.com/canonical/mysql-k8s-operator/blob/main/src/constants.py). 
@@ -54,7 +54,7 @@ Passwords for *internal* users can be rotated using the action `set-password` on
 
 ## Relation users
 
-The operator created a dedicated user for every application related/integrated with database. The username is composed by the relation ID and truncated uuid for the model, to ensure there is no username clash in cross model relations. Usernames are limited to 32 chars as per [MySQL limit](https://dev.mysql.com/doc/refman/8.0/en/user-names.html).
+The operator created a dedicated user for every application related/integrated with database. The username is composed by the relation ID and truncated uuid for the model, to ensure there is no username clash in cross model relations. Usernames are limited to 32 chars as per [MySQL limit](https://dev.mysql.com/doc/refman/8.4/en/user-names.html).
 
 Relation users are removed on the juju relation/integration removal request. However, database data stays in place and can be reused on re-created relations (using new user credentials):
 
@@ -93,5 +93,4 @@ juju relate mysql-k8s myclientapp
 
 The charm mainly uses the `serverconfig` user for internal operations. For connections with this user, a special admin port is used (port `33062`), which enables the charm to operate MySQL even when users connections are saturated.
 
-For further information on the administrative connection, refer to [MySQL docs](https://dev.mysql.com/doc/refman/8.0/en/administrative-connection-interface.html) on the topic.
-
+For further information on the administrative connection, refer to [MySQL docs](https://dev.mysql.com/doc/refman/8.4/en/administrative-connection-interface.html) on the topic.

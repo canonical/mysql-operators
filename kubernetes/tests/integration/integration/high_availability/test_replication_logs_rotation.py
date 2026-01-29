@@ -37,7 +37,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
@@ -154,7 +154,7 @@ def list_unit_files(juju: Juju, unit_name: str, container: str, file_path: str) 
         file_path: The path at which to list the files
     """
     output = juju.ssh(
-        command=f"ls -la {file_path}",
+        command=f"ls --all {file_path}",
         container=container,
         target=unit_name,
     )

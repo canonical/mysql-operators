@@ -30,6 +30,7 @@ azure-mgmt-resource               23.1.1
 ...
 Your CLI is up-to-date.
 ```
+
 ### Authenticate
 Login to your Azure account:
 ```shell
@@ -126,7 +127,7 @@ juju deploy mysql-k8s --trust -n 3
 ```
 Sample output:
 ```shell
-Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.0/stable on ubuntu@22.04/stable
+Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision XXX in channel 8.4/edge on ubuntu@24.04/stable
 ```
 
 Check the status:
@@ -136,10 +137,10 @@ juju status --watch 1s
 Sample output:
 ```shell
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
-welcome  aks         aks/eastus    3.4.2    unsupported  16:42:15+02:00
+welcome  aks         aks/eastus    3.5.3    unsupported  16:42:15+02:00
 
-App        Version                  Status  Scale  Charm      Channel     Rev  Address       Exposed  Message
-mysql-k8s  8.0.35-0ubuntu0.22.04.1  active      3  mysql-k8s  8.0/stable  127  10.0.238.103  no       
+App        Version  Status  Scale  Charm      Channel     Rev  Address       Exposed  Message
+mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge    XXX  10.0.238.103  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.244.0.14         Primary
@@ -192,4 +193,3 @@ Finally, logout from AKS to clean the local credentials (to avoid forgetting and
 ```shell
 az logout
 ```
-

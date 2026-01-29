@@ -532,10 +532,6 @@ class MySQL(MySQLBase):
             )
             raise MySQLExecError from None
 
-    def _file_exists(self, path: str) -> bool:
-        """Check if a file exists."""
-        return self.container.exists(path)
-
     def write_content_to_file(
         self,
         path: str,

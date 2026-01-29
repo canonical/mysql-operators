@@ -40,9 +40,7 @@ No migration is necessary if the output above is `mysq-k8s`.
 
 ## Prepare
 
-Before migrating data:
-* check all [limitations of the modern Charmed MySQL](/reference/system-requirements) charm
-* check [your application's compatibility](/explanation/legacy-charm) with Charmed MySQL
+Before migrating data check all [limitations](/reference/system-requirements) of the modern Charmed MySQL charm.
 
 ```{caution}
 Always perform the migration in a test environment before performing it in production!
@@ -57,7 +55,7 @@ Always perform the migration in a test environment before performing it in produ
 - `mysql-client` on client machine (install by running `sudo apt install mysql-client`)
 
 ```{caution}
-Most legacy database charms support old Ubuntu series only, while [Juju 3.x does NOT support Ubuntu Bionic](https://documentation.ubuntu.com/juju/3.6/reference/juju/juju-roadmap-and-releases/#juju-3-0-0-22-oct-2022).
+Most legacy database charms support old Ubuntu series only, while [Juju 3.x does NOT support Ubuntu Bionic](https://documentation.ubuntu.com/juju/3.6/releasenotes/unsupported/juju_3.x.x/#juju-3-0-0-22-oct-2022).
 
 It is recommended to use the latest stable revision of the charm on Ubuntu Jammy and Juju 3.x
 ```
@@ -88,7 +86,7 @@ OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[] | .address')
 Deploy new MySQL databases. In this example, 3 units are deployed:
 
 ```shell
-juju deploy mysql-k8s --trust --channel 8.0/stable -n 3
+juju deploy mysql-k8s --trust --channel 8.4/edge -n 3
 ```
 
 Obtain credentials for each new database by executing the following commands, once per database:

@@ -3,7 +3,7 @@
 The following are the minimum software and hardware requirements to run Charmed MySQL on Kubernetes.
 
 ## Software
-* Ubuntu 22.04 (Jammy) or later
+* Ubuntu 24.04 (Noble) or later
 * Kubernetes 1.27+
 * Canonical MicroK8s 1.27+ (snap channel 1.27-strict/stable and newer)
 
@@ -11,17 +11,13 @@ The following are the minimum software and hardware requirements to run Charmed 
 
 The table below shows which minor versions of each major Juju release are supported by the stable Charmhub releases of MySQL K8s. 
 
-| Juju major release | Supported minor versions | Compatible charm revisions |Comment |
-|:--------|:-----|:-----|:-----|
-| ![3.6 LTS] | `3.6.1+` | 213+ |     |
-| ![3.5] | `3.5.2+` | [153]+ |     |
-| ![3.4] | `3.4.3+` | [153]+ | Known issues with `3.4.2`: [bug #1](https://bugs.launchpad.net/juju/+bug/2065284), [bug #2](https://bugs.launchpad.net/juju/+bug/2064772)   |
-| ![3.1] | `3.1.6+` | [99]+ |     |
+| Juju major release | Supported minor versions | Compatible charm revisions | Comment                                                                                                                                   |
+|:-------------------|:-------------------------|:---------------------------|:------------------------------------------------------------------------------------------------------------------------------------------|
 
 ### MySQL Group Replication requirements
 
-* In order to integrate with this charm, every table created by the integrated application **must have a primary key**. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.0/en/group-replication-requirements.html) enabled in this charm.
-* The count of [Charmed MySQL K8s units](https://dev.mysql.com/doc/refman/8.0/en/group-replication-limitations.html) in a single Juju application is limited to 9. Unit 10+ will start; however, they will not join the cluster but sleep in a hot-swap reserve.
+* In order to integrate with this charm, every table created by the integrated application **must have a primary key**. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.4/en/group-replication-requirements.html) enabled in this charm.
+* The count of [Charmed MySQL K8s units](https://dev.mysql.com/doc/refman/8.4/en/group-replication-limitations.html) in a single Juju application is limited to 9. Unit 10+ will start; however, they will not join the cluster but sleep in a hot-swap reserve.
 
 ## Hardware
 
@@ -32,7 +28,8 @@ Make sure your machine meets the following requirements:
 
 The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/charmed-mysql-rock), which is recursively based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysql). It currently supports:
 * `amd64`
-* `arm64` (from revision 180+)
+* `arm64`
+* `s390x`
 
 [Contact us](/reference/contacts) if you are interested in a new architecture!
 
@@ -41,13 +38,3 @@ The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/
 * Only IPv4 is supported at the moment
   * See more information about this limitation in [this Jira issue](https://warthogs.atlassian.net/browse/DPE-4695)
   * [Contact us](/reference/contacts) if you are interested in IPv6!
-
-<!-- LINKS -->
-[153]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev153
-[99]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev99
-
-<!-- BADGES -->
-[3.1]: https://img.shields.io/badge/3.1-%23E95420?label=Juju
-[3.4]: https://img.shields.io/badge/3.4-%23E95420?label=Juju
-[3.5]: https://img.shields.io/badge/3.5-%23E95420?label=Juju
-[3.6 LTS]: https://img.shields.io/badge/3.6_LTS-%23E95420?label=Juju

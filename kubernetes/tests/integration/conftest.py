@@ -31,7 +31,7 @@ def charm():
     # Return str instead of pathlib.Path since python-libjuju's model.deploy(), juju deploy, and
     # juju bundle files expect local charms to begin with `./` or `/` to distinguish them from
     # Charmhub charms.
-    return f"./mysql-k8s_ubuntu@22.04-{architecture.architecture}.charm"
+    return f"./mysql-k8s_ubuntu@24.04-{architecture.architecture}.charm"
 
 
 @pytest.fixture(scope="session")

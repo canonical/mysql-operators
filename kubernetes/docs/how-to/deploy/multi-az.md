@@ -135,8 +135,8 @@ After a successful deployment, `juju status` will show an active application:
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.5.3    unsupported  22:02:32+02:00
 
-App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.0.36   active      3  mysql-k8s  8.0/stable  180  34.118.235.169  no       
+App         Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge  XXX  34.118.235.169  no       
 
 Unit           Workload  Agent  Address    Ports  Message
 mydatabase/0   active    idle   10.80.5.9         
@@ -224,8 +224,8 @@ The `juju status` output will indicate this problem as well:
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.5.3    unsupported  22:31:00+02:00
 
-App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.0.36   active      3  mysql-k8s  8.0/stable  180  34.118.235.169  no       installing agent
+App         Version  Status  Scale  Charm     Channel     Rev  Address         Exposed  Message
+mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge   XXX  34.118.235.169  no       installing agent
 
 Unit           Workload  Agent  Address    Ports  Message
 mydatabase/0   unknown   lost                     agent lost, see 'juju show-status-log mydatabase/0'
@@ -245,8 +245,8 @@ The K8s scheduler will return the pod back to AZ `us-east4-c` and Juju will auto
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.5.3    unsupported  22:38:23+02:00
 
-App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.0.36   active      3  mysql-k8s  8.0/stable  180  34.118.235.169  no   
+App         Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge  XXX  34.118.235.169  no   
 
 Unit           Workload  Agent  Address     Ports  Message
 mydatabase/0   active    idle   10.80.5.10         
@@ -287,4 +287,3 @@ Below you will find specific information about  AZs on specific clouds and more 
  * [Affinity/anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity)
  * [Taint and toleration](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
 * ...
-

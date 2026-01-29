@@ -11,7 +11,6 @@ Additional context about key concepts behind the MySQL charm.
 Architecture <architecture>
 Interfaces and endpoints <interfaces-and-endpoints>
 Juju <juju>
-Legacy charm <legacy-charm>
 ```
 
 ## Operational concepts
@@ -44,4 +43,3 @@ Mermaid diagrams of charm events and hooks.
 
 Charm flowcharts <flowcharts>
 ```
-

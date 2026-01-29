@@ -2,17 +2,12 @@
 
 Charmed MySQL K8s is able to restore [its own backups](/how-to/back-up-and-restore/restore-a-backup) stored on [S3-compatible storage](/how-to/back-up-and-restore/configure-s3-aws). 
 
-The same restore approach is applicable to restore [external backups](/how-to/back-up-and-restore/migrate-a-cluster) made by a different Charmed MySQL installation, or even another MySQL charm. (Note that, in this case, the backup must be created manually using Percona XtraBackup)
-
-```{seealso}
-For data stored in [legacy charms](/explanation/legacy-charm), see [How to migrate data via `mysqldump`](/how-to/development/migrate-data-via-mysqldump)
-```
+The same restore approach is applicable to restore [external backups](/how-to/back-up-and-restore/migrate-a-cluster) made by a different Charmed MySQL installation, or even another MySQL charm.
+Note that, in this case, the backup must be created manually using Percona XtraBackup.
 
 ## Prepare
 
-Before migrating data:
-* check all [limitations of the modern Charmed MySQL](/reference/system-requirements) charm
-* check [your application's compatibility](/explanation/legacy-charm) with Charmed MySQL
+Before migrating data check all [limitations](/reference/system-requirements) of the modern Charmed MySQL charm.
 
 ## Migrate via backup/restore
 
@@ -23,7 +18,7 @@ And, as always, try it out in a test environment before migrating in production!
 * Retrieve root/admin level credentials from legacy charm.
   * Example: [](mysqldump-obtain-existing-database-credentials)
 * Install [Percona XtraBackup](https://www.percona.com/software/mysql-database/percona-xtrabackup) inside the old charm OR remotely.
-  * Ensure the version is compatible with xtrabackup in `Charmed MySQL` revision you are going to deploy. See [installation examples](https://docs.percona.com/percona-xtrabackup/8.0/installation.html).
+  * Ensure the version is compatible with xtrabackup in `Charmed MySQL` revision you are going to deploy. See [installation examples](https://docs.percona.com/percona-xtrabackup/8.4/installation.html).
   * You can also use the [`charmed-mysql` snap](https://snapcraft.io/charmed-mysql) or [rock](https://github.com/canonical/charmed-mysql-rock) directly. For more details, see [](/explanation/architecture).
 * Configure storage for database backup
   * S3-based is recommended. See [](/how-to/back-up-and-restore/configure-s3-aws)
@@ -35,4 +30,3 @@ And, as always, try it out in a test environment before migrating in production!
 * Schedule and perform the final production migration
 
 Do you have questions? [Contact us](/reference/contacts) if you are interested in such a data migration!
-

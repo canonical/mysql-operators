@@ -26,8 +26,8 @@ class MySQLConfig:
         "group_replication_message_cache_size",
         "log_error",
         "report_host",
-        "loose-audit_log_strategy",
-        "loose-audit_log_format",
+        "loose-audit_log_filter.strategy",
+        "loose-audit_log_filter.format",
     }
 
     def keys_requires_restart(self, keys: set) -> bool:

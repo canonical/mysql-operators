@@ -21,10 +21,10 @@ When upgrading your database charm with <code>juju refresh</code>, Juju checks t
 ```shell
 ~$ juju refresh mysql
 
-Added charm-hub charm "mysql", revision 42 in channel 8.0/stable, to the model
+Added charm-hub charm "mysql", revision XX in channel 8.4/stable, to the model
 ERROR Charm feature requirements cannot be met:
     - charm requires all of the following:
-      - charm requires feature "juju" (version >= 3.1.5) but model currently supports version 3.1.4
+      - charm requires feature "juju" (version >= 3.5.2) but model currently supports version 3.5.1
 ```
 
 You must then [upgrade to the required Juju version](/how-to/refresh/upgrade-juju) before proceeding with the charm upgrade.

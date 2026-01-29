@@ -8,7 +8,7 @@ This guide will show you how to establish and change the amount of juju units us
 
 To deploy MySQL K8s with multiple replicas, specify the number of desired units with the `-n` option.
 ```shell
-juju deploy mysql-k8s --channel 8.0 --trust -n <number_of_replicas>
+juju deploy mysql-k8s --channel 8.4/edge --trust -n <number_of_replicas>
 ```
 
 ```{tip}
@@ -47,4 +47,3 @@ juju scale-application mysql-k8s <total number of units>
 ```{attention}
 Do not remove the last unit, it will destroy your data!
 ```
-
