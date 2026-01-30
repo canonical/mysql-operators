@@ -464,9 +464,6 @@ class MySQL(MySQLBase):
         if unit_address in members_in_cluster:
             raise MySQLWaitUntilUnitRemovedFromClusterError("Remove member still in cluster")
 
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
     def create_database_legacy(self, database_name: str) -> None:
         """Creates a database.
 
@@ -489,9 +486,6 @@ class MySQL(MySQLBase):
             logger.exception(f"Failed to create database {database_name}", exc_info=e)
             raise MySQLCreateDatabaseError() from None
 
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
     def create_user_legacy(
         self, username: str, password: str, label: str, hostname: str = "%"
     ) -> None:
@@ -520,9 +514,6 @@ class MySQL(MySQLBase):
             logger.exception(f"Failed to create user {username}@{hostname}")
             raise MySQLCreateUserError() from None
 
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
     def escalate_user_privileges(self, username: str, hostname: str = "%") -> None:
         """Escalates the provided user's privileges.
 
@@ -561,9 +552,6 @@ class MySQL(MySQLBase):
             logger.exception(f"Failed to escalate user privileges for {username}@{hostname}")
             raise MySQLEscalateUserPrivilegesError() from None
 
-    # TODO:
-    #  Remove when migrating to MySQL 8.4
-    #  (when breaking changes are allowed)
     def delete_users_with_label(self, label_name: str, label_value: str) -> None:
         """Delete users with the provided label.
 
