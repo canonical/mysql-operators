@@ -10,7 +10,6 @@ from ast import literal_eval
 from pathlib import Path
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from ...helpers_ha import (
@@ -33,7 +32,6 @@ MINUTE_SECS = 60
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     snap_revisions = Path("snap_revisions.json")
@@ -84,7 +82,6 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-@pytest.mark.abort_on_fail
 def test_pre_upgrade_check(juju: Juju) -> None:
     """Test that the pre-upgrade-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
@@ -96,7 +93,6 @@ def test_pre_upgrade_check(juju: Juju) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-@pytest.mark.abort_on_fail
 def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
     logging.info("Ensure continuous_writes")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
@@ -133,7 +129,6 @@ def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-@pytest.mark.abort_on_fail
 def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     """Test upgrade rollback to a healthy revision."""
     relation_data = get_relation_data(juju, MYSQL_APP_NAME, "upgrade")

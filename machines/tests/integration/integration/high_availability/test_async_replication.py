@@ -28,13 +28,13 @@ MINUTE_SECS = 60
 
 
 @pytest.fixture(scope="module")
-def first_model(juju: Juju, request: pytest.FixtureRequest) -> Generator:
+def first_model(juju: Juju) -> Generator:
     """Creates and return the first model."""
     yield juju.model
 
 
 @pytest.fixture(scope="module")
-def second_model(juju: Juju, request: pytest.FixtureRequest) -> Generator:
+def second_model(juju: Juju) -> Generator:
     """Creates and returns the second model."""
     model_name = f"{juju.model}-other"
 
@@ -42,8 +42,6 @@ def second_model(juju: Juju, request: pytest.FixtureRequest) -> Generator:
     juju.add_model(model_name)
 
     yield model_name
-    if request.config.getoption("--keep-models"):
-        return
 
     logging.info(f"Destroying model: {model_name}")
     juju.destroy_model(model_name, destroy_storage=True, force=True)
@@ -66,7 +64,6 @@ def continuous_writes(first_model: str) -> Generator:
     model_1.run(model_1_test_app_leader, "clear-continuous-writes")
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> None:
     """Simple test to ensure that the MySQL application charms get deployed."""
     configuration = {"profile": "testing"}
@@ -103,7 +100,6 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     )
 
 
-@pytest.mark.abort_on_fail
 def test_async_relate(first_model: str, second_model: str) -> None:
     """Relate the two MySQL clusters."""
     logging.info("Creating offers in first model")
@@ -131,7 +127,6 @@ def test_async_relate(first_model: str, second_model: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_router_and_app(first_model: str) -> None:
     """Deploy the router and the test application."""
     logging.info("Deploying the router and test application")
@@ -169,7 +164,6 @@ def test_deploy_router_and_app(first_model: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_create_replication(first_model: str, second_model: str) -> None:
     """Run the create-replication action and wait for the applications to settle."""
     model_1 = Juju(model=first_model)
@@ -193,7 +187,6 @@ def test_create_replication(first_model: str, second_model: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
     """Test to write to primary, and read the same data back from replicas."""
     logging.info("Testing data replication")
@@ -204,7 +197,6 @@ def test_data_replication(first_model: str, second_model: str, continuous_writes
     assert results[0] > 1, "No data was written to the database"
 
 
-@pytest.mark.abort_on_fail
 def test_standby_promotion(first_model: str, second_model: str, continuous_writes) -> None:
     """Test graceful promotion of a standby cluster to primary."""
     model_2 = Juju(model=second_model)
@@ -233,7 +225,6 @@ def test_standby_promotion(first_model: str, second_model: str, continuous_write
     )
 
 
-@pytest.mark.abort_on_fail
 def test_failover(first_model: str, second_model: str) -> None:
     """Test switchover on primary cluster fail."""
     logging.info("Freezing mysqld on primary cluster units")
@@ -275,7 +266,6 @@ def test_failover(first_model: str, second_model: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_rejoin_invalidated_cluster(
     first_model: str, second_model: str, continuous_writes
 ) -> None:
@@ -294,7 +284,6 @@ def test_rejoin_invalidated_cluster(
     assert results[0] > 1, "No data was written to the database"
 
 
-@pytest.mark.abort_on_fail
 def test_unrelate_and_relate(first_model: str, second_model: str, continuous_writes) -> None:
     """Test removing and re-relating the two mysql clusters."""
     model_1 = Juju(model=first_model)

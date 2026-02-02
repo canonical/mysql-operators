@@ -5,7 +5,6 @@
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from ...helpers import execute_queries_on_unit
@@ -25,8 +24,6 @@ INTEGRATOR_APP_NAME = "data-integrator"
 TIMEOUT = 15 * MINUTE_SECS
 
 
-@pytest.mark.abort_on_fail
-@pytest.mark.skip_if_deployed
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Simple test to ensure that the mysql and data-integrator charms get deployed."""
     juju.deploy(
@@ -52,7 +49,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_charmed_dba_role(juju: Juju):
     """Test the instance-level DBA role."""
     # configure integrator and relate

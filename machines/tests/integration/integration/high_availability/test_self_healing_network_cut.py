@@ -6,7 +6,6 @@ import logging
 import subprocess
 
 import jubilant
-import pytest
 from jubilant import Juju
 from tenacity import (
     Retrying,
@@ -39,7 +38,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -72,7 +70,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_network_cut(juju: Juju, continuous_writes) -> None:
     """Completely cut and restore network."""
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)

@@ -22,7 +22,6 @@ TIMEOUT = 15 * MINUTE_SECS
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
