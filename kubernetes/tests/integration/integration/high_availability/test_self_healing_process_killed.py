@@ -5,7 +5,6 @@ import logging
 import time
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from constants import CONTAINER_NAME
@@ -31,7 +30,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -65,7 +63,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_kill_db_process(juju: Juju, continuous_writes) -> None:
     """Test to send a SIGKILL to the primary db process and ensure that the cluster self heals."""
     logging.info("Ensuring all units have continuous writes incrementing")

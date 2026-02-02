@@ -4,7 +4,6 @@
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 from lightkube.core.client import Client
 from lightkube.models.meta_v1 import ObjectMeta
@@ -27,7 +26,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -61,7 +59,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_pod_eviction_and_pvc_deletion(juju: Juju, continuous_writes) -> None:
     """Test behavior when node drains - pod is evicted and pvs are rotated."""
     logging.info("Ensuring that all instances have incrementing continuous writes")

@@ -5,7 +5,6 @@
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from ...helpers_ha import (
@@ -23,8 +22,6 @@ CLUSTER_NAME = "test_cluster"
 TIMEOUT = 15 * MINUTE_SECS
 
 
-@pytest.mark.skip_if_deployed
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the mysql charm and deploy it."""
     logger.info(f"Deploying {APP_NAME}")
@@ -44,7 +41,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_custom_variables(juju: Juju) -> None:
     """Query database for custom variables."""
     app_units = get_app_units(juju, APP_NAME)

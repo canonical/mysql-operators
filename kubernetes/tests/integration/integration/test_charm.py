@@ -5,7 +5,6 @@
 import logging
 
 import jubilant
-import pytest
 import urllib3
 from jubilant import Juju
 
@@ -33,8 +32,6 @@ CLUSTER_NAME = "test_cluster"
 TIMEOUT = 15 * MINUTE_SECS
 
 
-@pytest.mark.skip_if_deployed
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the mysql charm and deploy it."""
     logger.info(f"Deploying {APP_NAME}")
@@ -72,7 +69,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         assert output[0] == 3
 
 
-@pytest.mark.abort_on_fail
 def test_scale_up_after_scale_down(juju: Juju) -> None:
     """Confirm storage reuse works."""
     logger.info("Scale down to one unit")
@@ -88,7 +84,6 @@ def test_scale_up_after_scale_down(juju: Juju) -> None:
     assert (num_online, num_not_online) == (3, 0)
 
 
-@pytest.mark.abort_on_fail
 def test_scale_up_from_zero(juju: Juju) -> None:
     """Ensure scaling down to zero and back up works."""
     logger.info("Scaling down to 0 units")
@@ -106,7 +101,6 @@ def test_scale_up_from_zero(juju: Juju) -> None:
     assert (num_online, num_not_online) == (3, 0)
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation(juju: Juju):
     """Rotate password and confirm changes."""
     app_units = get_app_units(juju, APP_NAME)
@@ -140,7 +134,6 @@ def test_password_rotation(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation_silent(juju: Juju):
     """Rotate password and confirm changes."""
     app_units = get_app_units(juju, APP_NAME)
@@ -171,7 +164,6 @@ def test_password_rotation_silent(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation_root_user_implicit(juju: Juju):
     """Rotate password and confirm changes."""
     app_units = get_app_units(juju, APP_NAME)
@@ -198,7 +190,6 @@ def test_password_rotation_root_user_implicit(juju: Juju):
     assert updated_credentials["password"] == updated_root_credentials["password"]
 
 
-@pytest.mark.abort_on_fail
 def test_exporter_endpoints(juju: Juju) -> None:
     """Test that endpoints are running."""
     app_units = get_app_units(juju, APP_NAME)
