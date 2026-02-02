@@ -6,7 +6,6 @@ import logging
 import random
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ...helpers_ha import (
@@ -32,7 +31,6 @@ SLOW_WAIT_TIMEOUT = 45 * 60
 FAST_WAIT_TIMEOUT = 30 * 60
 
 
-@pytest.mark.abort_on_fail
 def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     """Deploy the keystone bundle to test the 'db-router' relation."""
     juju.deploy(

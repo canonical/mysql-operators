@@ -4,7 +4,6 @@
 import logging
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from constants import SERVER_CONFIG_USERNAME
@@ -27,7 +26,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -62,7 +60,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     """The cluster manual re-join test.
 

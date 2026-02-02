@@ -5,7 +5,6 @@ import logging
 import random
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from constants import CLUSTER_ADMIN_USERNAME, SERVER_CONFIG_USERNAME
@@ -35,7 +34,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -70,7 +68,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
     """Stop server, write data, start and validate replication."""
     # Ensure continuous writes still incrementing for all units
