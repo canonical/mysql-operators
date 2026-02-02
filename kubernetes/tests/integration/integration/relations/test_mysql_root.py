@@ -5,7 +5,6 @@
 import logging
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ...helpers_ha import (
@@ -20,8 +19,6 @@ APPLICATION_APP_NAME = "mysql-test-app"
 APPLICATION_ENDPOINT = "mysql"
 
 
-@pytest.mark.abort_on_fail
-@pytest.mark.skip_if_deployed
 def test_build_and_deploy(juju: Juju, charm):
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
@@ -45,7 +42,6 @@ def test_build_and_deploy(juju: Juju, charm):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relation_creation_eager(juju: Juju):
     """Relate charms before they have time to properly start.
 

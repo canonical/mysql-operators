@@ -4,7 +4,6 @@
 import logging
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 from tenacity import RetryError, Retrying, stop_after_attempt, wait_fixed
 
@@ -141,7 +140,6 @@ def test_deploy_and_relate_osm_bundle(juju: Juju, charm) -> None:
     juju.integrate("osm-pol:mysql", f"{APP_NAME}:mysql-root")
 
 
-@pytest.mark.abort_on_fail
 @markers.juju3
 @markers.amd64_only  # kafka-k8s charm not available for arm64
 def test_osm_pol_operations(juju: Juju) -> None:

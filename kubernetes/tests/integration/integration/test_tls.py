@@ -6,7 +6,6 @@ import logging
 from time import sleep
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from constants import CLUSTER_ADMIN_USERNAME, CONTAINER_NAME, TLS_SSL_CERT_FILE
@@ -48,8 +47,6 @@ else:
 config = {}
 
 
-@pytest.mark.skip_if_deployed
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     # Set model configuration
@@ -72,7 +69,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_connection_before_tls(juju: Juju) -> None:
     """Ensure connections (with and without ssl) are possible before relating with TLS operator."""
     app_units = get_app_units(juju, APP_NAME)
@@ -100,7 +96,6 @@ def test_connection_before_tls(juju: Juju) -> None:
         )
 
 
-@pytest.mark.abort_on_fail
 def test_enable_tls(juju: Juju) -> None:
     """Test for encryption enablement when relation to TLS charm."""
     app_units = get_app_units(juju, APP_NAME)
@@ -143,7 +138,6 @@ def test_enable_tls(juju: Juju) -> None:
     assert get_tls_ca(juju, app_units[0]), "❌ No CA found after TLS relation"
 
 
-@pytest.mark.abort_on_fail
 def test_rotate_tls_key(juju: Juju) -> None:
     """Verify rotating tls private keys restarts cluster with new certificates.
 
@@ -193,7 +187,6 @@ def test_rotate_tls_key(juju: Juju) -> None:
         )
 
 
-@pytest.mark.abort_on_fail
 def test_disable_tls(juju: Juju) -> None:
     # Remove the relation
     app_units = get_app_units(juju, APP_NAME)

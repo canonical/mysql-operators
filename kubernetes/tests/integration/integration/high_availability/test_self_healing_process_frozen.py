@@ -5,7 +5,6 @@ import logging
 import random
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 from tenacity import (
     Retrying,
@@ -32,7 +31,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -68,7 +66,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     """Test to send a SIGSTOP to the primary db process and ensure that the cluster self heals."""
     logging.info("Ensuring that all instances have incrementing continuous writes")

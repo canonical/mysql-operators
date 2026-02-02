@@ -7,7 +7,6 @@ import tempfile
 
 import jinja2
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ..helpers_ha import CHARM_METADATA, wait_for_apps_status
@@ -18,7 +17,6 @@ IMAGE_SOURCE = CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]
 TIMEOUT = 10 * 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_bundle_with_cos_integrations(juju: Juju, charm) -> None:
     """Test COS integrations formed before mysql is allocated and deployed."""
     bundle_template = jinja2.Template(

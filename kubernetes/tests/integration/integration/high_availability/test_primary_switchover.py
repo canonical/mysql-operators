@@ -5,7 +5,6 @@ import logging
 import subprocess
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ...helpers_ha import (
@@ -26,7 +25,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -62,7 +60,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_cluster_switchover(juju: Juju) -> None:
     """Test that the primary node can be switched over."""
     logging.info("Testing cluster switchover...")
@@ -90,7 +87,6 @@ def test_cluster_switchover(juju: Juju) -> None:
     assert get_mysql_primary_unit(juju, app_name) == new_primary_unit, "Switchover failed"
 
 
-@pytest.mark.abort_on_fail
 def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     """Test the promote-to-primary command after losing the majority of nodes, with force flag."""
     app_name = get_app_name(juju, MYSQL_APP_NAME)
