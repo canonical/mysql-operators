@@ -98,3 +98,7 @@ To change the frequency of the `update-status` hook, run
 juju model-config update-status-hook-interval=<time(s/m/h)>
 ```
 ````
+
+```{seealso}
+{ref}`primary-switchover`
+```
