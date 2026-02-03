@@ -14,7 +14,7 @@ Available deployment methods, clouds, and specialised setups:
 Deploy <deploy/index>
 ```
 
-<!-- ## Usage and maintenance
+## Usage and maintenance
 
 Most common operations when operating a MySQL cluster:
 
@@ -22,14 +22,14 @@ Most common operations when operating a MySQL cluster:
 :titlesonly:
 :maxdepth: 2
 
-Integrate with another application <integrate-with-another-application>
+Integrate with applications <integrate-with-applications>
+```
+<!-- 
 Scale replicas <scale-replicas>
 Manage passwords <manage-passwords>
 Enable TLS <enable-tls>
 External network access <external-network-access>
 Primary switchover <primary-switchover>
-```
-
 ## Back up and restore
 
 Configuration of storage providers and backup management:
