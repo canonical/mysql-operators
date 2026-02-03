@@ -23,9 +23,9 @@ Most common operations when operating a MySQL cluster:
 :maxdepth: 2
 
 Integrate with applications <integrate-with-applications>
+Scale your cluster <scale>
 ```
 <!-- 
-Scale replicas <scale-replicas>
 Manage passwords <manage-passwords>
 Enable TLS <enable-tls>
 External network access <external-network-access>
