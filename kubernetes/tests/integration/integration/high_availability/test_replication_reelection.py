@@ -4,7 +4,6 @@
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from ...helpers import generate_random_string
@@ -25,7 +24,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -59,7 +57,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_kill_primary_check_reelection(juju: Juju) -> None:
     """Confirm that a new primary is elected when the current primary is tear down."""
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)

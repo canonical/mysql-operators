@@ -6,7 +6,6 @@ import json
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from constants import DB_RELATION_NAME, PASSWORD_LENGTH, ROOT_USERNAME
@@ -39,8 +38,6 @@ ENDPOINT = "database"
 TIMEOUT = 15 * MINUTE_SECS
 
 
-@pytest.mark.abort_on_fail
-@pytest.mark.skip_if_deployed
 def test_build_and_deploy(juju: Juju, charm):
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
@@ -69,7 +66,6 @@ def test_build_and_deploy(juju: Juju, charm):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
@@ -97,7 +93,6 @@ def test_password_rotation(juju: Juju):
     assert len(output) > 0, "query with new password failed, no databases found"
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation_silent(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
@@ -122,7 +117,6 @@ def test_password_rotation_silent(juju: Juju):
     assert len(output) > 0, "query with new password failed, no databases found"
 
 
-@pytest.mark.abort_on_fail
 def test_password_rotation_root_user(juju: Juju):
     """Rotate password for root user and confirm changes."""
     # get primary unit first, need that to invoke set-password action
@@ -137,7 +131,6 @@ def test_password_rotation_root_user(juju: Juju):
     assert updated_credentials["password"] != old_credentials["password"]
 
 
-@pytest.mark.abort_on_fail
 def test_relation_creation(juju: Juju):
     """Relate charms and wait for the expected changes in status (using juju secrets)."""
     juju.integrate(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")
@@ -153,7 +146,6 @@ def test_relation_creation(juju: Juju):
     assert "secret-user" in relation_data[0]["application-data"]
 
 
-@pytest.mark.abort_on_fail
 def test_read_only_endpoints(juju: Juju):
     """Check read-only-endpoints are correctly updated."""
     relation_data = get_relation_data(juju, DATABASE_APP_NAME, DB_RELATION_NAME)
@@ -191,7 +183,6 @@ def test_read_only_endpoints(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relation_broken(juju: Juju):
     """Remove relation and wait for the expected changes in status."""
     juju.remove_relation(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")

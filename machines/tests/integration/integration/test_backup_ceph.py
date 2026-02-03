@@ -161,7 +161,6 @@ def clean_backups_from_buckets(cloud_configs_ceph):
         bucket_object.delete()
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Simple test to ensure that the mysql charm gets deployed."""
     logger.info("Deploying mysql")
@@ -209,7 +208,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     """Test to create a backup and list backups."""
     global backup_id, value_before_backup, value_after_backup
@@ -292,7 +290,6 @@ def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     """Test to restore a backup to the same mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_ceph
@@ -405,7 +402,6 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     scale_app_units(juju, DATABASE_APP_NAME, 0)  # TODO: is this needed?
 
 
-@pytest.mark.abort_on_fail
 def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     """Test to restore a backup on a new mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_ceph

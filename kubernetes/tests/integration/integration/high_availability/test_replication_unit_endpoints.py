@@ -4,7 +4,6 @@
 import logging
 
 import jubilant
-import pytest
 from jubilant import Juju
 
 from ...helpers_ha import (
@@ -26,7 +25,6 @@ MYSQL_TEST_APP_NAME_2 = "mysql-test-app2"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -66,7 +64,6 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         )
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -106,7 +103,6 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         )
 
 
-@pytest.mark.abort_on_fail
 def test_labeling_of_k8s_endpoints(juju: Juju) -> None:
     """Test the labeling of k8s endpoints when apps with same cluster-name deployed."""
     logging.info("Ensuring that the created k8s endpoints have correct addresses")

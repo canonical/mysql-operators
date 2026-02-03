@@ -3,7 +3,6 @@
 # See LICENSE file for licensing details.
 
 import jubilant
-import pytest
 from jubilant import CLIError, Juju
 from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
@@ -14,7 +13,6 @@ SCALE_APPS = 7
 SCALE_UNITS = 3
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm):
     """Build the charm and deploy 1 units to ensure a cluster is formed."""
     config = {"profile": "testing"}
@@ -83,7 +81,6 @@ def test_build_and_deploy(juju: Juju, charm):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relate_all(juju: Juju):
     """Relate all the applications to the database."""
     for idx in range(SCALE_APPS):
@@ -105,7 +102,6 @@ def test_relate_all(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_scale_out(juju: Juju):
     """Scale database and routers."""
     retry_if_cli_error(lambda: juju.add_unit(MYSQL_APP_NAME, num_units=SCALE_UNITS - 1))
@@ -123,7 +119,6 @@ def test_scale_out(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_scale_in(juju: Juju):
     """Scale database and routers."""
     retry_if_cli_error(lambda: juju.remove_unit(MYSQL_APP_NAME, num_units=SCALE_UNITS - 1))

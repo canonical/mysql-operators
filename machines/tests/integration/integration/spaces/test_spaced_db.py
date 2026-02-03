@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 import logging
 
 import jubilant
@@ -22,7 +23,6 @@ TIMEOUT = 15 * MINUTE_SECS
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
@@ -117,16 +117,8 @@ def test_integrate_with_isolated_space(juju: Juju):
     juju.ssh(unit, "sudo ip route flush default")
 
     logger.info("Starting continuous writes")
-    # The charm will first try to stop the continuous writes,
-    # which first queries the database to retrieve the last value.
-    # OpsTest supported just enqueuing the action, but Jubilant doesn't,
-    # so we need to acknowledge the timeout error resulting from the new network topology
-    # (only in Juju >= 3)
-    if juju._is_juju_2:
+    with pytest.raises(TimeoutError):
         juju.run(unit, "start-continuous-writes")
-    else:
-        with pytest.raises(TimeoutError):
-            juju.run(unit, "start-continuous-writes")
 
     # Ensure continuous writes do not increment for all units
     with pytest.raises(AssertionError):
