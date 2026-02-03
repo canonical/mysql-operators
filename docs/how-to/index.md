@@ -29,7 +29,7 @@ Enable TLS <enable-tls>
 External network access <external-network-access>
 Primary switchover <primary-switchover>
 ```
-<!-- 
+
 ## Back up and restore
 
 Configuration of storage providers and backup management:
@@ -41,6 +41,7 @@ Configuration of storage providers and backup management:
 Back up and restore <back-up-and-restore/index>
 ```
 
+<!-- 
 ## Monitoring (COS)
 
 Integrate with observability services like Grafana, Prometheus, and Tempo:
