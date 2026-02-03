@@ -41,30 +41,17 @@ Charmed MySQL can be deployed on several machine and Kubernetes cloud services.
 ```{toctree}
 :titlesonly:
 
-vm-clouds/index
-k8s-clouds/index
+Machine clouds <vm-clouds/index>
+K8s clouds <k8s-clouds/index>
 ```
 
-## Terraform
-
-Deploy MySQL and automate your infrastructure with the Juju Terraform Provider.
+## Additional deployment scenarios
 
 ```{toctree}
 :titlesonly:
 
 Terraform <terraform/index>
-```
-
-## Networking and encryption
-
-
-
-## Airgapped
-
-Install PostgreSQL in an airgapped environment via Charmhub and the Snap Store Proxy
-
-```{toctree}
-:titlesonly:
-
 Airgapped <airgapped>
+Multi-AZ <multi-az/index>
+Juju spaces <juju-spaces>
 ```
