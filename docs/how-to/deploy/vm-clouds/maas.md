@@ -3,7 +3,7 @@
 
 This guide aims to provide a quick start to deploying Charmed MySQL on MAAS. It summarizes the instructions from the [Build a MAAS and LXD environment with Multipass Tutorial](https://discourse.maas.io/t/5360) to set up and tear down a **playground environment**.
 
-If you want to deploy MySQL on MAAS in a **production environment**, refer to the official [Bootstrap MAAS Tutorial](https://maas.io/docs/tutorial-bootstrapping-maas) followed by the [Charmed MySQL Tutorial](/tutorial/index).
+If you want to deploy MySQL on MAAS in a **production environment**, refer to the official [Bootstrap MAAS Tutorial](https://maas.io/docs/tutorial-bootstrapping-maas) followed by the {ref}`Charmed MySQL Tutorial <tutorial>`.
 
 ## Bootstrap a Multipass VM
 
@@ -130,7 +130,7 @@ Machine  State    Address     Inst id       Base          AZ       Message
 
 ## Test your Charmed MySQL deployment
 
-Check the [Testing](/reference/software-testing) reference to test your deployment.
+Check the {ref}`software-testing` reference to test your deployment.
 
 ## Clean up the environment
 To stop your VM, run: 

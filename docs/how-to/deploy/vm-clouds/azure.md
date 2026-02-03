@@ -205,7 +205,7 @@ At this point, you can access your DB inside Azure VM using the internal IP addr
 mysql -h 192.168.0.5 -u relation-14 -P1yGJ2KqtN4Qlf6KgeJDLOVES test123
 ```
 
-From here you can begin to use your newly deployed MySQL. Learn more about operations like scaling, enabling TLS, managing users and passwords, and more in the [Charmed MySQL tutorial](/tutorial/index).
+From here you can operate your newly deployed Charmed MySQL. See the {ref}`how-to guides <how-to>` for more information.
 
 ## Expose database (optional)
 

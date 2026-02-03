@@ -192,7 +192,7 @@ mysql> show databases;
 3 rows in set (0.13 sec)
 ```
 
-From here you can [use/scale/backup/restore/refresh](/tutorial/index) your newly deployed Charmed MySQL.
+From here you can operate your newly deployed Charmed MySQL. See the {ref}`how-to guides <how-to>` for more information.
 
 ## Expose database (optional)
 

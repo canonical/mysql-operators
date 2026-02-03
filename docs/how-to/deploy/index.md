@@ -44,3 +44,13 @@ Charmed MySQL can be deployed on several machine and Kubernetes cloud services.
 vm-clouds/index
 k8s-clouds/index
 ```
+
+## Terraform
+
+Deploy MySQL and automate your infrastructure with the Juju Terraform Provider.
+
+```{toctree}
+:titlesonly:
+
+Terraform <terraform/index>
+```
