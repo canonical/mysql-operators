@@ -309,7 +309,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",
     "sphinxcontrib.mermaid",
-    "sphinxext.rediraffe"
+    "sphinxext.rediraffe",
+    "sphinx_new_tab_link"
 ]
 
 # Excludes files or directories from processing
