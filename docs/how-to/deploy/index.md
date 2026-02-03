@@ -54,3 +54,17 @@ Deploy MySQL and automate your infrastructure with the Juju Terraform Provider.
 
 Terraform <terraform/index>
 ```
+
+## Networking and encryption
+
+
+
+## Airgapped
+
+Install PostgreSQL in an airgapped environment via Charmhub and the Snap Store Proxy
+
+```{toctree}
+:titlesonly:
+
+Airgapped <airgapped>
+```
