@@ -52,22 +52,5 @@ def cloud_configs_gcp() -> tuple[dict[str, str], dict[str, str]]:
 
 
 @pytest.fixture(scope="module")
-def juju(request: pytest.FixtureRequest):
-    """Pytest fixture that wraps :meth:`jubilant.with_model`.
-
-    This adds command line parameter ``--keep-models`` (see help for details).
-    """
-    model = request.config.getoption("--model")
-    keep_models = bool(request.config.getoption("--keep-models"))
-
-    if model:
-        juju = jubilant_backports.Juju(model=model)  # type: ignore
-        yield juju
-        log = juju.debug_log(limit=1000)
-    else:
-        with jubilant_backports.temp_model(keep=keep_models) as juju:
-            yield juju
-            log = juju.debug_log(limit=1000)
-
-    if request.session.testsfailed:
-        print(log, end="")
+def juju() -> jubilant_backports.Juju:
+    return jubilant_backports.Juju(model="testing")

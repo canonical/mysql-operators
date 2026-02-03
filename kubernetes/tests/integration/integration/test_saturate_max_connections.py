@@ -18,7 +18,6 @@ TEST_APP_NAME = "app"
 CONNECTIONS = 10
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the charm and deploy 1 units to ensure a cluster is formed."""
     juju.deploy(
@@ -32,7 +31,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_and_relate_test_app(juju: Juju) -> None:
     config = {"auto_start_writes": False, "sleep_interval": "500"}
     logger.info("Deploying test app")
@@ -55,7 +53,6 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_saturate_max_connections(juju: Juju) -> None:
     app_unit_name = get_app_units(juju, TEST_APP_NAME)[0]
     mysql_unit_name = get_app_units(juju, MYSQL_APP_NAME)[0]

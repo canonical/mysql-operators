@@ -6,7 +6,6 @@ from subprocess import run
 from time import sleep
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ..helpers_ha import MINUTE_SECS, get_app_units, get_unit_machine
@@ -19,8 +18,6 @@ SLEEP_WAIT = 5
 TIMEOUT = 15 * MINUTE_SECS
 
 
-@pytest.mark.skip_if_deployed
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     logger.info(f"Deploying {APP_NAME}")
@@ -42,7 +39,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_reboot_1_of_3_units(juju: Juju) -> None:
     """Reboot a single unit and ensure it comes back online."""
     app_units = get_app_units(juju, APP_NAME)
@@ -61,7 +57,6 @@ def test_reboot_1_of_3_units(juju: Juju) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_reboot_2_of_3_units(juju: Juju) -> None:
     """Reboot 2 units and ensure they come back online."""
     app_units = get_app_units(juju, APP_NAME)
@@ -80,7 +75,6 @@ def test_reboot_2_of_3_units(juju: Juju) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_reboot_3_of_3_units(juju: Juju) -> None:
     """Reboot all 3 units and ensure they come back online."""
     app_units = get_app_units(juju, APP_NAME)

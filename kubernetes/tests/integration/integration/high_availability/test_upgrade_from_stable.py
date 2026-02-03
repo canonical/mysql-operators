@@ -5,7 +5,6 @@ import logging
 from contextlib import suppress
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju, TaskError
 
 from ...helpers_ha import (
@@ -27,7 +26,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_stable(juju: Juju) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -64,7 +62,6 @@ def test_deploy_stable(juju: Juju) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_pre_upgrade_check(juju: Juju) -> None:
     """Test that the pre-upgrade-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
@@ -86,7 +83,6 @@ def test_pre_upgrade_check(juju: Juju) -> None:
     assert get_k8s_stateful_set_partitions(juju, MYSQL_APP_NAME) == 2, "Partition not set to 2"
 
 
-@pytest.mark.abort_on_fail
 def test_upgrade_from_stable(juju: Juju, charm: str, continuous_writes) -> None:
     """Update the second cluster."""
     logging.info("Ensure continuous writes are incrementing")

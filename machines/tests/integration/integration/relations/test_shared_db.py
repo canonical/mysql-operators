@@ -7,7 +7,6 @@ import random
 from time import sleep
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ...helpers_ha import (
@@ -32,7 +31,6 @@ SLOW_WAIT_TIMEOUT = 25 * 60
 FAST_WAIT_TIMEOUT = 15 * 60
 
 
-@pytest.mark.abort_on_fail
 def test_keystone_bundle_shared_db(juju: Juju, charm) -> None:
     """Deploy the keystone bundle to test the 'shared-db' relation.
 

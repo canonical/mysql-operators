@@ -8,7 +8,6 @@ from contextlib import suppress
 from pathlib import Path
 
 import jubilant_backports
-import pytest
 from jubilant_backports import CLIError, Juju
 from tenacity import (
     Retrying,
@@ -32,7 +31,6 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-@pytest.mark.abort_on_fail
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
@@ -68,7 +66,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_log_rotation(juju: Juju) -> None:
     """Test the log rotation of text files."""
     log_types = ["error", "audit"]

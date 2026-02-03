@@ -25,7 +25,6 @@ DATABASE_APP_NAME = CHARM_METADATA["name"]
 INTEGRATOR_APP_NAME = "data-integrator"
 
 
-@pytest.mark.abort_on_fail
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Simple test to ensure that the mysql and data-integrator charms get deployed."""
     juju.deploy(
@@ -68,7 +67,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_charmed_read_role(juju: Juju):
     """Test the charmed_read predefined role."""
     juju.config(
@@ -154,7 +152,6 @@ def test_charmed_read_role(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_charmed_dml_role(juju: Juju):
     """Test the charmed_dml role."""
     juju.config(

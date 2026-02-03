@@ -5,7 +5,6 @@
 import logging
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ...helpers import (
@@ -31,8 +30,6 @@ TEST_DATABASE = "continuous_writes"
 TIMEOUT = 15 * 60
 
 
-@pytest.mark.abort_on_fail
-@pytest.mark.skip_if_deployed
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     logger.info(
@@ -67,7 +64,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relation_creation(juju: Juju):
     """Relate charms and wait for the expected changes in status."""
     # Configure a user and database to be used for the relation
@@ -92,7 +88,6 @@ def test_relation_creation(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relation_broken(juju: Juju):
     """Remove relation and wait for the expected changes in status."""
     # store database credentials for test access later

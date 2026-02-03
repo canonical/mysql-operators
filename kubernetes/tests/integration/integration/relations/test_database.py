@@ -5,7 +5,6 @@
 import logging
 
 import jubilant_backports
-import pytest
 from jubilant_backports import Juju
 
 from ... import markers
@@ -24,8 +23,6 @@ APPLICATION_ENDPOINT = "database"
 APPS = [DATABASE_APP_NAME, APPLICATION_APP_NAME]
 
 
-@pytest.mark.abort_on_fail
-@pytest.mark.skip_if_deployed
 def test_build_and_deploy(juju: Juju, charm):
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
@@ -46,7 +43,6 @@ def test_build_and_deploy(juju: Juju, charm):
     )
 
 
-@pytest.mark.abort_on_fail
 def test_relation_creation_eager(juju: Juju):
     """Relate charms before they have time to properly start.
 
@@ -72,7 +68,6 @@ def test_relation_creation_eager(juju: Juju):
     )
 
 
-@pytest.mark.abort_on_fail
 @markers.only_without_juju_secrets
 def test_relation_creation_databag(juju: Juju):
     """Relate charms and wait for the expected changes in status."""
@@ -85,7 +80,6 @@ def test_relation_creation_databag(juju: Juju):
     assert {"password", "username"} <= set(relation_data[0]["application-data"])
 
 
-@pytest.mark.abort_on_fail
 @markers.only_with_juju_secrets
 def test_relation_creation(juju: Juju):
     """Relate charms and wait for the expected changes in status."""
@@ -99,7 +93,6 @@ def test_relation_creation(juju: Juju):
     assert "secret-user" in relation_data[0]["application-data"]
 
 
-@pytest.mark.abort_on_fail
 def test_relation_broken(juju: Juju):
     """Remove relation and wait for the expected changes in status."""
     juju.remove_relation(
