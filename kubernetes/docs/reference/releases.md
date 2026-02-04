@@ -31,14 +31,22 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 > 
 > See: [`juju set-constraints`](https://juju.is/docs/juju/juju-set-constraints), [`juju info`](https://juju.is/docs/juju/juju-info) 
 
+### Release 342-344
+
+| Revision | amd64 | arm64 | s390x | Ubuntu 22.04 LTS
+|:--------:|:-----:|:-----:|:-----:|:-----:|
+|[343] | ![check] | | | ![check] |
+|[344] | | ![check] | | ![check] |
+|[342] | | | ![check] | ![check] |
+
+[details=Older releases]
+
 ### Release 254-255
 
 | Revision | amd64 | arm64 | Ubuntu 22.04 LTS
 |:--------:|:-----:|:-----:|:-----:|
 |[254]  || ![check]  | ![check]  |
 |[255] |   ![check]| |  ![check] |
-
-[details=Older releases]
 
 ### Release 240-241
 
