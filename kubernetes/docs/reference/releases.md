@@ -8,6 +8,7 @@ To see all releases and commits, check the [Charmed MySQL K8s Releases page on G
 
 | Release | MySQL version | Juju version | [TLS encryption](/how-to/enable-tls)* | [COS monitoring](/how-to/monitoring-cos/enable-monitoring) | [Minor version upgrades](/how-to/refresh/single-cluster/refresh-single-cluster) | [Cluster-cluster replication](/how-to/cluster-cluster-replication/deploy) | [Point-in-time recovery](point-in-time-recovery)
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| [342], [343], [344] | 8.0.44 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | ![check] |
 | [254], [255] | 8.0.41 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | ![check] |
 | [240], [241] | 8.0.41 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | |
 | [210], [211] | 8.0.39 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | |
@@ -30,14 +31,22 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 > 
 > See: [`juju set-constraints`](https://juju.is/docs/juju/juju-set-constraints), [`juju info`](https://juju.is/docs/juju/juju-info) 
 
+### Release 342-344
+
+| Revision | amd64 | arm64 | s390x | Ubuntu 22.04 LTS
+|:--------:|:-----:|:-----:|:-----:|:-----:|
+|[343] | ![check] | | | ![check] |
+|[344] | | ![check] | | ![check] |
+|[342] | | | ![check] | ![check] |
+
+[details=Older releases]
+
 ### Release 254-255
 
 | Revision | amd64 | arm64 | Ubuntu 22.04 LTS
 |:--------:|:-----:|:-----:|:-----:|
 |[254]  || ![check]  | ![check]  |
 |[255] |   ![check]| |  ![check] |
-
-[details=Older releases]
 
 ### Release 240-241
 
@@ -92,6 +101,9 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 [/details]
 
 <!-- LINKS -->
+[344]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev342
+[343]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev342
+[342]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev342
 [255]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev255
 [254]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev255
 [240]: https://github.com/canonical/mysql-k8s-operator/releases/tag/rev240
