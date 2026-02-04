@@ -73,15 +73,14 @@ Walkthrough of a highly available cluster-cluster deployment and its primary ope
 
 Cluster-cluster replication <cluster-cluster-replication/index>
 ```
-<!-- 
 
 ## Charm development
 
-For charm developers looking to support PostgreSQL integrations with their charm
+For charm developers looking to support MySQL integrations with their charm.
 
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
 
-Development <development/index>
-``` -->
+Charm development <charm-development/index>
+```
