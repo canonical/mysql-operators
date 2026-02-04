@@ -51,7 +51,6 @@ Integrate with observability services like Grafana, Prometheus, and Tempo:
 
 Monitoring (COS) <monitoring/index>
 ```
-<!-- 
 
 ## Refresh (upgrade)
 
@@ -64,6 +63,7 @@ Instructions for upgrading a single or multiple clusters:
 Refresh (upgrade) <refresh/index>
 ```
 
+<!-- 
 ## Cluster-cluster replication
 
 Walkthrough of a highly available cluster-cluster deployment and its primary operations:

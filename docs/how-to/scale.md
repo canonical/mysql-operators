@@ -65,6 +65,7 @@ juju scale-application mysql-k8s <total number of units>
 Removing the last unit will destroy your data!
 ```
 
+(primary-vs-leader-unit)=
 ## Primary vs. leader unit 
 
 The MySQL primary server unit is *not* always the same as the [Juju leader unit](https://juju.is/docs/juju/leader).
