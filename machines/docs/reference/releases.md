@@ -16,6 +16,7 @@ For a given release, this table shows:
 
 | Release | MySQL version | Juju version | [TLS encryption](/how-to/enable-tls)* | [COS monitoring](/how-to/monitoring-cos/enable-monitoring) | [In-place upgrades](/how-to/refresh/single-cluster/refresh-single-cluster) | [Cluster-cluster replication](/how-to/cluster-cluster-replication/deploy) |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| [442], [443], [444] | 8.0.44 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [366], [367] | 8.0.41 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [312], [313] | 8.0.39 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
 | [240] | 8.0.36 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] |
@@ -35,6 +36,16 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 > If you deploy a specific revision, **you must make sure it matches your base and architecture** via the tables below or with [`juju info`](https://juju.is/docs/juju/juju-info)
 
 
+### Release 442-444
+
+| Revision | amd64 | arm64 | s390x | Ubuntu 22.04 LTS
+|:--------:|:-----:|:-----:|:-----:|:-----:|
+|[444] | ![check] | | | ![check] |
+|[442] | | ![check] | | ![check] |
+|[443] | | | ![check] | ![check] |
+
+[details=Older releases]
+
 ### Release 366-367
 
 | Revision | amd64 | arm64 | Ubuntu 22.04 LTS
@@ -42,15 +53,12 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 |[366]  |![check] | | ![check]  |
 |[367] |  | ![check]| ![check] |
 
-[details=Older releases]
-
 ### Release 312-313
 
 | Revision | amd64 | arm64 | Ubuntu 22.04 LTS
 |:--------:|:-----:|:-----:|:-----:|
 |[313]  |![check] | | ![check]  |
 |[312] |  | ![check]| ![check] |
-
 
 ### Release 240
 
@@ -78,6 +86,9 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 
 <!-- LINKS -->
 
+[444]: https://github.com/canonical/mysql-operator/releases/tag/rev442
+[443]: https://github.com/canonical/mysql-operator/releases/tag/rev442
+[442]: https://github.com/canonical/mysql-operator/releases/tag/rev442
 [367]: https://github.com/canonical/mysql-operator/releases/tag/rev366
 [366]: https://github.com/canonical/mysql-operator/releases/tag/rev366
 [313]: https://github.com/canonical/mysql-operator/releases/tag/rev312
