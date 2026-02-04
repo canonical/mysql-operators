@@ -41,7 +41,6 @@ Configuration of storage providers and backup management:
 Back up and restore <back-up-and-restore/index>
 ```
 
-<!-- 
 ## Monitoring (COS)
 
 Integrate with observability services like Grafana, Prometheus, and Tempo:
@@ -50,8 +49,9 @@ Integrate with observability services like Grafana, Prometheus, and Tempo:
 :titlesonly:
 :maxdepth: 2
 
-Monitoring (COS) <monitoring-cos/index>
+Monitoring (COS) <monitoring/index>
 ```
+<!-- 
 
 ## Refresh (upgrade)
 

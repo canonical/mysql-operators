@@ -3,7 +3,6 @@
 
 During the deployment to hardware/VMs, it is important to spread all the database copies (Juju units) to different hardware servers, or even better, to different [availability zones](https://en.wikipedia.org/wiki/Availability_zone) (AZ). This will guarantee no shared service-critical components across the database cluster (eliminate the case with all eggs in the same basket).
 
-
 ## Prerequisites
 
 **Machines**: This feature is enabled by default on EC2/GCE and is supported by LXD/MicroCloud.

@@ -9,6 +9,8 @@ This guide shows you how to deploy Charmed MySQL K8s to Canonical Kubernetes.
 
 This guide assumes you have a spare hardware/VMs running Ubuntu 22.04 LTS (or newer). 
 
+---
+
 ## Install Canonical Kubernetes
 
 >The following instructions are a complete but summarized version of the steps for installing Canonical K8s. For more thorough instructions and details, see the official Canonical Kubernetes documentation: [Install Canonical Kubernetes from a snap](https://documentation.ubuntu.com/canonical-kubernetes/latest/src/snap/howto/install/snap/).

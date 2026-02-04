@@ -17,6 +17,8 @@ To restore a backup that was made from the a *different* cluster, (i.e. cluster 
     * <!--TODO-->
     * <!--TODO-->
 
+---
+
 ## List backups
 
 To view the available backups to restore you can enter the command `list-backups`:

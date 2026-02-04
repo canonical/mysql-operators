@@ -13,6 +13,8 @@ To perform a basic restore from a *local* backup, see {ref}`restore-a-backup`.
 * A {ref}`backup <create-a-backup>` from the previous cluster in your S3 storage
 * Passwords from your previous cluster
 
+---
+
 ## Set cluster passwords
 
 When you restore a backup from an old cluster, it will restore the password from the previous cluster to your current cluster.

@@ -15,6 +15,8 @@ This feature is **not** available on Kubernetes.
 * Configured network spaces
   * See [Juju | How to manage network spaces](https://documentation.ubuntu.com/juju/latest/reference/juju-cli/list-of-juju-cli-commands/add-space/)
 
+---
+
 ## Deploy
 
 On application deployment, constraints are required to ensure the unit(s) have address(es) on the specified network space(s), and endpoint binding(s) for the space(s).
