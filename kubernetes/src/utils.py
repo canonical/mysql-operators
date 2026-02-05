@@ -16,6 +16,9 @@ def generate_random_password(length: int) -> str:
     Returns:
         A randomly generated string intended to be used as a password.
     """
+    # FIXME: There is a nonzero probability that the password doesn't have
+    # any numbers, or any uppercase letters, or any lowercase letters,
+    # in which case validation will fail
     choices = string.ascii_letters + string.digits
     return "".join([secrets.choice(choices) for _ in range(length)])
 
