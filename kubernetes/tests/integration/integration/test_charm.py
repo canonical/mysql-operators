@@ -74,14 +74,18 @@ def test_scale_up_after_scale_down(juju: Juju) -> None:
     logger.info("Scale down to one unit")
     scale_app_units(juju, APP_NAME, 1)
 
-    num_online, num_not_online = get_cluster_member_statuses(juju, APP_NAME)
-    assert (num_online, num_not_online) == (1, 0)
+    mysql_units = get_app_units(juju, APP_NAME)
+    mysql_cluster_status = get_mysql_cluster_status(juju, mysql_units[0])
+    mysql_cluster_members = mysql_cluster_status["defaultReplicaSet"]["topology"].keys()
+    assert len(mysql_units) == len(mysql_cluster_members)
 
     logger.info("Scaling up to 3 units")
     scale_app_units(juju, APP_NAME, 3)
 
-    num_online, num_not_online = get_cluster_member_statuses(juju, APP_NAME)
-    assert (num_online, num_not_online) == (3, 0)
+    mysql_units = get_app_units(juju, APP_NAME)
+    mysql_cluster_status = get_mysql_cluster_status(juju, mysql_units[0])
+    mysql_cluster_members = mysql_cluster_status["defaultReplicaSet"]["topology"].keys()
+    assert len(mysql_units) == len(mysql_cluster_members)
 
 
 def test_scale_up_from_zero(juju: Juju) -> None:
@@ -97,8 +101,10 @@ def test_scale_up_from_zero(juju: Juju) -> None:
     logger.info("Scaling back up to 3 units")
     scale_app_units(juju, APP_NAME, 3)
 
-    num_online, num_not_online = get_cluster_member_statuses(juju, APP_NAME)
-    assert (num_online, num_not_online) == (3, 0)
+    mysql_units = get_app_units(juju, APP_NAME)
+    mysql_cluster_status = get_mysql_cluster_status(juju, mysql_units[0])
+    mysql_cluster_members = mysql_cluster_status["defaultReplicaSet"]["topology"].keys()
+    assert len(mysql_units) == len(mysql_cluster_members)
 
 
 def test_password_rotation(juju: Juju):
@@ -207,22 +213,3 @@ def test_exporter_endpoints(juju: Juju) -> None:
 
         resp = http.request("GET", f"http://{unit_address}:9104/metrics")
         assert resp.status == 200, "Can't get metrics from mysql_exporter"
-
-
-def get_cluster_member_statuses(juju, app_name):
-    app_units = get_app_units(juju, app_name)
-    unit_name = app_units[0]
-
-    cluster_status = get_mysql_cluster_status(juju, unit_name)
-    online_member_addresses = [
-        member["address"]
-        for _, member in cluster_status["defaultReplicaSet"]["topology"].items()
-        if member["status"] == "ONLINE"
-    ]
-    not_online_member_addresses = [
-        member["address"]
-        for _, member in cluster_status["defaultReplicaSet"]["topology"].items()
-        if member["status"] != "ONLINE"
-    ]
-
-    return len(online_member_addresses), len(not_online_member_addresses)

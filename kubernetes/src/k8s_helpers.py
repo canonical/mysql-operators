@@ -11,7 +11,6 @@ from lightkube.core.client import Client
 from lightkube.core.exceptions import ApiError
 from lightkube.models.core_v1 import ServicePort, ServiceSpec
 from lightkube.models.meta_v1 import ObjectMeta
-from lightkube.resources.apps_v1 import StatefulSet
 from lightkube.resources.core_v1 import Node, Pod, Service
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -204,20 +203,3 @@ class KubernetesHelpers:
             logger.debug(f"Kubernetes {service_endpoint=} not ready")
             raise TimeoutError
         logger.debug("Kubernetes service endpoint ready")
-
-    def set_rolling_update_partition(self, partition: int) -> None:
-        """Patch the statefulSet's `spec.updateStrategy.rollingUpdate.partition`.
-
-        Args:
-            partition: partition to set
-        """
-        try:
-            patch = {"spec": {"updateStrategy": {"rollingUpdate": {"partition": partition}}}}
-            self.client.patch(StatefulSet, name=self.app_name, namespace=self.namespace, obj=patch)
-            logger.debug(f"Kubernetes statefulset partition set to {partition}")
-        except ApiError as e:
-            if e.status.code == 403:
-                logger.error("Kubernetes statefulset patch failed: `juju trust` needed")
-            else:
-                logger.exception("Kubernetes statefulset patch failed")
-            raise KubernetesClientError from None

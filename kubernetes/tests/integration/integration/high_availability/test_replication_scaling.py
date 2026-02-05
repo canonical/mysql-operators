@@ -32,6 +32,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
+        trust=True,
     )
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
@@ -40,6 +41,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
+        trust=False,
     )
 
     juju.integrate(

@@ -28,6 +28,7 @@ def test_deploy_single_unit_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=1,
+        trust=True,
     )
 
     logging.info("Wait for applications to become active")

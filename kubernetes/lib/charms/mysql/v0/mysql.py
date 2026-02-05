@@ -76,6 +76,7 @@ from typing import (
     get_args,
 )
 
+import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerUnitData
 from constants import (
@@ -138,7 +139,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 LIBAPI = 0
 LIBPATCH = 103
 
-PYDEPS = ["mysql_shell_client ~= 0.7"]
+PYDEPS = ["charm_refresh ~= 3.1.1", "mysql_shell_client ~= 0.7"]
 
 UNIT_TEARDOWN_LOCKNAME = "unit-teardown"
 UNIT_ADD_LOCKNAME = "unit-add"
@@ -487,6 +488,12 @@ class MySQLCharmBase(CharmBase, ABC):
     @abstractmethod
     def _mysql(self) -> "MySQLBase":
         """Return the MySQL instance."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def refresh(self) -> charm_refresh.Common:
+        """Return the refresh instance."""
         raise NotImplementedError
 
     @abstractmethod
@@ -2962,6 +2969,23 @@ class MySQLBase(ABC):
 
         Implemented in subclasses, test for socket file existence.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def write_content_to_file(
+        self,
+        path: str,
+        content: str,
+        owner: str,
+        group: str,
+        permission: int,
+    ) -> None:
+        """Write content to file."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def read_file_content(self, path: str) -> str | None:
+        """Reads a file content."""
         raise NotImplementedError
 
     @abstractmethod

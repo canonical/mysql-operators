@@ -35,6 +35,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
+        trust=True,
     )
     juju.deploy(
         charm="mysql-test-app",
@@ -43,6 +44,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
+        trust=False,
     )
 
     juju.integrate(
@@ -74,6 +76,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
+        trust=True,
     )
     juju.deploy(
         charm="mysql-test-app",
@@ -82,6 +85,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
+        trust=False,
     )
 
     juju.integrate(

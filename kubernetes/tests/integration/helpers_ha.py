@@ -14,7 +14,6 @@ import yaml
 from jubilant import CLIError, Juju
 from jubilant.statustypes import Status
 from lightkube.core.client import Client
-from lightkube.resources.apps_v1 import StatefulSet
 from lightkube.resources.core_v1 import Endpoints, PersistentVolume, PersistentVolumeClaim, Pod
 from tenacity import (
     Retrying,
@@ -138,18 +137,6 @@ def exec_k8s_container_command(
         raise RuntimeError("Failed to execute command")
 
 
-def get_k8s_stateful_set_partitions(juju: Juju, app_name: str) -> int:
-    """Get the number of partitions in a Kubernetes stateful set."""
-    client = Client()
-    stateful_set = client.get(
-        res=StatefulSet,
-        name=app_name,
-        namespace=juju.model,
-    )
-
-    return stateful_set.spec.updateStrategy.rollingUpdate.partition
-
-
 def get_k8s_endpoint_addresses(juju: Juju, endpoint_name: str) -> list[str]:
     """Retrieve the addresses selected by a K8s endpoint."""
     client = Client()
@@ -268,11 +255,13 @@ def scale_app_units(juju: Juju, app_name: str, num_units: int) -> None:
         ready=lambda status: len(status.apps[app_name].units) == num_units,
         timeout=20 * MINUTE_SECS,
     )
-    juju.wait(
-        ready=wait_for_apps_status(jubilant.all_active, app_name),
-        error=jubilant.any_blocked,
-        timeout=20 * MINUTE_SECS,
-    )
+
+    if num_units > 0:
+        juju.wait(
+            ready=wait_for_apps_status(jubilant.all_active, app_name),
+            error=jubilant.any_blocked,
+            timeout=20 * MINUTE_SECS,
+        )
 
 
 def get_model_debug_logs(juju: Juju, log_level: str, log_lines: int = 100) -> str:

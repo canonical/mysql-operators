@@ -21,10 +21,10 @@ This guide covers rollbacks for single cluster MySQL deployments. Before rolling
 
 To execute a rollback, we use a similar procedure to the refresh. The difference is the charm revision to refresh to. In this guide's example, we will refresh the charm back to revision `88`.
 
-It is necessary to re-run `pre-upgrade-check` action on the leader unit, to enter the refresh recovery state:
+It is necessary to re-run `pre-refresh-check` action on the leader unit, to enter the refresh recovery state:
 
 ```shell
-juju run mysql-k8s/leader pre-upgrade-check
+juju run mysql-k8s/leader pre-refresh-check
 ```
 
 ## Step 2: Rollback
@@ -56,10 +56,10 @@ The first unit will be rolled out and should rejoin the cluster after settling d
 
 ## Step 3: Resume
 
-To resume the upgrade on the remaining units use the `resume-upgrade` action:
+To resume the upgrade on the remaining units use the `resume-refresh` action:
 
 ```shell
-juju run mysql-k8s/leader resume-upgrade
+juju run mysql-k8s/leader resume-refresh
 ```
 
 This will roll out the pods in the remaining units to the same charm revision.

@@ -150,7 +150,6 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.rescan_cluster")
     @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
-    @patch("upgrade.MySQLK8sUpgrade.idle", return_value=True)
     @patch("mysql_k8s_helpers.MySQL.write_content_to_file")
     @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.create_cluster_set")
@@ -196,7 +195,6 @@ class TestCharm(unittest.TestCase):
         _create_cluster_set,
         _is_data_dir_initialised,
         _write_content_to_file,
-        _upgrade_idle,
         _active_status_message,
         _rescan_cluster,
         _cluster_metadata_exists,
@@ -237,12 +235,10 @@ class TestCharm(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm.join_unit_to_cluster")
     @patch("charm.MySQLOperatorCharm._configure_instance")
     @patch("charm.MySQLOperatorCharm._write_mysqld_configuration")
-    @patch("upgrade.MySQLK8sUpgrade.idle", return_value=True)
     @patch("charm.MySQLOperatorCharm._mysql")
     def test_pebble_ready_set_data(
         self,
         mock_mysql,
-        mock_upgrade_idle,
         mock_write_conf,
         mock_conf,
         mock_join,
