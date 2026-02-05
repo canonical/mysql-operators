@@ -86,6 +86,7 @@ from constants import (
     MYSQLD_EXPORTER_PORT,
     MYSQLD_EXPORTER_SERVICE,
     MYSQLD_LOCATION,
+    MYSQLD_PASSWORD_VALIDATION_CONFIG_FILE,
     MYSQLD_SERVICE,
     PASSWORD_LENGTH,
     PEER,
@@ -697,6 +698,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self._mysql.write_content_to_file(path=MYSQLD_CONFIG_FILE, content=new_config_content)
         return new_config_dict
 
+    def _write_mysqld_password_validation_configuration(self) -> dict:
+        new_config_content, new_config_dict = (
+            self._mysql.render_mysqld_password_validation_configuration()
+        )
+        self._mysql.write_content_to_file(
+            path=MYSQLD_PASSWORD_VALIDATION_CONFIG_FILE, content=new_config_content
+        )
+        return new_config_dict
+
     def _configure_instance(self, container) -> None:
         """Configure the instance for use in Group Replication."""
         # Run mysqld for the first time to
@@ -727,6 +737,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 # Enable the audit plugin
                 self._mysql.install_plugins(["audit_log"])
             self._mysql.install_plugins(["binlog_utils_udf"])
+
+            # TODO: Is there a better way rather than having to restart again?
+            self._mysql.install_components(["file://component_validate_password"])
+            self._write_mysqld_password_validation_configuration()
+            container.restart(MYSQLD_SERVICE)
 
             # Configure instance as a cluster node
             self._mysql.configure_instance()

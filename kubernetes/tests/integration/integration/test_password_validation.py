@@ -116,7 +116,9 @@ def test_password_valid_succeeds(juju: Juju) -> None:
 
     valid_password = generate_random_password(PASSWORD_LENGTH)
 
-    logger.info(f"Attempting to set valid password with length {len(valid_password)}")
+    logger.info(
+        f"Attempting to set valid password with length {len(valid_password)}: {valid_password}"
+    )
 
     juju.run(
         unit=primary_unit_name,
