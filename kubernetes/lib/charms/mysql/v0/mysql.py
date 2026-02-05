@@ -216,6 +216,10 @@ class MySQLCheckUserExistenceError(Error):
     """Exception raised when checking for the existence of a MySQL user."""
 
 
+class MySQLUpdateUserError(Error):
+    """Exception raised when updating a user in MySQL."""
+
+
 class MySQLConfigureRouterUserError(Error):
     """Exception raised when configuring the MySQLRouter user."""
 
@@ -2244,7 +2248,7 @@ class MySQLBase(ABC):
         try:
             client.update_instance_user(user, new_password)
         except ExecutionError as e:
-            raise MySQLCheckUserExistenceError() from e
+            raise MySQLUpdateUserError() from e
 
     @retry(
         reraise=True,
