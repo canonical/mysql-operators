@@ -175,6 +175,10 @@ jobs:
         timeout-minutes: 3
         if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
         run: sudo juju debug-log --color --replay --no-tail | tee ~/logs/juju-debug-log.txt
+      - name: juju debug-log controller
+        timeout-minutes: 3
+        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        run: sudo juju debug-log -m controller --color --replay --no-tail | tee ~/logs/juju-debug-log-controller.txt
       - name: jhack tail
         timeout-minutes: 3
         if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
