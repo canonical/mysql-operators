@@ -20,10 +20,10 @@ This guide covers rollbacks for single cluster MySQL deployments. Before rolling
 
 To execute a rollback, we use a similar procedure to the refresh. The difference is the charm revision to refresh to. In this guide's example, we will refresh the charm back to revision `312`.
 
-It is necessary to re-run `pre-upgrade-check` action on the leader unit in order to enter the refresh recovery state:
+It is necessary to re-run `pre-refresh-check` action on the leader unit in order to enter the refresh recovery state:
 
 ```shell
-juju run mysql/leader pre-upgrade-check
+juju run mysql/leader pre-refresh-check
 ```
 
 ## Step 2: Rollback

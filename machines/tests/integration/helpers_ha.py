@@ -216,33 +216,6 @@ def get_unit_status_log(juju: Juju, unit_name: str, log_lines: int = 0) -> list[
     return json.loads(output)
 
 
-def get_relation_data(juju: Juju, app_name: str, rel_name: str) -> list[dict]:
-    """Returns a list that contains the relation-data.
-
-    Args:
-        juju: The juju instance to use.
-        app_name: The name of the application
-        rel_name: name of the relation to get connection data from
-
-    Returns:
-        A list that contains the relation-data
-    """
-    app_leader = get_app_leader(juju, app_name)
-    app_leader_info = get_unit_info(juju, app_leader)
-    if not app_leader_info:
-        raise ValueError(f"No unit info could be grabbed for unit {app_leader}")
-
-    relation_data = [
-        value
-        for value in app_leader_info[app_leader]["relation-info"]
-        if value["endpoint"] == rel_name
-    ]
-    if not relation_data:
-        raise ValueError(f"No relation data could be grabbed for relation {rel_name}")
-
-    return relation_data
-
-
 @retry(stop=stop_after_attempt(30), wait=wait_fixed(5), reraise=True)
 def get_mysql_cluster_status(juju: Juju, unit: str, cluster_set: bool = False) -> dict:
     """Get the cluster status by running the get-cluster-status action.

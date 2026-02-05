@@ -128,18 +128,9 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster before backup
     logger.info("Inserting value before backup")
     value_before_backup = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_before_backup,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_before_backup,
-    )
+
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_before_backup)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_before_backup)
 
     logger.info("Setting s3 config")
     juju.config(S3_INTEGRATOR, cloud_configs)
@@ -181,18 +172,9 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster after backup
     logger.info("Inserting value after backup")
     value_after_backup = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_backup,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_backup,
-    )
+
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
 
 
 def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
@@ -247,18 +229,9 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_restore,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_restore,
-    )
+
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_restore)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_restore)
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
 
@@ -302,9 +275,6 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
         juju.status().apps[DATABASE_APP_NAME].app_status.message
         == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
     ), "cluster should migrate to blocked status after restore"
-
-    # scale down the cluster to preserve resources for the following tests
-    scale_app_units(juju, DATABASE_APP_NAME, 0)
 
 
 def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
@@ -397,18 +367,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        new_mysql_application_name,
-        TABLE_NAME,
-        value_after_restore,
-    )
-    verify_mysql_test_data(
-        juju,
-        new_mysql_application_name,
-        TABLE_NAME,
-        value_after_restore,
-    )
+
+    insert_mysql_test_data(juju, new_mysql_application_name, TABLE_NAME, value_after_restore)
+    verify_mysql_test_data(juju, new_mysql_application_name, TABLE_NAME, value_after_restore)
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
 

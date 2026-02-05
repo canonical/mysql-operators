@@ -1,13 +1,15 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
 import logging
+import platform
 import shutil
 import zipfile
 from pathlib import Path
 
 import jubilant
+import tomli
+import tomli_w
 from jubilant import Juju
 
 from ...helpers_ha import (
@@ -16,7 +18,6 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_variable_value,
-    get_relation_data,
     wait_for_apps_status,
 )
 
@@ -58,13 +59,13 @@ def test_deploy_latest(juju: Juju) -> None:
     )
 
 
-def test_pre_upgrade_check(juju: Juju) -> None:
-    """Test that the pre-upgrade-check action runs successfully."""
+def test_pre_refresh_check(juju: Juju) -> None:
+    """Test that the pre-refresh-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=mysql_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=mysql_leader, action="pre-refresh-check")
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in mysql_units:
@@ -76,23 +77,36 @@ def test_pre_upgrade_check(juju: Juju) -> None:
     assert mysql_primary == mysql_leader, "Primary unit not set to leader"
 
 
-def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
-    """Update the second cluster."""
+def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
+    """Refresh using the locally built charm."""
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=charm)
 
-    logging.info("Wait for upgrade to start")
-    juju.wait(
-        ready=lambda status: jubilant.any_maintenance(status, MYSQL_APP_NAME),
-        timeout=10 * MINUTE_SECS,
-    )
+    try:
+        logging.info("Wait for refresh to start")
+        juju.wait(
+            ready=wait_for_apps_status(jubilant.all_blocked, MYSQL_APP_NAME),
+            timeout=5 * MINUTE_SECS,
+        )
 
-    logging.info("Wait for upgrade to complete")
+        mysql_units = get_app_units(juju, MYSQL_APP_NAME)
+        mysql_units.sort()
+
+        logging.info("Resume refresh")
+        juju.run(
+            unit=mysql_units[1],
+            action="resume-refresh",
+            wait=5 * MINUTE_SECS,
+        )
+    except TimeoutError:
+        logging.info("Refresh completed without snap refresh (Python code only)")
+
+    logging.info("Wait for refresh to complete")
     juju.wait(
-        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 
@@ -101,12 +115,12 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
 
 
 def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
-    """Test an upgrade failure and its rollback."""
+    """Test a refresh failure and its rollback."""
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_app_units = get_app_units(juju, MYSQL_APP_NAME)
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=mysql_app_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=mysql_app_leader, action="pre-refresh-check")
 
     tmp_folder = Path("tmp")
     tmp_folder.mkdir(exist_ok=True)
@@ -115,12 +129,12 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     shutil.copy(charm, tmp_folder_charm)
 
     logging.info("Inject dependency fault")
-    inject_dependency_fault(juju, MYSQL_APP_NAME, tmp_folder_charm)
+    inject_dependency_fault(tmp_folder_charm)
 
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=tmp_folder_charm)
 
-    logging.info("Wait for upgrade to fail on leader")
+    logging.info("Wait for refresh to fail on leader")
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
@@ -129,21 +143,12 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     logging.info("Ensure continuous writes on all units")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
 
-    logging.info("Re-run pre-upgrade-check action")
-    juju.run(unit=mysql_app_leader, action="pre-upgrade-check")
-
     logging.info("Re-refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=charm)
 
-    logging.info("Wait for upgrade to start")
+    logging.info("Wait for refresh to complete")
     juju.wait(
-        ready=lambda status: jubilant.any_maintenance(status, MYSQL_APP_NAME),
-        timeout=10 * MINUTE_SECS,
-    )
-
-    logging.info("Wait for upgrade to complete")
-    juju.wait(
-        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 
@@ -154,19 +159,14 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     tmp_folder_charm.unlink()
 
 
-def inject_dependency_fault(juju: Juju, app_name: str, charm_file: str | Path) -> None:
+def inject_dependency_fault(charm_file: str | Path) -> None:
     """Inject a dependency fault into the mysql charm."""
-    # Open dependency.json and load current charm version
-    with open("src/dependency.json") as dependency_file:
-        current_charm_version = json.load(dependency_file)["charm"]["version"]
+    with Path("refresh_versions.toml").open("rb") as file:
+        versions = tomli.load(file)
 
-    # Query running dependency to overwrite with incompatible version
-    relation_data = get_relation_data(juju, app_name, "upgrade")
+    versions["charm"] = "8.4/0.0.0"
+    versions["snap"]["revisions"][platform.machine()] = "1"
 
-    loaded_dependency_dict = json.loads(relation_data[0]["application-data"]["dependencies"])
-    loaded_dependency_dict["charm"]["upgrade_supported"] = f">{current_charm_version}"
-    loaded_dependency_dict["charm"]["version"] = f"{int(current_charm_version) + 1}"
-
-    # Overwrite dependency.json with incompatible version
+    # Overwrite refresh_versions.toml with incompatible version.
     with zipfile.ZipFile(charm_file, mode="a") as charm_zip:
-        charm_zip.writestr("src/dependency.json", json.dumps(loaded_dependency_dict))
+        charm_zip.writestr("refresh_versions.toml", tomli_w.dumps(versions))

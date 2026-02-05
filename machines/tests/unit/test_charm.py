@@ -29,20 +29,15 @@ class TestCharm(unittest.TestCase):
         self.harness.begin()
         self.charm = self.harness.charm
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
-        upgrade_relation_id = self.harness.add_relation("upgrade", "upgrade")
-        self.harness.update_relation_data(
-            upgrade_relation_id, self.charm.unit.name, {"state": "idle"}
-        )
         self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
         self.harness.add_relation("restart", "restart")
 
-    @patch("upgrade.MySQLVMUpgrade.cluster_state", return_value="idle")
     @patch("socket.getfqdn", return_value="test-hostname")
     @patch("socket.gethostbyname", return_value="")
     @patch("subprocess.check_call")
     @patch("mysql_vm_helpers.is_volume_mounted", return_value=True)
     @patch("mysql_vm_helpers.MySQL.install_and_configure_mysql_dependencies")
-    def test_on_install(self, _install_and_configure_mysql_dependencies, ___, __, _, _____, ____):
+    def test_on_install(self, _install_and_configure_mysql_dependencies, ___, __, _, _____):
         self.charm.on.install.emit()
         _install_and_configure_mysql_dependencies.assert_called_once()
 

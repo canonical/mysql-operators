@@ -43,12 +43,18 @@ class MySQLLogs(Object):
     def _flush_mysql_logs(self, _) -> None:
         """Flush the specified (via LOGS_TYPE env var) mysql logs."""
         if (
-            self.charm.peers is None
+            not self.charm.peers
             or not self.charm.unit_initialized()
-            or not self.charm.upgrade.idle
             or not self.charm._mysql.is_mysqld_running()
         ):
-            # skip when not initialized, during an upgrade, or when mysqld is not running
+            # skip when not initialized
+            return
+
+        if self.charm.refresh is None:
+            logger.warning("Refresh could be in progress")
+            return
+        if self.charm.refresh and self.charm.refresh.in_progress:
+            logger.debug("Refresh in progress")
             return
 
         logs_type = os.environ.get("LOGS_TYPE", "")

@@ -64,8 +64,8 @@ class TestAsyncRelation(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._mysql")
     def test_async_relation_broken_offer(self, _mysql, _, _cluster_initialized):
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
         self.async_primary_relation_id = self.harness.add_relation(RELATION_OFFER, "db2")
+
         _mysql.is_cluster_replica.return_value = False
         _mysql.get_member_state.return_value = (None, "primary")
         _mysql.is_cluster_in_cluster_set.return_value = True
@@ -90,8 +90,8 @@ class TestAsyncRelation(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._mysql")
     def test_async_relation_broken_consumer(self, _mysql, _, _cluster_initialized):
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
         async_primary_relation_id = self.harness.add_relation(RELATION_OFFER, "db2")
+
         _mysql.is_cluster_replica.return_value = True
         _mysql.get_member_state.return_value = (None, "PRIMARY")
         _mysql.is_instance_in_cluster.return_value = False
@@ -142,7 +142,6 @@ class TestAsyncRelation(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._mysql")
     def test_create_replication(self, _mysql, _, _cluster_initialized):
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
 
         _mysql.is_cluster_replica.return_value = False
         _mysql.get_mysql_version.return_value = "8.4.0"
@@ -266,7 +265,6 @@ class TestAsyncRelation(unittest.TestCase):
     def test_consumer_created(self, _mysql, _, _unit_initialized):
         """Test replica creation."""
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
 
         _mysql.get_non_system_databases.return_value = set()
 
@@ -279,7 +277,6 @@ class TestAsyncRelation(unittest.TestCase):
     def test_consumer_created_user_data(self, _mysql, _, _unit_initialized):
         """Test replica creation."""
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
 
         _mysql.get_non_system_databases.return_value = set("a-database")
 
@@ -303,7 +300,6 @@ class TestAsyncRelation(unittest.TestCase):
     def test_consumer_changed_syncing(self, _mysql, _state, _returning_cluster, _defer, _):
         """Test replica changed for syncing state."""
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
 
         async_relation_id = self.harness.add_relation(RELATION_CONSUMER, "db1")
 
@@ -379,7 +375,7 @@ class TestAsyncRelation(unittest.TestCase):
     def test_consumer_changed_ready(self, _mysql, _state, _update_status, _, _unit_initialized):
         """Test replica changed for ready state."""
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
+
         _state.return_value = States.READY
         _mysql.get_cluster_set_name.return_value = "cluster-set-test"
 
@@ -402,7 +398,7 @@ class TestAsyncRelation(unittest.TestCase):
     def test_consumer_changed_recovering(self, _mysql, _state, _defer, _):
         """Test replica changed for ready state."""
         self.harness.set_leader(True)
-        self.charm.on.config_changed.emit()
+
         _state.return_value = States.RECOVERING
         _mysql.get_cluster_node_count.return_value = 2
 

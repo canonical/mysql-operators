@@ -3,7 +3,6 @@
 
 """Helper class to manage the MySQL InnoDB cluster lifecycle with MySQL Shell."""
 
-import json
 import logging
 import os
 import pathlib
@@ -16,6 +15,7 @@ from collections.abc import Iterable
 from typing import override
 
 import jinja2
+import tomli
 from charms.mysql.v0.mysql import (
     BYTES_1MB,
     Error,
@@ -151,7 +151,7 @@ class MySQL(MySQLBase):
         self.charm = charm
 
     @staticmethod
-    def install_and_configure_mysql_dependencies() -> None:
+    def install_and_configure_mysql_dependencies(revision: str | None = None) -> None:
         """Install and configure MySQL dependencies.
 
         Raises:
@@ -175,10 +175,13 @@ class MySQL(MySQLBase):
                 f"Multiple {CHARMED_MYSQL_SNAP_NAME} snap installs not supported on one machine"
             )
 
+        if revision is None:
+            with pathlib.Path("refresh_versions.toml").open("rb") as file:
+                revisions = tomli.load(file)["snap"]["revisions"]
+                revision = revisions[platform.machine()]
+
         try:
             # install the charmed-mysql snap
-            with pathlib.Path("snap_revisions.json").open("r") as file:
-                revision = json.load(file)[platform.machine()]
             logger.info(f"Installing {CHARMED_MYSQL_SNAP_NAME} {revision=}")
             charmed_mysql.ensure(snap.SnapState.Present, revision=revision)
             if not charmed_mysql.held:
@@ -807,8 +810,8 @@ class MySQL(MySQLBase):
         """
         return [host.names[1] for host in self.charm.hostname_resolution._get_host_details()]
 
-    @staticmethod
     def write_content_to_file(
+        self,
         path: str,
         content: str,
         owner: str = MYSQL_SYSTEM_USER,
@@ -829,6 +832,23 @@ class MySQL(MySQLBase):
 
         shutil.chown(path, owner, group)
         os.chmod(path, mode=permission)
+
+    def read_file_content(self, path: str) -> str | None:
+        """Read file content.
+
+        Args:
+            path: filesystem full path (with filename)
+
+        Returns:
+            file content
+        """
+        if not os.path.exists(path):
+            return None
+
+        with open(path, encoding="utf-8") as fd:
+            content = fd.read()
+
+        return content
 
     @staticmethod
     def fetch_error_log() -> str | None:

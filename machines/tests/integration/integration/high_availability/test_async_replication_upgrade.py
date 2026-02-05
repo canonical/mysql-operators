@@ -175,18 +175,18 @@ def test_create_replication(first_model: str, second_model: str) -> None:
     )
 
 
-def test_upgrade_from_edge(
+def test_refresh_from_edge(
     first_model: str, second_model: str, charm: str, continuous_writes
 ) -> None:
-    """Upgrade the two MySQL clusters."""
+    """Refresh the two MySQL clusters."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
 
-    run_pre_upgrade_checks(model_1, MYSQL_APP_1)
-    run_upgrade_from_edge(model_1, MYSQL_APP_1, charm)
+    run_pre_refresh_checks(model_1, MYSQL_APP_1)
+    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
 
-    run_pre_upgrade_checks(model_2, MYSQL_APP_2)
-    run_upgrade_from_edge(model_2, MYSQL_APP_2, charm)
+    run_pre_refresh_checks(model_2, MYSQL_APP_2)
+    run_refresh_from_edge(model_2, MYSQL_APP_2, charm)
 
 
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
@@ -227,13 +227,13 @@ def get_mysql_max_written_values(first_model: str, second_model: str) -> list[in
     return results
 
 
-def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
-    """Run the pre-upgrade-check actions."""
+def run_pre_refresh_checks(juju: Juju, app_name: str) -> None:
+    """Run the pre-refresh-check actions."""
     app_leader = get_app_leader(juju, app_name)
     app_units = get_app_units(juju, app_name)
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=app_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=app_leader, action="pre-refresh-check")
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in app_units:
@@ -245,23 +245,36 @@ def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
     assert mysql_primary == app_leader, "Primary unit not set to leader"
 
 
-def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
-    """Update the second cluster."""
+def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
+    """Refresh the second cluster."""
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, app_name)
 
     logging.info("Refresh the charm")
     juju.refresh(app=app_name, path=charm)
 
-    logging.info("Wait for upgrade to start")
-    juju.wait(
-        ready=lambda status: jubilant.any_maintenance(status, app_name),
-        timeout=10 * MINUTE_SECS,
-    )
+    try:
+        logging.info("Wait for refresh to start")
+        juju.wait(
+            ready=wait_for_apps_status(jubilant.all_blocked, app_name),
+            timeout=5 * MINUTE_SECS,
+        )
 
-    logging.info("Wait for upgrade to complete")
+        app_units = get_app_units(juju, app_name)
+        app_units.sort()
+
+        logging.info("Resume refresh")
+        juju.run(
+            unit=app_units[1],
+            action="resume-refresh",
+            wait=5 * MINUTE_SECS,
+        )
+    except TimeoutError:
+        logging.info("Refresh completed without snap refresh (Python code only)")
+
+    logging.info("Wait for refresh to complete")
     juju.wait(
-        ready=lambda status: jubilant.all_active(status, app_name),
+        ready=wait_for_apps_status(jubilant.all_active, app_name),
         timeout=20 * MINUTE_SECS,
     )
 
