@@ -136,7 +136,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 100
+LIBPATCH = 101
 
 PYDEPS = ["mysql_shell_client ~= 0.6"]
 
@@ -882,6 +882,11 @@ class MySQLCharmBase(CharmBase, ABC):
             # When a replica instance is catching up with the primary instance,
             # the custom label assigned by the operator code has not yet been applied.
             if v["status"] == InstanceState.RECOVERING:
+                continue
+
+            # Early calls for endpoint update can be run before unit joined the relation
+            # so we skip when unit (k) not unit_labels dict
+            if k not in unit_labels:
                 continue
 
             address = f"{self.get_unit_address(unit_labels[k], relation_name)}:3306"
