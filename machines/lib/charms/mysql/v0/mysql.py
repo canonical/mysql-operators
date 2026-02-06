@@ -136,7 +136,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 101
+LIBPATCH = 102
 
 PYDEPS = ["mysql_shell_client ~= 0.6"]
 
@@ -176,6 +176,9 @@ ALLOWED_PLUGINS = {
     "audit_log_filter": "audit_log_filter.so",
     "binlog_utils_udf": "binlog_utils_udf.so",
 }
+ALLOWED_COMPONENTS = {
+    "file://component_validate_password": "component_validate_password.so",
+}
 
 APP_SCOPE = "app"
 UNIT_SCOPE = "unit"
@@ -214,6 +217,10 @@ class MySQLConfigureMySQLUsersError(Error):
 
 class MySQLCheckUserExistenceError(Error):
     """Exception raised when checking for the existence of a MySQL user."""
+
+
+class MySQLUpdateUserError(Error):
+    """Exception raised when updating a user in MySQL."""
 
 
 class MySQLConfigureRouterUserError(Error):
@@ -1202,6 +1209,22 @@ class MySQLBase(ABC):
             config.write(string_io)
             return string_io.getvalue(), dict(config["mysqld"])
 
+    def render_mysqld_password_validation_configuration(self) -> tuple[str, dict]:
+        """Render mysqld ini configuration file for password validation."""
+        config = configparser.ConfigParser(interpolation=None)
+        config["mysqld"] = {
+            "validate_password.check_user_name": "ON",
+            "validate_password.length": 24,
+            "validate_password.mixed_case_count": 1,
+            "validate_password.number_count": 1,
+            "validate_password.policy": "MEDIUM",
+            "validate_password.special_char_count": 0,
+        }
+
+        with io.StringIO() as string_io:
+            config.write(string_io)
+            return string_io.getvalue(), dict(config["mysqld"])
+
     def _build_mysql_database_dba_role(self, database: str) -> str:
         """Builds the database-level DBA role, given length constraints."""
         role_prefix = "charmed_dba"
@@ -1373,6 +1396,27 @@ class MySQLBase(ABC):
 
                 try:
                     self._instance_client_tcp.uninstall_instance_plugin(plugin)
+                except ExecutionError as e:
+                    raise MySQLPluginInstallError() from e
+
+    def install_components(self, components: list[str]) -> None:
+        """Install components."""
+        installed_components = self._instance_client_tcp.search_instance_components("%")
+
+        for component in components:
+            if component not in installed_components:
+                if component not in ALLOWED_COMPONENTS:
+                    logger.warning(f"{component=} is not supported")
+                    continue
+                if not self._plugin_file_exists(ALLOWED_COMPONENTS[component]):
+                    logger.warning(f"{component=} file not found. Skip installation")
+                    continue
+                if component in installed_components:
+                    logger.info(f"{component=} already installed")
+                    continue
+
+                try:
+                    self._instance_client_tcp.install_instance_component(component)
                 except ExecutionError as e:
                     raise MySQLPluginInstallError() from e
 
@@ -2244,7 +2288,7 @@ class MySQLBase(ABC):
         try:
             client.update_instance_user(user, new_password)
         except ExecutionError as e:
-            raise MySQLCheckUserExistenceError() from e
+            raise MySQLUpdateUserError() from e
 
     @retry(
         reraise=True,

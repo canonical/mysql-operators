@@ -49,6 +49,7 @@ from constants import (
     MYSQLD_CONFIG_DIRECTORY,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_DEFAULTS_CONFIG_FILE,
+    MYSQLD_PASSWORD_VALIDATION_CONFIG_FILE,
     MYSQLD_SOCK_FILE,
     ROOT_SYSTEM_USER,
     XTRABACKUP_PLUGIN_DIR,
@@ -62,6 +63,10 @@ if typing.TYPE_CHECKING:
 
 class MySQLResetRootPasswordAndStartMySQLDError(Error):
     """Exception raised when there's an error resetting root password and starting mysqld."""
+
+
+class MySQLWritePasswordValidationConfigAndStartMySQLDError(Error):
+    """Exception raised when there's an error writing the password validation configuration and starting mysqld."""
 
 
 class MySQLCreateCustomMySQLDConfigError(Error):
@@ -402,6 +407,30 @@ class MySQL(MySQLBase):
                 raise MySQLResetRootPasswordAndStartMySQLDError(
                     "mysqld service not running"
                 ) from e
+
+    def write_mysqld_password_validation_configuration_and_restart_mysqld(self) -> None:
+        """Create custom mysql config file for password validation and restarts mysqld."""
+        content_str, content_dict = self.render_mysqld_password_validation_configuration()
+        self.write_content_to_file(
+            path=MYSQLD_PASSWORD_VALIDATION_CONFIG_FILE,
+            content=content_str,
+        )
+
+        try:
+            snap_service_operation(CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart")
+        except SnapServiceOperationError as e:
+            raise MySQLWritePasswordValidationConfigAndStartMySQLDError(
+                "Failed to restart mysqld"
+            ) from e
+
+        try:
+            self.wait_until_mysql_connection()
+        except MySQLServiceNotRunningError as e:
+            raise MySQLWritePasswordValidationConfigAndStartMySQLDError(
+                "mysqld service not running"
+            ) from e
+
+        return content_dict
 
     @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(5))
     def wait_until_mysql_connection(self, check_port: bool = True) -> None:
