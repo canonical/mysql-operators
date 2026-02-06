@@ -16,11 +16,17 @@ def generate_random_password(length: int) -> str:
     Returns:
         a string with random letters and digits of length specified
     """
-    # FIXME: There is a nonzero probability that the password doesn't have
-    # any numbers, or any uppercase letters, or any lowercase letters,
-    # in which case validation will fail
     choices = string.ascii_letters + string.digits
-    return "".join([secrets.choice(choices) for i in range(length)])
+    # Might seem risky but in fact the probability that a password doesn't pass these checks is low
+    while True:
+        password = "".join([secrets.choice(choices) for i in range(length)])
+        # These checks are consistent with our rules for the password validation MySQL component
+        if (
+            any(c.islower() for c in password)
+            and any(c.isupper() for c in password)
+            and any(c.isdigit() for c in password)
+        ):
+            return password
 
 
 def compare_dictionaries(dict1: dict, dict2: dict) -> set:
