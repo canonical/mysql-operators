@@ -767,7 +767,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self._mysql.install_plugins(["binlog_utils_udf"])
 
         self._mysql.install_components(["file://component_validate_password"])
-        self._mysql.write_mysqld_password_validation_configuration_and_restart_mysqld()
+        self._mysql.persist_password_validation_configuration()
 
         current_mysqld_pid = self._mysql.get_pid_of_port_3306()
         self._mysql.configure_instance()
