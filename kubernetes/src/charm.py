@@ -52,8 +52,6 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
-from charms.tempo_coordinator_k8s.v0.charm_tracing import trace_charm
-from charms.tempo_coordinator_k8s.v0.tracing import TracingEndpointRequirer
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
@@ -65,6 +63,7 @@ from ops.model import (
     WaitingStatus,
 )
 from ops.pebble import ChangeError, Layer
+from ops_tracing import Tracing
 from tenacity import RetryError, Retrying, stop_after_attempt
 
 from config import CharmConfig, MySQLConfig
@@ -94,8 +93,6 @@ from constants import (
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
     SERVER_CONFIG_USERNAME,
-    TRACING_PROTOCOL,
-    TRACING_RELATION_NAME,
 )
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager
@@ -110,29 +107,6 @@ from utils import compare_dictionaries, dotappend, generate_random_password
 logger = logging.getLogger(__name__)
 
 
-@trace_charm(
-    tracing_endpoint="tracing_endpoint",
-    extra_types=(
-        GrafanaDashboardProvider,
-        KubernetesHelpers,
-        LogProxyConsumer,
-        LogRotateManager,
-        MetricsEndpointProvider,
-        MySQL,
-        MySQLAsyncReplicationConsumer,
-        MySQLAsyncReplicationOffer,
-        MySQLBackups,
-        MySQLConfig,
-        MySQLK8sUpgrade,
-        MySQLProvider,
-        MySQLRelation,
-        MySQLRootRelation,
-        MySQLTLS,
-        RollingOpsManager,
-        RotateMySQLLogs,
-        S3Requirer,
-    ),
-)
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
@@ -202,15 +176,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
-        self.tracing = TracingEndpointRequirer(
-            self, protocols=[TRACING_PROTOCOL], relation_name=TRACING_RELATION_NAME
-        )
-
-    @property
-    def tracing_endpoint(self) -> Optional[str]:
-        """Otlp http endpoint for charm instrumentation."""
-        if self.tracing.is_ready():
-            return self.tracing.get_endpoint(TRACING_PROTOCOL)
+        self.tracing = Tracing(self, tracing_relation_name="tracing")
 
     @property
     def _mysql(self) -> MySQL:
