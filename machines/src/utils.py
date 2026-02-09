@@ -21,11 +21,11 @@ def generate_random_password(length: int) -> str:
     while True:
         password = "".join([secrets.choice(choices) for i in range(length)])
         # These checks are consistent with our rules for the password validation MySQL component
-        if (
-            any(c.islower() for c in password)
-            and any(c.isupper() for c in password)
-            and any(c.isdigit() for c in password)
-        ):
+        if all((
+            any(c.islower() for c in password),
+            any(c.isupper() for c in password),
+            any(c.isdigit() for c in password),
+        )):
             return password
 
 
