@@ -1397,21 +1397,25 @@ class MySQLBase(ABC):
         installed_components = self._instance_client_tcp.search_instance_components("%")
 
         for component in components:
-            if component not in installed_components:
-                if component not in ALLOWED_COMPONENTS:
-                    logger.warning(f"{component=} is not supported")
-                    continue
-                if not self._plugin_file_exists(ALLOWED_COMPONENTS[component]):
-                    logger.warning(f"{component=} file not found. Skip installation")
-                    continue
-                if component in installed_components:
-                    logger.info(f"{component=} already installed")
-                    continue
+            if component in installed_components:
+                logger.debug(f"Skipping already installed component {component=}")
+                continue
 
-                try:
-                    self._instance_client_tcp.install_instance_component(component)
-                except ExecutionError as e:
-                    raise MySQLPluginInstallError() from e
+            if component not in ALLOWED_COMPONENTS:
+                logger.warning(f"{component=} is not supported")
+                continue
+
+            # Since we're checking ALLOWED_COMPONENTS already,
+            # we do not check for file existence
+
+            if component in installed_components:
+                logger.info(f"{component=} already installed")
+                continue
+
+            try:
+                self._instance_client_tcp.install_instance_component(component)
+            except ExecutionError as e:
+                raise MySQLPluginInstallError() from e
 
     def persist_password_validation_configuration(self) -> None:
         """Persist password validation configuration."""
