@@ -1194,6 +1194,13 @@ class MySQLBase(ABC):
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
             "max_connect_errors": "10000",
+            # Password validation
+            "loose-validate_password.check_user_name": "ON",
+            "loose-validate_password.length": 24,
+            "loose-validate_password.mixed_case_count": 1,
+            "loose-validate_password.number_count": 1,
+            "loose-validate_password.policy": "MEDIUM",
+            "loose-validate_password.special_char_count": 0,
         }
 
         if audit_log_enabled:
@@ -1416,11 +1423,6 @@ class MySQLBase(ABC):
                 self._instance_client_tcp.install_instance_component(component)
             except ExecutionError as e:
                 raise MySQLPluginInstallError() from e
-
-    def persist_password_validation_configuration(self) -> None:
-        """Persist password validation configuration."""
-        for name, value in PASSWORD_VALIDATION_CONFIGURATION.items():
-            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, name, value)
 
     def does_mysql_user_exist(self, username: str, hostname: str) -> bool:
         """Checks if a mysql user already exists."""
