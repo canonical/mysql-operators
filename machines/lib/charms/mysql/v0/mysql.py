@@ -884,6 +884,11 @@ class MySQLCharmBase(CharmBase, ABC):
             if v["status"] == InstanceState.RECOVERING:
                 continue
 
+            # Early calls for endpoint update can be run before unit joined the relation
+            # so we skip when unit (k) not unit_labels dict
+            if k not in unit_labels:
+                continue
+
             address = f"{self.get_unit_address(unit_labels[k], relation_name)}:3306"
 
             if v["status"] != InstanceState.ONLINE:
