@@ -180,6 +180,15 @@ ALLOWED_COMPONENTS = {
     "file://component_validate_password": "component_validate_password.so",
 }
 
+PASSWORD_VALIDATION_CONFIGURATION = {
+    "validate_password.check_user_name": "ON",
+    "validate_password.length": 24,
+    "validate_password.mixed_case_count": 1,
+    "validate_password.number_count": 1,
+    "validate_password.policy": "MEDIUM",
+    "validate_password.special_char_count": 0,
+}
+
 APP_SCOPE = "app"
 UNIT_SCOPE = "unit"
 Scopes = Literal["app", "unit"]
@@ -1209,22 +1218,6 @@ class MySQLBase(ABC):
             config.write(string_io)
             return string_io.getvalue(), dict(config["mysqld"])
 
-    def render_mysqld_password_validation_configuration(self) -> tuple[str, dict]:
-        """Render mysqld ini configuration file for password validation."""
-        config = configparser.ConfigParser(interpolation=None)
-        config["mysqld"] = {
-            "validate_password.check_user_name": "ON",
-            "validate_password.length": 24,
-            "validate_password.mixed_case_count": 1,
-            "validate_password.number_count": 1,
-            "validate_password.policy": "MEDIUM",
-            "validate_password.special_char_count": 0,
-        }
-
-        with io.StringIO() as string_io:
-            config.write(string_io)
-            return string_io.getvalue(), dict(config["mysqld"])
-
     def _build_mysql_database_dba_role(self, database: str) -> str:
         """Builds the database-level DBA role, given length constraints."""
         role_prefix = "charmed_dba"
@@ -1419,6 +1412,11 @@ class MySQLBase(ABC):
                     self._instance_client_tcp.install_instance_component(component)
                 except ExecutionError as e:
                     raise MySQLPluginInstallError() from e
+
+    def persist_password_validation_configuration(self) -> None:
+        """Persist password validation configuration."""
+        for name, value in PASSWORD_VALIDATION_CONFIGURATION.items():
+            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, name, value)
 
     def does_mysql_user_exist(self, username: str, hostname: str) -> bool:
         """Checks if a mysql user already exists."""

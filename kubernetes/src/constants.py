@@ -32,7 +32,6 @@ MYSQL_DATA_DIR = "/var/lib/mysql"
 MYSQLD_SOCK_FILE = "/var/run/mysqld/mysqld.sock"
 MYSQLD_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom.cnf"
 MYSQLD_INIT_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"
-MYSQLD_PASSWORD_VALIDATION_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom-password-validation.cnf"  # noqa: S105
 MYSQL_LOG_DIR = "/var/log/mysql"
 MYSQL_LOG_ERROR = f"{MYSQL_LOG_DIR}/error.log"
 MYSQL_LOG_FILES = [
