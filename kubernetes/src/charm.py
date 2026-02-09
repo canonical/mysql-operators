@@ -729,7 +729,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self._mysql.install_plugins(["binlog_utils_udf"])
 
             self._mysql.install_components(["file://component_validate_password"])
-            self._mysql.persist_password_validation_configuration()
 
             # Configure instance as a cluster node
             self._mysql.configure_instance()

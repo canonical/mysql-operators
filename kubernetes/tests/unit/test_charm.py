@@ -143,7 +143,6 @@ class TestCharm(unittest.TestCase):
                 secret_data[password].isalnum() and len(secret_data[password]) == PASSWORD_LENGTH
             )
 
-    @patch("mysql_k8s_helpers.MySQL.persist_password_validation_configuration")
     @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.install_plugins")
@@ -203,7 +202,6 @@ class TestCharm(unittest.TestCase):
         _install_plugins,
         _get_unit_address,
         _install_components,
-        _persist_password_validation_configuration,
     ):
         # Check if initial plan is empty
         self.harness.set_can_connect("mysql", True)
