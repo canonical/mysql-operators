@@ -6,7 +6,6 @@
 import logging
 import socket
 import typing
-from typing import Dict, List, Optional, Tuple
 
 from lightkube.core.client import Client
 from lightkube.core.exceptions import ApiError
@@ -47,7 +46,7 @@ class KubernetesHelpers:
         self.cluster_name = charm.app_peer_data.get("cluster-name")
         self.client = Client()  # type: ignore
 
-    def create_endpoint_services(self, roles: List[str]) -> None:
+    def create_endpoint_services(self, roles: list[str]) -> None:
         """Create kubernetes service for endpoints.
 
         Args:
@@ -94,7 +93,7 @@ class KubernetesHelpers:
                     logger.exception("Kubernetes service creation failed: %s", e)
                 raise KubernetesClientError from e
 
-    def delete_endpoint_services(self, roles: List[str]) -> None:
+    def delete_endpoint_services(self, roles: list[str]) -> None:
         """Delete kubernetes service for endpoints.
 
         Args:
@@ -112,7 +111,7 @@ class KubernetesHelpers:
                 else:
                     logger.warning("Kubernetes service deletion failed: %s", e)
 
-    def label_pod(self, role: str, pod_name: Optional[str] = None) -> None:
+    def label_pod(self, role: str, pod_name: str | None = None) -> None:
         """Create or update pod labels.
 
         Args:
@@ -148,7 +147,7 @@ class KubernetesHelpers:
                 logger.exception("Kubernetes pod label creation failed: %s", e)
             raise KubernetesClientError from e
 
-    def get_resources_limits(self, container_name: str) -> Dict:
+    def get_resources_limits(self, container_name: str) -> dict:
         """Return resources limits for a given container.
 
         Args:
@@ -187,7 +186,7 @@ class KubernetesHelpers:
             raise KubernetesClientError from e
 
     @retry(stop=stop_after_attempt(60), wait=wait_fixed(1), reraise=True)
-    def wait_service_ready(self, service_endpoint: Tuple[str, int]) -> None:
+    def wait_service_ready(self, service_endpoint: tuple[str, int]) -> None:
         """Wait for a service to be listening on a given endpoint.
 
         Args:

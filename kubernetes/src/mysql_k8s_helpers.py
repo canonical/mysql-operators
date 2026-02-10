@@ -6,7 +6,8 @@
 
 import json
 import logging
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import jinja2
 from charms.mysql.v0.mysql import (
@@ -343,16 +344,16 @@ class MySQL(MySQLBase):
     def execute_backup_commands(
         self,
         s3_path: str,
-        s3_parameters: Dict[str, str],
+        s3_parameters: dict[str, str],
         xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
         mysqld_socket_file: str = MYSQLD_SOCK_FILE,
         tmp_base_directory: str = MYSQL_DATA_DIR,
         defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
-        user: Optional[str] = MYSQL_SYSTEM_USER,
-        group: Optional[str] = MYSQL_SYSTEM_GROUP,
-    ) -> Tuple[str, str]:
+        user: str | None = MYSQL_SYSTEM_USER,
+        group: str | None = MYSQL_SYSTEM_GROUP,
+    ) -> tuple[str, str]:
         """Executes commands to create a backup."""
         return super().execute_backup_commands(
             s3_path,
@@ -378,13 +379,13 @@ class MySQL(MySQLBase):
     def retrieve_backup_with_xbcloud(
         self,
         backup_id: str,
-        s3_parameters: Dict[str, str],
+        s3_parameters: dict[str, str],
         temp_restore_directory: str = MYSQL_DATA_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
         user: str = MYSQL_SYSTEM_USER,
         group: str = MYSQL_SYSTEM_GROUP,
-    ) -> Tuple[str, str, str]:
+    ) -> tuple[str, str, str]:
         """Retrieve the specified backup from S3.
 
         The backup is retrieved using xbcloud and stored in a temp dir in the
@@ -400,7 +401,7 @@ class MySQL(MySQLBase):
             group,
         )
 
-    def prepare_backup_for_restore(self, backup_location: str) -> Tuple[str, str]:
+    def prepare_backup_for_restore(self, backup_location: str) -> tuple[str, str]:
         """Prepare the backup in the provided dir for restore."""
         return super().prepare_backup_for_restore(
             backup_location,
@@ -418,7 +419,7 @@ class MySQL(MySQLBase):
             group=MYSQL_SYSTEM_GROUP,
         )
 
-    def restore_backup(self, backup_location: str) -> Tuple[str, str]:
+    def restore_backup(self, backup_location: str) -> tuple[str, str]:
         """Restore the provided prepared backup."""
         return super().restore_backup(
             backup_location,
@@ -639,14 +640,14 @@ class MySQL(MySQLBase):
 
     def _execute_commands(
         self,
-        commands: List[str],
+        commands: list[str],
         bash: bool = False,
-        user: Optional[str] = None,
-        group: Optional[str] = None,
-        env_extra: Optional[Dict] = None,
-        timeout: Optional[float] = None,
-        stream_output: Optional[str] = None,
-    ) -> Tuple[str, str]:
+        user: str | None = None,
+        group: str | None = None,
+        env_extra: dict | None = None,
+        timeout: float | None = None,
+        stream_output: str | None = None,
+    ) -> tuple[str, str]:
         """Execute commands on the server where MySQL is running."""
         try:
             if bash:
@@ -699,7 +700,7 @@ class MySQL(MySQLBase):
         """
         self.container.push(path, content, permissions=permission, user=owner, group=group)
 
-    def read_file_content(self, path: str) -> Optional[str]:
+    def read_file_content(self, path: str) -> str | None:
         """Read file content.
 
         Args:
@@ -805,7 +806,7 @@ class MySQL(MySQLBase):
         super().set_cluster_primary(new_primary_address)
         self.update_endpoints(PEER)
 
-    def fetch_error_log(self) -> Optional[str]:
+    def fetch_error_log(self) -> str | None:
         """Fetch the MySQL error log."""
         return self.read_file_content(MYSQL_LOG_ERROR)
 
