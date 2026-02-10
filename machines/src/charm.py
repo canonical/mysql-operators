@@ -19,7 +19,7 @@ from time import sleep
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
 from charms.data_platform_libs.v0.s3 import S3Requirer
-from charms.grafana_agent.v0.cos_agent import COSAgentProvider, charm_tracing_config
+from charms.grafana_agent.v0.cos_agent import COSAgentProvider
 from charms.mysql.v0.async_replication import (
     RELATION_CONSUMER,
     RELATION_OFFER,
@@ -50,7 +50,6 @@ from charms.mysql.v0.mysql import (
 )
 from charms.mysql.v0.tls import MySQLTLS
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
-from charms.tempo_coordinator_k8s.v0.charm_tracing import trace_charm
 from ops import (
     ActiveStatus,
     BlockedStatus,
@@ -65,6 +64,7 @@ from ops import (
     Unit,
     WaitingStatus,
 )
+from ops_tracing import Tracing
 from tenacity import (
     RetryError,
     Retrying,
@@ -131,24 +131,6 @@ class MySQLCustomCharmEvents(FlushMySQLLogsCharmEvents, IPAddressChangeCharmEven
     """Custom event sources for the charm."""
 
 
-@trace_charm(
-    tracing_endpoint="tracing_endpoint",
-    extra_types=(
-        COSAgentProvider,
-        MySQL,
-        MySQLAsyncReplicationConsumer,
-        MySQLAsyncReplicationOffer,
-        MySQLBackups,
-        MySQLConfig,
-        MySQLLogs,
-        MySQLMachineHostnameResolution,
-        MySQLProvider,
-        MySQLTLS,
-        MySQLVMUpgrade,
-        RollingOpsManager,
-        S3Requirer,
-    ),
-)
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
@@ -208,7 +190,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
-        self.tracing_endpoint_config, _ = charm_tracing_config(self._grafana_agent, None)
+        self.tracing = Tracing(self, tracing_relation_name="tracing")
 
     # =======================
     #  Charm Lifecycle Hooks
@@ -635,11 +617,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     # =======================
     #  Helpers
     # =======================
-
-    @property
-    def tracing_endpoint(self) -> str | None:
-        """Otlp http endpoint for charm instrumentation."""
-        return self.tracing_endpoint_config
 
     @property
     def _mysql(self):
