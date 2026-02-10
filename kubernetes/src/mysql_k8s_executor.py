@@ -5,7 +5,7 @@
 
 import json
 import re
-from typing import Generator
+from collections.abc import Generator
 
 import ops
 from mysql_shell.executors import BaseExecutor

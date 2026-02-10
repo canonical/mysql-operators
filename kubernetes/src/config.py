@@ -7,7 +7,7 @@
 import configparser
 import logging
 import re
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from charms.data_platform_libs.v0.data_models import BaseConfigModel
 from charms.mysql.v0.mysql import MAX_CONNECTIONS_FLOOR
@@ -51,10 +51,10 @@ class CharmConfig(BaseConfigModel):
     """Manager for the structured configuration."""
 
     profile: str
-    cluster_name: Optional[str]
-    cluster_set_name: Optional[str]
-    profile_limit_memory: Optional[int]
-    experimental_max_connections: Optional[int]
+    cluster_name: str | None
+    cluster_set_name: str | None
+    profile_limit_memory: int | None
+    experimental_max_connections: int | None
     binlog_retention_days: int
     plugin_audit_enabled: bool
     plugin_audit_strategy: str
@@ -63,7 +63,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("profile")
     @classmethod
-    def profile_values(cls, value: str) -> Optional[str]:
+    def profile_values(cls, value: str) -> str | None:
         """Check profile config option is one of `testing` or `production`."""
         if value not in ["testing", "production"]:
             raise ValueError("Value not one of 'testing' or 'production'")
@@ -72,7 +72,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("cluster_name", "cluster_set_name")
     @classmethod
-    def cluster_name_validator(cls, value: str) -> Optional[str]:
+    def cluster_name_validator(cls, value: str) -> str | None:
         """Check for valid cluster, cluster-set name.
 
         Limited to 63 characters, and must start with a letter and
@@ -94,7 +94,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("profile_limit_memory")
     @classmethod
-    def profile_limit_memory_validator(cls, value: int) -> Optional[int]:
+    def profile_limit_memory_validator(cls, value: int) -> int | None:
         """Check profile limit memory."""
         if value < 600:
             raise ValueError("MySQL Charm requires at least 600MB for bootstrapping")
@@ -105,7 +105,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("experimental_max_connections")
     @classmethod
-    def experimental_max_connections_validator(cls, value: int) -> Optional[int]:
+    def experimental_max_connections_validator(cls, value: int) -> int | None:
         """Check experimental max connections."""
         if value < MAX_CONNECTIONS_FLOOR:
             raise ValueError(
@@ -126,7 +126,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("plugin_audit_strategy")
     @classmethod
-    def plugin_audit_strategy_validator(cls, value: str) -> Optional[str]:
+    def plugin_audit_strategy_validator(cls, value: str) -> str | None:
         """Check profile config option is one of `testing` or `production`."""
         if value not in ["async", "semi-async"]:
             raise ValueError("plugin_audit_strategy not one of 'async' or 'semi-async'")
@@ -135,7 +135,7 @@ class CharmConfig(BaseConfigModel):
 
     @validator("logs_audit_policy")
     @classmethod
-    def logs_audit_policy_validator(cls, value: str) -> Optional[str]:
+    def logs_audit_policy_validator(cls, value: str) -> str | None:
         """Check values for audit log policy."""
         valid_values = ["all", "logins", "queries"]
         if value not in valid_values:

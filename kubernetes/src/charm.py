@@ -17,7 +17,6 @@ import logging
 import random
 from socket import getfqdn
 from time import sleep
-from typing import Optional
 
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
@@ -261,7 +260,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         return Layer(layer)  # pyright: ignore [reportArgumentType]
 
     @property
-    def restart_peers(self) -> Optional[ops.model.Relation]:
+    def restart_peers(self) -> ops.model.Relation | None:
         """Retrieve the peer relation."""
         return self.model.get_relation("restart")
 
@@ -310,7 +309,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         else:
             return False
 
-    def get_unit_hostname(self, unit_name: Optional[str] = None) -> str:
+    def get_unit_hostname(self, unit_name: str | None = None) -> str:
         """Get the hostname.localdomain for a unit.
 
         Translate juju unit name to hostname.localdomain, necessary
@@ -369,7 +368,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.exception("Failed to initialize primary")
             raise
 
-    def _get_primary_from_online_peer(self) -> Optional[str]:
+    def _get_primary_from_online_peer(self) -> str | None:
         """Get the primary address from an online peer."""
         for unit in self.peers.units:
             # TODO:
@@ -995,7 +994,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # avoid changing status while async replication is setting up
         return not (self.replication_consumer.idle and self.replication_offer.idle)
 
-    def _on_update_status(self, _: Optional[UpdateStatusEvent]) -> None:
+    def _on_update_status(self, _: UpdateStatusEvent | None) -> None:
         """Handle the update status event."""
         if not self.upgrade.idle:
             # avoid changing status while upgrade is in progress

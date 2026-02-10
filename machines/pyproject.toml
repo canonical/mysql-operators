@@ -1,9 +1,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-[project]
-name = "mysql-operator"  # Charm is not meant to be packaged
-dependencies = [
+[dependency-groups]
+main = [
     "boto3~=1.28",
     "jinja2~=3.1",
     "ops[tracing]~=2.21",
@@ -12,9 +11,6 @@ dependencies = [
     "tenacity~=8.2",
     "typing_extensions~=4.7",
 ]
-requires-python = "~=3.10"
-
-[dependency-groups]
 charm-libs = [
     # data_platform_libs/v0/data_interfaces.py
     "ops>=2.0.0",
@@ -63,6 +59,9 @@ integration = [
 package-mode = false
 requires-poetry = ">=2.2.0"
 
+[tool.poetry.dependencies]
+python = "^3.10"
+
 [tool.poetry.group.format]
 optional = true
 
@@ -79,7 +78,7 @@ show_missing = true
 minversion = "6.0"
 log_cli_level = "INFO"
 
-# Formatting tools configuration
+# Linting tools configuration
 [tool.ruff]
 # preview and explicit preview are enabled for CPY001
 preview = true
@@ -89,7 +88,23 @@ line-length = 99
 
 [tool.ruff.lint]
 explicit-preview-rules = true
-select = ["A", "E", "W", "F", "C", "N", "D", "I", "B", "CPY001", "RUF", "S", "SIM", "UP", "TC"]
+select = [
+  "A",
+  "E",
+  "W",
+  "F",
+  "C",
+  "N",
+  "D",
+  "I",
+  "B",
+  "CPY001",
+  "RUF",
+  "S",
+  "SIM",
+  "UP",
+  "TC",
+]
 ignore = [
   "D107", # Ignore D107 Missing docstring in __init__
   "E501", # Ignore E501 Line too long
@@ -97,11 +112,12 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "D1", "D417",
-    # Asserts
-    "B011",
-    # Disable security checks for tests
-    "S",
+  "D1",
+  "D417",
+  # Asserts
+  "B011",
+  # Disable security checks for tests
+  "S",
 ]
 
 [tool.ruff.lint.flake8-copyright]
