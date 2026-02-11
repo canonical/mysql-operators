@@ -114,6 +114,11 @@ jobs:
       - name: Checkout
         timeout-minutes: 3
         uses: actions/checkout@v6
+      - name: Install juju-wrapper.sh
+        timeout-minutes: 1
+        run: |
+          sudo cp juju-wrapper.sh /usr/local/bin/
+          sudo chmod +x /usr/local/bin/juju-wrapper.sh
       - name: Set up environment
         timeout-minutes: 5
         run: |
@@ -183,6 +188,16 @@ jobs:
         timeout-minutes: 3
         if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
         run: sudo jhack tail --printer raw --replay --no-watch | tee ~/logs/jhack-tail.txt
+      - name: Collect juju-wrapper logs
+        timeout-minutes: 2
+        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        run: |
+          if [ -d /tmp/juju-wrapper-logs ]; then
+            cp -r /tmp/juju-wrapper-logs ~/logs/
+            echo "Collected $(ls -1 ~/logs/juju-wrapper-logs | wc -l) juju-wrapper log files"
+          else
+            echo "No juju-wrapper logs found"
+          fi
       - name: Upload logs
         timeout-minutes: 5
         if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}

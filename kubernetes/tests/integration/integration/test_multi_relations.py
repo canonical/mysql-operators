@@ -2,15 +2,26 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import logging
+
 import jubilant
 from jubilant import CLIError, Juju
-from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    before_sleep_log,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, wait_for_apps_status, wait_for_unit_status
 
 MYSQL_APP_NAME = "mysql"
 SCALE_APPS = 7
 SCALE_UNITS = 3
+
+logger = logging.getLogger(__name__)
 
 
 def test_build_and_deploy(juju: Juju, charm):
@@ -144,6 +155,7 @@ def retry_if_cli_error(fn, *, max_attempts=10):
             retry=retry_if_exception_type(CLIError),
             stop=stop_after_attempt(max_attempts),
             wait=wait_fixed(10),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
                 fn()

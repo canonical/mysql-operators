@@ -11,6 +11,7 @@ import pytest
 from . import architecture
 
 logging.getLogger("jubilant.wait").setLevel(logging.WARNING)
+logging.getLogger("jubilant").setLevel(logging.DEBUG)
 
 
 @pytest.fixture(scope="session")
@@ -53,4 +54,4 @@ def cloud_configs_gcp() -> tuple[dict[str, str], dict[str, str]]:
 
 @pytest.fixture(scope="module")
 def juju() -> jubilant.Juju:
-    return jubilant.Juju(model="testing")
+    return jubilant.Juju(model="testing", cli_binary="juju-wrapper.sh")
