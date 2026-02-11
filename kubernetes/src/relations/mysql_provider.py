@@ -116,6 +116,18 @@ class MySQLProvider(Object):
         db_user = self._get_username(relation_id)
         db_pass = self._get_or_set_password(event.relation)
 
+        # make sure pods are labeled before adding service
+        self.charm._mysql.update_endpoints(DB_RELATION_NAME)
+
+        # create k8s services for endpoints
+        self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
+
+        primary_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-primary"))
+        replicas_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-replicas"))
+
+        # wait for endpoints to be ready
+        self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
+
         try:
             if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
@@ -145,18 +157,6 @@ class MySQLProvider(Object):
                 "Permission to create k8s services denied. `juju trust`"
             )
             event.defer()
-
-        # make sure pods are labeled before adding service
-        self.charm._mysql.update_endpoints(DB_RELATION_NAME)
-
-        # create k8s services for endpoints
-        self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
-
-        primary_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-primary"))
-        replicas_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-replicas"))
-
-        # wait for endpoints to be ready
-        self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
 
         # Set relation data
         self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")
