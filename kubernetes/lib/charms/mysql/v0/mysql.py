@@ -1415,10 +1415,6 @@ class MySQLBase(ABC):
             # Since we're checking ALLOWED_COMPONENTS already,
             # we do not check for file existence
 
-            if component in installed_components:
-                logger.info(f"{component=} already installed")
-                continue
-
             try:
                 self._instance_client_tcp.install_instance_component(component)
             except ExecutionError as e:
