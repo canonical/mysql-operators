@@ -5,6 +5,7 @@
 import logging
 
 import jubilant
+import pytest
 from jubilant import Juju, TaskError
 
 from constants import CLUSTER_ADMIN_USERNAME, PASSWORD_LENGTH
@@ -54,16 +55,13 @@ def test_password_too_short_fails(juju: Juju) -> None:
     short_password = generate_random_password(20)
     logger.info(f"Attempting to set short password with length {len(short_password)}")
 
-    try:
+    with pytest.raises(TaskError) as excinfo:
         juju.run(
             unit=primary_unit_name,
             action="set-password",
             params={"username": CLUSTER_ADMIN_USERNAME, "password": short_password},
         )
-    except TaskError as e:
-        logger.info(f"Action failed as expected with exception: {e}")
-    else:
-        raise AssertionError("set-password task should have failed")
+    assert "MySQLUpdateUserError" in str(excinfo.value)
 
     new_credentials = get_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME)
     new_password = new_credentials["password"]
@@ -87,16 +85,13 @@ def test_password_only_lowercase_fails(juju: Juju) -> None:
     )
     logger.info(f"Attempting to set lowercase-only password with length {len(lowercase_password)}")
 
-    try:
+    with pytest.raises(TaskError) as excinfo:
         juju.run(
             unit=primary_unit_name,
             action="set-password",
             params={"username": CLUSTER_ADMIN_USERNAME, "password": lowercase_password},
         )
-    except Exception as e:
-        logger.info(f"Action failed as expected with exception: {e}")
-    else:
-        raise AssertionError("set-password task should have failed")
+    assert "MySQLUpdateUserError" in str(excinfo.value)
 
     new_credentials = get_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME)
     new_password = new_credentials["password"]
