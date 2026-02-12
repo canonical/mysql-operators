@@ -107,9 +107,9 @@ S3_INTEGRATOR_RELATION_NAME = "s3-parameters"
 # The unique Charmhub library identifier, never change it
 LIBID = "183844304be247129572309a5fb1e47c"
 LIBAPI = 0
-LIBPATCH = 19
+LIBPATCH = 20
 
-PYDEPS = ["mysql_shell_client ~= 0.6"]
+PYDEPS = ["mysql_shell_client ~= 0.7"]
 
 ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE = "S3 repository claimed by another cluster"
 MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
