@@ -30,4 +30,5 @@ Charmed MySQL includes features such as cluster-to-cluster replication, TLS encr
 Home <self>
 tutorial
 How-to guides <how-to/index>
+Reference <reference/index>
 ```

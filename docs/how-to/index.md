@@ -84,3 +84,10 @@ For charm developers looking to support MySQL integrations with their charm.
 
 Charm development <charm-development/index>
 ```
+
+```{toctree}
+:titlesonly:
+:hidden:
+
+Contribute <contribute>
+```
