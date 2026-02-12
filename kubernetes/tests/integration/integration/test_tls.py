@@ -8,7 +8,7 @@ from time import sleep
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME, REPLICATION_USERNAME, TLS_SSL_CERT_FILE
+from constants import CONTAINER_NAME, MYSQL_DATA_DIR, REPLICATION_USERNAME, TLS_SSL_CERT_FILE
 
 from ..helpers import is_connection_possible
 from ..helpers_ha import (
@@ -138,7 +138,7 @@ def test_rotate_tls_key(juju: Juju) -> None:
     for unit_name in app_units:
         original_tls[unit_name] = {}
         original_tls[unit_name]["cert"] = unit_file_md5(
-            juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}"
+            juju, unit_name, f"{MYSQL_DATA_DIR}/{TLS_SSL_CERT_FILE}"
         )
 
     # set key using auto-generated key for each unit
@@ -155,7 +155,7 @@ def test_rotate_tls_key(juju: Juju) -> None:
     # After updating both the external key and the internal key a new certificate request will be
     # made; then the certificates should be available and updated.
     for unit_name in app_units:
-        new_cert_md5 = unit_file_md5(juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}")
+        new_cert_md5 = unit_file_md5(juju, unit_name, f"{MYSQL_DATA_DIR}/{TLS_SSL_CERT_FILE}")
 
         assert new_cert_md5 != original_tls[unit_name]["cert"], (
             f"cert for {unit_name} was not updated."

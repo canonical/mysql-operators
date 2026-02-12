@@ -35,12 +35,14 @@ from constants import (
     CHARMED_MYSQL_XTRABACKUP_LOCATION,
     CONTAINER_NAME,
     LOG_ROTATE_CONFIG_FILE,
+    MYSQL_ARCHIVE_DIR,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
     MYSQL_DATA_DIR,
-    MYSQL_LOG_DIR,
     MYSQL_LOG_ERROR,
+    MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_GROUP,
     MYSQL_SYSTEM_USER,
+    MYSQL_TEMP_DIR,
     MYSQLD_DEFAULTS_CONFIG_FILE,
     MYSQLD_INIT_CONFIG_FILE,
     MYSQLD_LOCATION,
@@ -184,6 +186,14 @@ class MySQL(MySQLBase):
             "--initialize",
             "-u",
             MYSQL_SYSTEM_USER,
+            "--datadir",
+            MYSQL_DATA_DIR,
+            "--innodb-log-group-home-dir",
+            MYSQL_LOGS_DIR,
+            "--innodb-undo-directory",
+            MYSQL_LOGS_DIR,
+            "--innodb-temp-tablespaces-dir",
+            MYSQL_TEMP_DIR,
         ]
 
         try:
@@ -277,7 +287,8 @@ class MySQL(MySQLBase):
         rendered = template.render(
             system_user=MYSQL_SYSTEM_USER,
             system_group=MYSQL_SYSTEM_GROUP,
-            log_dir=MYSQL_LOG_DIR,
+            log_dir=MYSQL_LOGS_DIR,
+            archive_dir=MYSQL_ARCHIVE_DIR,
             logs_retention_period=logs_retention_period,
             logs_rotations=logs_rotations,
             logs_compression_enabled=logs_compression,
@@ -379,12 +390,17 @@ class MySQL(MySQLBase):
         mysql_data_directory=MYSQL_DATA_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
+        extra_dirs: list[str] | None = None,
     ) -> None:
         """Empty the mysql data directory in preparation of backup restore."""
+        if extra_dirs is None:
+            extra_dirs = [MYSQL_LOGS_DIR]
+
         super().empty_data_files(
             mysql_data_directory,
             user,
             group,
+            extra_dirs,
         )
 
     def restore_backup(
@@ -608,8 +624,8 @@ class MySQL(MySQLBase):
 
             # minimal expected content for an integral mysqld data-dir
             expected_content = {
-                "#innodb_redo",
-                "#innodb_temp",
+                # "#innodb_redo",  # stored separately
+                # "#innodb_temp",  # stored separately
                 "auto.cnf",
                 "ca-key.pem",
                 "ca.pem",
@@ -624,9 +640,10 @@ class MySQL(MySQLBase):
                 "server-cert.pem",
                 "server-key.pem",
                 "sys",
-                "undo_001",
-                "undo_002",
+                # "undo_001",  # stored separately
+                # "undo_002",  # stored separately
             }
+            logger.debug("mysql data dir contents: %s", content_set)
 
             return expected_content <= content_set
         except (ExecError, APIError):

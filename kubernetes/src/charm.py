@@ -75,6 +75,7 @@ from constants import (
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
+    MYSQL_DATA_DIR,
     MYSQL_LOG_ERROR,
     MYSQL_LOG_FILES,
     MYSQL_LOG_SERVICE,
@@ -128,9 +129,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on.leader_elected, self._on_leader_elected)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
-        self.framework.observe(
-            self.on.database_storage_detaching, self._on_database_storage_detaching
-        )
+
+        self.framework.observe(self.on.archive_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.data_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.logs_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.temp_storage_detaching, self._on_storage_detaching)
 
         self.framework.observe(self.on[PEER].relation_joined, self._on_peer_relation_joined)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
@@ -227,7 +230,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         mysqld_cmd = [
             MYSQLD_LOCATION,
             "--basedir=/usr",
-            "--datadir=/var/lib/mysql",
+            f"--datadir={MYSQL_DATA_DIR}",
             "--plugin-dir=/usr/lib/mysql/plugin",
             f"--log-error={MYSQL_LOG_ERROR}",
             f"--pid-file={self.unit_label}.pid",
@@ -1064,7 +1067,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer departed event")
 
-    def _on_database_storage_detaching(self, _) -> None:
+    def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
         # Only executes if the unit was initialised
         if not self.unit_initialized():
