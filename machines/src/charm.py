@@ -766,6 +766,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self._mysql.install_plugins(["audit_log"])
         self._mysql.install_plugins(["binlog_utils_udf"])
 
+        self._mysql.install_components(["file://component_validate_password"])
+
         current_mysqld_pid = self._mysql.get_pid_of_port_3306()
         self._mysql.configure_instance()
 

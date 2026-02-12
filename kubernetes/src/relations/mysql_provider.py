@@ -116,21 +116,10 @@ class MySQLProvider(Object):
         db_user = self._get_username(relation_id)
         db_pass = self._get_or_set_password(event.relation)
 
+        # make sure pods are labeled before adding service
+        self.charm._mysql.update_endpoints(DB_RELATION_NAME)
+
         try:
-            # make sure pods are labeled before adding service
-            self.charm._mysql.update_endpoints(DB_RELATION_NAME)
-
-            # create k8s services for endpoints
-            self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
-
-            primary_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-primary"))
-            replicas_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-replicas"))
-
-            db_version = self.charm._mysql.get_mysql_version()
-
-            # wait for endpoints to be ready
-            self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
-
             if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
 
@@ -142,15 +131,7 @@ class MySQLProvider(Object):
                 extra_roles=extra_user_roles,
             )
 
-            # Set relation data
-            self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")
-            self.database.set_read_only_endpoints(relation_id, f"{replicas_endpoint}:3306")
-            self.database.set_credentials(relation_id, db_user, db_pass)
-            self.database.set_version(relation_id, db_version)
-            self.database.set_database(relation_id, db_name)
-
-            logger.info(f"Created user for app {app_name}")
-            self.charm.unit.status = ActiveStatus()
+            db_version = self.charm._mysql.get_mysql_version()
         except (
             MySQLCreateApplicationDatabaseError,
             MySQLCreateApplicationScopedUserError,
@@ -158,6 +139,16 @@ class MySQLProvider(Object):
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
             self.charm.unit.status = BlockedStatus("Failed to create scoped user")
+
+        try:
+            # create k8s services for endpoints
+            self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
+
+            primary_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-primary"))
+            replicas_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-replicas"))
+
+            # wait for endpoints to be ready
+            self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
         except TimeoutError:
             logger.exception("Timed out waiting for k8s service to be ready")
             raise
@@ -167,6 +158,16 @@ class MySQLProvider(Object):
                 "Permission to create k8s services denied. `juju trust`"
             )
             event.defer()
+
+        # Set relation data
+        self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")
+        self.database.set_read_only_endpoints(relation_id, f"{replicas_endpoint}:3306")
+        self.database.set_credentials(relation_id, db_user, db_pass)
+        self.database.set_version(relation_id, db_version)
+        self.database.set_database(relation_id, db_name)
+
+        logger.info(f"Created user for app {app_name}")
+        self.charm.unit.status = ActiveStatus()
 
     def _on_mysql_pebble_ready(self, _: PebbleReadyEvent) -> None:
         """Handle the mysql pebble ready event.

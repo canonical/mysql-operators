@@ -728,6 +728,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self._mysql.install_plugins(["audit_log"])
             self._mysql.install_plugins(["binlog_utils_udf"])
 
+            self._mysql.install_components(["file://component_validate_password"])
+
             # Configure instance as a cluster node
             self._mysql.configure_instance()
             self._mysql.wait_until_mysql_connection()

@@ -231,14 +231,6 @@ class MySQLProvider(Object):
         self.charm.update_endpoint_address(DB_RELATION_NAME)
 
         try:
-            db_version = self.charm._mysql.get_mysql_version()
-            rw_endpoints, ro_endpoints, _ = self.charm.get_cluster_endpoints(DB_RELATION_NAME)
-            self.database.set_database(relation_id, db_name)
-            self.database.set_credentials(relation_id, db_user, db_pass)
-            self.database.set_endpoints(relation_id, rw_endpoints)
-            self.database.set_version(relation_id, db_version)
-            self.database.set_read_only_endpoints(relation_id, ro_endpoints)
-
             if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
 
@@ -249,8 +241,7 @@ class MySQLProvider(Object):
                 "%",
                 extra_roles=extra_user_roles,
             )
-            logger.info(f"Created user for app {app_name}")
-            self.charm.unit.status = ActiveStatus()
+            db_version = self.charm._mysql.get_mysql_version()
         except (
             MySQLCreateApplicationDatabaseError,
             MySQLCreateApplicationScopedUserError,
@@ -258,6 +249,16 @@ class MySQLProvider(Object):
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
             self.charm.unit.status = BlockedStatus("Failed to set up relation")
+
+        rw_endpoints, ro_endpoints, _ = self.charm.get_cluster_endpoints(DB_RELATION_NAME)
+        self.database.set_database(relation_id, db_name)
+        self.database.set_credentials(relation_id, db_user, db_pass)
+        self.database.set_endpoints(relation_id, rw_endpoints)
+        self.database.set_version(relation_id, db_version)
+        self.database.set_read_only_endpoints(relation_id, ro_endpoints)
+
+        logger.info(f"Created user for app {app_name}")
+        self.charm.unit.status = ActiveStatus()
 
     def _on_database_broken(self, event: RelationBrokenEvent) -> None:
         """Handle the removal of database relation.

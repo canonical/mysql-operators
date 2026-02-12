@@ -275,8 +275,8 @@ class TestMySQLBase(unittest.TestCase):
             "CREATE DATABASE `test_database`",
             "GRANT SELECT ON `test_database`.* TO 'charmed_read'",
             "GRANT SELECT, INSERT, DELETE, UPDATE ON `test_database`.* TO 'charmed_dml'",
-            "CREATE ROLE 'test_database_00'",
-            "GRANT SELECT, INSERT, DELETE, UPDATE, EXECUTE, ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE VIEW, DROP, INDEX, LOCK TABLES, REFERENCES, TRIGGER ON `test_database`.* TO 'test_database_00'",
+            "CREATE ROLE `test_database_00`",
+            "GRANT SELECT, INSERT, DELETE, UPDATE, EXECUTE, ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE VIEW, DROP, INDEX, LOCK TABLES, REFERENCES, TRIGGER ON `test_database`.* TO `test_database_00`",
         ])
 
         self.mysql.create_database("test_database")
@@ -303,7 +303,7 @@ class TestMySQLBase(unittest.TestCase):
     def test_create_application_scoped_user(self, _get_cluster_primary_address):
         """Test the successful execution of create_application_scoped_user."""
         create_commands = ";".join((
-            "CREATE USER 'test_username'@'1.1.1.1' IDENTIFIED BY 'test_password' ATTRIBUTE '{\\\"unit_name\\\": \\\"app/0\\\"}'",
+            "CREATE USER `test_username`@`1.1.1.1` IDENTIFIED BY 'test_password' ATTRIBUTE '{\\\"unit_name\\\": \\\"app/0\\\"}'",
             "",
         ))
         grant_commands = ";".join((
@@ -825,7 +825,7 @@ class TestMySQLBase(unittest.TestCase):
     @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_primary_address")
     def test_delete_user(self, _get_cluster_primary_address):
         """Test delete_user() method."""
-        query = "DROP USER IF EXISTS 'testuser'@'%'"
+        query = "DROP USER IF EXISTS `testuser`@`%`"
 
         self.mysql.delete_user("testuser")
         self.mock_executor.execute_sql.assert_called_once_with(query)
@@ -872,7 +872,7 @@ class TestMySQLBase(unittest.TestCase):
         """Test the successful execution of update_user_password."""
         _get_cluster_global_primary_address.return_value = "1.1.1.1"
 
-        query = "ALTER USER 'test_user'@'%' IDENTIFIED BY 'test_password'"
+        query = "ALTER USER `test_user`@`%` IDENTIFIED BY 'test_password'"
 
         self.mysql.update_user_password("test_user", "test_password")
         self.mock_executor.execute_sql.assert_called_once_with(query)
@@ -1696,6 +1696,12 @@ class TestMySQLBase(unittest.TestCase):
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
             "max_connect_errors": "10000",
+            "loose-validate_password.check_user_name": "ON",
+            "loose-validate_password.length": "24",
+            "loose-validate_password.mixed_case_count": "1",
+            "loose-validate_password.number_count": "1",
+            "loose-validate_password.policy": "MEDIUM",
+            "loose-validate_password.special_char_count": "0",
         }
         self.maxDiff = None
 
