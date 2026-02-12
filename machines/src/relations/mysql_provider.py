@@ -22,7 +22,7 @@ from ops.charm import RelationBrokenEvent, RelationDepartedEvent, RelationJoined
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
-from constants import DB_RELATION_NAME, PASSWORD_LENGTH, PEER
+from constants import DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH, PEER
 from utils import generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -190,7 +190,7 @@ class MySQLProvider(Object):
         """
         if password := self.database.fetch_my_relation_field(relation.id, "password"):
             return password
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self.database.update_relation_data(relation.id, {"password": password})
         return password
 
@@ -235,14 +235,6 @@ class MySQLProvider(Object):
         self.charm.update_endpoint_address(DB_RELATION_NAME)
 
         try:
-            db_version = self.charm._mysql.get_mysql_version()
-            rw_endpoints, ro_endpoints, _ = self.charm.get_cluster_endpoints(DB_RELATION_NAME)
-            self.database.set_database(relation_id, db_name)
-            self.database.set_credentials(relation_id, db_user, db_pass)
-            self.database.set_endpoints(relation_id, rw_endpoints)
-            self.database.set_version(relation_id, db_version)
-            self.database.set_read_only_endpoints(relation_id, ro_endpoints)
-
             if not any([
                 LEGACY_ROLE_ROUTER in extra_user_roles,
                 MODERN_ROLE_ROUTER in extra_user_roles,
@@ -256,8 +248,7 @@ class MySQLProvider(Object):
                 "%",
                 extra_roles=extra_user_roles,
             )
-            logger.info(f"Created user for app {app_name}")
-            self.charm.unit.status = ActiveStatus()
+            db_version = self.charm._mysql.get_mysql_version()
         except (
             MySQLCreateApplicationDatabaseError,
             MySQLCreateApplicationScopedUserError,
@@ -265,6 +256,16 @@ class MySQLProvider(Object):
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
             self.charm.unit.status = BlockedStatus("Failed to set up relation")
+
+        rw_endpoints, ro_endpoints, _ = self.charm.get_cluster_endpoints(DB_RELATION_NAME)
+        self.database.set_database(relation_id, db_name)
+        self.database.set_credentials(relation_id, db_user, db_pass)
+        self.database.set_endpoints(relation_id, rw_endpoints)
+        self.database.set_version(relation_id, db_version)
+        self.database.set_read_only_endpoints(relation_id, ro_endpoints)
+
+        logger.info(f"Created user for app {app_name}")
+        self.charm.unit.status = ActiveStatus()
 
     def _on_database_broken(self, event: RelationBrokenEvent) -> None:
         """Handle the removal of database relation.

@@ -1731,6 +1731,12 @@ class TestMySQLBase(unittest.TestCase):
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
             "max_connect_errors": "10000",
+            "loose-validate_password.check_user_name": "ON",
+            "loose-validate_password.length": "12",
+            "loose-validate_password.mixed_case_count": "1",
+            "loose-validate_password.number_count": "1",
+            "loose-validate_password.policy": "MEDIUM",
+            "loose-validate_password.special_char_count": "0",
         }
         self.maxDiff = None
 

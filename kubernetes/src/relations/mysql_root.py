@@ -16,7 +16,7 @@ from ops.charm import (
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
-from constants import CONTAINER_NAME, LEGACY_MYSQL_ROOT, PASSWORD_LENGTH, ROOT_PASSWORD_KEY
+from constants import CONTAINER_NAME, DEFAULT_PASSWORD_LENGTH, LEGACY_MYSQL_ROOT, ROOT_PASSWORD_KEY
 from mysql_k8s_helpers import (
     MySQLCreateDatabaseError,
     MySQLCreateUserError,
@@ -65,7 +65,7 @@ class MySQLRootRelation(Object):
         if password:
             return password
 
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self.charm.set_secret("app", password_key, password)
         return password
 

@@ -15,7 +15,7 @@ from ops.charm import LeaderElectedEvent, RelationChangedEvent, RelationDeparted
 from ops.framework import Object
 from ops.model import BlockedStatus
 
-from constants import LEGACY_DB_SHARED, PASSWORD_LENGTH, PEER
+from constants import DEFAULT_PASSWORD_LENGTH, LEGACY_DB_SHARED, PEER
 from utils import generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class SharedDBRelation(Object):
         """
         if password := self._peers.data[self._charm.app].get(f"{username}_password"):
             return password
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self._peers.data[self._charm.app][f"{username}_password"] = password
         return password
 

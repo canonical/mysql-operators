@@ -19,7 +19,7 @@ from ops.charm import RelationBrokenEvent, RelationCreatedEvent
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
-from constants import LEGACY_MYSQL, PASSWORD_LENGTH, ROOT_PASSWORD_KEY
+from constants import DEFAULT_PASSWORD_LENGTH, LEGACY_MYSQL, ROOT_PASSWORD_KEY
 from utils import generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class MySQLRelation(Object):
         if password:
             return password
 
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self.charm.set_secret("app", password_key, password)
         return password
 

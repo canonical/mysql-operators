@@ -86,10 +86,11 @@ from constants import (
     CLUSTER_ADMIN_PASSWORD_KEY,
     CLUSTER_ADMIN_USERNAME,
     COS_AGENT_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
-    PASSWORD_LENGTH,
+    MAX_PASSWORD_LENGTH,
     PEER,
     ROOT_PASSWORD_KEY,
     ROOT_USERNAME,
@@ -136,7 +137,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 102
+LIBPATCH = 103
 
 PYDEPS = ["mysql_shell_client ~= 0.7"]
 
@@ -178,6 +179,9 @@ ALLOWED_PLUGINS = {
     "audit_log_filter": "audit_log_filter.so",
     "binlog_utils_udf": "binlog_utils_udf.so",
 }
+ALLOWED_COMPONENTS = {
+    "file://component_validate_password": "component_validate_password.so",
+}
 
 APP_SCOPE = "app"
 UNIT_SCOPE = "unit"
@@ -216,6 +220,10 @@ class MySQLConfigureMySQLUsersError(Error):
 
 class MySQLCheckUserExistenceError(Error):
     """Exception raised when checking for the existence of a MySQL user."""
+
+
+class MySQLUpdateUserError(Error):
+    """Exception raised when updating a user in MySQL."""
 
 
 class MySQLConfigureRouterUserError(Error):
@@ -556,7 +564,10 @@ class MySQLCharmBase(CharmBase, ABC):
             )
             return
 
-        new_password = event.params.get("password") or generate_random_password(PASSWORD_LENGTH)
+        new_password = event.params.get("password") or generate_random_password(DEFAULT_PASSWORD_LENGTH)
+        if len(new_password) > MAX_PASSWORD_LENGTH:
+            raise MySQLUpdateUserError("Password is too long")
+
         host = "%" if username != ROOT_USERNAME else "localhost"
 
         self._mysql.update_user_password(username, new_password, host=host)
@@ -1179,6 +1190,13 @@ class MySQLBase(ABC):
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
             "max_connect_errors": "10000",
+            # Password validation
+            "loose-validate_password.check_user_name": "ON",
+            "loose-validate_password.length": 12,
+            "loose-validate_password.mixed_case_count": 1,
+            "loose-validate_password.number_count": 1,
+            "loose-validate_password.policy": "MEDIUM",
+            "loose-validate_password.special_char_count": 0,
         }
 
         if audit_log_enabled:
@@ -1371,6 +1389,27 @@ class MySQLBase(ABC):
                     self._instance_client_tcp.uninstall_instance_plugin(plugin)
                 except ExecutionError as e:
                     raise MySQLPluginInstallError() from e
+
+    def install_components(self, components: list[str]) -> None:
+        """Install components."""
+        installed_components = self._instance_client_tcp.search_instance_components("%")
+
+        for component in components:
+            if component in installed_components:
+                logger.debug(f"Skipping already installed component {component=}")
+                continue
+
+            if component not in ALLOWED_COMPONENTS:
+                logger.warning(f"{component=} is not supported")
+                continue
+
+            # Since we're checking ALLOWED_COMPONENTS already,
+            # we do not check for file existence
+
+            try:
+                self._instance_client_tcp.install_instance_component(component)
+            except ExecutionError as e:
+                raise MySQLPluginInstallError() from e
 
     def does_mysql_user_exist(self, username: str, hostname: str) -> bool:
         """Checks if a mysql user already exists."""
@@ -2274,7 +2313,7 @@ class MySQLBase(ABC):
         try:
             client.update_instance_user(user, new_password)
         except ExecutionError as e:
-            raise MySQLCheckUserExistenceError() from e
+            raise MySQLUpdateUserError() from e
 
     @retry(
         reraise=True,

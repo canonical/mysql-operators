@@ -20,7 +20,7 @@ from ops.charm import LeaderElectedEvent, RelationChangedEvent, RelationDeparted
 from ops.framework import Object
 from ops.model import BlockedStatus, RelationDataContent
 
-from constants import LEGACY_DB_ROUTER, PASSWORD_LENGTH
+from constants import DEFAULT_PASSWORD_LENGTH, LEGACY_DB_ROUTER
 from utils import generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class DBRouterRelation(Object):
         if peer_databag.get(f"{username}_password"):
             return peer_databag.get(f"{username}_password")
 
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         peer_databag[f"{username}_password"] = password
 
         return password

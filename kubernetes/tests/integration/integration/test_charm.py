@@ -8,7 +8,7 @@ import jubilant_backports
 import urllib3
 from jubilant_backports import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, PASSWORD_LENGTH, ROOT_USERNAME
+from constants import CLUSTER_ADMIN_USERNAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
 from utils import generate_random_password
 
 from ..helpers import execute_queries_on_unit
@@ -117,7 +117,7 @@ def test_password_rotation(juju: Juju):
         f"Test succeeded Primary unit detected before password rotation is {primary_unit_address}"
     )
 
-    new_password = generate_random_password(PASSWORD_LENGTH)
+    new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
 
     rotate_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, new_password)
 
