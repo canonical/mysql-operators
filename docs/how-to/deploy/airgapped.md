@@ -35,7 +35,7 @@ The general steps for setting up an airgapped deployment for charms are as follo
 
 Exporting charms, snaps, and OCI resources are currently independent processes. The [`store-admin`](https://snapcraft.io/store-admin) tool is designed to simplify the process.
 
-#### Export snaps (machines only)
+#### Export snaps (VM only)
 
 Machine charms usually require snaps (and some manually pin them). 
 
@@ -115,7 +115,7 @@ Always check the [checksum](https://en.wikipedia.org/wiki/Checksum) for the tran
 
 Artifacts must now be uploaded into their corresponding stores in the airgapped environment. 
 
-#### Import snaps (machines only)
+#### Import snaps (VM only)
 
 When importing machine charms that depend on a snap for functionality, **you must first manually import the required snap**.
 
