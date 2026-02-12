@@ -50,9 +50,9 @@ logger = logging.getLogger(__name__)
 
 LIBID = "eb73947deedd4380a3a90d527e0878eb"
 LIBAPI = 0
-LIBPATCH = 11
+LIBPATCH = 12
 
-PYDEPS = ["mysql_shell_client ~= 0.6"]
+PYDEPS = ["mysql_shell_client ~= 0.7"]
 
 SCOPE = "unit"
 
