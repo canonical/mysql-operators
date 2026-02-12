@@ -7,7 +7,7 @@ Information about releases, charm options, technical specifications, and other r
 :titlesonly:
 :maxdepth: 2
 
-Releases <releases>
+Release notes <release-notes/index>
 System requirements <system-requirements>
 Profiles <profiles>
 Plugins/extensions <plugins-extensions>
