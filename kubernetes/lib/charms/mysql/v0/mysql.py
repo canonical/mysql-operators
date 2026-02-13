@@ -78,6 +78,7 @@ import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerUnitData
 from constants import (
+    MYSQL_DATA_DIR,
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
     CHARMED_MYSQL_PITR_HELPER,
@@ -1161,6 +1162,7 @@ class MySQLBase(ABC):
         # do not enable slow query logs, but specify a log file path in case
         # the admin enables them manually
         config["mysqld"] = {
+            "datadir": MYSQL_DATA_DIR,
             # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104

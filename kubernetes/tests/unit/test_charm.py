@@ -15,6 +15,7 @@ from constants import (
     BACKUPS_PASSWORD_KEY,
     DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
+    MYSQL_DATA_DIR,
     MYSQLD_LOCATION,
     OPERATOR_PASSWORD_KEY,
     REPLICATION_PASSWORD_KEY,
@@ -56,7 +57,7 @@ class TestCharm(unittest.TestCase):
         mysqld_cmd = [
             MYSQLD_LOCATION,
             "--basedir=/usr",
-            "--datadir=/var/lib/mysql",
+            f"--datadir={MYSQL_DATA_DIR}",
             "--plugin-dir=/usr/lib/mysql/plugin",
             "--log-error=/var/log/mysql/error.log",
             f"--pid-file={self.charm.unit_label}.pid",

@@ -75,6 +75,7 @@ from constants import (
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
+    MYSQL_DATA_DIR,
     MYSQL_LOG_ERROR,
     MYSQL_LOG_FILES,
     MYSQL_LOG_SERVICE,
@@ -227,7 +228,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         mysqld_cmd = [
             MYSQLD_LOCATION,
             "--basedir=/usr",
-            "--datadir=/var/lib/mysql",
+            f"--datadir={MYSQL_DATA_DIR}",
             "--plugin-dir=/usr/lib/mysql/plugin",
             f"--log-error={MYSQL_LOG_ERROR}",
             f"--pid-file={self.unit_label}.pid",
