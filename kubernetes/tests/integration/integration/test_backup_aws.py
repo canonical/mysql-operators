@@ -5,6 +5,7 @@
 import logging
 import socket
 from pathlib import Path
+import uuid
 
 import boto3
 import jubilant
@@ -160,7 +161,7 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     logger.info("Setting s3 config")
     juju.config(S3_INTEGRATOR, cloud_configs)
     logger.info("Syncing credentials")
-    secret_uri = juju.add_secret("s3creds", content=cloud_credentials)
+    secret_uri = juju.add_secret(str(uuid.uuid4())[:8], content=cloud_credentials)
     juju.grant_secret(secret_uri, S3_INTEGRATOR)
     juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
 
@@ -222,7 +223,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     logger.info("Syncing credentials")
 
     juju.config(S3_INTEGRATOR, cloud_configs)
-    secret_uri = juju.add_secret("s3creds", content=cloud_credentials)
+    secret_uri = juju.add_secret(str(uuid.uuid4())[:8], content=cloud_credentials)
     juju.grant_secret(secret_uri, S3_INTEGRATOR)
     juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
 
@@ -364,7 +365,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     logger.info("Syncing credentials")
 
     juju.config(S3_INTEGRATOR, cloud_configs)
-    secret_uri = juju.add_secret("s3creds", content=cloud_credentials)
+    secret_uri = juju.add_secret(str(uuid.uuid4())[:8], content=cloud_credentials)
     juju.grant_secret(secret_uri, S3_INTEGRATOR)
     juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
 

@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import uuid
 
 import boto3
 import jubilant
@@ -108,7 +109,7 @@ def build_and_deploy_operations(
         timeout=TIMEOUT,
     )
     juju.config(S3_INTEGRATOR, cloud_configs)
-    secret_uri = juju.add_secret("s3creds", content=cloud_credentials)
+    secret_uri = juju.add_secret(str(uuid.uuid4())[:8], content=cloud_credentials)
     juju.grant_secret(secret_uri, S3_INTEGRATOR)
     juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
     juju.wait(
