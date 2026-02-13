@@ -71,7 +71,7 @@ def build_and_deploy_operations(
         S3_INTEGRATOR,
         S3_INTEGRATOR,
         channel=S3_INTEGRATOR_CHANNEL,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         revision=S3_INTEGRATOR_REVISION,
     )
 

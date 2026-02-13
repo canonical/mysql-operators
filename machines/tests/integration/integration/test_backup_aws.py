@@ -88,7 +88,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         S3_INTEGRATOR,
         channel=S3_INTEGRATOR_CHANNEL,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         revision=S3_INTEGRATOR_REVISION,
     )
 
