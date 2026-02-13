@@ -11,6 +11,7 @@ from pathlib import Path
 import jubilant_backports
 from jubilant_backports import Juju, TaskError
 
+from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
@@ -44,6 +45,7 @@ def test_deploy_latest(juju: Juju) -> None:
         num_units=3,
         trust=True,
     )
+    constraints = {"arch": architecture.architecture}
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
@@ -51,6 +53,7 @@ def test_deploy_latest(juju: Juju) -> None:
         channel="latest/edge",
         num_units=1,
         trust=False,
+        constraints=constraints,
     )
 
     juju.integrate(
