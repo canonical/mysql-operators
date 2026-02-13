@@ -78,23 +78,20 @@ def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -
         "undo_002",
     }
 
-    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_DATA_DIR, container=CONTAINER_NAME)
-    actual_content = set(result.strip().split())
+    actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_DATA_DIR))
 
     assert expected_content <= actual_content
     assert excluded_content.isdisjoint(actual_content)
 
 
 def test_temp_directory_has_only_expected_file_extensions_after_initialization(juju: Juju) -> None:
-    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_TEMP_DIR, container=CONTAINER_NAME)
-    actual_content = set(result.strip().split())
+    actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_TEMP_DIR))
 
     assert all(fname.endswith(".ibt") for fname in actual_content)
 
 
 def test_binlogs_directory_has_only_expected_file_names_after_initialization(juju: Juju) -> None:
-    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_BINLOGS_DIR, container=CONTAINER_NAME)
-    actual_content = set(result.strip().split())
+    actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_BINLOGS_DIR))
 
     assert all(fname.startswith("binlog") for fname in actual_content)
     assert "binlog.index" in actual_content
@@ -105,8 +102,8 @@ def test_redologs_directory_has_only_expected_files_after_initialization(
 ) -> None:
     redolog_pattern = re.compile(r"^\'\#ib_redo\d+")
     undolog_pattern = re.compile(r"^undo_\d+$")
-    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_REDOLOGS_DIR, container=CONTAINER_NAME)
-    actual_content = set(result.strip().split())
+
+    actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_REDOLOGS_DIR))
 
     assert all(
         (undolog_pattern.match(fname) or (fname == "'#innodb_redo'")) for fname in actual_content
@@ -132,7 +129,13 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
         "audit.log",
         "error.log",
     }
-    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_LOG_DIR, container=CONTAINER_NAME)
-    actual_content = set(result.strip().split())
+    actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_LOG_DIR))
 
     assert expected_content <= actual_content
+
+
+def list_container_files(
+    juju, unit_name: str, path: str, container: str = CONTAINER_NAME
+) -> list[str]:
+    result = juju.ssh(unit_name, "ls", path, container=container)
+    return result.strip().split()
