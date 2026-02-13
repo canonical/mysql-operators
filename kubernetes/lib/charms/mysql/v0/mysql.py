@@ -80,6 +80,7 @@ from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerU
 from constants import (
     MYSQL_DATA_DIR,
     MYSQL_TEMP_DIR,
+    MYSQL_BINLOGS_DIR,
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
     CHARMED_MYSQL_PITR_HELPER,
@@ -1165,6 +1166,7 @@ class MySQLBase(ABC):
         config["mysqld"] = {
             "datadir": MYSQL_DATA_DIR,
             "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
+            "log_bin": f"{MYSQL_BINLOGS_DIR}/binlog",
             # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104

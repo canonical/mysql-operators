@@ -7,7 +7,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME, MYSQL_DATA_DIR, MYSQL_TEMP_DIR
+from constants import CONTAINER_NAME, MYSQL_BINLOGS_DIR, MYSQL_DATA_DIR, MYSQL_TEMP_DIR
 
 from ..helpers_ha import (
     CHARM_METADATA,
@@ -41,7 +41,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_charm_lists_expected_storage(juju: Juju) -> None:
-    expected_storages = ["data", "temp"]
+    expected_storages = ["data", "temp", "binlogs"]
 
     assert len(juju.status().storage.storage) == len(expected_storages)
 
@@ -82,3 +82,11 @@ def test_temp_directory_has_only_expected_file_extensions_after_initialization(j
     actual_content = set(result.strip().split())
 
     assert all(fname.endswith(".ibt") for fname in actual_content)
+
+
+def test_binlogs_directory_has_only_expected_file_names_after_initialization(juju: Juju) -> None:
+    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_BINLOGS_DIR, container=CONTAINER_NAME)
+    actual_content = set(result.strip().split())
+
+    assert all(fname.startswith("binlog") for fname in actual_content)
+    assert "binlog.index" in actual_content

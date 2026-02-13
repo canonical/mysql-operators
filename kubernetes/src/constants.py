@@ -29,6 +29,7 @@ MYSQL_CLI_LOCATION = "/usr/bin/mysql"
 MYSQLSH_LOCATION = "/usr/bin/mysqlsh"
 MYSQL_DATA_DIR = "/var/lib/mysql/data"  # Corresponds to the data storage mount
 MYSQL_TEMP_DIR = "/var/lib/mysql/temp"  # Corresponds to the temp storage mount
+MYSQL_BINLOGS_DIR = "/var/lib/mysql/binlogs"  # Corresponds to the binlogs storage mount
 MYSQLD_SOCK_FILE = "/var/run/mysqld/mysqld.sock"
 MYSQLD_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom.cnf"
 MYSQLD_INIT_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"
