@@ -271,16 +271,19 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_sql.assert_not_called()
 
         _get_non_system_databases.return_value = set()
-        query = ";".join([
-            "CREATE DATABASE `test_database`",
-            "GRANT SELECT ON `test_database`.* TO 'charmed_read'",
-            "GRANT SELECT, INSERT, DELETE, UPDATE ON `test_database`.* TO 'charmed_dml'",
+        creation_query = "CREATE DATABASE `test_database`"
+        granting_query = ";".join([
+            "GRANT SELECT ON `test_database`.* TO `charmed_read`",
+            "GRANT SELECT, INSERT, DELETE, UPDATE ON `test_database`.* TO `charmed_dml`",
             "CREATE ROLE `test_database_00`",
             "GRANT SELECT, INSERT, DELETE, UPDATE, EXECUTE, ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE VIEW, DROP, INDEX, LOCK TABLES, REFERENCES, TRIGGER ON `test_database`.* TO `test_database_00`",
         ])
 
         self.mysql.create_database("test_database")
-        self.mock_executor.execute_sql.assert_called_once_with(query)
+        self.mock_executor.execute_sql.assert_has_calls([
+            call(creation_query),
+            call(granting_query),
+        ])
 
     @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_primary_address")
     @patch("charms.mysql.v0.mysql.MySQLBase.get_non_system_databases")
