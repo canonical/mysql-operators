@@ -84,6 +84,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
         constraints=constraints,
         resources=resources,
         num_units=3,
+        trust=True,
     )
     model_2 = Juju(model=second_model)
     model_2.deploy(
@@ -94,6 +95,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
         constraints=constraints,
         resources=resources,
         num_units=3,
+        trust=True,
     )
 
     logging.info("Waiting for the applications to settle")
@@ -137,6 +139,7 @@ def test_async_relate(first_model: str, second_model: str) -> None:
 def test_deploy_router_and_app(first_model: str) -> None:
     """Deploy the router and the test application."""
     logging.info("Deploying the router and test application")
+    constraints = {"arch": architecture.architecture}
     model_1 = Juju(model=first_model)
     model_1.deploy(
         charm=MYSQL_ROUTER_NAME,
@@ -145,6 +148,7 @@ def test_deploy_router_and_app(first_model: str) -> None:
         channel="8.4/edge",
         num_units=1,
         trust=True,
+        constraints=constraints,
     )
     model_1.deploy(
         charm=MYSQL_TEST_APP_NAME,
@@ -153,6 +157,7 @@ def test_deploy_router_and_app(first_model: str) -> None:
         channel="latest/edge",
         num_units=1,
         trust=False,
+        constraints=constraints,
     )
 
     logging.info("Relating the router and test application")
