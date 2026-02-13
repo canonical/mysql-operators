@@ -127,6 +127,7 @@ class TestMySQL(unittest.TestCase):
     @patch("ops.model.Container")
     def test_log_rotate_config(self, _container):
         """Test log_rotate_config."""
+        # TODO: Parametrize with MYSQL_LOG_DIR?
         rendered_logrotate_config = (
             "# Create dedicated subdirectory for rotated files\n"
             "createolddir 770 mysql mysql\n\n"

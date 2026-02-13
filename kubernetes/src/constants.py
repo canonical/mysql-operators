@@ -34,7 +34,7 @@ MYSQL_REDOLOGS_DIR = "/var/lib/mysql/redologs"  # Corresponds to the redologs st
 MYSQLD_SOCK_FILE = "/var/run/mysqld/mysqld.sock"
 MYSQLD_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom.cnf"
 MYSQLD_INIT_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"
-MYSQL_LOG_DIR = "/var/log/mysql"
+MYSQL_LOG_DIR = "/var/log/mysql"  # Corresponds to the logs storage mount
 MYSQL_LOG_ERROR = f"{MYSQL_LOG_DIR}/error.log"
 MYSQL_LOG_FILES = [
     MYSQL_LOG_ERROR,

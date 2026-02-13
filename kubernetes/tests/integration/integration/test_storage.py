@@ -12,6 +12,7 @@ from constants import (
     CONTAINER_NAME,
     MYSQL_BINLOGS_DIR,
     MYSQL_DATA_DIR,
+    MYSQL_LOG_DIR,
     MYSQL_REDOLOGS_DIR,
     MYSQL_TEMP_DIR,
 )
@@ -48,7 +49,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_charm_lists_expected_storage(juju: Juju) -> None:
-    expected_storages = ["data", "temp", "binlogs", "redologs"]
+    expected_storages = ["data", "temp", "binlogs", "redologs", "logs"]
 
     assert len(juju.status().storage.storage) == len(expected_storages)
 
@@ -120,3 +121,18 @@ def test_redologs_directory_has_only_expected_files_after_initialization(
     actual_content = set(result.strip().split())
 
     assert all(redolog_pattern.match(fname) for fname in actual_content)
+
+
+def test_logs_directory_has_only_expected_contents_after_initialization(
+    juju: Juju,
+) -> None:
+    expected_content = {
+        "archive_audit",
+        "archive_error",
+        "audit.log",
+        "error.log",
+    }
+    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_LOG_DIR, container=CONTAINER_NAME)
+    actual_content = set(result.strip().split())
+
+    assert expected_content <= actual_content
