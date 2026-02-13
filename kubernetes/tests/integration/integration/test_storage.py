@@ -3,11 +3,18 @@
 # See LICENSE file for licensing details.
 
 import logging
+import re
 
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME, MYSQL_BINLOGS_DIR, MYSQL_DATA_DIR, MYSQL_TEMP_DIR
+from constants import (
+    CONTAINER_NAME,
+    MYSQL_BINLOGS_DIR,
+    MYSQL_DATA_DIR,
+    MYSQL_REDOLOGS_DIR,
+    MYSQL_TEMP_DIR,
+)
 
 from ..helpers_ha import (
     CHARM_METADATA,
@@ -41,14 +48,13 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_charm_lists_expected_storage(juju: Juju) -> None:
-    expected_storages = ["data", "temp", "binlogs"]
+    expected_storages = ["data", "temp", "binlogs", "redologs"]
 
     assert len(juju.status().storage.storage) == len(expected_storages)
 
 
 def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -> None:
     expected_content = {
-        "'#innodb_redo'",
         "auto.cnf",
         "ca-key.pem",
         "ca.pem",
@@ -63,11 +69,12 @@ def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -
         "server-cert.pem",
         "server-key.pem",
         "sys",
-        "undo_001",
-        "undo_002",
     }
     excluded_content = {
         "'#innodb_temp'",
+        "'#innodb_redo'",
+        "undo_001",
+        "undo_002",
     }
 
     result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_DATA_DIR, container=CONTAINER_NAME)
@@ -90,3 +97,26 @@ def test_binlogs_directory_has_only_expected_file_names_after_initialization(juj
 
     assert all(fname.startswith("binlog") for fname in actual_content)
     assert "binlog.index" in actual_content
+
+
+def test_redologs_directory_has_only_expected_files_after_initialization(
+    juju: Juju,
+) -> None:
+    redolog_pattern = re.compile(r"^\'\#ib_redo\d+")
+    undolog_pattern = re.compile(r"^undo_\d+$")
+    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_REDOLOGS_DIR, container=CONTAINER_NAME)
+    actual_content = set(result.strip().split())
+
+    assert all(
+        (undolog_pattern.match(fname) or (fname == "'#innodb_redo'")) for fname in actual_content
+    )
+
+    result = juju.ssh(
+        f"{DATABASE_APP_NAME}/0",
+        "ls",
+        f"{MYSQL_REDOLOGS_DIR}/#innodb_redo",
+        container=CONTAINER_NAME,
+    )
+    actual_content = set(result.strip().split())
+
+    assert all(redolog_pattern.match(fname) for fname in actual_content)

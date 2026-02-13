@@ -81,6 +81,7 @@ from constants import (
     MYSQL_DATA_DIR,
     MYSQL_TEMP_DIR,
     MYSQL_BINLOGS_DIR,
+    MYSQL_REDOLOGS_DIR,
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
     CHARMED_MYSQL_PITR_HELPER,
@@ -1167,6 +1168,8 @@ class MySQLBase(ABC):
             "datadir": MYSQL_DATA_DIR,
             "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
             "log_bin": f"{MYSQL_BINLOGS_DIR}/binlog",
+            "innodb_log_group_home_dir": MYSQL_REDOLOGS_DIR,
+            "innodb_undo_directory": MYSQL_REDOLOGS_DIR,
             # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104
