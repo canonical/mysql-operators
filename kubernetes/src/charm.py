@@ -20,7 +20,7 @@ from time import sleep
 
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
-from charms.data_platform_libs.v0.s3 import S3Requirer
+from charms.data_platform_libs.v0.object_storage import S3Requirer
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.mysql.v0.async_replication import (
