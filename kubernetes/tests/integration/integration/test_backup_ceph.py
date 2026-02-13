@@ -9,8 +9,8 @@ import os
 import socket
 import subprocess
 import time
-from pathlib import Path
 import uuid
+from pathlib import Path
 
 import boto3
 import botocore.exceptions
