@@ -27,8 +27,10 @@ containers:
     gid: 584788
     resource: mysql-image
     mounts:
-      - storage: database
-        location: /var/lib/mysql
+      - storage: data
+        location: /var/lib/mysql/data
+      - storage: temp
+        location: /var/lib/mysql/temp
 
 resources:
   mysql-image:
@@ -81,9 +83,12 @@ requires:
     optional: true
 
 storage:
-  database:
+  data:
     type: filesystem
     description: Persistent storage for MySQL data
+  temp:
+    type: filesystem
+    description: Persistent storage for InnoDB temporary tablespaces
 
 assumes:
   - k8s-api

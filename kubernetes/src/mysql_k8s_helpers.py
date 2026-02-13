@@ -578,7 +578,7 @@ class MySQL(MySQLBase):
             # minimal expected content for an integral mysqld data-dir
             expected_content = {
                 "#innodb_redo",
-                "#innodb_temp",
+                # "#innodb_temp",  # stored separately
                 "auto.cnf",
                 "ca-key.pem",
                 "ca.pem",

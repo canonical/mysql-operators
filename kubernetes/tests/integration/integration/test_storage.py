@@ -7,7 +7,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME, MYSQL_DATA_DIR
+from constants import CONTAINER_NAME, MYSQL_DATA_DIR, MYSQL_TEMP_DIR
 
 from ..helpers_ha import (
     CHARM_METADATA,
@@ -41,7 +41,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_charm_lists_expected_storage(juju: Juju) -> None:
-    expected_storages = ["database"]
+    expected_storages = ["data", "temp"]
 
     assert len(juju.status().storage.storage) == len(expected_storages)
 
@@ -49,7 +49,6 @@ def test_charm_lists_expected_storage(juju: Juju) -> None:
 def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -> None:
     expected_content = {
         "'#innodb_redo'",
-        "'#innodb_temp'",
         "auto.cnf",
         "ca-key.pem",
         "ca.pem",
@@ -67,8 +66,19 @@ def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -
         "undo_001",
         "undo_002",
     }
+    excluded_content = {
+        "'#innodb_temp'",
+    }
 
     result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_DATA_DIR, container=CONTAINER_NAME)
     actual_content = set(result.strip().split())
 
     assert expected_content <= actual_content
+    assert excluded_content.isdisjoint(actual_content)
+
+
+def test_temp_directory_has_only_expected_file_extensions_after_initialization(juju: Juju) -> None:
+    result = juju.ssh(f"{DATABASE_APP_NAME}/0", "ls", MYSQL_TEMP_DIR, container=CONTAINER_NAME)
+    actual_content = set(result.strip().split())
+
+    assert all(fname.endswith(".ibt") for fname in actual_content)

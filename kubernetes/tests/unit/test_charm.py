@@ -337,7 +337,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.remove_instance")
     @patch("mysql_k8s_helpers.MySQL.get_primary_label")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=True)
-    def test_database_storage_detaching(
+    def test_data_storage_detaching(
         self,
         mock_is_instance_in_cluster,
         mock_get_primary_label,
@@ -353,7 +353,7 @@ class TestCharm(unittest.TestCase):
         )
         mock_get_primary_label.return_value = self.charm.unit_label
 
-        self.charm._on_database_storage_detaching(None)
+        self.charm._on_data_storage_detaching(None)
         mock_remove_instance.assert_called_once_with(self.charm.unit_label, from_instance=None)
 
         self.assertEqual(
