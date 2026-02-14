@@ -40,6 +40,7 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -69,6 +70,7 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 

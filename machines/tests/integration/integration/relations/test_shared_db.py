@@ -53,6 +53,7 @@ def test_keystone_bundle_shared_db(juju: Juju, charm) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=FAST_WAIT_TIMEOUT,
+        delay=2,
     )
 
     mysql_units = get_app_units(juju, APP_NAME)
@@ -109,6 +110,7 @@ def test_keystone_bundle_shared_db(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
         timeout=FAST_WAIT_TIMEOUT,
+        delay=2,
     )
 
     # Scale mysql back up to 3 units
@@ -154,6 +156,7 @@ def deploy_and_relate_keystone_with_mysql(
             ),
         )),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
 
     # Relate keystone to mysql
@@ -163,4 +166,5 @@ def deploy_and_relate_keystone_with_mysql(
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, keystone_application_name),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )

@@ -56,6 +56,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -84,6 +85,7 @@ def test_cluster_data_isolation(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, mysql_other_app_name),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     table_name = "cluster_isolation_table"

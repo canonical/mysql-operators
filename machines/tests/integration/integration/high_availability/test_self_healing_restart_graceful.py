@@ -57,6 +57,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -104,6 +105,7 @@ def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_primary_unit, "active"),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     # Ensure continuous writes still incrementing for all units
