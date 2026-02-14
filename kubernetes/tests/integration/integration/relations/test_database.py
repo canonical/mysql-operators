@@ -7,9 +7,8 @@ import logging
 import jubilant_backports
 from jubilant_backports import Juju
 
-from tests.integration import architecture
-
 from ... import markers
+from ...architecture import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -37,7 +36,7 @@ def test_build_and_deploy(juju: Juju, charm):
         trust=True,
     )
 
-    constraints = {"arch": architecture.architecture}
+    constraints = {"arch": architecture}
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=2,
