@@ -24,7 +24,9 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
         base="ubuntu@22.04",
     )
 
-    juju.wait(ready=jubilant_backports.all_error, timeout=300,
+    juju.wait(
+        ready=jubilant_backports.all_error,
+        timeout=300,
         delay=2,
     )
 
@@ -42,7 +44,9 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
         base="ubuntu@22.04",
     )
 
-    juju.wait(ready=jubilant_backports.all_error, timeout=300,
+    juju.wait(
+        ready=jubilant_backports.all_error,
+        timeout=300,
         delay=2,
     )
 
