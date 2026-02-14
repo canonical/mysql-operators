@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+from time import sleep
 
 import boto3
 import jubilant_backports
@@ -82,6 +83,10 @@ def build_and_deploy_operations(
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         trust=True,
     )
+
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
 
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APPLICATION_NAME),

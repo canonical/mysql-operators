@@ -5,6 +5,7 @@
 import logging
 import socket
 from pathlib import Path
+from time import sleep
 
 import boto3
 import jubilant_backports
@@ -332,6 +333,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
         trust=True,
     )
 
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
+
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, new_mysql_application_name),
         timeout=TIMEOUT,
@@ -383,8 +388,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
 
     logger.info("Waiting for blocked application status with another cluster S3 repository")
     juju.wait(  # Might take a few minutes to get past this
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
+        ),
         timeout=TIMEOUT,
     )
 
@@ -462,7 +469,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
 
     logger.info("Waiting for blocked application status after restore")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
+        ),
         timeout=TIMEOUT,
     )

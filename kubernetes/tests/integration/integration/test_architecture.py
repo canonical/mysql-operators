@@ -3,6 +3,8 @@
 # See LICENSE file for licensing details.
 
 
+from time import sleep
+
 from jubilant_backports import Juju
 
 from .. import markers
@@ -25,6 +27,10 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         base="ubuntu@22.04",
     )
+
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
 
     juju.wait(
         ready=lambda status: all((
@@ -50,6 +56,10 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         base="ubuntu@22.04",
     )
+
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
 
     juju.wait(
         ready=lambda status: all((
