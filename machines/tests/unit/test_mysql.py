@@ -1700,7 +1700,7 @@ class TestMySQLBase(unittest.TestCase):
             "activate_all_roles_on_login": "ON",
             "max_connect_errors": "10000",
             "loose-validate_password.check_user_name": "ON",
-            "loose-validate_password.length": "24",
+            "loose-validate_password.length": "12",
             "loose-validate_password.mixed_case_count": "1",
             "loose-validate_password.number_count": "1",
             "loose-validate_password.policy": "MEDIUM",
