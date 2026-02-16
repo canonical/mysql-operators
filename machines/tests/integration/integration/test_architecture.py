@@ -2,6 +2,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+from time import sleep
 
 import jubilant_backports
 from jubilant_backports import Juju
@@ -23,6 +24,9 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
         config={"profile": "testing"},
         base="ubuntu@22.04",
     )
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
 
     juju.wait(
         ready=jubilant_backports.all_error,
@@ -43,6 +47,9 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
         config={"profile": "testing"},
         base="ubuntu@22.04",
     )
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
 
     juju.wait(
         ready=jubilant_backports.all_error,
