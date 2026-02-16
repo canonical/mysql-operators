@@ -44,13 +44,13 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_password_too_short_fails(juju: Juju) -> None:
-    """Test that a password with less than 24 characters fails."""
+    """Test that a password with less than 12 characters fails."""
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME)
     old_password = old_credentials["password"]
 
-    short_password = generate_random_password(20)
+    short_password = generate_random_password(8)
     logger.info(f"Attempting to set short password with length {len(short_password)}")
 
     with pytest.raises(TaskError) as excinfo:
