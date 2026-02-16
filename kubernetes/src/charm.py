@@ -73,6 +73,7 @@ from constants import (
     CLUSTER_ADMIN_USERNAME,
     CONTAINER_NAME,
     COS_AGENT_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
@@ -87,7 +88,6 @@ from constants import (
     MYSQLD_EXPORTER_SERVICE,
     MYSQLD_LOCATION,
     MYSQLD_SERVICE,
-    PASSWORD_LENGTH,
     PEER,
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
@@ -670,7 +670,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         for required_password in required_passwords:
             if not self.get_secret("app", required_password):
                 self.set_secret(
-                    "app", required_password, generate_random_password(PASSWORD_LENGTH)
+                    "app", required_password, generate_random_password(DEFAULT_PASSWORD_LENGTH)
                 )
 
         # Create and set cluster and cluster-set names in the peer relation databag

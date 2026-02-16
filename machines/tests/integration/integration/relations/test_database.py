@@ -8,7 +8,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import DB_RELATION_NAME, PASSWORD_LENGTH, ROOT_USERNAME
+from constants import DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
 from utils import generate_random_password
 
 from ...helpers import execute_queries_on_unit
@@ -74,7 +74,7 @@ def test_password_rotation(juju: Juju):
     logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name)
-    new_password = generate_random_password(PASSWORD_LENGTH)
+    new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
 
     rotate_mysql_server_credentials(juju, primary_unit_name, password=new_password)
 

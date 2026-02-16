@@ -21,7 +21,7 @@ from ops.charm import PebbleReadyEvent, RelationBrokenEvent, RelationDepartedEve
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
-from constants import CONTAINER_NAME, CONTAINER_RESTARTS, DB_RELATION_NAME, PASSWORD_LENGTH
+from constants import CONTAINER_NAME, CONTAINER_RESTARTS, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
 from k8s_helpers import KubernetesClientError
 from utils import dotappend, generate_random_password
 
@@ -69,7 +69,7 @@ class MySQLProvider(Object):
         """
         if password := self.database.fetch_my_relation_field(relation.id, "password"):
             return password
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self.database.update_relation_data(relation.id, {"password": password})
         return password
 

@@ -14,9 +14,9 @@ from charm import MySQLOperatorCharm
 from constants import (
     BACKUPS_PASSWORD_KEY,
     CLUSTER_ADMIN_PASSWORD_KEY,
+    DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
     MYSQLD_LOCATION,
-    PASSWORD_LENGTH,
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
 )
@@ -125,7 +125,8 @@ class TestCharm(unittest.TestCase):
         # Test passwords in content and length
         for password in REQUIRED_PASSWORD_KEYS:
             self.assertTrue(
-                peer_data[password].isalnum() and len(peer_data[password]) == PASSWORD_LENGTH
+                peer_data[password].isalnum()
+                and len(peer_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
     def test_on_leader_elected_secrets(self):
@@ -140,7 +141,8 @@ class TestCharm(unittest.TestCase):
         # Test passwords in content and length
         for password in REQUIRED_PASSWORD_KEYS:
             self.assertTrue(
-                secret_data[password].isalnum() and len(secret_data[password]) == PASSWORD_LENGTH
+                secret_data[password].isalnum()
+                and len(secret_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
     @patch("mysql_k8s_helpers.MySQL.install_components")

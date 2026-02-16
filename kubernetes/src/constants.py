@@ -3,7 +3,8 @@
 
 """File containing constants to be used in the charm."""
 
-PASSWORD_LENGTH = 24
+DEFAULT_PASSWORD_LENGTH = 24
+MAX_PASSWORD_LENGTH = 130
 PEER = "database-peers"
 CONTAINER_NAME = "mysql"
 MYSQLD_SERVICE = "mysqld"

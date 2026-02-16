@@ -85,13 +85,13 @@ from constants import (
     CLUSTER_ADMIN_USERNAME,
     COS_AGENT_RELATION_NAME,
     DB_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     MYSQL_EXPORTER_PORT,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_SOCK_FILE,
-    PASSWORD_LENGTH,
     PEER,
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
@@ -225,7 +225,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         for required_password in required_passwords:
             if not self.get_secret("app", required_password):
                 self.set_secret(
-                    "app", required_password, generate_random_password(PASSWORD_LENGTH)
+                    "app", required_password, generate_random_password(DEFAULT_PASSWORD_LENGTH)
                 )
         self.unit_peer_data.update({"leader": "true"})
 
