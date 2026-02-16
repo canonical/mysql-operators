@@ -98,6 +98,8 @@ def test_integrate_with_isolated_space(juju: Juju):
         isolated_app_name,
         constraints={"spaces": "isolated"},
         bind={"database": "isolated"},
+        num_units=1,
+        base="ubuntu@22.04",
         channel="latest/edge",
     )
     juju.wait(
