@@ -60,7 +60,7 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         channel="latest/edge",
         config={"auto_start_writes": False, "sleep_interval": 500},
         num_units=1,
