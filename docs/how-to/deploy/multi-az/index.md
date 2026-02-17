@@ -11,7 +11,7 @@ During the deployment to hardware/VMs, it is important to spread all the databas
 
 ## Examples
 
-These guides will take you through deploying a MySQL cluster on Google Cloud using 3 available zones. All Juju units (or pods, on Kubernetes) will be set up to sit in their dedicated zones only, which effectively guarantees database copy survival across all available AZs.
+These guides will take you through deploying a MySQL cluster on Google Cloud using 3 available zones. All Juju units (or pods, on Kubernetes) will be set up to sit in their dedicated zones only, which effectively guarantees database copy survival across all available availability zones.
 
 ```{toctree}
 :titlesonly:

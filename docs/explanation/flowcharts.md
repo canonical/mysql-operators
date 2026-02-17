@@ -1,3 +1,4 @@
+(flowcharts)=
 # Charm lifecycle flowcharts
 
 ```{mermaid}

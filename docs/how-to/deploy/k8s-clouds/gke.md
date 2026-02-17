@@ -7,7 +7,7 @@ This guide will walk you through setting up a cluster and deploying MySQL K8s on
 
 ## Install GKE and Juju tooling
 
-Install `juju`, `kubectl`, and Google Cloud command-line tools using snap:
+Install `juju`, `kubectl`, and Google Cloud Platform command-line tools using snap:
 
 ```shell
 sudo snap install juju
@@ -28,36 +28,41 @@ If successful, the command prompt will show:
 >```
 
 ### Configure project ID
-Next, you must associate this installation with GCloud project using "Project ID" from [resource-management](https://console.cloud.google.com/cloud-resource-manager):
+Next, you must associate this installation with Google Cloud Platform project using "Project ID" from [resource-management](https://console.cloud.google.com/cloud-resource-manager):
 ```shell
 > gcloud config set project <PROJECT_ID>
 ```
 Sample output:
->```shell
->Updated property [core/project].
->```
 
-### Install additional gcloud CLI tool
+```shell
+Updated property [core/project].
+```
 
-As a last step, install the Debian package `google-cloud-sdk-gke-gcloud-auth-plugin` using this Google guide: [Install the gcloud CLI](https://cloud.google.com/sdk/docs/install#deb).
+### Install additional Google Cloud Platform CLI tool
+
+As a last step, install the Debian package `google-cloud-sdk-gke-gcloud-auth-plugin` using this Google guide: [Install the Google Cloud Platform CLI](https://cloud.google.com/sdk/docs/install#deb).
 
 ## Create a new GKE cluster
 
 This guide will use high-availability zone `europe-west1` and compute engine type `n1-standard-4` in command examples. Make sure to choose the zone and resources that best suit your use-case.
 
-The following command will start three [compute engines](https://cloud.google.com/compute/) on Google Cloud and deploy a K8s cluster (you can imagine the compute engines as three physical servers in clouds):
+The following command will start three [compute engines](https://cloud.google.com/compute/) on Google Cloud Platform and deploy a K8s cluster (you can imagine the compute engines as three physical servers in clouds):
+
 ```shell
 gcloud container clusters create --zone europe-west1-c $USER-$RANDOM --cluster-version 1.25 --machine-type n1-standard-4 --num-nodes=3 --no-enable-autoupgrade
 ```
 
 Next, assign your account as an admin of the newly created K8s cluster:
+
 ```shell
 kubectl create clusterrolebinding cluster-admin-binding-$USER --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 ```
 
 ## Bootstrap Juju on GKE
 
-> Note: [This known issue](https://bugs.launchpad.net/juju/+bug/2007575) forces unSNAPed Juju usage to add-k8s credentials on Juju.
+```{note}
+[This known issue](https://bugs.launchpad.net/juju/+bug/2007575) forces unSNAPed Juju usage to add-k8s credentials on Juju.
+```
 
 ```shell
 /snap/juju/current/bin/juju add-k8s gke-jun-9 --storage=standard --client
@@ -65,6 +70,7 @@ juju bootstrap gke-jun-9
 juju add-model welcome-model
 ```
 At this stage, Juju is ready to use GKE. Check the list of currently running K8s pods with:
+
 ```shell
 kubectl get pods -n welcome-model
 ```
@@ -123,7 +129,7 @@ juju remove-cloud gke-jun-9
 gcloud container clusters list
 gcloud container clusters delete <cluster_name> --zone europe-west1-c
 ```
-Revoke the GCloud user credentials:
+Revoke the Google Cloud Platform user credentials:
 ```shell
 gcloud auth revoke your_account@gmail.com
 ```

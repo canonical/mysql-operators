@@ -13,7 +13,7 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 
 If you do not specify a revision on deploy time, Juju will automatically choose the revision that matches your base and architecture.
 
-All revisions of MySQL described below are built for *Ubuntu 22.04 (Jammy)*.
+All revisions of MySQL described below are built for *Ubuntu 22.04 LTS (Jammy)*.
 
 | Revision (`amd`) | Revision (`arm`) | Revision (`s390x`) | MySQL version | Juju version | {ref}`TLS <enable-tls>`* | {ref}`Monitoring <enable-monitoring>` | {ref}`In-place upgrades <refresh-single-cluster>`| {ref}`Cluster-cluster replication <cluster-cluster-replication>` |
 |:---:|:---:|:----:|:---:|:---:|:---:|:---:|:---:|:---:|

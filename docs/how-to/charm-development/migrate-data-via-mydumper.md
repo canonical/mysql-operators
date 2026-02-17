@@ -9,7 +9,7 @@
 Both tools use multi-threading capabilities and support S3 storage to write/read dumps. <!--MyDumper is Open Source and maintained by the community, it is not a Percona, MariaDB, MySQL or Canonical product.-->
 
 ```{seealso}
-For data stored in legacy charms, see {ref}`migrate-data-via-mysqldump`
+For data stored in legacy charms, see {ref}`migrate-data-mysqldump`
 ```
 
 ## Prepare

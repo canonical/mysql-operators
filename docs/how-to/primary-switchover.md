@@ -26,5 +26,5 @@ In this example, the unit `mysql-k8s/1` will become the new primary. The previou
 ```{caution}
 The `promote-to-primary` action can be used in cluster scope, when using cluster-cluster replication.
 
-See {ref}`switchover-failover` for more information.
+See {ref}`cluster-cluster-switchover-failover` for more information.
 ```

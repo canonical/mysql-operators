@@ -1,11 +1,11 @@
-(audit_logs)=
+(audit-logs)=
 # Audit logs
 
 The Audit Log plugin allows fine grained configuration for all login/logout, queries or both records to be stored in a log file. It is enabled in Charmed MySQL by default.
 
 ## Overview
 
-The following is a sample of the audit logs, with format json with only logins records (default configuration):
+The following is a sample of the audit logs, in JSON format with only logins records (default configuration):
 
 ```json
 {"audit_record":{"name":"Quit","record":"6_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"992","status":0,"user":"clusteradmin","priv_user":"clusteradmin","os_login":"","proxy_user":"","host":"localhost","ip":"","db":""}}

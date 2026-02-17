@@ -32,9 +32,9 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 
 * Fixed MAAS deployment [[PR#444](https://github.com/canonical/mysql-operator/pull/444)][[DPE-3115](https://warthogs.atlassian.net/browse/DPE-3115)]
 * Fixed single unit upgrade [[PR#340](https://github.com/canonical/mysql-operator/pull/340)][[DPE-2662](https://warthogs.atlassian.net/browse/DPE-2662)]
-* Fixed dateformat in logrotate config to avoid causing filename conflicts after 24hrs of uptime [[PR#363](https://github.com/canonical/mysql-operator/pull/363)][[DPE-3063](https://warthogs.atlassian.net/browse/DPE-3063)]
+* Fixed date format in logrotate config to avoid causing filename conflicts after 24hrs of uptime [[PR#363](https://github.com/canonical/mysql-operator/pull/363)][[DPE-3063](https://warthogs.atlassian.net/browse/DPE-3063)]
 * Stops logging FLUSH LOG statements to the MySQL binlog which is causing GTID conflicts and prevents the member from self-healing [[PR#336](https://github.com/canonical/mysql-operator/pull/336)]
-* Fixed rollback for unsupported MySQL datadir [[DPE-3392](https://warthogs.atlassian.net/browse/DPE-3392)]
+* Fixed rollback for unsupported MySQL {vale-ignore}`datadir` [[DPE-3392](https://warthogs.atlassian.net/browse/DPE-3392)]
 * Updated TLS test lib and test charm [[PR#392](https://github.com/canonical/mysql-operator/pull/392)][[DPE-3403](https://warthogs.atlassian.net/browse/DPE-3403)]
 * Fixed floor value for max_connections [[PR#398](https://github.com/canonical/mysql-operator/pull/398)]
 * Fixed max_connections calculation [[#429](https://github.com/canonical/mysql-operator/pull/429)][DPE-3706](https://warthogs.atlassian.net/browse/DPE-3706)
@@ -46,7 +46,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 *  Started using labels for internal secrets [[PR#348](https://github.com/canonical/mysql-operator/pull/348)][[DPE-2886](https://warthogs.atlassian.net/browse/DPE-2886)]
 
 Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.net/jira/software/c/projects/DPE/issues/) and [GitHub](https://github.com/canonical/mysql-operator/issues) platforms.  
-[GitHub Releases](https://github.com/canonical/mysql-operator/releases) provide a detailed list of bugfixes, PRs, and commits for each revision.  
+[GitHub Releases](https://github.com/canonical/mysql-operator/releases) provide a detailed list of bug fixes, PRs, and commits for each revision.  
 
 **Full Changelog**: https://github.com/canonical/mysql-operator/compare/rev196...rev240
 
@@ -64,7 +64,7 @@ Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.n
 * Upgrade (`juju refresh`) is possible from revision 196+
 * Use this operator together with a modern operator [MySQL Router](https://charmhub.io/mysql-router?channel=dpe/beta)
 * Please check restrictions from [previous release notes](https://charmhub.io/mysql/docs/r-releases)
-* Ensure [the charm requirements](/t/11742) met.
+* Ensure {ref}`system requirements <system-requirements>` are met.
   
 ## Contact us
   

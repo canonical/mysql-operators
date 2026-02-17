@@ -93,7 +93,7 @@ To upgrade from older versions to Revision 153 or higher, the data must be migra
 
 ### Juju version upgrade
 
-Before refreshing the charm, make sure to check the {ref}`releases` page to see if there any requirements for the new revision, such as a Juju version upgrade.
+Before refreshing the charm, make sure to check the {ref}`release-notes` page to see if there any requirements for the new revision, such as a Juju version upgrade.
 
 ```{toctree}
 :titlesonly:

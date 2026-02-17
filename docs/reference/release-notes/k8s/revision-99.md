@@ -21,20 +21,20 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 * Support `juju expose` [[DPE-1215](https://warthogs.atlassian.net/browse/DPE-1215)]
 * Add the first Prometheus alert rule (COS Loki) [[PR#244](https://github.com/canonical/mysql-k8s-operator/pull/244)]
 * New documentation:
-  * [Architecture (HLD/LLD)](https://charmhub.io/mysql-k8s/docs/e-architecture)
-  * [Upgrade section](https://charmhub.io/mysql-k8s/docs/h-upgrade)
-  * [Release Notes](https://charmhub.io/mysql-k8s/docs/r-releases)
-  * [Requirements](https://charmhub.io/mysql-k8s/docs/r-system-requirements)
-  * [Users](https://charmhub.io/mysql-k8s/docs/e-users)
-  * [Statuses](https://charmhub.io/mysql-k8s/docs/r-statuses)
-  * [Development](/t/11884)
-  * [Testing reference](https://charmhub.io/mysql-k8s/docs/r-testing)
-  * [Legacy charm](https://charmhub.io/mysql-k8s/docs/e-legacy-charm)
-  * [Contacts](https://charmhub.io/mysql-k8s/docs/r-contacts)
+  * {ref}`Architecture (HLD/LLD) <architecture>`
+  * {ref}`Upgrade section <refresh>`
+  * {ref}`Release Notes <release-notes>`
+  * {ref}`Requirements <system-requirements>`
+  * {ref}`Users <users>`
+  * {ref}`Statuses <charm-statuses>`
+  * {ref}`Development <charm-development>`
+  * {ref}`Testing reference <charm-testing>`
+  * {ref}`Legacy charm <legacy-charm>`
+  * {ref}`Contacts <contacts>`
 
 ## Bug fixes
 
-Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.net/jira/software/c/projects/DPE/issues/) and [GitHub](https://github.com/canonical/mysql-k8s-operator/issues) platforms.<br/>[GitHub Releases](https://github.com/canonical/mysql-k8s-operator/releases) provide a detailed list of bugfixes/PRs/Git commits for each revision.<br/>Highlights for the current revision:
+Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.net/jira/software/c/projects/DPE/issues/) and [GitHub](https://github.com/canonical/mysql-k8s-operator/issues) platforms.<br/>[GitHub Releases](https://github.com/canonical/mysql-k8s-operator/releases) provide a detailed list of bug fixes/PRs/Git commits for each revision.<br/>Highlights for the current revision:
 
 * [DPE-1919](https://warthogs.atlassian.net/browse/DPE-1919) Fixed GKE [deployment support](https://charmhub.io/mysql-k8s/docs/h-deploy-gke)
 * [DPE-1519](https://warthogs.atlassian.net/browse/DPE-1519) Stabilized integration with mysql-route-k8s

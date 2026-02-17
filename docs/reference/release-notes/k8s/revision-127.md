@@ -22,7 +22,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 
 ## Bug fixes
 
-* [DPE-3547](https://warthogs.atlassian.net/browse/DPE-3547) Fixed mitigations for container restart  in [#377](https://github.com/canonical/mysql-k8s-operator/pull/377)
+* [DPE-3547](https://warthogs.atlassian.net/browse/DPE-3547) Fixed mitigation for container restart in [#377](https://github.com/canonical/mysql-k8s-operator/pull/377)
 * [DPE-3389](https://warthogs.atlassian.net/browse/DPE-3389) Fixed support for rollbacks with incompatible data dir in [#385](https://github.com/canonical/mysql-k8s-operator/pull/385)
 * [DPE-2919](https://warthogs.atlassian.net/browse/DPE-2919) Fixed pod labels update on preemptive switchover in [#367](https://github.com/canonical/mysql-k8s-operator/pull/367)
 * [DPE-3265](https://warthogs.atlassian.net/browse/DPE-3265) Refactored lib secrets in [#362](https://github.com/canonical/mysql-k8s-operator/pull/362)

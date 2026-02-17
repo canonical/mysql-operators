@@ -130,7 +130,7 @@ Machine  State    Address     Inst id       Base          AZ       Message
 
 ## Test your Charmed MySQL deployment
 
-Check the {ref}`software-testing` reference to test your deployment.
+Check the {ref}`charm-testing` reference to test your deployment.
 
 ## Clean up the environment
 To stop your VM, run: 

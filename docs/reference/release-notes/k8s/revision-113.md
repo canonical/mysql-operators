@@ -21,9 +21,9 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 
 ## Bug fixes
 
-Canonica Data issues are now public on both [Jira](https://warthogs.atlassian.net/jira/software/c/projects/DPE/issues/) and [GitHub](https://github.com/canonical/mysql-k8s-operator/issues) platforms.<br/>[GitHub Releases](https://github.com/canonical/mysql-k8s-operator/releases) provide a detailed list of bugfixes/PRs/Git commits for each revision.<br/>Highlights for the current revision:
+Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.net/jira/software/c/projects/DPE/issues/) and [GitHub](https://github.com/canonical/mysql-k8s-operator/issues) platforms.<br/>[GitHub Releases](https://github.com/canonical/mysql-k8s-operator/releases) provide a detailed list of bug fixes/PRs/Git commits for each revision.<br/>Highlights for the current revision:
 
-* Fixed dateformat in logrotate config to avoid causing filename conflicts after 24hrs of uptime [[PR#343](https://github.com/canonical/mysql-k8s-operator/pull/343)][[DPE-3063](https://warthogs.atlassian.net/browse/DPE-3063)]
+* Fixed date format in logrotate config to avoid causing filename conflicts after 24hrs of uptime [[PR#343](https://github.com/canonical/mysql-k8s-operator/pull/343)][[DPE-3063](https://warthogs.atlassian.net/browse/DPE-3063)]
 * Fixed bug that resulted in wrong output displayed from list-backups action [[PR#340](https://github.com/canonical/mysql-k8s-operator/pull/340)]
 * Fixed unit removal issue if TLS  operator is in use [[PR#347](https://github.com/canonical/mysql-k8s-operator/pull/347)]
 * Fixed the single unit upgrade [[PR#324](https://github.com/canonical/mysql-k8s-operator/pull/324)][[DPE-2661](https://warthogs.atlassian.net/browse/DPE-2661)]

@@ -3,7 +3,7 @@
 
 This guide goes through an example deployment of MySQL on GCE (Google Cloud Engine) with Juju zone constraints.
 
-## Set up GCE on Google Cloud
+## Set up GCE on Google Cloud Engine
 
 Let's deploy the MySQL Cluster on GCE (us-east4) using all 3 zones there (`us-east4-a`, `us-east4-b`, `us-east4-c`) and make sure all pods always sits in the dedicated zones only.
 

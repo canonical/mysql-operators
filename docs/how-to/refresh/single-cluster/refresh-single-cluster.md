@@ -7,7 +7,7 @@ This guide covers refresh for single cluster MySQL deployments. To refresh a mul
 
 **Check if your current Juju version is compatible with the new charm version**.
 
-For information about charm versions, see {ref}`releases`.
+For information about charm versions, see {ref}`release-notes`.
 
 To upgrade Juju, see {ref}`upgrade-juju`
 

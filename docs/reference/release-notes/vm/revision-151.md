@@ -23,7 +23,7 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 
 |Charm|Version|Charm channel|Documentation|License|
 | --- | --- | --- | --- | --- |
-|[MySQL](https://github.com/canonical/mysql-operator)|8.0.32|[8.0/stable](https://charmhub.io/mysql) (r151)|[Tutorial](https://charmhub.io/mysql/docs/t-overview?channel=8.0/edge), [Readme](https://github.com/canonical/mysql-operator/blob/main/README.md), [Contributing](https://github.com/canonical/mysql-operators/blob/main/CONTRIBUTING.md)|[Apache 2.0](https://github.com/canonical/mysql-operator/blob/main/LICENSE)|
+|[MySQL](https://github.com/canonical/mysql-operator)|8.0.32|[8.0/stable](https://charmhub.io/mysql) (r151)|[Tutorial](https://charmhub.io/mysql/docs/t-overview?channel=8.0/edge), [README](https://github.com/canonical/mysql-operator/blob/main/README.md), [Contributing](https://github.com/canonical/mysql-operators/blob/main/CONTRIBUTING.md)|[Apache 2.0](https://github.com/canonical/mysql-operator/blob/main/LICENSE)|
 
 **Full Changelog**: https://github.com/canonical/mysql-operator/commits/rev151
 
@@ -43,7 +43,7 @@ Please contact us, see details below, if you are considering migrating from othe
 * Tracks description:
   * Charm MySQL charm follows the SNAP track “8.0”.
 * No “latest” track in use (no surprises in tracking “latest/stable”)!
-  * Charmed MySQL charms provide [legacy charm](/t/10788) through “latest/stable”.
+  * Charmed MySQL charms provide the {ref}`legacy charm <legacy-charm>` through “latest/stable”.
 * Charm lifecycle flowchart diagrams: [MySQL](https://github.com/canonical/mysql-k8s-operator/tree/main/docs/reference).
 * Modern interfaces are well described in “[Interfaces catalogue](https://github.com/canonical/charm-relation-interfaces)” and implemented by '[data-platform-libs](https://github.com/canonical/data-platform-libs/)'.
 

@@ -6,7 +6,7 @@
 This guide goes through the steps for setting up Sunbeam and deploying Charmed MySQL. 
 
 ## Prerequisites
-* A physical or virtual machine running Ubuntu 22.04+
+* A physical or virtual machine running Ubuntu 22.04 LTS (Jammy) or newer
   * If you'd like to follow this guide in an isolated test environment, you can [launch a Multipass](create-multipass-vm) instance.
 * Hardware requirements depend on planned deployment size.
   * Recommended: 8 CPU cores, 32GB RAM, 100GB of storage
@@ -60,9 +60,9 @@ Machine  State    Address          Inst id                               Base   
 Follow the official guide: [Accessing the OpenStack dashboard].
 ```{note}
 When using a Multipass VM, you may need to manually route OpenStack IPs. For example:
-```
-sudo ip route add 10.10.10.0/24 via 10.76.203.210 
-```
+
+  sudo ip route add 10.10.10.0/24 via 10.76.203.210 
+
 where `10.76.203.210` is the IP of the Multipass VM and  `10.10.10.0` is the network returned by `sunbeam dashboard-url`. 
 ```
 
@@ -70,9 +70,10 @@ The image below is an example of the OpenStack dashboard view (bastion + juju co
 
 ![image|690x225](upload://fsYFnvPbgxhsAeFtfva4b5qbKii.png)
 
-> To learn more about deploying and operating MySQL, see the {ref}`tutorial`.
+To learn more about deploying and operating MySQL, see the {ref}`tutorial`.
 
-<!-- LABELS-->
+<!-- Links -->
+
 [Single-node guided]: https://microstack.run/docs/single-node-guided
 [Accessing the OpenStack dashboard]: https://canonical-openstack.readthedocs-hosted.com/en/latest/how-to/misc/using-the-openstack-dashboard/
 [Images Sync]: https://canonical-openstack.readthedocs-hosted.com/en/latest/how-to/features/images-sync/

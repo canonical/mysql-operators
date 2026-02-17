@@ -121,7 +121,7 @@ Please {ref}`contact us <contacts>` if you need different versions/series.
 
 ## Supported architectures
 
-Currently, thall modern charm revisions support `amd64`. Later revisions introduced support for `arm64`, and `s390x`.
+Currently, all modern charm revisions support `amd64`. Later revisions introduced support for `arm64`, and `s390x`.
 
 See the {ref}`release-notes` for more information.
 

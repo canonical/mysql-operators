@@ -1,3 +1,4 @@
+(refresh-multi-cluster)=
 # How to refresh a multi-cluster deployment
 
 A MySQL multi-cluster deployment (also known as a cluster set) can be upgraded by performing a refresh of each cluster individually.

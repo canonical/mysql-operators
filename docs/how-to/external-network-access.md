@@ -17,5 +17,5 @@ Please follow the MySQL Router documentation:
 
 **Use case**: the client application is a Juju application outside of the database deployment (e.g. hybrid Juju deployment with different VM clouds/controllers, or mixed K8s and VM applications).
 
-In this case, a cross-controllers relation is necessary. Please {ref}`contact <contact>` the Data team to discuss the possible option for your use case.
+In this case, a cross-controllers relation is necessary. Please {ref}`contact <contacts>` the Data team to discuss the possible option for your use case.
 

@@ -26,7 +26,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 * [DPE-4375](https://warthogs.atlassian.net/browse/DPE-4375) Add cluster manual re-join handler by @sinclert-canonical in https://github.com/canonical/mysql-operator/pull/592
 * [DPE-6666](https://warthogs.atlassian.net/browse/DPE-PE-666) Remove async-replication test workaround by @sinclert-canonical in https://github.com/canonical/mysql-operator/pull/619
 * fix: dpe-6695 fix race on legacy mysql by @paulomach in https://github.com/canonical/mysql-operator/pull/624
-* [DPE-6488](https://warthogs.atlassian.net/browse/DPE-PE-648) Address slow mysqld start upon unit reboot by @shayancanonical in https://github.com/canonical/mysql-operator/pull/615
+* [DPE-6488](https://warthogs.atlassian.net/browse/DPE-PE-648) Address slow `mysqld` start upon unit reboot by @shayancanonical in https://github.com/canonical/mysql-operator/pull/615
 
 **Full Changelog**: https://github.com/canonical/mysql-operator/compare/rev312...rev366
 

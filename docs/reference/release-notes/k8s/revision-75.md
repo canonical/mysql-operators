@@ -23,7 +23,7 @@ See also: {ref}`System requirements <system-requirements>`
 
 |Charm|Version|Charm channel|Documentation|License|
 | --- | --- | --- | --- | --- |
-|[MySQL K8s](https://github.com/canonical/mysql-k8s-operator)|8.0.32|[8.0/stable](https://charmhub.io/mysql-k8s) (r75)|[Tutorial](https://charmhub.io/mysql-k8s/docs/t-overview), [Readme](https://github.com/canonical/mysql-k8s-operator/blob/main/README.md), [Contributing](https://github.com/canonical/mysql-k8s-operator/blob/main/CONTRIBUTING.md)|[Apache 2.0](https://github.com/canonical/mysql-k8s-operator/blob/main/LICENSE)|
+|[MySQL K8s](https://github.com/canonical/mysql-k8s-operator)|8.0.32|[8.0/stable](https://charmhub.io/mysql-k8s) (r75)|[Tutorial](https://charmhub.io/mysql-k8s/docs/t-overview), [README](https://github.com/canonical/mysql-k8s-operator/blob/main/README.md), [Contributing](https://github.com/canonical/mysql-k8s-operator/blob/main/CONTRIBUTING.md)|[Apache 2.0](https://github.com/canonical/mysql-k8s-operator/blob/main/LICENSE)|
 
 **Full Changelog**: https://github.com/canonical/mysql-k8s-operator/commits/rev75
 

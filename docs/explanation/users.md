@@ -58,7 +58,7 @@ Passwords for *internal* users can be rotated using the action `set-password` on
 
 ## Relation users
 
-The operator created a dedicated user for every application related/integrated with database. The username is composed by the relation ID and truncated uuid for the model, to ensure there is no username clash in cross model relations. Usernames are limited to 32 chars as per [MySQL limit](https://dev.mysql.com/doc/refman/8.0/en/user-names.html).
+The operator created a dedicated user for every application related/integrated with database. The username is composed by the relation ID and truncated UUID for the model, to ensure there is no username clash in cross model relations. Usernames are limited to 32 chars as per [MySQL limit](https://dev.mysql.com/doc/refman/8.0/en/user-names.html).
 
 Relation users are removed on the juju relation/integration removal request. However, database data stays in place and can be reused on re-created relations (using new user credentials):
 

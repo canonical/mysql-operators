@@ -1,17 +1,18 @@
 (gce)=
 # How to deploy on GCE
 
-[Google Compute Engine](https://cloud.google.com/products/compute) is a popular subsidiary of Google that provides on-demand cloud computing platforms on a metered pay-as-you-go basis. Access the GCloud web console at [console.cloud.google.com](https://console.cloud.google.com/compute/instances).
+[Google Compute Engine](https://cloud.google.com/products/compute) is a popular subsidiary of Google that provides on-demand cloud computing platforms on a metered pay-as-you-go basis. Access the Google Cloud web console at [console.cloud.google.com](https://console.cloud.google.com/compute/instances).
 
-## Install GCloud and Juju tooling
+## Install Google Cloud and Juju tooling
 
 Install Juju via snap:
+
 ```shell
 sudo snap install juju
 sudo snap install google-cloud-cli --classic
 ```
 
-Check the official the [Google Cloud (GCloud) CLI](https://cloud.google.com/sdk/docs/install)  documentation about other installation options.
+Check the official the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)  documentation about other installation options.
 
 To check they are all correctly installed, run the commands demonstrated below with sample outputs:
 
@@ -23,13 +24,17 @@ To check they are all correctly installed, run the commands demonstrated below w
 Google Cloud SDK 474.0.0
 ...
 ```
+
 ### Authenticate
-Login to GCloud:
+
+Login to Google Cloud:
+
 ```shell
 gcloud auth login
 ```
 
 [Create an service IAM account](https://cloud.google.com/iam/docs/service-accounts-create) for Juju to operate GCE:
+
 ```shell
 > gcloud iam service-accounts create juju-gce-account --display-name="Juju GCE service account"
 Created service account [juju-gce-account].
@@ -49,7 +54,8 @@ created key [aaaaaaa....aaaaaaa] of type [json] as [sa-private-key.json] for [ju
 
 ## Bootstrap Juju controller on GCE
 
-It is necessary to move the newly exported GCloud json file into a SNAP-accessible folder due to a known Juju [issue](https://bugs.launchpad.net/juju/+bug/2007575).
+It is necessary to move the newly exported Google Cloud JSON file into a SNAP-accessible folder due to a known Juju [issue](https://bugs.launchpad.net/juju/+bug/2007575).
+
 ```shell
 sudo mv sa-private-key.json /var/snap/juju/common/sa-private-key.json
 sudo chmod a+r /var/snap/juju/common/sa-private-key.json
@@ -105,7 +111,7 @@ to create a new model to deploy workloads.
 ```
 [/details]
 
-You can check the [GCE instance availability](https://console.cloud.google.com/compute/instances) (ensure the right GCloud project chosen!):
+You can check the [GCE instance availability](https://console.cloud.google.com/compute/instances) (ensure the right Google Cloud project chosen!):
 
 ![image|690x172](upload://4t1wS2BwCYgBfrdR1MdOBbUALJ1.png)
 
@@ -177,7 +183,7 @@ mysql:
 ok: "True"
 ```
 
-At this point, you can access your DB inside GCloud using the internal IP address. All further Juju applications will use the database through the internal network:
+At this point, you can access your DB inside Google Cloud using the internal IP address. All further Juju applications will use the database through the internal network:
 ```shell
 > mysql -h 10.142.0.21 -P 3306 -u relation-4 -pzDPalkEi1Uaj26oDSYjCoWYl test123
 ...
@@ -196,7 +202,7 @@ From here you can operate your newly deployed Charmed MySQL. See the {ref}`how-t
 
 ## Expose database (optional)
 
-To access the database from outside of GCloud (warning: opening ports to public is risky) open the GCloud firewall using the simple [juju expose](https://juju.is/docs/juju/juju-expose) functionality: 
+To access the database from outside of Google Cloud (warning: opening ports to public is risky) open the Google Cloud firewall using the simple [juju expose](https://juju.is/docs/juju/juju-expose) functionality: 
 ```shell
 juju expose mysql
 ```
@@ -228,12 +234,14 @@ juju unexpose mysql
 ```
 ## Clean up
 
-```{caution}
 Always clean GCE resources that are no longer necessary -  they could be costly!
-```
 
 To destroy the Juju controller and remove GCE instance, run: 
->**Warning**: all your data will be permanently removed
+
+```{warning}
+All your data will be permanently removed
+```
+
 ```shell
 > juju controllers
 Controller  Model    User   Access     Cloud/Region     Models  Nodes    HA  Version
@@ -242,20 +250,24 @@ gce*        welcome  admin  superuser  google/us-east1       2      1  none  3.5
 > juju destroy-controller gce --destroy-all-models --destroy-storage --force
 ```
 
-Next, check and manually delete all unnecessary GCloud resources, to show the list of all your GCE instances run the following command (make sure the correct region used!): 
+Next, check and manually delete all unnecessary Google Cloud resources, to show the list of all your GCE instances run the following command (make sure the correct region used!):
+
 ```shell
 gcloud compute instances list
 ```
-[details="Output example"]
+
+<details><summary>Output example</summary>
+
 ```shell
 NAME           ZONE        MACHINE_TYPE   PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP     STATUS
 juju-33f662-0  us-east1-b  n1-highcpu-4                10.142.0.17  35.231.246.157  RUNNING
 juju-e2b96f-0  us-east1-b  n2d-highcpu-2               10.142.0.18  35.237.64.81    STOPPING
 juju-e2b96f-1  us-east1-d  n2d-highcpu-2               10.142.0.19  34.73.238.173   STOPPING
 ```
-[/details]
+</details>
 
 List your Juju credentials:
+
 ```shell
 > juju credentials
 ...
@@ -264,12 +276,15 @@ Cloud        Credentials
 google       juju-gce-account
 ...
 ```
-Remove GCloud credentials from Juju:
+
+Remove Google Cloud credentials from Juju:
+
 ```shell
-> juju remove-credential google juju-gce-account
+juju remove-credential google juju-gce-account
 ```
 
-Finally, remove the GCloud json file user credentials (to avoid forgetting and leaking):
+Finally, remove the Google Cloud JSON file user credentials (to avoid forgetting and leaking):
+
 ```shell
 rm -f /var/snap/juju/common/sa-private-key.json
 ```

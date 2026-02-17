@@ -280,7 +280,7 @@ mydatabase/2   active    idle   10.80.1.6
 
 At this point we can relax and enjoy the protection from Cloud Availability zones!
 
-To survive acomplete cloud outage, we recommend setting up [cluster-cluster asynchronous replication](/how-to/cluster-cluster-replication/deploy).
+To survive a complete cloud outage, we recommend setting up [cluster-cluster asynchronous replication](/how-to/cluster-cluster-replication/deploy).
 
 
 ## Remove GKE setup
@@ -305,7 +305,7 @@ Information about availability zones on specific clouds, and more about node sel
 
 * [General Kubernetes](https://kubernetes.io/docs/setup/best-practices/multiple-zones/)
 * [AWS/EKS](https://aws.amazon.com/rds/features/multi-az/)
-* [GCloud/GKE](https://cloud.google.com/kubernetes-engine/multi-cloud/docs/azure/how-to/create-cluster)
+* [Google Cloud/GKE](https://cloud.google.com/kubernetes-engine/multi-cloud/docs/azure/how-to/create-cluster)
 * [Azure/AKS](https://learn.microsoft.com/en-us/azure/aks/availability-zones)
 
 ### Kubernetes strategies to choose hardware nodes

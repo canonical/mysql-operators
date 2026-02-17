@@ -4,7 +4,7 @@ relatedlinks: "[Charmhub&#32;|&#32;MySQL&#32;VM](https://charmhub.io/mysql?chann
 
 # Charmed MySQL documentation
 
-Charmed MySQL is an open-source software operator that deploys and operates [MySQL Community Edition](https://www.mysql.com/products/community/) relational databases on machines or Kubernetes via [Juju](https://juju.is/). 
+Charmed MySQL is an open-source software operator that deploys and operates [MySQL Community Edition](https://www.mysql.com/products/community/) relational databases on machines or Kubernetes with [Juju](https://juju.is/). 
 
 This operator is built with the latest [Ops framework](https://documentation.ubuntu.com/ops/latest/) and replaces the legacy [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona cluster](https://charmhub.io/percona-cluster) and [MySQL InnoDB cluster](https://charmhub.io/mysql-innodb-cluster) operators.
 

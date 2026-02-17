@@ -12,15 +12,17 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 
 If you are jumping over several stable revisions, make sure to check {ref}`previous release notes <release-notes-k8s>` before upgrading to this revision.
 
-### Features
+## Features
+
 * Upgraded MySQL from `v8.0.36` -> `v8.0.37` (see [Packaging](#packaging))
 * Added support or ARM64 architecture ([PR #448](https://github.com/canonical/mysql-k8s-operator/pull/448)) 
 * Added support for Audit plugin ([PR #474](https://github.com/canonical/mysql-k8s-operator/pull/474)) ([DPE-4970](https://warthogs.atlassian.net/browse/DPE-4970))
 *  Add first Awesome Alert Rules ([PR #469](https://github.com/canonical/mysql-k8s-operator/pull/469)) ([DPE-2477](https://warthogs.atlassian.net/browse/DPE-2477))
-* Added support for rescanning cluster for unit rejoin after node drain ([PR #433](https://github.com/canonical/mysql-k8s-operator/pull/433)) ([DPE-4118](https://warthogs.atlassian.net/browse/DPE-4118))
+* Added support for re-scanning cluster for unit rejoin after node drain ([PR #433](https://github.com/canonical/mysql-k8s-operator/pull/433)) ([DPE-4118](https://warthogs.atlassian.net/browse/DPE-4118))
 * Changed binlog retention period (one week by default) ([PR #478](https://github.com/canonical/mysql-k8s-operator/pull/478)) ([DPE-4247](https://warthogs.atlassian.net/browse/DPE-4247))
 
-### Bug fixes
+## Bug fixes
+
 * Removed passwords from outputs and tracebacks ([PR #473](https://github.com/canonical/mysql-k8s-operator/pull/473)) ([DPE-4266](https://warthogs.atlassian.net/browse/DPE-4266))
 * Fixed intermittent issue on AKS deployments (unknown/idle state) ([PR #458](https://github.com/canonical/mysql-k8s-operator/pull/458)) ([DPE-4850](https://warthogs.atlassian.net/browse/DPE-4850))
 * Strip passwords from command execute output and tracebacks ([PR #473](https://github.com/canonical/mysql-k8s-operator/pull/473)) ([DPE-4266](https://warthogs.atlassian.net/browse/DPE-4266))

@@ -177,7 +177,7 @@ The following are logrotate config values used for log rotation:
 
 ## High Level Design
 
-There is a cron job on the machine where the charm exists that is triggered every minute and runs `logrotate`. The logrotate utility does *not* use `copytruncate`. Instead, the existing log file is moved into the archive directory by logrotate, and then the logrotate's postrotate script invokes `juju-run` (or `juju-exec` depending on the juju version) to dispatch a custom event. This custom event's handler flushes the MySQL log with the [FLUSH](https://dev.mysql.com/doc/refman/8.0/en/flush.html) statement that will result in a new and empty log file being created under `/var/log/mysql` and the rotated file's descriptor being closed.
+There is a cron job on the machine where the charm exists that is triggered every minute and runs `logrotate`. The logrotate utility does *not* use `copytruncate`. Instead, the existing log file is moved into the archive directory by logrotate, and then the logrotate post-rotate script invokes `juju-run` (or `juju-exec` depending on the juju version) to dispatch a custom event. This custom event's handler flushes the MySQL log with the [FLUSH](https://dev.mysql.com/doc/refman/8.0/en/flush.html) statement that will result in a new and empty log file being created under `/var/log/mysql` and the rotated file's descriptor being closed.
 
 We use a custom event in juju to execute the FLUSH statement in order to avoid storing any credentials on the disk. The charm code has a mechanism that will retrieve credentials from the peer relation databag or juju secrets backend, if available, and keep these credentials in memory for the duration of the event handler.
 

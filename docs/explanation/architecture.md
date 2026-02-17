@@ -48,7 +48,7 @@ The `mysqld` snap service is a main MySQL instance which is normally up and runn
 
 The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=dpe/edge) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql) deployments.
 
-All `exporter` services are activated after the relation with [COS Monitoring](/how-to/monitoring-cos/enable-monitoring) only.
+All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
 ```{caution}
 * It is possible to start, stop, and restart snap services manually but it is NOT recommended to avoid a split brain with a charm state machine! Do it with a caution!!!
@@ -91,7 +91,7 @@ The Charmed MySQL K8s (`workload` container) based on the `mysql-image` resource
 
 [Charmcraft](https://juju.is/docs/sdk/install-charmcraft) uploads an image as a [charm resource](https://charmhub.io/mysql-k8s/resources/mysql-image) to [Charmhub](https://charmhub.io/mysql-k8s) during the [publishing](https://github.com/canonical/mysql-k8s-operator/blob/main/.github/workflows/release.yaml#L40-L53), as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
-The charm supports Juju deploymed to all Kubernetes environments: [MicroK8s](https://microk8s.io/), [Charmed Kubernetes](https://ubuntu.com/kubernetes/charmed-k8s), [GKE](https://charmhub.io/mysql-k8s/docs/h-deploy-gke), [Amazon EKS](https://aws.amazon.com/eks/), ...
+The charm supports Juju deployment to all Kubernetes environments: [MicroK8s](https://microk8s.io/), [Charmed Kubernetes](https://ubuntu.com/kubernetes/charmed-k8s), [GKE](https://charmhub.io/mysql-k8s/docs/h-deploy-gke), [Amazon EKS](https://aws.amazon.com/eks/), ...
 
 The OCI/ROCK ships the following components based on the [`charmed-mysql` snap](https://canonical-charmed-mysql.readthedocs-hosted.com/explanation/architecture):
 
@@ -134,7 +134,7 @@ The `mysqld_safe` is a main MySQL wrapper which is normally up and running right
 
 The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.0/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
 
-All `exporter` services are activated after the relation with [COS Monitoring](/how-to/monitoring-cos/enable-monitoring) only.
+All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
 ```{caution}
 * It is possible to start, stop, and restart pebble services manually but it is NOT recommended to avoid a split brain with a charm state machine! Do it with a caution!!!
@@ -169,7 +169,7 @@ The [TLS Certificates](https://charmhub.io/tls-certificates-operator) charm is r
 
 ### Data Integrator
 
-The [Data Integrator](https://charmhub.io/data-integrator) charm is a solution to request DB credentials for non-native Juju applications. Not all applications implement a data_interfaces relation but allow setting credentials via config. Also, some of the applications are run outside of juju. This integrator charm allows receiving credentials which can be passed into application config directly without implementing juju-native relation.
+The [Data Integrator](https://charmhub.io/data-integrator) charm is a solution to request DB credentials for non-native Juju applications. Not all applications implement a data_interfaces relation but allow setting credentials through config options. Also, some of the applications are run outside of juju. This integrator charm allows receiving credentials which can be passed into application config directly without implementing juju-native relation.
 
 ### MySQL Test App
 
@@ -177,7 +177,7 @@ The charm [MySQL Test App](https://charmhub.io/mysql-test-app) is a Canonical te
 
 ### Grafana
 
-Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed datasources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability. See: {ref}`enable-monitoring`.
+Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed data sources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability. See: {ref}`enable-monitoring`.
 
 ### Loki
 

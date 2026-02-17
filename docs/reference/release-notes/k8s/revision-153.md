@@ -44,7 +44,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 ## Technical notes
   
 * Upgrade (`juju refresh`) is possible from revision 75+
-* [Creating Async replication](https://charmhub.io/mysql-k8s/docs/h-async-deployment) under significant write load to Primary could lead to MySQL DB deadlock and replication setup failures, more details in official [charm bugreport](https://github.com/canonical/mysql-k8s-operator/issues/399) and [MySQL bug](https://bugs.mysql.com/bug.php?id=114624&thanks=sub).
+* [Creating Async replication](https://charmhub.io/mysql-k8s/docs/h-async-deployment) under significant write load to Primary could lead to MySQL DB deadlock and replication setup failures, more details in official [charm bug report](https://github.com/canonical/mysql-k8s-operator/issues/399) and [MySQL bug](https://bugs.mysql.com/bug.php?id=114624&thanks=sub).
 * Use this operator together with modern operator [MySQL Router K8s](https://charmhub.io/mysql-router-k8s)
 * Please check restrictions from [previous release notes](https://charmhub.io/mysql-k8s/docs/r-releases)  
 * Ensure [the charm requirements](https://charmhub.io/mysql-k8s/docs/r-system-requirements) met.

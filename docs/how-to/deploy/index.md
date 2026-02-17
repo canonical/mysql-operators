@@ -9,7 +9,7 @@ If you are not sure where to start, or would like a more guided walkthrough for 
 
 Charmed MySQL can be deployed using the Juju CLI directly, or via Terraform.
 
-To deploy via the **Juju CLI**, you need to first [boostrap](https://juju.is/docs/juju/juju-bootstrap) a cloud controller and create a [model](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/model/):
+To deploy via the **Juju CLI**, you need to first [bootstrap](https://juju.is/docs/juju/juju-bootstrap) a cloud controller and create a [model](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/model/):
 
 ```shell
 juju bootstrap <cloud name> <controller name>

@@ -39,7 +39,7 @@ OCI image resources:
 * Fixed /database requested wait container ([PR #500](https://github.com/canonical/mysql-k8s-operator/pull/500)) ([DPE-5385](https://warthogs.atlassian.net/browse/DPE-5385))
 * Attempted to stabilize failing integration tests ([PR #496](https://github.com/canonical/mysql-k8s-operator/pull/496))
 * Add test to ensure correct k8s endpoints created for clusters with the same name ([PR #508](https://github.com/canonical/mysql-k8s-operator/pull/508))
-* Add check to ensure peer databag populated before reconciling mysqld exporter pebble layers ([PR #505](https://github.com/canonical/mysql-k8s-operator/pull/505)) ([DPE-5417](https://warthogs.atlassian.net/browse/DPE-5417))
-* Add base in test_multi_relations to workaround libjuju bug ([PR #506](https://github.com/canonical/mysql-k8s-operator/pull/506)) ([DPE-5480](https://warthogs.atlassian.net/browse/DPE-5480))
+* Add check to ensure peer databag populated before reconciling `mysqld` exporter pebble layers ([PR #505](https://github.com/canonical/mysql-k8s-operator/pull/505)) ([DPE-5417](https://warthogs.atlassian.net/browse/DPE-5417))
+* Add base in test_multi_relations to workaround `libjuju` bug ([PR #506](https://github.com/canonical/mysql-k8s-operator/pull/506)) ([DPE-5480](https://warthogs.atlassian.net/browse/DPE-5480))
 
 **Full Changelog**: https://github.com/canonical/mysql-k8s-operator/compare/rev180...rev210

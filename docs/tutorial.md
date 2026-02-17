@@ -152,14 +152,14 @@ In this section, you will learn how to get the credentials of your deployment, c
 This is where we are introduced to internal database {ref}`users`.
 
 ```{caution}
-This part of the tutorial accesses MySQL via the charm's `root` user. 
+This part of the tutorial accesses MySQL through the charm's `root` user. 
 
 **Do not directly interface with the `root` user in a production environment.**
 
 In a later section, we will cover how to safely access MySQL more safely.
 ```
 
-The easiest way to access MySQL is via the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
+The easiest way to access MySQL is through the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
 
 ### Retrieve credentials
 
@@ -362,7 +362,7 @@ Machine  State    Address         Inst id        Series  AZ  Message
 
 [Integrations](https://documentation.ubuntu.com/juju/3.6/reference/relation/), also known as "relations", are the easiest way to create a user for MySQL. 
 
-Integrations automatically create a username, password, and database for the desired user/application. The best practice is to connect to MySQL via a specific user rather than the admin user, like we did earlier with the `root` user.
+Integrations automatically create a username, password, and database for the desired user/application. The best practice is to connect to MySQL through a specific user rather than the admin user, like we did earlier with the `root` user.
 
 In this tutorial, we will relate to the [data integrator charm](https://charmhub.io/data-integrator). This is a bare-bones charm that allows for central management of database users. It automatically provides credentials and endpoints that are needed to connect with a charmed database application.
 
@@ -601,7 +601,7 @@ To remove the external TLS and return to the locally generate one, remove the in
 juju remove-relation mysql self-signed-certificates
 ```
 
-If you once again check the TLS certificates in use via the OpenSSL client, you will see something similar to the output below:
+If you once again check the TLS certificates in use with the OpenSSL client, you will see something similar to the output below:
 
 ```{terminal}
 :user: ubuntu

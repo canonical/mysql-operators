@@ -7,7 +7,7 @@ This guide shows you how to deploy Charmed MySQL K8s to Canonical Kubernetes.
 
 ## Prerequisites
 
-This guide assumes you have a spare hardware/VMs running Ubuntu 22.04 LTS (or newer). 
+This guide assumes you have a spare hardware/VMs running Ubuntu 22.04 LTS (Jammy) or newer. 
 
 ---
 

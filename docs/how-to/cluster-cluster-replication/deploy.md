@@ -66,7 +66,7 @@ juju integrate replication-offer db2:replication
 ```
 Once relations are established, cluster `Rome` will get into `Blocked` state, waiting for the replication to be created.
 
-To do so, run the action `create-replication` on rome's leader unit.
+To do so, run the action `create-replication` on Rome's leader unit.
 
 ```shell
 juju switch rome

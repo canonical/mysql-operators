@@ -35,7 +35,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 ## Bug fixes
 
 * fix: ensure reconfiguration done after leader election by @paulomach in [#635](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/635)
-* Bump httpcore to version 1.0.9 by @sinclert-canonical in [#640](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/640)
+* Bump `httpcore` to version 1.0.9 by @sinclert-canonical in [#640](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/640)
 * Migrate release GHA workflow name by @sinclert-canonical in [#644](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/644)
 * [DPE-7648] Fix access to not populated instance label by @sinclert-canonical in [#650](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/650)
 * [MISC] Fix Juju Spaces lack of addresses by @sinclert-canonical in [#655](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/655)
@@ -50,7 +50,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 * [DPE-8600] Point certificates charm to 1/stable by @sinclert-canonical in [#718](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/718)
 * [MISC] Fix allure-report publication by @sinclert-canonical in [#721](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/721)
 * Fix incompatible downgrade after snapd update by @paulomach in [#723](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/723)
-* [DPE-8815] Dont reboot on storage not yet attached by @paulomach in [#716](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/716)
+* [DPE-8815] Don't reboot on storage not yet attached by @paulomach in [#716](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/716)
 * fix: escape role_name on creation by @paulomach in [#720](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/720)
 
 ## New contributors

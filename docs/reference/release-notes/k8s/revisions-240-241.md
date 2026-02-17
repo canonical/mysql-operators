@@ -26,7 +26,7 @@ OCI image resources:
 * DPE-6137 insecure password calls removal by @paulomach in https://github.com/canonical/mysql-k8s-operator/pull/553
 * DPE-4375 Add cluster manual re-join handler by @sinclert-canonical in https://github.com/canonical/mysql-k8s-operator/pull/560
 * DPE-6521 Add missing check and wait for pebble calls by @paulomach in https://github.com/canonical/mysql-k8s-operator/pull/571
-* DPE-6485 Manage mysqld directly by @paulomach in https://github.com/canonical/mysql-k8s-operator/pull/575
+* DPE-6485 Manage `mysqld` directly by @paulomach in https://github.com/canonical/mysql-k8s-operator/pull/575
 * DPE-6666 Remove async-replication test workaround by @sinclert-canonical in https://github.com/canonical/mysql-k8s-operator/pull/588
 * DPE-5164 ensure failed bootstrap cleanup by @paulomach in https://github.com/canonical/mysql-k8s-operator/pull/592
 

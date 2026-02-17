@@ -19,7 +19,7 @@ OCI image resources:
 
 * [DPE-1531](https://warthogs.atlassian.net/browse/DPE-1531) Avoid using initialize-insecure and instead use init-file to reset root user's password by @shayancanonical in [#596](https://github.com/canonical/mysql-k8s-operator/pull/596)
 * [DPE-6487](https://warthogs.atlassian.net/browse/DPE-6487) Point-in-time recovery support by @paulomach and @Zvirovyi  in [#600](https://github.com/canonical/mysql-k8s-operator/pull/600)
-* [DPE-3830](https://warthogs.atlassian.net/browse/DPE-3830) Default to paxos single leader by @paulomach in [#604](https://github.com/canonical/mysql-k8s-operator/pull/604)
+* [DPE-3830](https://warthogs.atlassian.net/browse/DPE-3830) Default to `paxos` single leader by @paulomach in [#604](https://github.com/canonical/mysql-k8s-operator/pull/604)
 * [DPE-6312](https://warthogs.atlassian.net/browse/DPE-6312) Add security policy by @paulomach  in [#605](https://github.com/canonical/mysql-k8s-operator/pull/605)
 * [DPE-7534](https://warthogs.atlassian.net/browse/DPE-7534) use absolute fqdn for replication and consumers by @paulomach in [#618](https://github.com/canonical/mysql-k8s-operator/pull/618)
 

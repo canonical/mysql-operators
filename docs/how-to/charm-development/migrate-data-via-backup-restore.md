@@ -6,7 +6,7 @@ Charmed MySQL is able to {ref}`restore <restore-a-backup>` backups stored on S3-
 The same restore approach is applicable to restore {ref}`external backups <migrate-a-cluster>` made by a different Charmed MySQL installation, or even another MySQL charm. (Note that, in this case, the backup must be created manually using Percona XtraBackup)
 
 ```{seealso}
-For data stored in legacy charms, see {ref}`migrate-data-via-mysqldump`
+For data stored in legacy charms, see {ref}`migrate-data-mysqldump`
 ```
 
 ## Prepare

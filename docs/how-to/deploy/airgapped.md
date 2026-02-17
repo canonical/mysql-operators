@@ -179,7 +179,7 @@ Deploy and operate Juju charms normally:
 ```{caution}
 All the charm, snap, and OCI revisions deployed in the airgapped environment must match the official Charmhub and Snap Store revisions.
 
-Use the official {ref}`release notes <releases>` as a reference.
+Use the official {ref}`release notes <release-notes>` as a reference.
 ```
 
 ## Additional resources
