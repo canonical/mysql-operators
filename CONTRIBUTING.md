@@ -19,20 +19,20 @@ this operator.
   the `8.4/edge` branch. This also avoids merge commits and creates a linear Git commit history.
 
 ## Develop
-Install `yq`, `tox`, `poetry`, and `charmcraftlocal`
+Install `yq`, `tox`, `uv`, and `charmcraftlocal`
 
 ```shell
 pipx install yq
-pipx install tox
-pipx install poetry
+pipx install tox tox-uv
+pipx install uv
 pipx install charmcraftlocal
 ```
 
 You can create an environment for development:
 
 ```shell
-(cd kubernetes && poetry install)
-(cd machines && poetry install)
+(cd kubernetes && uv sync --all-groups)
+(cd machines && uv sync --all-groups)
 ```
 
 ### Test
