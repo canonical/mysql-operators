@@ -34,7 +34,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 * Fixed single unit upgrade [[PR#340](https://github.com/canonical/mysql-operator/pull/340)][[DPE-2662](https://warthogs.atlassian.net/browse/DPE-2662)]
 * Fixed date format in logrotate config to avoid causing filename conflicts after 24hrs of uptime [[PR#363](https://github.com/canonical/mysql-operator/pull/363)][[DPE-3063](https://warthogs.atlassian.net/browse/DPE-3063)]
 * Stops logging FLUSH LOG statements to the MySQL binlog which is causing GTID conflicts and prevents the member from self-healing [[PR#336](https://github.com/canonical/mysql-operator/pull/336)]
-* Fixed rollback for unsupported MySQL {vale-ignore}`datadir` [[DPE-3392](https://warthogs.atlassian.net/browse/DPE-3392)]
+* Fixed rollback for unsupported MySQL `datadir` [[DPE-3392](https://warthogs.atlassian.net/browse/DPE-3392)]
 * Updated TLS test lib and test charm [[PR#392](https://github.com/canonical/mysql-operator/pull/392)][[DPE-3403](https://warthogs.atlassian.net/browse/DPE-3403)]
 * Fixed floor value for max_connections [[PR#398](https://github.com/canonical/mysql-operator/pull/398)]
 * Fixed max_connections calculation [[#429](https://github.com/canonical/mysql-operator/pull/429)][DPE-3706](https://warthogs.atlassian.net/browse/DPE-3706)
