@@ -6,7 +6,8 @@ Charmed MySQL supports modern `mysql_client` and legacy `mysql`, `mysql-shared`,
 |        | Interface      | Endpoints             | VM charm | K8s charm |
 |--------|----------------|-----------------------|----------|-----------|
 | modern | `mysql_client` | `database`            | ![check] | ![check]  |
-| legacy | `mysql`        | `mysql`, `mysql-root` | ![check] | ![check]  |
+| legacy | `mysql`        | `mysql`               | ![check] | ![check]  |
+|        |                | `mysql_root`          | ![check] |           |
 | legacy | `mysql-router` | `db-router`           | ![check] |           |
 | legacy | `mysql-shared` | `shared-db`           | ![check] |           |
 
@@ -18,7 +19,7 @@ Do **not** relate both modern and legacy interfaces simultaneously.
 
 This charm provides the modern [`mysql_client`](https://github.com/canonical/charm-relation-interfaces)interface. Applications can easily connect MySQL using [`data_interfaces`](https://charmhub.io/data-platform-libs/libraries/data_interfaces) library from [`data-platform-libs`](https://github.com/canonical/data-platform-libs/).
 
-### Modern `mysql_client` interface (`database` endpoint)
+### `mysql_client` interface, `database` endpoint
 
 Adding a [Juju relation](https://documentation.ubuntu.com/juju/3.6/reference/relation/) is accomplished with `juju integrate` via endpoint `database`.
 
@@ -80,9 +81,9 @@ Check the legacy interface implementation limitations in {ref}`legacy-charm`.
 
 This charm supports several legacy interfaces, e.g. `mysql`, `mysql-shared`, `mysql-router`. They were used in some legacy charms in [cross-model relations](https://documentation.ubuntu.com/juju/3.6/reference/relation/#cross-model-relation).
 
-### `mysql` interface, `mysql` and `mysql-root` endpoints
+### `mysql` interface, `mysql` endpoint
 
-It was a popular interface used by some legacy charms (e.g. [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona Cluster](https://charmhub.io/percona-cluster) and [MySQL Innodb Cluster](https://charmhub.io/mysql-innodb-cluster)), often in [cross-model relations](https://documentation.ubuntu.com/juju/3.6/reference/relation/#cross-model-relation).
+This was a popular interface used by some legacy charms (e.g. [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona Cluster](https://charmhub.io/percona-cluster) and [MySQL Innodb Cluster](https://charmhub.io/mysql-innodb-cluster)), often in [cross-model relations](https://documentation.ubuntu.com/juju/3.6/reference/relation/#cross-model-relation).
 
 Example usage of this interface:
 
@@ -107,7 +108,9 @@ Example usage of this interface:
 ````
 
 ```{caution}
-The endpoint `mysql-root` provides the same legacy interface `mysql` with MySQL root-level privileges. It is NOT recommended to use it from security point of view.
+The VM charm also supports the endpoint `mysql_root`, which provides the same legacy interface `mysql` with MySQL root-level privileges. 
+
+It is NOT recommended to use it from security point of view.
 ```
 
 ### `mysql-router` interface, `db-router` endpoint (VM only)
