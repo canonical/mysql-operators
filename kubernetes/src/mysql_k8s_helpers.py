@@ -593,9 +593,10 @@ class MySQL(MySQLBase):
                 "server-cert.pem",
                 "server-key.pem",
                 "sys",
-                "undo_001",
-                "undo_002",
+                # "undo_001",  # stored separately
+                # "undo_002",  # stored separately
             }
+            logger.debug("mysql data dir contents: %s", content_set)
 
             return expected_content <= content_set
         except (ExecError, APIError):
