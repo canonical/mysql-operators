@@ -4,6 +4,6 @@
 ```{toctree}
 :titlesonly:
 
-VM <vm/index>
-K8s <k8s/index>
+VM charm <vm/index>
+K8s charm <k8s/index>
 ```

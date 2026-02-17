@@ -16,6 +16,6 @@ These guides will take you through deploying a MySQL cluster on Google Cloud usi
 ```{toctree}
 :titlesonly:
 
-GCE (machines) <gce>
+GCE (VM) <gce>
 GKE (K8s) <gke>
 ```

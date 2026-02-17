@@ -35,9 +35,10 @@ peers     2         10.10.10.0/24
 The space `alpha` is default and cannot be removed. To deploy Charmed MySQL operator using the spaces:
 
 ```shell
-juju deploy mysql --channel 8.0/edge \
---constraints spaces=client,peers \
---bind "database-peers=peers database=client"
+juju deploy mysql \
+  --channel 8.0/edge \
+  --constraints spaces=client,peers \
+  --bind "database-peers=peers database=client"
 ```
 
 ```{caution}

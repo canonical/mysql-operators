@@ -7,12 +7,11 @@ relatedlinks: "[Charm&#32generations](https://documentation.ubuntu.com/charmcraf
 
 Historically, there were several **legacy charms** that provided MySQL/MariaDB functionality: 
 
-|  Legacy VM charms |  Legacy K8s charms |
-|:---|:---|
-|[MariaDB](https://charmhub.io/mariadb) | [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s) |
-|[Percona Cluster](https://charmhub.io/percona-cluster) | |
-|[MySQL Innodb Cluster](https://charmhub.io/mysql-innodb-cluster) | |
-
+| Legacy VM charms      | Legacy K8s charms |
+|:----------------------|:------------------|
+|[MariaDB]              | [OSM MariaDB]     |
+|[Percona Cluster]      |                   |
+|[MySQL Innodb Cluster] |                   |
 
 These legacy charms provided endpoints `mysql` and `mysql-root` for the interface `mysql`. 
 
@@ -115,7 +114,7 @@ channel: 8.0/stable
 
 ## Supported MySQL versions by modern charm
 
-At the moment, both K8s and VM modern charms support MySQL 8.0 (based on Jammy/22.04 series) only.
+Both K8s and VM modern charms support MySQL 8.0 (based on Jammy/22.04 series) only.
 
 Please {ref}`contact us <contacts>` if you need different versions/series.
 
@@ -133,3 +132,8 @@ Bug reports and feature requests can be submitted as GitHub issues.
 
 See {ref}`contacts` for more information.
 
+<!-- Links -->
+[MariaDB]: https://charmhub.io/mariadb                           
+[OSM MariaDB]: https://charmhub.io/charmed-osm-mariadb-k8s
+[Percona Cluster]: https://charmhub.io/percona-cluster
+[MySQL Innodb Cluster]: https://charmhub.io/mysql-innodb-cluster

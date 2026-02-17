@@ -16,17 +16,17 @@ If you do not specify a revision on deploy time, Juju will automatically choose 
 All revisions of MySQL described below are built for *Ubuntu 22.04 LTS (Jammy)*.
 
 | Revision (`amd`) | Revision (`arm`) | Revision (`s390x`) | MySQL version | Juju version | {ref}`TLS <enable-tls>`* | {ref}`Monitoring <enable-monitoring>` | {ref}`In-place upgrades <refresh-single-cluster>`| {ref}`Cluster-cluster replication <cluster-cluster-replication>` |
-|:---:|:---:|:----:|:---:|:---:|:---:|:---:|:---:|:---:|
-| [343] | [344] | [342] | 8.0.44 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] |
-| [255] | [254] |       | 8.0.41 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | ![check] |
-| [240] | [241] |       | 8.0.41 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | |
-| [210] | [211] |       | 8.0.39 | `3.5.4+` | ![check] | ![check] | ![check] | ![check] | |
-| [180] | [181] |       | 8.0.37 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] | |
-| [153] |       |       | 8.0.36 | `3.4.3+` | ![check] | ![check] | ![check] | ![check] | |
-| [127] |       |       | 8.0.35 | `3.1.6+` |  | ![check] | ![check] |  | |
-| [113] |       |       | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  | |
-| [99]  |       |       | 8.0.34 | `3.1.6+` |  | ![check] | ![check] |  | |
-| [75]  |       |       | 8.0.32 | `2.9.32+` |  | ![check] | ![check] |  | |
+|:-----:|:-----:|:-----:|:------:|:---------:|:--------:|:--------:|:--------:|:--------:|
+| [343] | [344] | [342] | 8.0.44 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
+| [255] | [254] |       | 8.0.41 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
+| [240] | [241] |       | 8.0.41 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] | 
+| [210] | [211] |       | 8.0.39 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] | 
+| [180] | [181] |       | 8.0.37 | `3.4.3+`  | ![check] | ![check] | ![check] | ![check] | 
+| [153] |       |       | 8.0.36 | `3.4.3+`  | ![check] | ![check] | ![check] | ![check] | 
+| [127] |       |       | 8.0.35 | `3.1.6+`  |          | ![check] | ![check] |          | 
+| [113] |       |       | 8.0.34 | `3.1.6+`  |          | ![check] | ![check] |          | 
+| [99]  |       |       | 8.0.34 | `3.1.6+`  |          | ![check] | ![check] |          | 
+| [75]  |       |       | 8.0.32 | `2.9.32+` |          | ![check] | ![check] |          | 
 
 \* The **TLS** column indicates support for **`v2` or higher** of the [`tls-certificates` interface](https://charmhub.io/tls-certificates-interface/libraries/tls_certificates). This means that you can integrate with [modern TLS charms](https://charmhub.io/topics/security-with-x-509-certificates).
 
