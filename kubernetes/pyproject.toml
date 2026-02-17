@@ -1,19 +1,15 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-[project]
-name = "mysql-k8s-operator"  # Charm is not meant to be packaged
-dependencies = [
+[dependency-groups]
+main = [
     "boto3~=1.28",
     "jinja2~=3.1",
     "lightkube~=0.15.0",
-    "ops~=2.15",
+    "ops[tracing]~=2.21",
     "pyyaml~=6.0",
     "tenacity~=8.2",
 ]
-requires-python = "~=3.10"
-
-[dependency-groups]
 charm-libs = [
     # data_platform_libs/v0/data_interfaces.py
     "ops>=2.0.0",
@@ -24,15 +20,13 @@ charm-libs = [
     # tempo_coordinator_k8s/v0/charm_tracing.py requires pydantic
     "pydantic~=1.10",
     # mysql/v0/*.py"
-    "mysql_shell_client~=0.6",
+    "mysql_shell_client~=0.7",
     # tls_certificates_interface/v1/tls_certificates.py
     # tls_certificates lib uses a feature only available in cryptography >=42.0.5
     "cryptography>=42.0.5",
     "jsonschema",
     # loki_k8s/v0/loki_push_api.py and prometheus_k8s/v0/prometheus_scrape.py
     "cosl>=0.0.50",
-    # tempo_coordinator_k8s/v0/charm_tracing.py
-    "opentelemetry-exporter-otlp-proto-http==1.21.0",
 ]
 format = [
     "ruff~=0.12.7",
@@ -69,6 +63,9 @@ integration = [
 package-mode = false
 requires-poetry = ">=2.2.0"
 
+[tool.poetry.dependencies]
+python = "^3.10"
+
 [tool.poetry.group.format]
 optional = true
 
@@ -85,13 +82,12 @@ show_missing = true
 minversion = "6.0"
 log_cli_level = "INFO"
 markers = ["juju3", "only_with_juju_secrets", "only_without_juju_secrets"]
-asyncio_mode = "auto"
 
 # Linting tools configuration
 [tool.ruff]
 # preview and explicit preview are enabled for CPY001
 preview = true
-target-version = "py38"  # Bump when ready to re-lint
+target-version = "py310"
 src = ["src", "."]
 line-length = 99
 

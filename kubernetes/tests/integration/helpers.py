@@ -4,7 +4,6 @@
 import itertools
 import secrets
 import string
-from typing import Dict, List
 
 from mysql.connector.errors import (
     DatabaseError,
@@ -34,10 +33,10 @@ def execute_queries_on_unit(
     unit_address: str,
     username: str,
     password: str,
-    queries: List[str],
+    queries: list[str],
     commit: bool = False,
     raw: bool = False,
-) -> List:
+) -> list:
     """Execute given MySQL queries on a unit.
 
     Args:
@@ -68,7 +67,7 @@ def execute_queries_on_unit(
 
 
 @retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)
-def is_connection_possible(credentials: Dict, **extra_opts) -> bool:
+def is_connection_possible(credentials: dict, **extra_opts) -> bool:
     """Test a connection to a MySQL server.
 
     Args:

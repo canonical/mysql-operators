@@ -136,9 +136,9 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 100
+LIBPATCH = 102
 
-PYDEPS = ["mysql_shell_client ~= 0.6"]
+PYDEPS = ["mysql_shell_client ~= 0.7"]
 
 UNIT_TEARDOWN_LOCKNAME = "unit-teardown"
 UNIT_ADD_LOCKNAME = "unit-add"
@@ -884,6 +884,11 @@ class MySQLCharmBase(CharmBase, ABC):
             if v["status"] == InstanceState.RECOVERING:
                 continue
 
+            # Early calls for endpoint update can be run before unit joined the relation
+            # so we skip when unit (k) not unit_labels dict
+            if k not in unit_labels:
+                continue
+
             address = f"{self.get_unit_address(unit_labels[k], relation_name)}:3306"
 
             if v["status"] != InstanceState.ONLINE:
@@ -1421,23 +1426,28 @@ class MySQLBase(ABC):
 
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-
-        role_name = self._build_mysql_database_dba_role(database)
-        role_query = self._auth_query_builder.build_database_admin_role_query(role_name, database)
-
-        queries = ";".join([
-            f"CREATE DATABASE `{database}`",
-            f"GRANT SELECT ON `{database}`.* TO '{ROLE_READ}'",
-            f"GRANT SELECT, INSERT, DELETE, UPDATE ON `{database}`.* TO '{ROLE_DML}'",
-            role_query,
-        ])
+        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
 
         try:
-            logger.info(f"Creating application {database=} and DBA {role_name=}")
-            primary_executor.execute_sql(queries)
+            logger.info(f"Creating application {database=}")
+            primary_client.create_instance_database(database)
         except ExecutionError as e:
             logger.error(f"Failed to create application database {database}")
             raise MySQLCreateApplicationDatabaseError() from e
+
+        role_name = self._build_mysql_database_dba_role(database)
+
+        queries = ";".join([
+            self._auth_query_builder.build_instance_reader_role_update_query(database),
+            self._auth_query_builder.build_instance_writer_role_update_query(database),
+            self._auth_query_builder.build_database_admin_role_query(role_name, database),
+        ])
+
+        try:
+            logger.info(f"Creating application DBA {role_name=}")
+            primary_executor.execute_sql(queries)
+        except ExecutionError:
+            logger.warning(f"Failed to create application DBA {role_name}")
 
     def create_scoped_user(
         self,
