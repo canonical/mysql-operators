@@ -2721,8 +2721,9 @@ class MySQLBase(ABC):
         mysql_data_directory: str,
         user: str | None = None,
         group: str | None = None,
+        extra_dirs: list[str] | None = None,
     ) -> None:
-        """Empty the mysql data directory in preparation of backup restore."""
+        """Empty the mysql data directories in preparation of backup restore."""
         empty_data_files_command = [
             "find",
             mysql_data_directory,
@@ -2742,11 +2743,28 @@ class MySQLBase(ABC):
                 user=user,
                 group=group,
             )
+
+            if extra_dirs:
+                for extra_dir in extra_dirs:
+                    logger.debug(f"Emptying extra directory {extra_dir}")
+                    self._execute_commands(
+                        [
+                            "find",
+                            extra_dir,
+                            "-not",
+                            "-path",
+                            extra_dir,
+                            "-delete",
+                        ],
+                        user=user,
+                        group=group,
+                    )
+
         except MySQLExecError as e:
-            logger.error("Failed to empty data directory in prep for backup restore")
+            logger.error("Failed to empty data directories in prep for backup restore")
             raise MySQLEmptyDataDirectoryError(e.message) from e
         except Exception as e:
-            logger.error("Failed to empty data directory in prep for backup restore")
+            logger.error("Failed to empty data directories in prep for backup restore")
             raise MySQLEmptyDataDirectoryError from e
 
     def restore_backup(

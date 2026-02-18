@@ -36,11 +36,14 @@ from constants import (
     CONTAINER_NAME,
     LOG_ROTATE_CONFIG_FILE,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
+    MYSQL_BINLOGS_DIR,
     MYSQL_DATA_DIR,
     MYSQL_LOG_DIR,
     MYSQL_LOG_ERROR,
+    MYSQL_REDOLOGS_DIR,
     MYSQL_SYSTEM_GROUP,
     MYSQL_SYSTEM_USER,
+    MYSQL_TEMP_DIR,
     MYSQLD_DEFAULTS_CONFIG_FILE,
     MYSQLD_INIT_CONFIG_FILE,
     MYSQLD_LOCATION,
@@ -368,6 +371,7 @@ class MySQL(MySQLBase):
             MYSQL_DATA_DIR,
             user=MYSQL_SYSTEM_USER,
             group=MYSQL_SYSTEM_GROUP,
+            extra_dirs=[MYSQL_TEMP_DIR, MYSQL_BINLOGS_DIR, MYSQL_REDOLOGS_DIR],
         )
 
     def restore_backup(self, backup_location: str) -> tuple[str, str]:
