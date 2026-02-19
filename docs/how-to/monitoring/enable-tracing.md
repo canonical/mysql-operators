@@ -77,12 +77,12 @@ juju deploy grafana-agent --channel 1/stable
 
 Then, integrate Grafana Agent with Charmed MySQL:
 ```
-juju integrate mysql:cos-agent grafana-agent:cos-agent
+juju relate mysql:cos-agent grafana-agent:cos-agent
 ```
 
 Finally, integrate Grafana Agent with the consumed interface from the previous section:
 ```shell
-juju integrate grafana-agent:tracing tempo:tracing
+juju relate grafana-agent:tracing tempo:tracing
 ```
 
 Wait until the model settles. The following is an example of the `juju status --relations` on the Charmed MySQL model:

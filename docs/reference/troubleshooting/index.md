@@ -281,6 +281,14 @@ To access MySQL, request `root` credentials to use `mysql`:
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 Learn more about charm users in {ref}`users`.
 
 Continue troubleshooting your database/SQL related issues from here.

@@ -1,16 +1,22 @@
 (sunbeam)=
 # How to deploy on Sunbeam
 
-> **Duration** : Up to 60 minutes depending on internet download speed.
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
 
 This guide goes through the steps for setting up Sunbeam and deploying Charmed MySQL. 
 
 ## Prerequisites
+
 * A physical or virtual machine running Ubuntu 22.04 LTS (Jammy) or newer
   * If you'd like to follow this guide in an isolated test environment, you can [launch a Multipass](create-multipass-vm) instance.
 * Hardware requirements depend on planned deployment size.
   * Recommended: 8 CPU cores, 32GB RAM, 100GB of storage
   * Minimum: See the requirements listed in the [Sunbeam documentation][Single-node guided]
+* Juju 3
 
 ---
 
@@ -68,7 +74,9 @@ where `10.76.203.210` is the IP of the Multipass VM and  `10.10.10.0` is the net
 
 The image below is an example of the OpenStack dashboard view (bastion + juju controller + 3 `mysql` nodes):
 
+<!-- TODO: missing image - generate a new one with the latest dashboard 
 ![image|690x225](upload://fsYFnvPbgxhsAeFtfva4b5qbKii.png)
+-->
 
 To learn more about deploying and operating MySQL, see the {ref}`tutorial`.
 

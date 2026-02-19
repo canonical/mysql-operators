@@ -82,10 +82,13 @@ Credential "juju-gce-account" added locally for cloud "google".
 ```
 
 Bootstrap a Juju controller ([check all supported configuration options](https://juju.is/docs/juju/google-gce)):
+
 ```shell
 juju bootstrap google gce
 ```
-[details="Output example"]
+
+<details><summary>Output example</summary>
+
 ```shell
 > juju bootstrap google gce
 Creating Juju controller "gce" on google/us-east1
@@ -109,7 +112,7 @@ Now you can run
 	juju add-model <model-name>
 to create a new model to deploy workloads.
 ```
-[/details]
+</details>
 
 You can check the [GCE instance availability](https://console.cloud.google.com/compute/instances) (ensure the right Google Cloud project chosen!):
 
@@ -162,10 +165,13 @@ mysql:upgrade                          mysql:upgrade                          up
 Once deployed, request the credentials for your newly bootstrapped MySQL database.
 
 For Juju 2.9 use:
+
 ```shell
 juju run-action --wait data-integrator/leader get-credentials
 ```
+
 and for newer Juju 3+ use:
+
 ```shell
 juju run data-integrator/leader get-credentials
 ```

@@ -1,6 +1,12 @@
 (cluster-cluster-deploy)=
 # Deploy
 
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
 Deploy two MySQL Clusters, named `Rome` and `Lisbon`.
 
 ````{tab-set}

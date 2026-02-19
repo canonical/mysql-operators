@@ -41,7 +41,7 @@ Charmed MySQL can be deployed on several machine and Kubernetes cloud services.
 ```{toctree}
 :titlesonly:
 
-Machine clouds <vm-clouds/index>
+VM clouds <vm-clouds/index>
 K8s clouds <k8s-clouds/index>
 ```
 

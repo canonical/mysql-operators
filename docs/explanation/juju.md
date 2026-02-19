@@ -12,7 +12,8 @@ See also:
 
 This page aims to provide some context on some of the inner workings of Juju that affect this charm.
 
-## Breaking changes between Juju 2.9.x and 3.x
+(breaking-changes-juju)=
+## Breaking changes between Juju 2.9 and 3
 
 As this charm documentation is written for Juju 3.x, users of 2.9.x will encounter noteworthy changes when following the instructions. This section explains those changes.
 

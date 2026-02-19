@@ -93,7 +93,7 @@ To rotate passwords for relation users, remove the relation and re-relate:
 
     juju remove-relation mysql <client application>
     juju wait-for application mysql
-    juju integrate mysql <client application>
+    juju relate mysql <client application>
 ```
 
 ```{tab-item} K8s
@@ -101,7 +101,7 @@ To rotate passwords for relation users, remove the relation and re-relate:
 
     juju remove-relation mysql-k8s <client application>
     juju wait-for application mysql-k8s
-    juju integrate mysql-k8s <client application>
+    juju relate mysql-k8s <client application>
 ```
 ````
 

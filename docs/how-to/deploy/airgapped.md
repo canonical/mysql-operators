@@ -1,6 +1,12 @@
 (airgapped)=
 # Deploy in an offline or airgapped environment
 
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
 An airgapped environment refers to a system that does not have access to the public internet.
 This guide goes through the special configuration steps for installing Charmed MySQL VM in an airgapped environment.
 
@@ -9,6 +15,7 @@ This guide goes through the special configuration steps for installing Charmed M
 Canonical does not prescribe how you should set up your specific airgapped environment. However, it is assumed that it meets the following conditions:
 
 * DNS is configured to the local nameservers.
+* Juju 3
 * [Juju is configured](https://documentation.ubuntu.com/enterprise-store/main/how-to/airgap-charmhub/#configure-juju) to use local airgapped services.
 * The [`store-admin`](https://snapcraft.io/store-admin) tool is installed and configured.
 * [Air-gapped CharmHub](https://documentation.ubuntu.com/enterprise-store/main/how-to/airgap-charmhub) is installed and running.

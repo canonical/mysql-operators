@@ -141,7 +141,7 @@ The following commands deploy and integrate the [MySQL K8s Bundle](https://charm
 ```shell
 juju deploy mysql-k8s-bundle --channel 8.0/edge --trust
 juju deploy mysql-test-app
-juju integrate mysql-test-app mysql-k8s:database
+juju relate mysql-test-app mysql-k8s:database
 ```
 
 To track the status of the deployment, run

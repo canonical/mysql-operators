@@ -96,6 +96,14 @@ The output of the action should look like:
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 The action will configure the charm to minimize the amount of primary switchover, among other preparations for a safe refresh process. After successful execution, the charm is ready to be refreshed.
 
 ## Step 4: Refresh

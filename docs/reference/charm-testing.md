@@ -67,6 +67,14 @@ Create a Juju model for testing, deploy a database with a test application and s
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 Expected results:
 
 * mysql-test-app continuously inserts records in database `continuous_writes` table `data`.

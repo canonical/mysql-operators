@@ -1,7 +1,13 @@
 (charm-module)=
 # Deploy charm module
 
-The MySQL _charm_ Terraform module is the smallest unit that can be deployed using Terraform, containing only the MySQL Server charm. It is designed to be deployed alongside other charms to build a more complex setup.
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
+The MySQL **charm** Terraform module is the smallest unit that can be deployed using Terraform, containing only the MySQL Server charm. It is designed to be deployed alongside other charms to build a more complex setup.
 
 ## Install Terraform tooling
 

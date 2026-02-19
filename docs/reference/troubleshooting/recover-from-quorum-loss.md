@@ -16,7 +16,7 @@ cause loss of data.
 
 ## Ensure the cluster is in no-quorum state
 
-A quorum loss will typically look like this in the juju status output:
+Using the VM charm as an example, a quorum loss will typically look like this in the {command}`juju status` output:
 
 ```
 Model   Controller  Cloud/Region             Version  SLA          Timestamp
@@ -31,10 +31,18 @@ mysql/1   maintenance  idle   10.1.0.195         offline
 mysql/2   active       idle   10.1.1.81
 ```
 
-From an active unit, check the cluster status with:
+In this example, from an active unit, you would check the cluster status with:
 
 ```shell
 juju run mysql/2 get-cluster-status
+```
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
 ```
 
 Which will output the current status of the cluster.
@@ -88,8 +96,7 @@ status:
 success: "True"
 ```
 
-Note from the output, we can see that the cluster is in a no-quorum state, with `status:
-no_quorum`.
+Note from the output, we can see that the cluster is in a no-quorum state, with `status: no_quorum`.
 
 ## Recover the cluster from the active unit
 

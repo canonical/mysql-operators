@@ -1,6 +1,12 @@
 (juju-spaces)=
 # Deploy on Juju spaces
 
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
 The Charmed MySQL operator for machines supports [Juju spaces](https://documentation.ubuntu.com/juju/latest/reference/space/index.html) to separate network traffic for:
 - **Client** - MySQL instance to client data.
 - **Instance-replication** - cluster instances replication data.
@@ -12,6 +18,7 @@ This feature is **not** available on Kubernetes.
 ## Prerequisites
 
 * Charmed MySQL VM, revision 380+
+* Juju 3
 * Configured network spaces
   * See [Juju | How to manage network spaces](https://documentation.ubuntu.com/juju/latest/reference/juju-cli/list-of-juju-cli-commands/add-space/)
 

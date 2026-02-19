@@ -112,6 +112,14 @@ OLD_DB_PASS=$(bash -c "juju run --unit ${DB_APP} 'relation-get -r ${OLD_DB_RELAT
 OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[] | .address')
 ```
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 ## Deploy new MySQL databases and obtain credentials
 
 Deploy new MySQL databases. In this example, 3 units are deployed:
@@ -210,13 +218,13 @@ Integrate your application and new MySQL database charm (using the `database` or
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate <your_application> mysql:database
+    juju relate <your_application> mysql:database
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate <your_application> mysql-k8s:database
+    juju relate <your_application> mysql-k8s:database
 ```
 ````
 
@@ -226,13 +234,13 @@ If the `mysql_client` interface is not yet supported, use the legacy mysql inter
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate <your_application> mysql:mysql
+    juju relate <your_application> mysql:mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate <your_application> mysql-k8s:mysql
+    juju relate <your_application> mysql-k8s:mysql
 ```
 ````
 

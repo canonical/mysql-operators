@@ -76,22 +76,22 @@ Then, integrate (relate) it with Charmed MySQL
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate grafana-agent mysql:cos-agent
+    juju relate grafana-agent mysql:cos-agent
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate grafana-agent mysql-k8s:cos-agent
+    juju relate grafana-agent mysql-k8s:cos-agent
 ```
 ````
 
 Finally, integrate (relate) `grafana-agent` with consumed COS offers:
 
 ```shell
-juju integrate grafana-agent grafana
-juju integrate grafana-agent loki
-juju integrate grafana-agent prometheus
+juju relate grafana-agent grafana
+juju relate grafana-agent loki
+juju relate grafana-agent prometheus
 ```
 
 After this is complete, Grafana will show the new dashboards: `MySQL Exporter` and allows access for Charmed MySQL logs on Loki.
@@ -179,6 +179,14 @@ To connect the Grafana web interface, follow the [Browse dashboards](https://cha
 
 ```shell
 juju run grafana/leader get-admin-password --model <cos_k8s_controller>:<cos_model_name>
+```
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
 ```
 
 ## Full example of COS integration (MySQL K8s)

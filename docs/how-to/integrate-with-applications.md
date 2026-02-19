@@ -19,13 +19,13 @@ To integrate with a charmed application that supports the `mysql_client` interfa
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate mysql <charm>
+    juju relate mysql <charm>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate mysql-k8s <charm>
+    juju relate mysql-k8s <charm>
 ```
 ````
 
@@ -58,13 +58,13 @@ To integrate via the legacy interface, run
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate mysql:mysql <charm>
+    juju relate mysql:mysql <charm>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate mysql-k8s:mysql <charm>
+    juju relate mysql-k8s:mysql <charm>
 ```
 ````
 
@@ -74,13 +74,13 @@ Extended permissions can be requested using `mysql-root` endpoint:
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate mysql:mysql-root <charm>
+    juju relate mysql:mysql-root <charm>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate mysql-k8s:mysql-root <charm>
+    juju relate mysql-k8s:mysql-root <charm>
 ```
 ````
 
@@ -100,13 +100,13 @@ Integrate with MySQL:
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate data-integrator mysql
+    juju relate data-integrator mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate data-integrator mysql-k8s
+    juju relate data-integrator mysql-k8s
 ```
 ````
 
@@ -114,6 +114,14 @@ Use the `get-credentials` action to retrieve credentials from `data-integrator`:
 
 ```shell
 juju run data-integrator/leader get-credentials
+```
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
 ```
 
 ## Rotate applications password
@@ -125,14 +133,14 @@ To rotate the passwords of users created for related applications, the relation 
 :sync: vm
 
     juju remove-relation <charm> mysql
-    juju integrate <charm> mysql
+    juju relate <charm> mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
     juju remove-relation <charm> mysql-k8s
-    juju integrate <charm> mysql-k8s
+    juju relate <charm> mysql-k8s
 ```
 ````
 

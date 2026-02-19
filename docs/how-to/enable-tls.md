@@ -23,13 +23,13 @@ To enable TLS, integrate it with your MySQL application:
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate self-signed-certificates mysql
+    juju relate self-signed-certificates mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate self-signed-certificates mysql-k8s
+    juju relate self-signed-certificates mysql-k8s
 ```
 ````
 
@@ -65,6 +65,14 @@ Apply the newly generated internal key on each `juju` unit:
     juju run mysql-k8s/2 set-tls-private-key "internal-key=$(base64 -w0 internal-key.pem)"
 ```
 ````
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
 
 Updates can also be done with auto-generated keys:
 

@@ -1,7 +1,13 @@
 (product-module)=
 # Deploy product module
 
-The MySQL _product_ Terraform module is the set of recommended charms to be deployed using Terraform, containing only Data Platform-owned charms by default. It could be extended with the addition of TLS and COS (Canonical Observability Stack) charms to build more complex setups.
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
+The MySQL **product** Terraform module is the set of recommended charms to be deployed using Terraform, containing only Data Platform-owned charms by default. It could be extended with the addition of TLS and COS (Canonical Observability Stack) charms to build more complex setups.
 
 ## Install Terraform tooling
 

@@ -21,7 +21,7 @@ This charm provides the modern [`mysql_client`](https://github.com/canonical/cha
 
 ### `mysql_client` interface, `database` endpoint
 
-Adding a [Juju relation](https://documentation.ubuntu.com/juju/3.6/reference/relation/) is accomplished with `juju integrate` via endpoint `database`.
+Adding a [Juju relation](https://documentation.ubuntu.com/juju/3.6/reference/relation/) is accomplished with `juju relate` via endpoint `database`.
 
 Example:
 
@@ -36,7 +36,7 @@ Example:
     juju deploy mysql-test-app
 
     # Integrate (relate) MySQL with your application
-    juju integrate mysql:database mysql-test-app:database
+    juju relate mysql:database mysql-test-app:database
 
     # Check established relation (using mysql_client interface):
     juju status --relations
@@ -94,7 +94,7 @@ Example usage of this interface:
     juju deploy mysql --channel 8.0
     juju config mysql mysql-interface-database=mediawiki mysql-interface-user=mediawiki
     juju deploy mediawiki
-    juju integrate mysql:mysql mediawiki:db
+    juju relate mysql:mysql mediawiki:db
 ```
 
 ```{tab-item} K8s
@@ -123,8 +123,8 @@ As an example, the following commands can be executed to deploy and integrate Ch
 juju deploy mysql --channel 8.0
 juju deploy mysql-router --series focal
 juju deploy keystone --series focal
-juju integrate mysql-router keystone
-juju integrate mysql:db-router mysql-router:db-router
+juju relate mysql-router keystone
+juju relate mysql:db-router mysql-router:db-router
 ```
 
 ```{note}
@@ -142,7 +142,7 @@ As an example, the following commands can be executed to deploy and integrate Ch
 ```shell
 juju deploy mysql --channel 8.0
 juju deploy keystone --series focal
-juju integrate keystone:shared-db mysql:shared-db
+juju relate keystone:shared-db mysql:shared-db
 ```
 
 <!--BADGES-->

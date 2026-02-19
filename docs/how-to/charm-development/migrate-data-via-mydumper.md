@@ -66,6 +66,14 @@ Dump database using Charmed MySQL operator user `serverconfig`:
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 The content of the database dump is stored in a newly created folder, e.g. `export-20230927-123337` (which can be stored on S3-compatible storage):
 
 ```shell

@@ -41,6 +41,14 @@ To retrieve credentials for a different user:
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 ## Set password
 
 To change the `root` user's password to a new, randomized password:

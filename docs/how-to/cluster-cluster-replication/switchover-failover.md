@@ -1,6 +1,12 @@
 (cluster-cluster-switchover-failover)=
 # Switchover / Failover
 
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
 This guide assumes both `Rome` and `Lisbon` Clusters are deployed using the {ref}`cluster-cluster-deploy`.
 
 ## Switchover (safe)

@@ -6,6 +6,7 @@
 ## Install AWS and Juju tooling
 
 Install Juju via snap:
+
 ```shell
 sudo snap install juju
 ```
@@ -42,10 +43,13 @@ Add AWS credentials to Juju:
 juju add-credential aws -f ~/.aws/credentials.yaml
 ```
 Bootstrap Juju controller ([check all supported configuration options](https://juju.is/docs/juju/amazon-ec2)):
+
 ```shell
 juju bootstrap aws
 ```
-[details="Output example"]
+
+<details><summary>Output example</summary>
+
 ```shell
 > juju bootstrap aws
 Creating Juju controller "aws-us-east-1" on aws/us-east-1
@@ -69,7 +73,7 @@ Now you can run
 	juju add-model <model-name>
 to create a new model to deploy workloads.
 ```
-[/details]
+</details>
 
 You can check the [AWS EC2 instance availability](https://us-east-1.console.aws.amazon.com/ec2/home?region=us-east-1) (ensure the right AWS region chosen!):
 ![image|690x118](upload://putAO5NyHdaeWE6jXI8X1hZHTYv.png)
@@ -125,10 +129,13 @@ mysql:upgrade                          mysql:upgrade                          up
 Once deployed, request the credentials for your newly bootstrapped MySQL database.
 
 For Juju 2.9 use:
+
 ```shell
 juju run-action --wait data-integrator/leader get-credentials
 ```
+
 and for newer Juju 3+ use:
+
 ```shell
 juju run data-integrator/leader get-credentials
 ```
@@ -215,7 +222,9 @@ Next, check and manually delete all unnecessary AWS EC2 instances, to show the l
 ```shell
 aws ec2 describe-instances --region us-east-1 --query "Reservations[].Instances[*].{InstanceType: InstanceType, InstanceId: InstanceId, State: State.Name}" --output table
 ```
-[details="Output example"]
+
+<details><summary>Output example</summary>
+
 ```shell
 -------------------------------------------------------
 |                  DescribeInstances                  |
@@ -228,9 +237,10 @@ aws ec2 describe-instances --region us-east-1 --query "Reservations[].Instances[
 |  i-0f4615983d113166d|  m7i.large     |  terminated  |
 +---------------------+----------------+--------------+
 ```
-[/details]
+</details>
 
 List your Juju credentials:
+
 ```shell
 > juju credentials
 ...

@@ -5,10 +5,22 @@ The following are the minimum software and hardware requirements to run Charmed 
 
 ## Software
 
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
 * Ubuntu 22.04 LTS (Jammy Jellyfish) or later
-* (K8s charm only) Kubernetes 1.27+
-* (K8s charm only) Canonical MicroK8s 1.27+
-  * snap channel 1.27-strict/stable and newer
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+* Ubuntu 22.04 LTS (Jammy Jellyfish) or later
+* Kubernetes 1.27+
+* Canonical MicroK8s 1.27+
+  * snap channel `1.27-strict/stable` and newer
+```
+````
 
 ### Juju
 

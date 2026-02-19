@@ -23,6 +23,14 @@ In this example, the unit `mysql-k8s/1` will become the new primary. The previou
 ```
 ````
 
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
 ```{caution}
 The `promote-to-primary` action can be used in cluster scope, when using cluster-cluster replication.
 

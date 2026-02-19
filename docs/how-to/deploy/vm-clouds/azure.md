@@ -71,7 +71,8 @@ If successful, you will see a confirmation that the credentials have been correc
 Credential <CREDENTIAL_NAME> added locally for cloud "azure".
 ```
 
-[details=Full sample output of `juju add-credential azure`]
+<details><summary>Full sample output of <code>juju add-credential azure</code></summary>
+
 ```shell
 > juju add-credential azure
 
@@ -110,11 +111,12 @@ To sign in, use a web browser to open the page https://microsoft.com/devicelogin
 To sign in, use a web browser to open the page https://microsoft.com/devicelogin and enter the code HIDDEN to authenticate.
 Credential "azure-test-credentials1" added locally for cloud "azure".
 ```
-[/details]
+</details>
 
 ### Bootstrap Juju controller
 
 Once successfully completed, bootstrap the new Juju controller on Azure:
+
 ```shell
 > juju bootstrap azure azure
 
@@ -161,7 +163,7 @@ The following command deploys MySQL and [Data Integrator](https://charmhub.io/da
 ```shell
 juju deploy mysql
 juju deploy data-integrator --config database-name=test123
-juju integrate mysql data-integrator
+juju relate mysql data-integrator
 ```
 Check the status:
 ```shell
@@ -185,6 +187,14 @@ Machine  State    Address      Inst id        Base          AZ  Message
 Once deployed, request the credentials for your newly bootstrapped MySQL database:
 ```shell
 juju run data-integrator/leader get-credentials
+```
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
 ```
 
 Example output:
