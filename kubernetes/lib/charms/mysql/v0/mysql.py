@@ -86,10 +86,11 @@ from constants import (
     CLUSTER_ADMIN_PASSWORD_KEY,
     CLUSTER_ADMIN_USERNAME,
     COS_AGENT_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
-    PASSWORD_LENGTH,
+    MAX_PASSWORD_LENGTH,
     PEER,
     ROOT_PASSWORD_KEY,
     ROOT_USERNAME,
@@ -136,7 +137,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 102
+LIBPATCH = 103
 
 PYDEPS = ["mysql_shell_client ~= 0.7"]
 
@@ -178,15 +179,6 @@ ALLOWED_PLUGINS = {
 }
 ALLOWED_COMPONENTS = {
     "file://component_validate_password": "component_validate_password.so",
-}
-
-PASSWORD_VALIDATION_CONFIGURATION = {
-    "validate_password.check_user_name": "ON",
-    "validate_password.length": 24,
-    "validate_password.mixed_case_count": 1,
-    "validate_password.number_count": 1,
-    "validate_password.policy": "MEDIUM",
-    "validate_password.special_char_count": 0,
 }
 
 APP_SCOPE = "app"
@@ -570,7 +562,10 @@ class MySQLCharmBase(CharmBase, ABC):
             )
             return
 
-        new_password = event.params.get("password") or generate_random_password(PASSWORD_LENGTH)
+        new_password = event.params.get("password") or generate_random_password(DEFAULT_PASSWORD_LENGTH)
+        if len(new_password) > MAX_PASSWORD_LENGTH:
+            raise MySQLUpdateUserError("Password is too long")
+
         host = "%" if username != ROOT_USERNAME else "localhost"
 
         self._mysql.update_user_password(username, new_password, host=host)
@@ -1196,7 +1191,7 @@ class MySQLBase(ABC):
             "max_connect_errors": "10000",
             # Password validation
             "loose-validate_password.check_user_name": "ON",
-            "loose-validate_password.length": 24,
+            "loose-validate_password.length": 12,
             "loose-validate_password.mixed_case_count": 1,
             "loose-validate_password.number_count": 1,
             "loose-validate_password.policy": "MEDIUM",

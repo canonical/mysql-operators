@@ -21,7 +21,7 @@ from ops.charm import RelationBrokenEvent, RelationDepartedEvent, RelationJoined
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
-from constants import DB_RELATION_NAME, PASSWORD_LENGTH, PEER
+from constants import DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH, PEER
 from utils import generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ class MySQLProvider(Object):
         """
         if password := self.database.fetch_my_relation_field(relation.id, "password"):
             return password
-        password = generate_random_password(PASSWORD_LENGTH)
+        password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
         self.database.update_relation_data(relation.id, {"password": password})
         return password
 
