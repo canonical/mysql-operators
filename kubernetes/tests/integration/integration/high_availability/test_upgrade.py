@@ -62,6 +62,7 @@ def test_deploy_latest(juju: Juju) -> None:
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -103,6 +104,7 @@ def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
+        delay=2,
     )
 
     mysql_status = juju.status().apps[MYSQL_APP_NAME]
@@ -135,6 +137,7 @@ def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")
@@ -166,6 +169,7 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_units[-1], "blocked"),
         timeout=10 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensure continuous writes on remaining units")
@@ -178,6 +182,7 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Wait for refresh to finish on first unit")
@@ -197,6 +202,7 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensure continuous writes after rollback procedure")

@@ -5,6 +5,7 @@ import logging
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
+from time import sleep
 
 import boto3
 import jubilant
@@ -96,9 +97,14 @@ def build_and_deploy_operations(
         trust=True,
     )
 
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
+
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     logger.info("Rotating mysql credentials")
@@ -114,6 +120,7 @@ def build_and_deploy_operations(
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.config(S3_INTEGRATOR, cloud_configs)
     s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
@@ -125,11 +132,13 @@ def build_and_deploy_operations(
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.integrate(f"{MYSQL_APPLICATION_NAME}:s3-parameters", f"{S3_INTEGRATOR}:s3-credentials")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -225,6 +234,7 @@ def pitr_operations(
             jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_not_exist=[td1, td2]), (
         "test data should not exist"
@@ -241,6 +251,7 @@ def pitr_operations(
             jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"
@@ -257,6 +268,7 @@ def pitr_operations(
             jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1], should_not_exist=[td2]), (
         "only first test data should exist"
@@ -273,6 +285,7 @@ def pitr_operations(
             jubilant.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"

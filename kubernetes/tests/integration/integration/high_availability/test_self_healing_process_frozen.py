@@ -65,6 +65,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -135,6 +136,7 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensuring that all instances have incrementing continuous writes")

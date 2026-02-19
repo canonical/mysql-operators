@@ -58,6 +58,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -76,6 +77,7 @@ def test_single_unit_pod_delete(juju: Juju) -> None:
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Write data to unit and verify that data was written")

@@ -38,6 +38,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 

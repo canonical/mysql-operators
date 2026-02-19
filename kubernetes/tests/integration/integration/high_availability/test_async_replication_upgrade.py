@@ -273,6 +273,7 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, app_name),
         timeout=10 * MINUTE_SECS,
+        delay=2,
     )
 
     app_status = juju.status().apps[app_name]
@@ -305,6 +306,7 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, app_name),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")

@@ -61,12 +61,14 @@ def test_relation_creation_eager(juju: Juju):
         ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
         error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -75,6 +77,7 @@ def test_relation_creation(juju: Juju):
     juju.wait(
         ready=jubilant.all_active,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     relation_data = get_relation_data(juju, APPLICATION_APP_NAME, "database")
@@ -93,11 +96,13 @@ def test_relation_broken(juju: Juju):
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
         error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     juju.remove_application(APPLICATION_APP_NAME, destroy_storage=True, force=True)

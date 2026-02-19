@@ -108,6 +108,7 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME),
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -143,6 +144,7 @@ def refresh_from_stable(juju: Juju, charm: str) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
+        delay=2,
     )
 
     mysql_status = juju.status().apps[MYSQL_APP_NAME]
@@ -175,6 +177,7 @@ def refresh_from_stable(juju: Juju, charm: str) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")

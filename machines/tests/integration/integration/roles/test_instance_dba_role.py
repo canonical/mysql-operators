@@ -42,10 +42,12 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_blocked, INTEGRATOR_APP_NAME),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -60,6 +62,7 @@ def test_charmed_dba_role(juju: Juju):
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, INTEGRATOR_APP_NAME, DATABASE_APP_NAME),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     mysql_unit = get_app_units(juju, DATABASE_APP_NAME)[0]

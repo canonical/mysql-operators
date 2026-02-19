@@ -5,6 +5,7 @@
 import jubilant
 from jubilant import Juju
 
+from .. import architecture
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, wait_for_apps_status, wait_for_unit_status
 
 MYSQL_APP_NAME = "mysql"
@@ -26,6 +27,7 @@ def test_build_and_deploy(juju: Juju, charm):
         trust=True,
     )
 
+    constraints = {"arch": architecture.architecture}
     for idx in range(SCALE_APPS):
         juju.deploy(
             "mysql-test-app",
@@ -34,6 +36,7 @@ def test_build_and_deploy(juju: Juju, charm):
             channel="latest/edge",
             config={"database_name": f"database{idx}", "sleep_interval": "2000"},
             base="ubuntu@24.04",
+            constraints=constraints,
         )
         juju.deploy(
             "mysql-router-k8s",
@@ -42,6 +45,7 @@ def test_build_and_deploy(juju: Juju, charm):
             channel="8.4/edge",
             trust=True,
             base="ubuntu@24.04",
+            constraints=constraints,
         )
 
     # Wait until deployment is complete in attempt to reduce CPU stress

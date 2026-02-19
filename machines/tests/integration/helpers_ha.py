@@ -142,12 +142,14 @@ def scale_app_units(juju: Juju, app_name: str, num_units: int) -> None:
     juju.wait(
         ready=lambda status: len(status.apps[app_name].units) == num_units,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     if num_units > 0:
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, app_name),
             timeout=20 * MINUTE_SECS,
+            delay=2,
         )
 
 

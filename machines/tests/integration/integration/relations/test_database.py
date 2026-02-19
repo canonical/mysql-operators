@@ -57,11 +57,13 @@ def test_build_and_deploy(juju: Juju, charm):
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         error=jubilant.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
         error=jubilant.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -138,6 +140,7 @@ def test_relation_creation(juju: Juju):
         ready=wait_for_apps_status(jubilant.all_active, *APPS),
         error=jubilant.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
     relation_data = get_relation_data(juju, APPLICATION_APP_NAME, DB_RELATION_NAME)
@@ -165,6 +168,7 @@ def test_read_only_endpoints(juju: Juju):
             juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME
         ),
         timeout=5 * MINUTE_SECS,
+        delay=2,
     )
 
     # increase the number of units
@@ -179,6 +183,7 @@ def test_read_only_endpoints(juju: Juju):
             juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME
         ),
         timeout=5 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -190,11 +195,13 @@ def test_relation_broken(juju: Juju):
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         error=jubilant.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
         error=jubilant.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 

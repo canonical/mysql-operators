@@ -5,6 +5,7 @@
 import logging
 import socket
 from pathlib import Path
+from time import sleep
 
 import boto3
 import jubilant
@@ -90,6 +91,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -113,6 +115,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -157,6 +160,7 @@ def test_backup(juju: Juju, cloud_configs_gcp) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     # list backups
@@ -222,6 +226,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_gcp) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     # restore the backup
@@ -286,6 +291,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_gcp) -> None:
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     logger.info("Ensuring inserted values before backup and after restore exist on all units")
@@ -324,9 +330,14 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
         trust=True,
     )
 
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
+
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     # relate to S3 integrator
@@ -335,6 +346,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     # rotate all credentials
@@ -364,6 +376,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     logger.info("Waiting for blocked application status with another cluster S3 repository")
@@ -373,6 +386,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
             == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
         ),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     # restore the backup
@@ -432,6 +446,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
             ),
         )),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     logger.info("Ensuring inserted values before backup and after restore exist on all units")
@@ -454,4 +469,5 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
             == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
         ),
         timeout=TIMEOUT,
+        delay=2,
     )

@@ -33,6 +33,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         jubilant.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -52,6 +53,7 @@ def test_reboot_1_of_3_units(juju: Juju) -> None:
     juju.wait(
         jubilant.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -71,6 +73,7 @@ def test_reboot_2_of_3_units(juju: Juju) -> None:
     juju.wait(
         jubilant.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -90,6 +93,7 @@ def test_reboot_3_of_3_units(juju: Juju) -> None:
     juju.wait(
         jubilant.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
