@@ -48,6 +48,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
         timeout=TIMEOUT,
+        delay=2,
     )
 
     app_units = get_app_units(juju, APP_NAME)
@@ -92,6 +93,7 @@ def test_scale_up_from_zero(juju: Juju) -> None:
     juju.wait(
         ready=lambda status: len(status.apps[APP_NAME].units) == 0,
         timeout=TIMEOUT,
+        delay=2,
     )
 
     logger.info("Scaling back up to 3 units")
