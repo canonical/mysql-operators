@@ -32,7 +32,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         channel="latest/edge",
         config={"sleep_interval": 500},
         num_units=1,

@@ -141,15 +141,15 @@ def test_deploy_router_and_app(first_model: str) -> None:
     model_1.deploy(
         charm=MYSQL_ROUTER_NAME,
         app=MYSQL_ROUTER_NAME,
-        base="ubuntu@22.04",
-        channel="8.0/edge",
+        base="ubuntu@24.04",
+        channel="8.4/edge",
         num_units=1,
         trust=True,
     )
     model_1.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         channel="latest/edge",
         num_units=1,
         trust=False,

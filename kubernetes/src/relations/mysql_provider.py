@@ -139,6 +139,7 @@ class MySQLProvider(Object):
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
             self.charm.unit.status = BlockedStatus("Failed to create scoped user")
+            return
 
         try:
             # create k8s services for endpoints
@@ -158,6 +159,7 @@ class MySQLProvider(Object):
                 "Permission to create k8s services denied. `juju trust`"
             )
             event.defer()
+            return
 
         # Set relation data
         self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")
