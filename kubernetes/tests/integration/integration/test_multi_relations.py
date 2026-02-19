@@ -142,6 +142,7 @@ def test_scale_in(juju: Juju):
 
 # All jubilant.Juju operations risk raising intermittent CLIErrors under CPU pressure,
 # so we wrap each of them
+# TODO: Try to remove when juju 3.6.15+ is out
 def retry_if_cli_error(fn, *, max_attempts=10):
     try:
         for attempt in Retrying(
