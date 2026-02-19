@@ -62,6 +62,7 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=lambda status: all((
@@ -72,10 +73,12 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
             ),
         )),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_blocked, KEYSTONE_MYSQLROUTER_APP_NAME),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
 
     juju.integrate(f"{KEYSTONE_MYSQLROUTER_APP_NAME}:db-router", f"{APP_NAME}:db-router")
@@ -85,6 +88,7 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
             jubilant_backports.all_active, KEYSTONE_APP_NAME, KEYSTONE_MYSQLROUTER_APP_NAME
         ),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
 
     mysql_units = get_app_units(juju, APP_NAME)
@@ -136,6 +140,7 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
             ANOTHER_KEYSTONE_MYSQLROUTER_APP_NAME,
         ),
         timeout=SLOW_WAIT_TIMEOUT,
+        delay=2,
     )
 
     for unit_name in mysql_units:

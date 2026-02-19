@@ -63,6 +63,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -97,12 +98,14 @@ def test_sst_test(juju: Juju, continuous_writes):
         juju.wait(
             ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_primary_unit, "maintenance"),
             timeout=20 * MINUTE_SECS,
+            delay=2,
         )
 
         logging.info("Waiting unit to be back online")
         juju.wait(
             ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_primary_unit, "active"),
             timeout=20 * MINUTE_SECS,
+            delay=2,
         )
 
     new_mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)

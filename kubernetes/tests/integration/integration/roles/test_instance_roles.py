@@ -51,6 +51,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
     juju.wait(
         ready=lambda status: all((
@@ -64,6 +65,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
             ),
         )),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -79,6 +81,7 @@ def test_charmed_read_role(juju: Juju):
             jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -149,6 +152,7 @@ def test_charmed_read_role(juju: Juju):
             ),
         )),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -163,6 +167,7 @@ def test_charmed_dml_role(juju: Juju):
             jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}1", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     juju.config(
@@ -175,6 +180,7 @@ def test_charmed_dml_role(juju: Juju):
             jubilant_backports.all_active, f"{INTEGRATOR_APP_NAME}2", DATABASE_APP_NAME
         ),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
@@ -260,4 +266,5 @@ def test_charmed_dml_role(juju: Juju):
             ),
         )),
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
