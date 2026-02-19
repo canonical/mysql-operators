@@ -45,6 +45,7 @@ def test_ubuntu_pro(juju: Juju, charm):
     juju.wait(
         jubilant_backports.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -65,4 +66,5 @@ def test_landscape_client(juju: Juju):
     juju.wait(
         jubilant_backports.all_active,
         timeout=TIMEOUT,
+        delay=2,
     )

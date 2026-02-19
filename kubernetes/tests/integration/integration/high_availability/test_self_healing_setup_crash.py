@@ -35,6 +35,7 @@ def test_deploy_single_unit_cluster(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
 
@@ -51,6 +52,7 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        delay=2,
     )
 
     logging.info("Deleting pod")
@@ -61,4 +63,5 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
         juju.wait(
             ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
             timeout=20 * MINUTE_SECS,
+            delay=2,
         )

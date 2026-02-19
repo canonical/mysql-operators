@@ -7,6 +7,7 @@ import logging
 import jubilant_backports
 from jubilant_backports import Juju
 
+from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -34,11 +35,13 @@ def test_build_and_deploy(juju: Juju, charm):
         base="ubuntu@22.04",
         trust=True,
     )
+    constraints = {"arch": architecture.architecture}
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=2,
         channel="latest/edge",
         base="ubuntu@22.04",
+        constraints=constraints,
     )
 
 
@@ -57,10 +60,12 @@ def test_relation_creation_eager(juju: Juju):
         ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=15 * MINUTE_SECS,
+        delay=2,
     )

@@ -56,11 +56,13 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -85,6 +87,7 @@ def test_relation_creation(juju: Juju):
         ),
         error=jubilant_backports.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
 
@@ -114,11 +117,13 @@ def test_relation_broken(juju: Juju):
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=TIMEOUT,
+        delay=2,
     )
 
     logger.info(

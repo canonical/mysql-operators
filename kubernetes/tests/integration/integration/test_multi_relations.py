@@ -6,6 +6,7 @@ import jubilant_backports
 from jubilant_backports import CLIError, Juju
 from tenacity import RetryError, Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from .. import architecture
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, wait_for_apps_status, wait_for_unit_status
 
 MYSQL_APP_NAME = "mysql"
@@ -27,6 +28,7 @@ def test_build_and_deploy(juju: Juju, charm):
         trust=True,
     )
 
+    constraints = {"arch": architecture.architecture}
     for idx in range(SCALE_APPS):
         juju.deploy(
             "mysql-test-app",
@@ -35,6 +37,7 @@ def test_build_and_deploy(juju: Juju, charm):
             channel="latest/edge",
             config={"database_name": f"database{idx}", "sleep_interval": "2000"},
             base="ubuntu@22.04",
+            constraints=constraints,
         )
         juju.deploy(
             "mysql-router-k8s",
@@ -43,6 +46,7 @@ def test_build_and_deploy(juju: Juju, charm):
             channel="8.0/edge",
             trust=True,
             base="ubuntu@22.04",
+            constraints=constraints,
         )
 
     # Wait until deployment is complete in attempt to reduce CPU stress
@@ -138,6 +142,7 @@ def test_scale_in(juju: Juju):
 
 # All jubilant.Juju operations risk raising intermittent CLIErrors under CPU pressure,
 # so we wrap each of them
+# TODO: Try to remove when juju 3.6.15+ is out
 def retry_if_cli_error(fn, *, max_attempts=10):
     try:
         for attempt in Retrying(
