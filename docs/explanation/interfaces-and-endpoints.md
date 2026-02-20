@@ -35,7 +35,7 @@ Example:
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app
 
-    # Integrate (relate) MySQL with your application
+    # Relate MySQL with your application
     juju relate mysql:database mysql-test-app:database
 
     # Check established relation (using mysql_client interface):

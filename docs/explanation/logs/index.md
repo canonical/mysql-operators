@@ -19,17 +19,17 @@ The charm stores its logs in `/var/snap/charmed-mysql/common/var/log/mysql`.
 
     $ ls -lahR /var/snap/charmed-mysql/common/var/log/mysql
 
-    /var/log/mysql:
+    # /var/log/mysql:
     drwxrwx--- 2 mysql mysql 4.0K Oct 23 20:46 archive_audit
     drwxrwx--- 2 mysql mysql 4.0K Oct 23 20:46 archive_error
     -rw-r----- 1 mysql mysql 1.1K Oct 23 20:46 audit.log
     -rw-r----- 1 mysql mysql 1.1K Oct 23 20:46 error.log
 
-    /var/snap/charmed-mysql/common/var/log/mysql/archive_audit:
+    # /var/snap/charmed-mysql/common/var/log/mysql/archive_audit:
     -rw-r----- 1 snap_daemon root 43K Sep 3 01:24 audit.log-20240903_0124.gz
     -rw-r----- 1 snap_daemon root 109K Sep 3 01:25 audit.log-20240903_0125.gz
 
-    /var/snap/charmed-mysql/common/var/log/mysql/archive_error:
+    # /var/snap/charmed-mysql/common/var/log/mysql/archive_error:
 
     -rw-r----- 1 mysql mysql 8.7K Oct 23 20:44 error.log-43_2045.gz
     -rw-r----- 1 mysql mysql 2.3K Oct 23 20:45 error.log-43_2046.gz
@@ -42,17 +42,17 @@ The charm stores its logs in `/var/log/mysql`.
 
     $ ls -lahR /var/log/mysql
 
-    /var/log/mysql:
+    # /var/log/mysql:
     drwxrwx--- 2 mysql mysql 4.0K Oct 23 20:46 archive_audit
     drwxrwx--- 2 mysql mysql 4.0K Oct 23 20:46 archive_error
     -rw-r----- 1 mysql mysql 1.1K Oct 23 20:46 audit.log
     -rw-r----- 1 mysql mysql 1.1K Oct 23 20:46 error.log
 
-    /var/log/mysql/archive_audit:
-    -rw-r----- 1 snap_daemon root         43K Sep  3 01:24 audit.log-20240903_0124.gz
-    -rw-r----- 1 snap_daemon root        109K Sep  3 01:25 audit.log-20240903_0125.gz
+    # /var/log/mysql/archive_audit:
+    -rw-r----- 1 snap_daemon root 43K Sep  3 01:24 audit.log-20240903_0124.gz
+    -rw-r----- 1 snap_daemon root 109K Sep  3 01:25 audit.log-20240903_0125.gz
 
-    /var/log/mysql/archive_error:
+    # /var/log/mysql/archive_error:
     -rw-r----- 1 mysql mysql 8.7K Oct 23 20:44 error.log-43_2045.gz
     -rw-r----- 1 mysql mysql 2.3K Oct 23 20:45 error.log-43_2046.gz
 ```
