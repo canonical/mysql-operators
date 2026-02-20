@@ -7,7 +7,7 @@ Charmed MySQL supports modern `mysql_client` and legacy `mysql`, `mysql-shared`,
 |--------|----------------|-----------------------|----------|-----------|
 | modern | `mysql_client` | `database`            | ![check] | ![check]  |
 | legacy | `mysql`        | `mysql`               | ![check] | ![check]  |
-|        |                | `mysql_root`          | ![check] |           |
+|        |                | `mysql_root`          |          | ![check]  |
 | legacy | `mysql-router` | `db-router`           | ![check] |           |
 | legacy | `mysql-shared` | `shared-db`           | ![check] |           |
 
@@ -83,7 +83,7 @@ This charm supports several legacy interfaces, e.g. `mysql`, `mysql-shared`, `my
 
 ### `mysql` interface, `mysql` endpoint
 
-This was a popular interface used by some legacy charms (e.g. [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona Cluster](https://charmhub.io/percona-cluster) and [MySQL Innodb Cluster](https://charmhub.io/mysql-innodb-cluster)), often in [cross-model relations](https://documentation.ubuntu.com/juju/3.6/reference/relation/#cross-model-relation).
+This was a popular interface used by some legacy charms on both VM and K8s (e.g. [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona Cluster](https://charmhub.io/percona-cluster) and [MySQL Innodb Cluster](https://charmhub.io/mysql-innodb-cluster)), often in [cross-model relations](https://documentation.ubuntu.com/juju/3.6/reference/relation/#cross-model-relation).
 
 Example usage of this interface:
 
@@ -107,10 +107,12 @@ Example usage of this interface:
 ```
 ````
 
-```{caution}
-The VM charm also supports the endpoint `mysql_root`, which provides the same legacy interface `mysql` with MySQL root-level privileges. 
+#### `mysql_root` endpoint (K8s only)
 
-It is NOT recommended to use it from security point of view.
+The K8s charm additionally supports the endpoint `mysql_root`, which provides the same legacy interface `mysql` with MySQL root-level privileges. 
+
+```{caution}
+Usage of `mysql_root` is **not** recommended from security point of view.
 ```
 
 ### `mysql-router` interface, `db-router` endpoint (VM only)
