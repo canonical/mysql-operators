@@ -2297,17 +2297,10 @@ class MySQLBase(ABC):
 
         Recovery for cases where majority loss put the cluster in defunct state.
         """
-        # This is the ONLY operation in MySQL Shell 8.0 that requires
-        # an explicit username + password in the instance definition string.
-        # Otherwise, the `ubuntu` user is used.
-        instance_def = (
-            f"{self.cluster_admin_user}:{self.cluster_admin_password}@{self.instance_address}"
-        )
-
         try:
             self._cluster_client_tcp.force_instance_quorum_into_cluster(
                 cluster_name=self.cluster_name,
-                instance_host=instance_def,
+                instance_host=self.instance_address,
                 instance_port=str(3306),
             )
         except ExecutionError as e:
