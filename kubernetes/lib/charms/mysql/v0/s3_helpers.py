@@ -88,7 +88,7 @@ def _get_bucket(s3_parameters: dict) -> boto3.resources.base.ServiceResource:
 
     with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
         if ca_file:
-            ca = "\n".join([base64.b64decode(s).decode() for s in ca_chain])
+            ca = "\n".join(ca_chain)
             ca_file.write(ca.encode())
             ca_file.flush()
 
