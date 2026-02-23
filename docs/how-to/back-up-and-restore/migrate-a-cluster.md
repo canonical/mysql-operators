@@ -28,6 +28,8 @@ Set the password of your current cluster to the previous cluster’s password:
     juju run mysql/leader set-password username=root password=<previous cluster password>
     juju run mysql/leader set-password username=clusteradmin password=<previous cluster password>
     juju run mysql/leader set-password username=serverconfig password=<previous cluster password>
+    juju run mysql/leader set-password username=backups password=<previous cluster password>
+    juju run mysql/leader set-password username=monitoring password=<previous cluster password>
 ```
 
 ```{tab-item} K8s
@@ -36,6 +38,8 @@ Set the password of your current cluster to the previous cluster’s password:
     juju run mysql-k8s/leader set-password username=root password=<previous cluster password>
     juju run mysql-k8s/leader set-password username=clusteradmin password=<previous cluster password>
     juju run mysql-k8s/leader set-password username=serverconfig password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=backups password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=monitoring password=<previous cluster password>
 ```
 ````
 ```{admonition} Juju 2.9 users
