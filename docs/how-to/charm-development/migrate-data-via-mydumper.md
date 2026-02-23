@@ -43,7 +43,7 @@ Dump database using Charmed MySQL operator user `serverconfig`:
     OLD_DB_PASS=$(juju run mysql/leader get-password username=${OLD_DB_USER}| yq '.password')
 
     # Test connection
-    mysql -h ${OLD_DB_IP} -u ${OLD_DB_USER} -p${OLD_DB_PASS} ${DB_NAME}
+    mysql -h ${OLD_DB_IP} -u ${OLD_DB_USER} --password=${OLD_DB_PASS} ${DB_NAME}
 
     # Dump database using mydumper
     mydumper -h ${OLD_DB_IP} -u ${OLD_DB_USER} -p ${OLD_DB_PASS} -B ${DB_NAME}
@@ -59,7 +59,7 @@ Dump database using Charmed MySQL operator user `serverconfig`:
     OLD_DB_PASS=$(juju run mysql-k8s/leader get-password username=${OLD_DB_USER}| yq '.password')
 
     # Test connection
-    mysql -h ${OLD_DB_IP} -u ${OLD_DB_USER} -p${OLD_DB_PASS} ${DB_NAME}
+    mysql -h ${OLD_DB_IP} -u ${OLD_DB_USER} --password=${OLD_DB_PASS} ${DB_NAME}
 
     # Dump database using mydumper
     mydumper -h ${OLD_DB_IP} -u ${OLD_DB_USER} -p ${OLD_DB_PASS} -B ${DB_NAME}
