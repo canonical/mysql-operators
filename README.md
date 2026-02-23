@@ -35,8 +35,7 @@ juju destroy-model mysql --destroy-storage --yes
 
 ## Documentation
 
-Please follow the tutorial guide ([K8s](https://canonical-charmed-mysql-k8s.readthedocs-hosted.com/tutorial/) or [VM](https://canonical-charmed-mysql.readthedocs-hosted.com/tutorial/)) 
-with detailed explanation how to access DB, configure cluster, change credentials and/or enable TLS.
+See the [official documentation](https://canonical-charmed-mysql.readthedocs-hosted.com/) for more operational guidance, such as deployment on specific clouds, TLS, monitoring, backups, and troubleshooting.
 
 ## Relations
 
