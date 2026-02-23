@@ -75,7 +75,7 @@ In order to integrate with this charm, every table created by the integrated app
 
 ## Legacy relations
 
-**Legacy relations are deprecated and will be discontinued** in future releases. Their usage should be avoided. 
+**Legacy relations are deprecated and will be discontinued** from Charmed MySQL 8.4 onward. Their usage should be avoided. 
 
 Check the legacy interface implementation limitations in {ref}`legacy-charm`.
 
