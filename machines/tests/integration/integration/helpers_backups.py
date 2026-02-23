@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+from time import sleep
 
 import boto3
 import jubilant_backports
@@ -70,9 +71,6 @@ def build_and_deploy_operations(
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    # but it is enough to deploy another application in the meantime
     logger.info("Deploying s3 integrator")
     juju.deploy(
         S3_INTEGRATOR,
@@ -80,6 +78,9 @@ def build_and_deploy_operations(
         channel=S3_INTEGRATOR_CHANNEL,
         base="ubuntu@22.04",
     )
+    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
+    # (filesystem for storage instance "database/X" not found)
+    sleep(30)
 
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APPLICATION_NAME),

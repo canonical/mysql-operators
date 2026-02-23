@@ -82,11 +82,11 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )
-    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
-    # (filesystem for storage instance "database/X" not found)
-    # but it is enough to deploy another application in the meantime
     juju.deploy(S3_INTEGRATOR, channel="1/stable", base="ubuntu@22.04")
 
+    # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
+    # (filesystem for storage instance "database/X" not found)
+    sleep(30)
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
@@ -336,7 +336,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
 
     # A race condition in Juju 2.9 makes `juju.wait` fail if called too early
     # (filesystem for storage instance "database/X" not found)
-    sleep(5)
+    sleep(30)
 
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, new_mysql_application_name),
@@ -392,8 +392,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
 
     logger.info("Waiting for blocked application status with another cluster S3 repository")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
+        ),
         timeout=TIMEOUT,
         delay=2,
     )
@@ -446,8 +448,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
 
     logger.info("Waiting for blocked application status after restore")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
+        ),
         timeout=TIMEOUT,
         delay=2,
     )
