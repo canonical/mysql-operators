@@ -1,0 +1,55 @@
+(cluster-cluster-removal)=
+# Removal
+
+```{admonition} This feature requires Juju 3
+:class: warning
+
+The feature described in this page is **not** available on Juju 2.9.
+```
+
+This guide assumes both `Rome` and `Lisbon` Clusters are deployed using the {ref}`cluster-cluster-deploy`.
+
+## Detach cluster from ClusterSet
+
+```{important} 
+It is important to {ref}`swithchover <cluster-cluster-switchover-failover>` `Primary` cluster before detaching it from ClusterSet!
+```
+
+Assuming the `Lisbon` is a current `Primary` and we want to detach `Rome` (for removal or reuse):
+
+```shell
+juju remove-relation replication-offer db2:replication
+```
+
+The command above will move cluster `Rome` into the detached state `blocked` keeping all the data in place.
+
+All units in `Rome` will be in a standalone (non-clusterized) read-only state.
+
+From this point, there are three options, as described in the following sections.
+
+## Rejoin detached cluster into previous ClusterSet
+
+At this stage, the detached/blocked cluster `Rome` can re-join the previous ClusterSet by restoring async integration/relation:
+
+```shell
+juju switch rome
+juju integrate replication-offer db1:replication
+juju switch lisbon
+juju run db2/leader create-replication
+```
+
+## Remove detached cluster
+
+Remove no-longer necessary Cluster `Rome` (and destroy storage if Rome data is no longer necessary):
+
+```shell
+juju remove-application db1 # --destroy-storage
+```
+
+## New ClusterSet from detached Cluster
+
+Convert `Rome` to the new Cluster/ClusterSet keeping the current data in use:
+
+```shell
+juju run -m rome db1/leader recreate-cluster
+```

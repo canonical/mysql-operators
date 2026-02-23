@@ -1,0 +1,104 @@
+(configure-s3-radosgw)=
+# Configure S3 for RadosGW
+
+Charmed MySQL backups can be stored on any S3-compatible storage. S3 access and configurations are managed with the [s3-integrator charm](https://charmhub.io/s3-integrator).
+
+This guide will teach you how to deploy and configure the s3-integrator charm on Ceph via [RadosGW](https://docs.ceph.com/en/quincy/man/8/radosgw/), send the configuration to a Charmed MySQL application, and update it. 
+
+```{seealso}
+{ref}`configure-s3-aws`
+```
+
+## Configure `s3-integrator`
+
+First, install the MinIO client and create a bucket:
+
+```shell
+mc config host add dest https://radosgw.mycompany.fqdn <access-key> <secret-key> --api S3v4 --lookup path
+mc mb dest/backups-bucket
+```
+
+Then, deploy and run the charm:
+
+```shell
+juju deploy s3-integrator
+juju run s3-integrator/leader sync-s3-credentials access-key=<access-key> secret-key=<secret-key>
+```
+
+```{admonition} Juju 2.9 users
+:class: tip
+
+Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
+
+See also: {ref}`breaking-changes-juju`
+```
+
+Lastly, use `juju config` to add your configuration parameters. For example:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
+```shell
+juju config s3-integrator \
+    endpoint="https://radosgw.mycompany.fqdn" \
+    bucket="backups-bucket" \
+    path="/mysql" \
+    region="" \
+    s3-api-version="" \
+    s3-uri-style="path"
+```    
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```shell
+juju config s3-integrator \
+    endpoint="https://radosgw.mycompany.fqdn" \
+    bucket="backups-bucket" \
+    path="/mysql-k8s" \
+    region="" \
+    s3-api-version="" \
+    s3-uri-style="path"
+```
+````
+`````
+
+## Integrate with Charmed MySQL
+
+To pass these configurations to Charmed MySQL, integrate the two applications:
+
+```shell
+juju relate s3-integrator mysql
+```
+
+You can create, list, and restore backups now:
+
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju run mysql/leader list-backups
+    juju run mysql/leader create-backup
+    juju run mysql/leader list-backups
+    juju run mysql/leader restore backup-id=<backup-id>
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju run mysql-k8s/leader list-backups
+    juju run mysql-k8s/leader create-backup
+    juju run mysql-k8s/leader list-backups
+    juju run mysql-k8s/leader restore backup-id=<backup-id>
+```
+````
+
+You can also update your S3 configuration options after relating:
+
+```shell
+juju config s3-integrator <option>=<value>
+```
+
+The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure) for your S3 storage.
