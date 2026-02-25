@@ -475,6 +475,11 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
         if not self._charm.unit.is_leader():
             return
 
+        if not self._charm._is_peer_data_set:
+            logger.info("Cluster not initialized, deferring event")
+            event.defer()
+            return
+
         if (
             isinstance(self._charm.app.status, BlockedStatus)
             and self._charm.app_peer_data.get("removed-from-cluster-set") == "true"
@@ -721,6 +726,10 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
     def _on_consumer_relation_created(self, event):
         """Handle the async_replica relation being created on the leader unit."""
         if not self._charm.unit.is_leader():
+            return
+        if not self._charm._is_peer_data_set:
+            logger.info("Cluster not initialized, deferring event")
+            event.defer()
             return
         if not self._charm.unit_initialized() and not self.returning_cluster:
             # avoid running too early for non returning clusters
