@@ -13,7 +13,6 @@ if is_wrong_architecture() and __name__ == "__main__":
 import logging
 import random
 import socket
-import subprocess
 from time import sleep
 
 import ops
@@ -344,12 +343,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-            for port in ["3306", "33060"]:
-                try:
-                    # TODO use set_ports instead
-                    subprocess.check_call(["open-port", f"{port}/tcp"])  # noqa: S603 S607
-                except subprocess.CalledProcessError:
-                    logger.exception(f"failed to open port {port}")
+            self.unit.set_ports(3306, 33060)
 
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer relation event")
