@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Configure COS alert notifications for Charmed MySQL using AlertManager with Pushover, including credentials setup and receiver configuration."
+---
+
 (enable-alert-rules)=
 # How to enable alert rules
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Migrate database data from legacy MySQL or MariaDB charms to modern Charmed MySQL using mysqldump, with environment preparation and migration checks."
+---
+
 (migrate-data-mysqldump)=
 # Migrate database data via `mysqldump`
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Complete reference for all Juju application statuses for Charmed MySQL, with descriptions and recommended operator actions for each status."
+---
+
 (charm-statuses)=
 # Charm statuses
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revisions 342–344 (MySQL 8.0.44): first s390x architecture support for amd64, arm64, and s390x."
+---
+
 (revisions-342-344)=
 # Revisions 342, 343, 344
 

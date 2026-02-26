@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Overview of supported machine and VM clouds for Charmed MySQL deployments, including LXD, Sunbeam, MAAS, AWS EC2, GCE, and Azure."
+---
+
 (vm-clouds)=
 # Machine clouds
 

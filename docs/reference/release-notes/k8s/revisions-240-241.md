@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revisions 240 and 241 for amd64 and arm64 architectures, upgrading MySQL to version 8.0.41."
+---
+
 (revisions-240-241)=
 # Revisions 240, 241
 

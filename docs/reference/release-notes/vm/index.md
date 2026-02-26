@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Overview of all stable Charmed MySQL VM charm revisions with MySQL versions, Juju requirements, and supported features per release."
+---
+
 (release-notes-vm)=
 # Release notes (VM)
 

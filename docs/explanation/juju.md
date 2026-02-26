@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand how Juju orchestrates Charmed MySQL and learn about command differences between Juju 2.9 and Juju 3.x relevant to this documentation."
+---
+
 (juju)=
 # Juju 
 

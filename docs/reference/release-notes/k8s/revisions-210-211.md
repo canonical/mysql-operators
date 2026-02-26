@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revisions 210 and 211 (MySQL 8.0.39 for amd64 and arm64), requiring Juju 3.5.4 or later."
+---
+
 (revisions-210-211)=
 # Revisions 210, 211
 

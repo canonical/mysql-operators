@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL across multiple availability zones for high availability, eliminating single points of failure on GCE and GKE."
+---
+
 (multi-az)=
 # Deploy on multiple availability zones (AZ) 
 

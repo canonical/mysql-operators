@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference for Charmed MySQL resource profiles (production and testing), their configuration parameters, and how to set or change them with juju config."
+---
+
 (profiles)=
 # Profiles
 

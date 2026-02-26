@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy the Charmed MySQL Terraform product module for a recommended stack including optional TLS and COS monitoring integrations."
+---
+
 (product-module)=
 # Deploy product module
 

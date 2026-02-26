@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference for Charmed MySQL interfaces and endpoints, including mysql_client and legacy mysql, mysql-shared, and mysql-router interfaces."
+---
+
 (interfaces-and-endpoints)=
 # Interfaces and endpoints
 

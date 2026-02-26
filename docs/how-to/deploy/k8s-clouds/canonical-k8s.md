@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s on Canonical Kubernetes, Ubuntu's optimized Kubernetes distribution, using Juju for orchestration."
+---
+
 (canonical-k8s)=
 # How to deploy on Canonical Kubernetes
 

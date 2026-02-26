@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Overview of Charmed MySQL cluster-to-cluster async replication (ClusterSet) for disaster recovery, with links to deploy, failover, and recovery guides."
+---
+
 (cluster-cluster-replication)=
 # Cluster-cluster replication
 

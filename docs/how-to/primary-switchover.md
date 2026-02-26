@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Perform a primary switchover in Charmed MySQL by promoting a chosen unit to primary using the promote-to-primary Juju action."
+---
+
 (primary-switchover)=
 # How to do a primary switchover
 

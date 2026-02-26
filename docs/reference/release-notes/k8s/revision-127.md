@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revision 127 (MySQL 8.0.35): Juju 3.1.7+ compatibility and CA chain support for TLS encryption."
+---
+
 (revision-127)=
 # Revision 127
 

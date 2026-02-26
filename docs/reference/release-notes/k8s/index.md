@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Overview of all stable Charmed MySQL K8s charm revisions with MySQL versions, Juju requirements, and supported features per release."
+---
+
 (release-notes-k8s)=
 # Release notes (K8s)
 

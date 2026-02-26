@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on Microsoft Azure: install Juju and Azure CLI, authenticate via browser, and bootstrap a Juju controller on Azure."
+---
+
 (azure)=
 # How to deploy on Azure
 

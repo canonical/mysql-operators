@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on Amazon Web Services EC2: install Juju and AWS CLI, create IAM credentials, and bootstrap a Juju controller."
+---
+
 (aws-ec2)=
 # How to deploy on AWS EC2
 

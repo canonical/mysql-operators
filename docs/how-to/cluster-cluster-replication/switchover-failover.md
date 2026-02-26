@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Perform a planned switchover or emergency failover for Charmed MySQL ClusterSet to promote a standby cluster to primary."
+---
+
 (cluster-cluster-switchover-failover)=
 # Switchover / Failover
 

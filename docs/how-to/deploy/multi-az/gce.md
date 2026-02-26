@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy a Charmed MySQL VM cluster across three availability zones on Google Compute Engine using Juju zone constraints for high availability."
+---
+
 (multi-az-gce)=
 # Multi-AZ example on GCE
 

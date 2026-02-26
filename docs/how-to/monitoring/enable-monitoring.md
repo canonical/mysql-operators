@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Integrate Charmed MySQL with COS Lite (Grafana, Prometheus, Loki) for observability via cross-model offers and Juju integrations."
+---
+
 (enable-monitoring)=
 # How to enable monitoring (COS)
 

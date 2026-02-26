@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revisions 366 and 367 (MySQL 8.0.41): new log rotation options and operator-managed self-rejoin for cluster members."
+---
+
 (revisions-366-367)=
 # Revisions 366, 367
 

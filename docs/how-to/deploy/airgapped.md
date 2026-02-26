@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL in an offline or airgapped environment without internet access using Juju 3 and locally available resources."
+---
+
 (airgapped)=
 # Deploy in an offline or airgapped environment
 

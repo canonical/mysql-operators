@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Enable Grafana Tempo distributed tracing for Charmed MySQL (development preview) by deploying Tempo HA and integrating via cross-model offers."
+---
+
 (enable-tracing)=
 # Enable tracing
 

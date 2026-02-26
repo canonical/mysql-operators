@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Security hardening guide for Charmed MySQL covering cloud environments, Juju security, OS hardening, encryption, authentication, and monitoring."
+---
+
 (security-hardening)=
 # Security hardening
 

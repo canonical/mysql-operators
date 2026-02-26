@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s on Google Kubernetes Engine (GKE): set up Google Cloud CLI, authenticate, bootstrap Juju, and deploy the charm."
+---
+
 (gke)=
 # How to deploy on GKE
 

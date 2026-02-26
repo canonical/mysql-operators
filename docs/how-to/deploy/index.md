@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL via Juju CLI or Terraform on VM or Kubernetes clouds, with guides for multi-AZ and airgapped environments."
+---
+
 (deploy)=
 # How to deploy MySQL
 

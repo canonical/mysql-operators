@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revision 113: profile-limit-memory config option, log rotation for error and slow query logs, secret labels."
+---
+
 (revision-113)=
 # Revision 113
 

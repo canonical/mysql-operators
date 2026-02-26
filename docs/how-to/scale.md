@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Scale your Charmed MySQL cluster by adding or removing Juju units, with guidance on initial replica count and scaling up or down after deployment."
+---
+
 (scale)=
 # How to scale your cluster
 

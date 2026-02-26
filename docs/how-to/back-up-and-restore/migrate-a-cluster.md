@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Migrate a Charmed MySQL cluster by restoring a backup from a source cluster to a new cluster, including password synchronization steps."
+---
+
 (migrate-a-cluster)=
 # How to migrate a cluster
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Learn about Charmed MySQL logging: audit logs, error logs, log rotation configuration, and storage locations for VM and K8s deployments."
+---
+
 (logs)=
 # Logs
 

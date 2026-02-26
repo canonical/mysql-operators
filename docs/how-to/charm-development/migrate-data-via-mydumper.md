@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Migrate MySQL data using mydumper and myloader: install tools, dump from source with serverconfig credentials, and import into Charmed MySQL."
+---
+
 (migrate-data-mydumper)=
 # Migrate data via mydumper
 

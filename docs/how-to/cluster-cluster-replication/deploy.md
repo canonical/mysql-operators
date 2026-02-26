@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy two MySQL clusters for cluster-to-cluster async replication by configuring ClusterSet endpoints to link primary and standby clusters."
+---
+
 (cluster-cluster-deploy)=
 # Deploy
 
