@@ -22,19 +22,27 @@ class TestAsyncReplication(unittest.TestCase):
 
     def test_consumer_relation_created_deferred_when_peer_data_not_set(self):
         """Test that consumer relation created event is deferred when peer data is not set."""
-        with patch.object(type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)):
-            with patch("ops.framework.EventBase.defer") as mock_defer:
-                relation_id = self.harness.add_relation("replication", "remote")
-                self.harness.add_relation_unit(relation_id, "remote/0")
-                
-                mock_defer.assert_called()
+        with (
+            patch.object(
+                type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)
+            ),
+            patch("ops.framework.EventBase.defer") as mock_defer,
+        ):
+            relation_id = self.harness.add_relation("replication", "remote")
+            self.harness.add_relation_unit(relation_id, "remote/0")
+
+            mock_defer.assert_called()
 
     def test_consumer_relation_changed_deferred_when_peer_data_not_set(self):
         """Test that consumer relation changed event is deferred when peer data is not set."""
-        with patch.object(type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)):
-            with patch("ops.framework.EventBase.defer") as mock_defer:
-                relation_id = self.harness.add_relation("replication", "remote")
-                self.harness.add_relation_unit(relation_id, "remote/0")
-                self.harness.update_relation_data(relation_id, "remote/0", {"key": "value"})
-                
-                mock_defer.assert_called()
+        with (
+            patch.object(
+                type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)
+            ),
+            patch("ops.framework.EventBase.defer") as mock_defer,
+        ):
+            relation_id = self.harness.add_relation("replication", "remote")
+            self.harness.add_relation_unit(relation_id, "remote/0")
+            self.harness.update_relation_data(relation_id, "remote/0", {"key": "value"})
+
+            mock_defer.assert_called()
