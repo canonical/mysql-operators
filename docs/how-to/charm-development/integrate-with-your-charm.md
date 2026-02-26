@@ -7,8 +7,6 @@ Charmed MySQL can be integrated with any charmed application that supports its i
 
 First, we recommend that you check the {ref}`supported interfaces <interfaces-and-endpoints>` of the current charm. You have the option to use modern (preferred) or legacy interfaces. 
 
-Most existing charms currently use the legacy [ops-lib-pgsql](https://github.com/canonical/ops-lib-pgsql) interface.
-
 For new charms, **Canonical recommends using [data-platform-libs](https://github.com/canonical/data-platform-libs).**
 
 ```{seealso}

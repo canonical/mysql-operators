@@ -112,17 +112,12 @@ channel: 8.0/stable
 ````
 `````
 
-## Supported MySQL versions by modern charm
+## Modern charm
 
-Both K8s and VM modern charms support MySQL 8.0 (based on Jammy/22.04 series) only.
+For more information about the modern charm, see:
 
-Please {ref}`contact us <contacts>` if you need different versions/series.
-
-## Supported architectures
-
-Currently, all modern charm revisions support `amd64`. Later revisions introduced support for `arm64`, and `s390x`.
-
-See the {ref}`release-notes` for more information.
+* {ref}`system-requirements`
+* {ref}`release-notes`
 
 ## Report issues and contact authors
 
