@@ -26,7 +26,7 @@ Legacy MariaDB/MySQL charms for **Kubernetes**:
 
 * [OSM MariaDB K8s](https://charmhub.io/charmed-osm-mariadb-k8s)
 
-See the [`mysqldump` guide for Charmed MySQL K8s](https://canonical-charmed-mysql-k8s.readthedocs-hosted.com/how-to/development/migrate-data-via-mysqldump/)
+See the [`mysqldump` guide for Charmed MySQL K8s](https://canonical-charmed-mysql.readthedocs-hosted.com/how-to/charm-development/migrate-data-via-mysqldump/)
 
 To check if a database migration is required, run the following commands, where `DB_CHARM` is the name of your legacy database application:
 

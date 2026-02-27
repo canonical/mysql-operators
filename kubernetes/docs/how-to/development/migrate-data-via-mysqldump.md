@@ -26,7 +26,7 @@ Legacy MariaDB/MySQL charms for **machines**:
 * [Percona Cluster](https://charmhub.io/percona-cluster)
 * [MySQL InnoDB Cluster](https://charmhub.io/mysql-innodb-cluster)
 
-See the [`mysqldump` guide for Charmed MySQL VM](https://canonical-charmed-mysql.readthedocs-hosted.com/how-to/development/migrate-data-via-mysqldump/)
+See the [`mysqldump` guide for Charmed MySQL VM](https://canonical-charmed-mysql.readthedocs-hosted.com/how-to/charm-development/migrate-data-via-mysqldump/)
 
 
 To check if a database migration is required, run the following commands, where `DB_CHARM` is the name of your legacy database application:
