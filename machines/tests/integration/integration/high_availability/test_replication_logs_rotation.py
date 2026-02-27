@@ -134,7 +134,7 @@ def list_unit_files(juju: Juju, unit_name: str, file_path: str) -> list[str]:
         unit_name: The unit in which to list the files
         file_path: The path at which to list the files
     """
-    task = juju.exec(f"sudo ls --all {file_path}", unit=unit_name)
+    task = juju.exec(f"sudo ls -la {file_path}", unit=unit_name)
     output = task.stdout.split("\n")[1:]
 
     return [

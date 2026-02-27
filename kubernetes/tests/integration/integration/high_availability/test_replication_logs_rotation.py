@@ -154,7 +154,7 @@ def list_unit_files(juju: Juju, unit_name: str, container: str, file_path: str) 
         file_path: The path at which to list the files
     """
     output = juju.ssh(
-        command=f"ls --all {file_path}",
+        command=f"ls -la {file_path}",
         container=container,
         target=unit_name,
     )
