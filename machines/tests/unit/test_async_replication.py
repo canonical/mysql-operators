@@ -17,10 +17,10 @@ from ops.testing import ActionFailed, Harness
 from charm import MySQLOperatorCharm
 from constants import (
     BACKUPS_PASSWORD_KEY,
-    REPLICATION_PASSWORD_KEY,
     MONITORING_PASSWORD_KEY,
-    ROOT_PASSWORD_KEY,
     OPERATOR_PASSWORD_KEY,
+    REPLICATION_PASSWORD_KEY,
+    ROOT_PASSWORD_KEY,
 )
 
 

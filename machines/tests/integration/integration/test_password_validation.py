@@ -8,7 +8,7 @@ import jubilant
 import pytest
 from jubilant import Juju, TaskError
 
-from constants import REPLICATION_USERNAME, MAX_PASSWORD_LENGTH
+from constants import MAX_PASSWORD_LENGTH, REPLICATION_USERNAME
 from utils import generate_random_password
 
 from ..helpers_ha import (

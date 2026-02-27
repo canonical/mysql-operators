@@ -10,7 +10,7 @@ import jubilant
 import pytest
 from jubilant import Juju
 
-from constants import REPLICATION_USERNAME, ROOT_USERNAME, OPERATOR_USERNAME
+from constants import OPERATOR_USERNAME, REPLICATION_USERNAME, ROOT_USERNAME
 
 from ..helpers import generate_random_string
 from ..helpers_ha import (
@@ -95,9 +95,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     rotate_mysql_server_credentials(
         juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD
-    )
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
     rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
 
     logger.info("Configuring s3 integrator and integrating it with mysql")
@@ -343,9 +341,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     rotate_mysql_server_credentials(
         juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD
-    )
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
     rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
 
     server_config_credentials = get_mysql_server_credentials(juju, primary_unit_name)

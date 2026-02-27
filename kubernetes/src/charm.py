@@ -70,8 +70,6 @@ from config import CharmConfig, MySQLConfig
 from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
-    REPLICATION_PASSWORD_KEY,
-    REPLICATION_USERNAME,
     CONTAINER_NAME,
     COS_AGENT_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
@@ -89,10 +87,12 @@ from constants import (
     MYSQLD_EXPORTER_SERVICE,
     MYSQLD_LOCATION,
     MYSQLD_SERVICE,
-    PEER,
-    ROOT_PASSWORD_KEY,
     OPERATOR_PASSWORD_KEY,
     OPERATOR_USERNAME,
+    PEER,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
+    ROOT_PASSWORD_KEY,
 )
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager

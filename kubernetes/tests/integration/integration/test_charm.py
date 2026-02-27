@@ -8,7 +8,7 @@ import jubilant
 import urllib3
 from jubilant import Juju
 
-from constants import REPLICATION_USERNAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
+from constants import DEFAULT_PASSWORD_LENGTH, REPLICATION_USERNAME, ROOT_USERNAME
 from utils import generate_random_password
 
 from ..helpers import execute_queries_on_unit

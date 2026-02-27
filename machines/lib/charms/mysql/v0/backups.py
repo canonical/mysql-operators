@@ -88,9 +88,9 @@ from charms.mysql.v0.s3_helpers import (
 )
 from constants import (
     MYSQL_DATA_DIR,
-    PEER,
     OPERATOR_PASSWORD_KEY,
     OPERATOR_USERNAME,
+    PEER,
 )
 from mysql_shell.models.cluster import ClusterStatus
 from mysql_shell.models.instance import InstanceRole, InstanceState

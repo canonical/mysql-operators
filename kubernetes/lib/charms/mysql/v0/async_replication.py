@@ -13,19 +13,6 @@ from charms.mysql.v0.mysql import (
     MySQLPromoteClusterToPrimaryError,
     MySQLRejoinClusterError,
 )
-from constants import (
-    BACKUPS_PASSWORD_KEY,
-    BACKUPS_USERNAME,
-    REPLICATION_PASSWORD_KEY,
-    REPLICATION_USERNAME,
-    MONITORING_PASSWORD_KEY,
-    MONITORING_USERNAME,
-    PEER,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-    OPERATOR_PASSWORD_KEY,
-    OPERATOR_USERNAME,
-)
 from mysql_shell.models import (
     ClusterGlobalStatus,
     ClusterRole,
@@ -48,6 +35,20 @@ from ops import (
 )
 from ops.framework import Object
 from tenacity import RetryError, Retrying, stop_after_attempt, wait_fixed
+
+from constants import (
+    BACKUPS_PASSWORD_KEY,
+    BACKUPS_USERNAME,
+    MONITORING_PASSWORD_KEY,
+    MONITORING_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
+    PEER,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
+    ROOT_PASSWORD_KEY,
+    ROOT_USERNAME,
+)
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm

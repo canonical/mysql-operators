@@ -8,7 +8,7 @@ from time import sleep
 import jubilant
 from jubilant import Juju
 
-from constants import REPLICATION_USERNAME, CONTAINER_NAME, TLS_SSL_CERT_FILE
+from constants import CONTAINER_NAME, REPLICATION_USERNAME, TLS_SSL_CERT_FILE
 
 from ..helpers import is_connection_possible
 from ..helpers_ha import (

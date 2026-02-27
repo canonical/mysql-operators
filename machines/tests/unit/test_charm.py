@@ -82,8 +82,8 @@ class TestCharm(unittest.TestCase):
         )
         expected_peer_relation_databag_keys = [
             "root-password",
-            "server-config-password",
-            "cluster-admin-password",
+            "operator-password",
+            "replication-password",
             "monitoring-password",
             "backups-password",
             "cluster-name",
@@ -105,8 +105,8 @@ class TestCharm(unittest.TestCase):
 
         expected_peer_relation_databag_keys = [
             "root-password",
-            "server-config-password",
-            "cluster-admin-password",
+            "operator-password",
+            "replication-password",
             "monitoring-password",
             "backups-password",
         ]

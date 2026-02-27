@@ -72,31 +72,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Type,
     get_args,
 )
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerUnitData
-from constants import (
-    BACKUPS_PASSWORD_KEY,
-    BACKUPS_USERNAME,
-    CHARMED_MYSQL_PITR_HELPER,
-    REPLICATION_PASSWORD_KEY,
-    REPLICATION_USERNAME,
-    COS_AGENT_RELATION_NAME,
-    DEFAULT_PASSWORD_LENGTH,
-    GR_MAX_MEMBERS,
-    MONITORING_PASSWORD_KEY,
-    MONITORING_USERNAME,
-    MAX_PASSWORD_LENGTH,
-    PEER,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-    SECRET_KEY_FALLBACKS,
-    OPERATOR_PASSWORD_KEY,
-    OPERATOR_USERNAME,
-)
 from mysql_shell.builders import (
     CharmAuthorizationQueryBuilder,
     CharmLockingQueryBuilder,
@@ -123,6 +103,26 @@ from tenacity import (
     stop_after_attempt,
     wait_fixed,
     wait_random,
+)
+
+from constants import (
+    BACKUPS_PASSWORD_KEY,
+    BACKUPS_USERNAME,
+    CHARMED_MYSQL_PITR_HELPER,
+    COS_AGENT_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
+    GR_MAX_MEMBERS,
+    MAX_PASSWORD_LENGTH,
+    MONITORING_PASSWORD_KEY,
+    MONITORING_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
+    PEER,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
+    ROOT_PASSWORD_KEY,
+    ROOT_USERNAME,
+    SECRET_KEY_FALLBACKS,
 )
 from utils import generate_random_password
 
@@ -558,7 +558,9 @@ class MySQLCharmBase(CharmBase, ABC):
             )
             return
 
-        new_password = event.params.get("password") or generate_random_password(DEFAULT_PASSWORD_LENGTH)
+        new_password = event.params.get("password") or generate_random_password(
+            DEFAULT_PASSWORD_LENGTH
+        )
         if len(new_password) > MAX_PASSWORD_LENGTH:
             raise MySQLUpdateUserError("Password is too long")
 
@@ -1003,7 +1005,7 @@ class MySQLBase(ABC):
         backups_user: str,
         backups_password: str,
         mysqlsh_path: str,
-        executor_class: Type[BaseExecutor],
+        executor_class: type[BaseExecutor],
     ):
         """Initialize the MySQL class."""
         self.instance_address = instance_address

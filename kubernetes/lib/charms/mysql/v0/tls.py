@@ -25,7 +25,6 @@ import re
 import socket
 import typing
 
-import ops
 from charms.mysql.v0.mysql import MySQLKillSessionError, MySQLTLSSetupError
 from charms.tls_certificates_interface.v2.tls_certificates import (
     CertificateAvailableEvent,
@@ -34,6 +33,11 @@ from charms.tls_certificates_interface.v2.tls_certificates import (
     generate_csr,
     generate_private_key,
 )
+from mysql_shell.models import InstanceState
+from ops.charm import ActionEvent
+from ops.framework import Object
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
+
 from constants import (
     MYSQL_DATA_DIR,
     TLS_RELATION,
@@ -41,10 +45,6 @@ from constants import (
     TLS_SSL_CERT_FILE,
     TLS_SSL_KEY_FILE,
 )
-from mysql_shell.models import InstanceState
-from ops.charm import ActionEvent
-from ops.framework import Object
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 logger = logging.getLogger(__name__)
 

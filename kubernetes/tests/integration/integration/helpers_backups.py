@@ -90,9 +90,7 @@ def build_and_deploy_operations(
 
     logger.info("Rotating mysql credentials")
     primary_unit_name = get_mysql_primary_unit(juju, MYSQL_APPLICATION_NAME)
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD
-    )
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     logger.info("Configuring s3 integrator and integrating it with mysql")
     juju.wait(

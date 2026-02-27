@@ -7,7 +7,7 @@ import random
 import jubilant
 from jubilant import Juju
 
-from constants import REPLICATION_USERNAME, OPERATOR_USERNAME
+from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 
 from ...helpers import (
     execute_queries_on_unit,
