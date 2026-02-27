@@ -16,7 +16,7 @@ To check they are all correctly installed, you can run the commands demonstrated
 
 ```console
 ~$ juju version
-3.5.4-genericlinux-amd64
+3.6.14-genericlinux-amd64
 
 ~$ aws --version
 aws-cli/2.13.25 Python/3.11.5 Linux/6.2.0-33-generic exe/x86_64.ubuntu.23 prompt/off
@@ -48,8 +48,8 @@ juju bootstrap aws
 ```shell
 > juju bootstrap aws
 Creating Juju controller "aws-us-east-1" on aws/us-east-1
-Looking for packaged Juju agent version 3.5.4 for amd64
-Located Juju agent version 3.5.4-ubuntu-amd64 at https://juju-dist-aws.s3.amazonaws.com/agents/agent/3.5.4/juju-3.5.4-linux-amd64.tgz
+Looking for packaged Juju agent version 3.6.14 for amd64
+Located Juju agent version 3.6.14-ubuntu-amd64 at https://juju-dist-aws.s3.amazonaws.com/agents/agent/3.6.14/juju-3.6.14-linux-amd64.tgz
 Launching controller instance(s) on aws/us-east-1...
  - i-0f4615983d113166d (arch=amd64 mem=8G cores=2)           
 Installing Juju agent on bootstrap instance
@@ -95,7 +95,7 @@ Check the status:
 ```shell
 > juju status --relations
 Model    Controller     Cloud/Region   Version  SLA          Timestamp
-welcome  aws-us-east-1  aws/us-east-1  3.5.4    unsupported  17:52:25+02:00
+welcome  aws-us-east-1  aws/us-east-1  3.6.14   unsupported  17:52:25+02:00
 
 App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator           active      1  data-integrator  latest/stable  41   no       
@@ -200,7 +200,7 @@ To destroy the Juju controller and remove AWS instance (warning: all your data w
 ```shell
 > juju controllers
 Controller      Model  User   Access     Cloud/Region   Models  Nodes    HA  Version
-aws-us-east-1*  -      admin  superuser  aws/us-east-1       1      1  none  3.5.4  
+aws-us-east-1*  -      admin  superuser  aws/us-east-1       1      1  none  3.6.14  
 
 > juju destroy-controller aws-us-east-1 --destroy-all-models --destroy-storage --force
 ```

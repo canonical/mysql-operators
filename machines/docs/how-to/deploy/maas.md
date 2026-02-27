@@ -35,7 +35,7 @@ multipass list
 </br>
 
 ```{note}
-Make sure you are downloading 22.04 images as well (20.04 is the current default).
+Make sure you are downloading 24.04 images as well.
 ```
 
 The LXD machine will be up and running after the images downloading and sync is completed.
@@ -116,7 +116,7 @@ juju deploy mysql --channel 8.4/edge
 Sample `juju status` output:
 ```shell
 Model  Controller       Cloud/Region        Version  SLA          Timestamp
-mysql  maas-controller  maas-cloud/default  3.5.3    unsupported  12:57:06+02:00
+mysql  maas-controller  maas-cloud/default  3.6.14   unsupported  12:57:06+02:00
 
 App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
 mysql  8.4.7    active      1  mysql  8.4/edge  XXX  no       

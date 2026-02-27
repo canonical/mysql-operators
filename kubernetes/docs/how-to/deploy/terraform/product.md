@@ -104,7 +104,7 @@ Sample output:
 
 ```shell
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
-my-model  k8s-controller  microk8s/localhost   3.5.3    unsupported  12:49:34Z
+my-model  k8s-controller  microk8s/localhost   3.6.14   unsupported  12:49:34Z
 
 App               Version  Status   Scale  Charm             Channel   Rev  Address         Exposed  Message                                
 mysql-k8s         8.4.7    active       3  mysql-k8s         8.4/edge  255  10.152.183.112  no

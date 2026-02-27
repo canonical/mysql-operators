@@ -92,7 +92,7 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 ```shell
 ubuntu@localhost:~$ juju status
 Model      Controller  Cloud/Region         Version  SLA          Timestamp
-vmmodel    local       localhost/localhost  3.5.3    unsupported  00:12:18+02:00
+vmmodel    local       localhost/localhost  3.6.14   unsupported  00:12:18+02:00
 
 SAAS         Status  Store    URL
 grafana      active  k8s      admin/cos.grafana
@@ -118,7 +118,7 @@ Machine  State    Address        Inst id        Base          AZ  Message
 ```shell
 ubuntu@localhost:~$ juju status
 Model  Controller   Cloud/Region        Version  SLA          Timestamp
-cos    k8s          microk8s/localhost  3.5.3    unsupported  00:15:31+02:00
+cos    k8s          microk8s/localhost  3.6.14   unsupported  00:15:31+02:00
 
 App           Version  Status  Scale  Charm             Channel  Rev  Address         Exposed  Message
 alertmanager  0.23.0   active      1  alertmanager-k8s  stable    47  10.152.183.206  no

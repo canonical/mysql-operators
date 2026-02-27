@@ -7,7 +7,7 @@ For more background about Juju upgrades in the context of database charms, check
 
 ## Patch version upgrade
 
-A [PATCH](https://semver.org/#summary) Juju upgrade (e.g. Juju `3.5.3` → `3.5.7`) can be easily applied in-place.
+A [PATCH](https://semver.org/#summary) Juju upgrade (e.g. Juju `3.6.0` → `3.6.1`) can be easily applied in-place.
 
 ```shell
 sudo snap refresh juju 
@@ -23,7 +23,7 @@ Once the model has finished upgrading, you can proceed with the [charm upgrade](
 
 ## Major/minor version upgrade
 
-The easiest way to perform a [MAJOR/MINOR](https://semver.org/#summary) Juju version upgrade (e.g. Juju `3.5.3` → `3.6.13`),  is to update the controller and model to the new version, then [migrate](https://juju.is/docs/juju/juju-migrate) the model.
+The easiest way to perform a [MAJOR/MINOR](https://semver.org/#summary) Juju version upgrade (e.g. Juju `3.5.3` → `3.6.14`),  is to update the controller and model to the new version, then [migrate](https://juju.is/docs/juju/juju-migrate) the model.
 
 ### Commands summary
 
@@ -32,11 +32,11 @@ The following is a summary of commands that upgrade Juju to `3.6/stable`:
 ```text
 sudo snap refresh juju --channel 3.6/stable
 
-juju bootstrap lxd lxd_3.6.13 # --agent-version 3.6.13
+juju bootstrap lxd lxd_3.6.14 # --agent-version 3.6.14
 
-juju migrate lxd_3.5.3:mydatabase lxd_3.6.13
+juju migrate lxd_3.5.3:mydatabase lxd_3.6.14
 
-juju upgrade-model -m lxd_3.6.13:mydatabase 
+juju upgrade-model -m lxd_3.6.14:mydatabase 
 # wait until complete
 ```
 
@@ -70,7 +70,7 @@ Machine  State    Address        Inst id        Base          AZ  Message
 ```
 </details>
 
-To upgrade Juju to `v.3.6.13`, we go through the following steps:
+To upgrade Juju to `v.3.6.14`, we go through the following steps:
 
 <details><summary>1. Update the Juju CLI</summary>
 
@@ -94,14 +94,14 @@ Optionally rerun the `juju --version` command to confirm the upgrade.
 Use the [`juju bootstrap`](https://juju.is/docs/juju/juju-bootstrap) command to create a new controller. In this example, we specify a particular version (and name the controller accordingly):
 
 ```text
-juju bootstrap lxd lxd_3.6.13 --agent-version 3.6.13
+juju bootstrap lxd lxd_3.6.14 --agent-version 3.6.14
 ```
 This will produce output describing  progress and the steps taken, similar to:
 
 ```text
-Creating Juju controller "lxd_3.6.13" on lxd/localhost
-Looking for packaged Juju agent version 3.6.13 for amd64
-Located Juju agent version 3.6.13-ubuntu-amd64 at https://streams.canonical.com/juju/tools/agent/3.6.13/juju-3.6.13-linux-amd64.tgz
+Creating Juju controller "lxd_3.6.14" on lxd/localhost
+Looking for packaged Juju agent version 3.6.14 for amd64
+Located Juju agent version 3.6.14-ubuntu-amd64 at https://streams.canonical.com/juju/tools/agent/3.6.14/juju-3.6.14-linux-amd64.tgz
 To configure your system to better support LXD containers, please see: https://documentation.ubuntu.com/lxd/en/latest/explanation/performance_tuning/
 Launching controller instance(s) on localhost/localhost...
  - juju-374723-0 (arch=amd64)          
@@ -112,7 +112,7 @@ Connected to 10.217.68.44
 Running machine configuration script...
 Bootstrap agent now started
 Contacting Juju controller at 10.217.68.44 to verify accessibility...
-Bootstrap complete, controller "lxd_3.6.13" is now available
+Bootstrap complete, controller "lxd_3.6.14" is now available
 Controller machines are in the "controller" model
 ...
 ```
@@ -124,7 +124,7 @@ Controller machines are in the "controller" model
 ~$ juju controllers
 Controller  Model       User   Access     Cloud/Region         Models  Nodes    HA  Version
 lxd_3.5.3*  mydatabase  admin  superuser  localhost/localhost       2      1  none  3.5.3  
-lxd_3.6.13   -          admin  superuser  localhost/localhost       1      1  none  3.6.13
+lxd_3.6.14   -          admin  superuser  localhost/localhost       1      1  none  3.6.14
 
 ~$ juju models -c lxd_3.5.3
 Controller: lxd_3.5.3
@@ -132,12 +132,12 @@ Model        Cloud/Region         Type  Status     Machines  Units  Access  Last
 controller   localhost/localhost  lxd   available         1      1  admin   just now
 mydatabase*  localhost/localhost  lxd   available         3      3  admin   36 seconds ago
 
-~$ juju models -c lxd_3.6.13
-Controller: lxd_3.6.13
+~$ juju models -c lxd_3.6.14
+Controller: lxd_3.6.14
 Model       Cloud/Region         Type  Status     Machines  Units  Access  Last connection
 controller  localhost/localhost  lxd   available         1      1  admin   just now
 
-~$ juju migrate lxd_3.5.3:mydatabase lxd_3.6.13
+~$ juju migrate lxd_3.5.3:mydatabase lxd_3.6.14
 Migration started with ID "5f227519-3cdb-4538-871c-1c4589a4598a:0"
 ```
 </details>
@@ -154,8 +154,8 @@ Controller: lxd_3.5.3
 Model       Cloud/Region         Type  Status     Machines  Units  Access  Last connection
 controller  localhost/localhost  lxd   available         1      1  admin   just now
 
-~$ juju models --controller lxd_3.6.13
-Controller: lxd_3.6.13
+~$ juju models --controller lxd_3.6.14
+Controller: lxd_3.6.14
 Model       Cloud/Region         Type  Status     Machines  Units  Access  Last connection
 controller  localhost/localhost  lxd   available         1      1  admin   just now
 mydatabase  localhost/localhost  lxd   available         3      3  admin   1 minute ago
@@ -165,19 +165,19 @@ mydatabase  localhost/localhost  lxd   available         3      3  admin   1 min
 <details><summary>5. Upgrade the model version itself (no database outage here)</summary>
 
 ```shell
-> juju status -m lxd_3.6.13:mydatabase
+> juju status -m lxd_3.6.14:mydatabase
 Model       Controller  Cloud/Region         Version  SLA          Timestamp
-mydatabase  lxd_3.6.13  localhost/localhost  3.5.3    unsupported  22:58:10+02:00
+mydatabase  lxd_3.6.14  localhost/localhost  3.5.3    unsupported  22:58:10+02:00
 ...
 
-> juju upgrade-model -m lxd_3.6.13:mydatabase
+> juju upgrade-model -m lxd_3.6.14:mydatabase
 best version:
-    3.6.13
-started upgrade to 3.6.13
+    3.6.14
+started upgrade to 3.6.14
 
-> juju status -m lxd_3.6.13:mydatabase
+> juju status -m lxd_3.6.14:mydatabase
 Model       Controller  Cloud/Region         Version  SLA          Timestamp
-mydatabase  lxd_3.6.13  localhost/localhost  3.6.13   unsupported  22:59:01+02:00
+mydatabase  lxd_3.6.14  localhost/localhost  3.6.14   unsupported  22:59:01+02:00
 ...
 ```
 </details>

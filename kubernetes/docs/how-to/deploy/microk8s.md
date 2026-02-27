@@ -23,7 +23,7 @@ juju deploy mysql-k8s --channel 8.4/edge --trust
 Sample output of `juju status --watch 1s`:
 ```shell
 Model   Controller  Cloud/Region        Version  SLA          Timestamp
-mysql   overlord    microk8s/localhost  3.5.3    unsupported  22:48:57+01:00
+mysql   overlord    microk8s/localhost  3.6.14   unsupported  22:48:57+01:00
 
 App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
 mysql-k8s  8.4.7    active      1  mysql-k8s  8.4/edge    XXX  10.152.183.234  no       

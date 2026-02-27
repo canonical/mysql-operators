@@ -14,7 +14,7 @@ juju add-model <model name>
 ```
 Deploy MySQL
 ```shell
-juju deploy mysql --channel 8.4/edge/stable
+juju deploy mysql --channel 8.4/edge
 ```
 > See the [`juju deploy` documentation](https://juju.is/docs/juju/juju-deploy) for all available options at deploy time.
 > 
@@ -23,7 +23,7 @@ juju deploy mysql --channel 8.4/edge/stable
 Sample output of `juju status --watch 1s`:
 ```shell
 Model   Controller  Cloud/Region         Version  SLA          Timestamp
-mysql   overlord    localhost/localhost  3.5.3    unsupported  00:52:59+02:00
+mysql   overlord    localhost/localhost  3.6.14   unsupported  00:52:59+02:00
 
 App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
 mysql  8.4.7    active      1  mysql  8.4/edge  XXX  no       Primary

@@ -86,7 +86,7 @@ Wait until the model settles. The following is an example of the `juju status --
 
 ```shell
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-database  lxd         localhost/localhost  3.5.4    unsupported  19:15:55Z
+database  lxd         localhost/localhost  3.6.14   unsupported  19:15:55Z
 
 SAAS   Status  Store       URL
 tempo  active  k8s         admin/cos.tempo

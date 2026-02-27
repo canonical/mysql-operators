@@ -17,7 +17,7 @@ To check they are all correctly installed, run the commands demonstrated below w
 
 ```console
 > juju version
-3.5.4-genericlinux-amd64
+3.6.14-genericlinux-amd64
 
 > gcloud --version
 Google Cloud SDK 474.0.0
@@ -83,8 +83,8 @@ juju bootstrap google gce
 ```shell
 > juju bootstrap google gce
 Creating Juju controller "gce" on google/us-east1
-Looking for packaged Juju agent version 3.5.4 for amd64
-Located Juju agent version 3.5.4-ubuntu-amd64 at https://streams.canonical.com/juju/tools/agent/3.5.4/juju-3.5.4-linux-amd64.tgz
+Looking for packaged Juju agent version 3.6.14 for amd64
+Located Juju agent version 3.6.14-ubuntu-amd64 at https://streams.canonical.com/juju/tools/agent/3.6.14/juju-3.6.14-linux-amd64.tgz
 Launching controller instance(s) on google/us-east1...
  - juju-33f662-0 (arch=amd64 mem=3.6G cores=4)
 Installing Juju agent on bootstrap instance
@@ -131,7 +131,7 @@ Check the status:
 ```shell
 > juju status --relations
 Model    Controller  Cloud/Region     Version  SLA          Timestamp
-welcome  gce         google/us-east1  3.5.4    unsupported  23:49:56+02:00
+welcome  gce         google/us-east1  3.6.14   unsupported  23:49:56+02:00
 
 App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator           active      1  data-integrator  latest/stable   41  no       
@@ -232,7 +232,7 @@ To destroy the Juju controller and remove GCE instance, run:
 ```shell
 > juju controllers
 Controller  Model    User   Access     Cloud/Region     Models  Nodes    HA  Version
-gce*        welcome  admin  superuser  google/us-east1       2      1  none  3.5.4  
+gce*        welcome  admin  superuser  google/us-east1       2      1  none  3.6.14  
 
 > juju destroy-controller gce --destroy-all-models --destroy-storage --force
 ```
