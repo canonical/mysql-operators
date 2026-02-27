@@ -93,7 +93,7 @@ class TestCharm(unittest.TestCase):
                     "user": "mysql",
                     "group": "mysql",
                     "environment": {
-                        "EXPORTER_USER": "monitoring",
+                        "EXPORTER_USER": "charmed-stats",
                         "EXPORTER_PASS": self.charm.get_secret("app", "monitoring-password"),
                     },
                 },

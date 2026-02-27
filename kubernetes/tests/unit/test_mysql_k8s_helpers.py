@@ -49,7 +49,7 @@ class TestMySQL(unittest.TestCase):
             "charmed-operatorpassword",
             "charmed-replication",
             "charmed-replicationpassword",
-            "monitoring",
+            "charmed-stats",
             "monitoringpassword",
             "backups",
             "backupspassword",
