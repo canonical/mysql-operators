@@ -41,28 +41,29 @@ jobs:
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
 
-  release-test:
-    name: Release tests
-    needs:
-      - build
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    uses: ./.github/workflows/release_test.yaml
-    with:
-      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-      path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+# TODO: Uncomment when MySQL 8.4/stable channel has releases
+#  release-test:
+#    name: Release tests
+#    needs:
+#      - build
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        path:
+#          - kubernetes
+#          - machines
+#    uses: ./.github/workflows/release_test.yaml
+#    with:
+#      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+#      path-to-charm-directory: ${{ matrix.path }}
+#    secrets: inherit
 
   release:
     name: Release charm | ${{ matrix.charm.path }}
     needs:
       - build
       - integration-test
-      - release-test
+      # - release-test
     strategy:
       fail-fast: false
       matrix:
