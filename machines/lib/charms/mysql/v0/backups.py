@@ -89,8 +89,8 @@ from charms.mysql.v0.s3_helpers import (
 from constants import (
     MYSQL_DATA_DIR,
     PEER,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
 )
 from mysql_shell.models.cluster import ClusterStatus
 from mysql_shell.models.instance import InstanceRole, InstanceState
@@ -879,8 +879,8 @@ class MySQLBackups(Object):
         return {
             "ENDPOINT": _construct_endpoint(s3_parameters),
             "HOSTS": ",".join(self.charm._mysql.get_cluster_members()),
-            "USER": SERVER_CONFIG_USERNAME,
-            "PASS": self.charm.get_secret("app", SERVER_CONFIG_PASSWORD_KEY),
+            "USER": OPERATOR_USERNAME,
+            "PASS": self.charm.get_secret("app", OPERATOR_PASSWORD_KEY),
             "STORAGE_TYPE": "s3",
             "ACCESS_KEY_ID": s3_parameters["access-key"],
             "SECRET_ACCESS_KEY": s3_parameters["secret-key"],

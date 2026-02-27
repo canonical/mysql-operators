@@ -14,7 +14,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CLUSTER_ADMIN_USERNAME
+from constants import REPLICATION_USERNAME
 
 from ...helpers import (
     generate_random_string,
@@ -86,7 +86,7 @@ def test_network_cut(juju: Juju, continuous_writes) -> None:
     credentials_task = juju.run(
         unit=mysql_primary_unit,
         action="get-password",
-        params={"username": CLUSTER_ADMIN_USERNAME},
+        params={"username": REPLICATION_USERNAME},
     )
 
     config = {

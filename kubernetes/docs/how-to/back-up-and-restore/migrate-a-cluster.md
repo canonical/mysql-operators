@@ -24,8 +24,8 @@ Set the password of your current cluster to the previous cluster’s password:
 
 ```shell
 juju run mysql-k8s/leader set-password username=root password=<previous cluster password>
-juju run mysql-k8s/leader set-password username=clusteradmin password=<previous cluster password>
-juju run mysql-k8s/leader set-password username=serverconfig password=<previous cluster password>
+juju run mysql-k8s/leader set-password username=charmed-replication password=<previous cluster password>
+juju run mysql-k8s/leader set-password username=charmed-operator password=<previous cluster password>
 ```
 
 ## List backups

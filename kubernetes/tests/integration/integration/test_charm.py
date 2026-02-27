@@ -8,7 +8,7 @@ import jubilant
 import urllib3
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
+from constants import REPLICATION_USERNAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
 from utils import generate_random_password
 
 from ..helpers import execute_queries_on_unit
@@ -106,7 +106,7 @@ def test_password_rotation(juju: Juju):
     app_units = get_app_units(juju, APP_NAME)
     random_unit_name = app_units[-1]
 
-    old_credentials = get_mysql_server_credentials(juju, random_unit_name, CLUSTER_ADMIN_USERNAME)
+    old_credentials = get_mysql_server_credentials(juju, random_unit_name, REPLICATION_USERNAME)
 
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, APP_NAME)
@@ -117,10 +117,10 @@ def test_password_rotation(juju: Juju):
 
     new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
 
-    rotate_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, new_password)
+    rotate_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME, new_password)
 
     updated_credentials = get_mysql_server_credentials(
-        juju, random_unit_name, CLUSTER_ADMIN_USERNAME
+        juju, random_unit_name, REPLICATION_USERNAME
     )
     assert updated_credentials["password"] != old_credentials["password"]
     assert updated_credentials["password"] == new_password
@@ -139,7 +139,7 @@ def test_password_rotation_silent(juju: Juju):
     app_units = get_app_units(juju, APP_NAME)
     random_unit_name = app_units[-1]
 
-    old_credentials = get_mysql_server_credentials(juju, random_unit_name, CLUSTER_ADMIN_USERNAME)
+    old_credentials = get_mysql_server_credentials(juju, random_unit_name, REPLICATION_USERNAME)
 
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, APP_NAME)
@@ -148,10 +148,10 @@ def test_password_rotation_silent(juju: Juju):
         f"Test succeeded Primary unit detected before password rotation is {primary_unit_address}"
     )
 
-    rotate_mysql_server_credentials(juju, primary_unit_name, CLUSTER_ADMIN_USERNAME)
+    rotate_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME)
 
     updated_credentials = get_mysql_server_credentials(
-        juju, random_unit_name, CLUSTER_ADMIN_USERNAME
+        juju, random_unit_name, REPLICATION_USERNAME
     )
     assert updated_credentials["password"] != old_credentials["password"]
 

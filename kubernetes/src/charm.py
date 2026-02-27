@@ -70,8 +70,8 @@ from config import CharmConfig, MySQLConfig
 from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
     CONTAINER_NAME,
     COS_AGENT_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
@@ -91,8 +91,8 @@ from constants import (
     MYSQLD_SERVICE,
     PEER,
     ROOT_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
 )
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager
@@ -182,10 +182,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.app_peer_data["cluster-name"],
             self.app_peer_data["cluster-set-domain-name"],
             self.get_secret("app", ROOT_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
-            SERVER_CONFIG_USERNAME,
-            self.get_secret("app", SERVER_CONFIG_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
-            CLUSTER_ADMIN_USERNAME,
-            self.get_secret("app", CLUSTER_ADMIN_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
+            OPERATOR_USERNAME,
+            self.get_secret("app", OPERATOR_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
+            REPLICATION_USERNAME,
+            self.get_secret("app", REPLICATION_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             MONITORING_USERNAME,
             self.get_secret("app", MONITORING_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             BACKUPS_USERNAME,
@@ -649,8 +649,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Set required passwords if not already set
         required_passwords = [
             ROOT_PASSWORD_KEY,
-            SERVER_CONFIG_PASSWORD_KEY,
-            CLUSTER_ADMIN_PASSWORD_KEY,
+            OPERATOR_PASSWORD_KEY,
+            REPLICATION_PASSWORD_KEY,
             MONITORING_PASSWORD_KEY,
             BACKUPS_PASSWORD_KEY,
         ]

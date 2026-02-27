@@ -4,8 +4,8 @@
 """File containing constants to be used in the charm."""
 
 ROOT_USERNAME = "root"
-CLUSTER_ADMIN_USERNAME = "clusteradmin"
-SERVER_CONFIG_USERNAME = "serverconfig"
+REPLICATION_USERNAME = "charmed-replication"
+OPERATOR_USERNAME = "charmed-operator"
 MONITORING_USERNAME = "monitoring"
 BACKUPS_USERNAME = "backups"
 DEFAULT_PASSWORD_LENGTH = 24
@@ -16,8 +16,8 @@ DB_RELATION_NAME = "database"
 
 # Labels are not confidential
 ROOT_PASSWORD_KEY = "root-password"  # noqa: S105
-SERVER_CONFIG_PASSWORD_KEY = "server-config-password"  # noqa: S105
-CLUSTER_ADMIN_PASSWORD_KEY = "cluster-admin-password"  # noqa: S105
+OPERATOR_PASSWORD_KEY = "operator-password"  # noqa: S105
+REPLICATION_PASSWORD_KEY = "replication-password"  # noqa: S105
 MONITORING_PASSWORD_KEY = "monitoring-password"  # noqa: S105
 BACKUPS_PASSWORD_KEY = "backups-password"  # noqa: S105
 

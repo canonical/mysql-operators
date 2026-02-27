@@ -17,10 +17,10 @@ from ops.testing import ActionFailed, Harness
 from charm import MySQLOperatorCharm
 from constants import (
     BACKUPS_PASSWORD_KEY,
-    CLUSTER_ADMIN_PASSWORD_KEY,
+    REPLICATION_PASSWORD_KEY,
     MONITORING_PASSWORD_KEY,
     ROOT_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
+    OPERATOR_PASSWORD_KEY,
 )
 
 
@@ -345,8 +345,8 @@ class TestAsyncRelation(unittest.TestCase):
 
         # 4. syncing
         secret_dict = {
-            SERVER_CONFIG_PASSWORD_KEY: "pass",
-            CLUSTER_ADMIN_PASSWORD_KEY: "pass",
+            OPERATOR_PASSWORD_KEY: "pass",
+            REPLICATION_PASSWORD_KEY: "pass",
             MONITORING_PASSWORD_KEY: "pass",
             BACKUPS_PASSWORD_KEY: "pass",
             ROOT_PASSWORD_KEY: "pass",

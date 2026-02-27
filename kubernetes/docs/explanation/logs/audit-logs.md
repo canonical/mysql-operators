@@ -8,9 +8,9 @@ The Audit Log plugin allows all login/logout records to be stored in a log file.
 The following is a sample of the audit logs, with format json with login/logout records:
 
 ```json
-{"audit_record":{"name":"Quit","record":"6_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"992","status":0,"user":"clusteradmin","priv_user":"clusteradmin","os_login":"","proxy_user":"","host":"localhost","ip":"","db":""}}
+{"audit_record":{"name":"Quit","record":"6_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"992","status":0,"user":"charmed-replication","priv_user":"charmed-replication","os_login":"","proxy_user":"","host":"localhost","ip":"","db":""}}
 {"audit_record":{"name":"Connect","record":"7_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"993","status":1156,"user":"","priv_user":"","os_login":"","proxy_user":"","host":"juju-da2225-8","ip":"10.207.85.214","db":""}}
-{"audit_record":{"name":"Connect","record":"8_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"994","status":0,"user":"serverconfig","priv_user":"serverconfig","os_login":"","proxy_user":"","host":"juju-da2225-8","ip":"10.207.85.214","db":""}} 
+{"audit_record":{"name":"Connect","record":"8_2024-09-03T01:53:14","timestamp":"2024-09-03T01:53:33Z","connection_id":"994","status":0,"user":"charmed-operator","priv_user":"charmed-operator","os_login":"","proxy_user":"","host":"juju-da2225-8","ip":"10.207.85.214","db":""}} 
 ```
 
 The logs are stored in the `/var/log/mysql` directory of the mysql container, and it's rotated

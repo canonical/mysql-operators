@@ -16,15 +16,15 @@ from charms.mysql.v0.mysql import (
 from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     PEER,
     ROOT_PASSWORD_KEY,
     ROOT_USERNAME,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
 )
 from mysql_shell.models import (
     ClusterGlobalStatus,
@@ -786,8 +786,8 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
                 event.defer()
                 return
             sync_keys = {
-                SERVER_CONFIG_PASSWORD_KEY: SERVER_CONFIG_USERNAME,
-                CLUSTER_ADMIN_PASSWORD_KEY: CLUSTER_ADMIN_USERNAME,
+                OPERATOR_PASSWORD_KEY: OPERATOR_USERNAME,
+                REPLICATION_PASSWORD_KEY: REPLICATION_USERNAME,
                 MONITORING_PASSWORD_KEY: MONITORING_USERNAME,
                 BACKUPS_PASSWORD_KEY: BACKUPS_USERNAME,
                 ROOT_PASSWORD_KEY: ROOT_USERNAME,

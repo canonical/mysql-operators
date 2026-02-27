@@ -22,13 +22,13 @@ sudo apt install ./mydumper_0.15.1-3.jammy_amd64.deb
 
 ## Dump database
 
-Dump database using Charmed MySQL operator user `serverconfig`:
+Dump database using Charmed MySQL operator user `charmed-operator`:
 
 ```shell
 # Collect credentials
 DB_NAME=<your_db_name>
 OLD_DB_IP=$(juju show-unit mysql/0 | yq '.[] | .public-address')
-OLD_DB_USER=serverconfig
+OLD_DB_USER=charmed-operator
 OLD_DB_PASS=$(juju run mysql/leader get-password username=${OLD_DB_USER}| yq '.password')
 
 # Test connection
@@ -57,7 +57,7 @@ drwxr-x--- 18 ubuntu ubuntu   4096 Sep 27 12:34 ..
 
 ```shell
 NEW_DB_IP=...
-NEW_DB_USER=serverconfig
+NEW_DB_USER=charmed-operator
 NEW_DB_PASS=...
 
 myloader -h ${NEW_DB_IP} -u ${NEW_DB_USER} -p ${NEW_DB_PASS} --directory=export-20230927-123337 --overwrite-tables

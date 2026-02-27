@@ -82,8 +82,8 @@ from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
     CHARMED_MYSQL_PITR_HELPER,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
     COS_AGENT_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
@@ -94,8 +94,8 @@ from constants import (
     ROOT_PASSWORD_KEY,
     ROOT_USERNAME,
     SECRET_KEY_FALLBACKS,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
 )
 from mysql_shell.builders import (
     CharmAuthorizationQueryBuilder,
@@ -516,8 +516,8 @@ class MySQLCharmBase(CharmBase, ABC):
 
         valid_usernames = {
             ROOT_USERNAME: ROOT_PASSWORD_KEY,
-            SERVER_CONFIG_USERNAME: SERVER_CONFIG_PASSWORD_KEY,
-            CLUSTER_ADMIN_USERNAME: CLUSTER_ADMIN_PASSWORD_KEY,
+            OPERATOR_USERNAME: OPERATOR_PASSWORD_KEY,
+            REPLICATION_USERNAME: REPLICATION_PASSWORD_KEY,
             MONITORING_USERNAME: MONITORING_PASSWORD_KEY,
             BACKUPS_USERNAME: BACKUPS_PASSWORD_KEY,
         }
@@ -545,8 +545,8 @@ class MySQLCharmBase(CharmBase, ABC):
 
         valid_usernames = {
             ROOT_USERNAME: ROOT_PASSWORD_KEY,
-            SERVER_CONFIG_USERNAME: SERVER_CONFIG_PASSWORD_KEY,
-            CLUSTER_ADMIN_USERNAME: CLUSTER_ADMIN_PASSWORD_KEY,
+            OPERATOR_USERNAME: OPERATOR_PASSWORD_KEY,
+            REPLICATION_USERNAME: REPLICATION_PASSWORD_KEY,
             MONITORING_USERNAME: MONITORING_PASSWORD_KEY,
             BACKUPS_USERNAME: BACKUPS_PASSWORD_KEY,
         }
@@ -804,8 +804,8 @@ class MySQLCharmBase(CharmBase, ABC):
         return bool(
             self.app_peer_data.get("cluster-name")
             and self.get_secret("app", ROOT_PASSWORD_KEY)
-            and self.get_secret("app", SERVER_CONFIG_PASSWORD_KEY)
-            and self.get_secret("app", CLUSTER_ADMIN_PASSWORD_KEY)
+            and self.get_secret("app", OPERATOR_PASSWORD_KEY)
+            and self.get_secret("app", REPLICATION_PASSWORD_KEY)
             and self.get_secret("app", MONITORING_PASSWORD_KEY)
             and self.get_secret("app", BACKUPS_PASSWORD_KEY)
         )
@@ -1666,7 +1666,7 @@ class MySQLBase(ABC):
 
         Use mysqlsh when querying clusters from remote instances. However, use
         mysqlcli when querying locally since this method can be called before
-        the cluster is initialized (before serverconfig and root users are set up
+        the cluster is initialized (before charmed-operator and root users are set up
         correctly)
         """
         if from_instance:
@@ -1707,7 +1707,7 @@ class MySQLBase(ABC):
             raise MySQLRemoveReplicaClusterError() from e
 
     def initialize_juju_units_operations_table(self) -> None:
-        """Initialize the mysql.juju_units_operations table using the serverconfig user."""
+        """Initialize the mysql.juju_units_operations table using the charmed-operator user."""
         query = self._lock_query_builder.build_table_creation_query()
         executor = self._build_instance_tcp_executor(self.instance_address)
 

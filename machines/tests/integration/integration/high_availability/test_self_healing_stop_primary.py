@@ -7,7 +7,7 @@ import random
 import jubilant
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, SERVER_CONFIG_USERNAME
+from constants import REPLICATION_USERNAME, OPERATOR_USERNAME
 
 from ...helpers import (
     execute_queries_on_unit,
@@ -78,7 +78,7 @@ def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
     credentials_task = juju.run(
         unit=mysql_primary_unit,
         action="get-password",
-        params={"username": CLUSTER_ADMIN_USERNAME},
+        params={"username": REPLICATION_USERNAME},
     )
 
     config = {
@@ -141,7 +141,7 @@ def insert_mysql_test_data(
     credentials_task = juju.run(
         unit=unit_name,
         action="get-password",
-        params={"username": SERVER_CONFIG_USERNAME},
+        params={"username": OPERATOR_USERNAME},
     )
 
     insert_queries = [

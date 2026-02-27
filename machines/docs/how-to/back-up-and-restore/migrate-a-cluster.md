@@ -24,8 +24,8 @@ When you restore a backup from an old cluster, it will restore the password from
 
 ```shell
 juju run mysql/leader set-password username=root password=<previous cluster password>
-juju run mysql/leader set-password username=clusteradmin password=<previous cluster password>
-juju run mysql/leader set-password username=serverconfig password=<previous cluster password>
+juju run mysql/leader set-password username=charmed-replication password=<previous cluster password>
+juju run mysql/leader set-password username=charmed-operator password=<previous cluster password>
 ```
 
 ## List backups

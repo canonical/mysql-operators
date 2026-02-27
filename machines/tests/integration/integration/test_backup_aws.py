@@ -10,7 +10,7 @@ import jubilant
 import pytest
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
+from constants import REPLICATION_USERNAME, ROOT_USERNAME, OPERATOR_USERNAME
 
 from ..helpers import generate_random_string
 from ..helpers_ha import (
@@ -37,8 +37,8 @@ DATABASE_APP_NAME = "mysql"
 S3_INTEGRATOR = "s3-integrator"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
-CLUSTER_ADMIN_PASSWORD = "clusteradminpasswordAA01"
-SERVER_CONFIG_PASSWORD = "serverconfigpasswordAA01"
+REPLICATION_PASSWORD = "charmed-replicationpasswordAA01"
+OPERATOR_PASSWORD = "charmed-operatorpasswordAA01"
 ROOT_PASSWORD = "rootpasswordAAAAAAAAAA01"
 TABLE_NAME = "backup-table"
 ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE = "S3 repository claimed by another cluster"
@@ -93,10 +93,10 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
     logger.info("Rotating all mysql credentials")
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
+        juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD
     )
     rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
 
@@ -341,10 +341,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     primary_unit_address = get_unit_ip(juju, new_mysql_application_name, primary_unit_name)
 
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
+        juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD
     )
     rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
 
