@@ -93,15 +93,15 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 
 ```shell
 Model  Controller   Cloud/Region        Version  SLA          Timestamp
-mysql  charmed-dev  microk8s/localhost  3.1.6    unsupported  02:20:09+02:00
+mysql  charmed-dev  microk8s/localhost  3.6.14   unsupported  02:20:09+02:00
 
 SAAS        Status  Store        URL
 grafana     active  charmed-dev  admin/cos.grafana
 loki        active  charmed-dev  admin/cos.loki
 prometheus  active  charmed-dev  admin/cos.prometheus
 
-App        Version                  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.0.32-0ubuntu0.22.04.2  active      1  mysql-k8s  8.0/stable   61  10.152.183.115  no       Primary
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      1  mysql-k8s  8.4/edge    XXX  10.152.183.115  no       Primary
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.116         Primary
@@ -113,7 +113,7 @@ mysql-k8s/0*  active    idle   10.1.84.116         Primary
 
 ```shell
 Model  Controller   Cloud/Region        Version  SLA          Timestamp
-cos    charmed-dev  microk8s/localhost  3.1.6    unsupported  02:20:11+02:00
+cos    charmed-dev  microk8s/localhost  3.6.14   unsupported  02:20:11+02:00
 
 App           Version  Status  Scale  Charm             Channel  Rev  Address         Exposed  Message
 alertmanager  0.23.0   active      1  alertmanager-k8s  stable    47  10.152.183.206  no       
@@ -150,4 +150,3 @@ juju run grafana/leader get-admin-password --model <k8s_controller>:<cos_model_n
 ## Full example of COS integration
 
 [![asciicast](https://asciinema.org/a/580608.svg)](https://asciinema.org/a/580608)
-

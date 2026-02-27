@@ -23,7 +23,7 @@ def test_build_and_deploy(juju: Juju, charm):
         config=config,
         num_units=1,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         trust=True,
     )
 

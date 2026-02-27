@@ -6,7 +6,7 @@
 import json
 import logging
 from socket import getfqdn
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from charms.data_platform_libs.v0.upgrade import (
     ClusterNotReadyError,
@@ -15,21 +15,21 @@ from charms.data_platform_libs.v0.upgrade import (
     KubernetesClientError,
 )
 from charms.mysql.v0.mysql import (
+    InstanceRole,
+    InstanceState,
+    MySQLComponentInstallError,
     MySQLGetMySQLVersionError,
-    MySQLPluginInstallError,
     MySQLRebootFromCompleteOutageError,
     MySQLRescanClusterError,
     MySQLServiceNotRunningError,
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
 )
-from mysql_shell import InstanceState
 from ops import Container
 from ops.model import BlockedStatus, MaintenanceStatus, RelationDataContent
 from ops.pebble import ChangeError
 from pydantic import BaseModel
 from tenacity import RetryError
-from typing_extensions import override
 
 import k8s_helpers
 from constants import CONTAINER_NAME, MYSQLD_SERVICE
@@ -213,9 +213,15 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm._reconcile_pebble_layer(container)
             self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
             self.charm.recover_unit_after_restart()
+
+            default_components = ["binlog_utils_udf", "validate_password"]
+            optional_components = []
             if self.charm.config.plugin_audit_enabled:
-                self.charm._mysql.install_plugins(["audit_log"])
-            self.charm._mysql.install_plugins(["binlog_utils_udf"])
+                optional_components.append("audit_log_filter")
+            self.charm._mysql.install_components([
+                *default_components,
+                *optional_components,
+            ])
             self._complete_upgrade()
         except MySQLRebootFromCompleteOutageError:
             logger.error("Failed to reboot single unit from outage after upgrade")
@@ -223,8 +229,8 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm.unit.status = BlockedStatus(
                 "upgrade failed. Check logs for rollback instruction"
             )
-        except MySQLPluginInstallError:
-            logger.error("Failed to install audit plugin")
+        except MySQLComponentInstallError:
+            logger.error("Failed to install components")
             self.set_unit_failed()
             self.charm.unit.status = BlockedStatus(
                 "upgrade failed. Check logs for rollback instruction"
@@ -274,7 +280,7 @@ class MySQLK8sUpgrade(DataUpgrade):
     def _check_server_unsupported_downgrade(self) -> bool:
         """Check error log for unsupported downgrade.
 
-        https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
+        https://dev.mysql.com/doc/mysql-errors/8.4/en/server-error-reference.html
         """
         if log_content := self.charm._mysql.fetch_error_log():
             return "MY-013171" in log_content
@@ -288,7 +294,11 @@ class MySQLK8sUpgrade(DataUpgrade):
         self.charm._write_mysqld_configuration()
         self.charm._configure_instance(container)
         # reset flags
-        self.charm.unit_peer_data.update({"member-role": "secondary", "member-state": "waiting"})
+        self.charm.unit_peer_data.update({
+            "member-role": InstanceRole.SECONDARY.value,
+            "member-state": "waiting",
+        })
+
         # rescan is needed to remove the instance old incarnation from the cluster
         leader = self.charm._get_primary_from_online_peer()
         self.charm._mysql.rescan_cluster(from_instance=leader, remove_instances=True)

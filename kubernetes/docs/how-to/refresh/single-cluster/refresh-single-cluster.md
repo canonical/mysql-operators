@@ -39,10 +39,10 @@ The first step is to record the revision of the running application as a safety 
 
 ```shell
 Model      Controller  Cloud/Region        Version  SLA          Timestamp
-my-model   mkc         microk8s/localhost  2.9.44   unsupported  01:20:47Z
+my-model   mkc         microk8s/localhost  3.6.13   unsupported  01:20:47Z
 
-App        Version                  Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-mysql-k8s  8.0.32-0ubuntu0.22.04.2  active      3  mysql-k8s  8.0/edge  88  10.152.183.102  no       Primary
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge  XXX  10.152.183.102  no       Primary
 
 Unit          Workload  Agent  Address       Ports  Message
 mysql-k8s/0*  active    idle   10.1.148.184         Primary
@@ -50,7 +50,7 @@ mysql-k8s/1   active    idle   10.1.148.138
 mysql-k8s/2   active    idle   10.1.148.143
 ```
 
-For this example, the current revision is `88`. Store it safely to use in case of rollback!
+For this example, the current revision is `XXX`. Store it safely to use in case of rollback!
 
 (step-2-scale-up-optional)=
 ## Step 2: Scale-up (optional)
@@ -99,13 +99,13 @@ Use the [`juju refresh`](https://juju.is/docs/juju/juju-refresh) command to trig
 Example with channel selection
 
 ```shell
-juju refresh mysql-k8s --channel 8.0/edge --trust
+juju refresh mysql-k8s --channel 8.4/edge --trust
 ```
 
 Example with specific revision selection (do not forget the OCI resource):
 
 ```shell
-juju refresh mysql-k8s --revision=89 --resource mysql-image=...  --trust
+juju refresh mysql-k8s --revision=YYY --resource mysql-image=...  --trust
 ```
 
 The upgrade will execute only on the highest ordinal unit.
@@ -131,10 +131,10 @@ For the running example `mysql-k8s/2`, `juju status` would look similar to the o
 
 ```shell
 Model      Controller  Cloud/Region        Version  SLA          Timestamp
-my-model   mkc         microk8s/localhost  2.9.44   unsupported  01:20:47Z
+my-model   mkc         microk8s/localhost  3.6.13   unsupported  01:20:47Z
 
-App        Version                  Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-mysql-k8s  8.0.32-0ubuntu0.22.04.2  waiting     3  mysql-k8s  8.0/edge  89  10.152.183.102  no       waiting for units to settle down
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    waiting     3  mysql-k8s  8.4/edge  YYY  10.152.183.102  no       waiting for units to settle down
 
 Unit          Workload     Agent      Address       Ports  Message
 mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...
@@ -164,10 +164,10 @@ juju run mysql-k8s/leader resume-upgrade
 
 ```shell
 Model      Controller  Cloud/Region        Version  SLA          Timestamp
-my-model   mkc         microk8s/localhost  2.9.44   unsupported  01:20:47Z
+my-model   mkc         microk8s/localhost  3.6.13   unsupported  01:20:47Z
 
-App        Version                  Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-mysql-k8s  8.0.32-0ubuntu0.22.04.2  waiting     3  mysql-k8s  8.0/edge  89  10.152.183.102  no       waiting for units to settle down
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    waiting     3  mysql-k8s  8.4/edge  YYY  10.152.183.102  no       waiting for units to settle down
 
 Unit          Workload     Agent      Address       Ports  Message
 mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...

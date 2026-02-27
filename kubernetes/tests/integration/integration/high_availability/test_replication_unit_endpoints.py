@@ -31,7 +31,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME_1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
@@ -70,7 +70,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME_2,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,

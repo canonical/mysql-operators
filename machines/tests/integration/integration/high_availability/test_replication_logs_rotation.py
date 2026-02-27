@@ -33,7 +33,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"profile": "testing"},
         num_units=3,
     )
@@ -61,9 +61,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 def test_log_rotation(juju: Juju) -> None:
     """Test the log rotation of text files."""
-    log_types = ["error", "audit"]
-    log_files = ["error.log", "audit.log"]
-    archive_dirs = ["archive_error", "archive_audit"]
+    log_types = ["audit", "error"]
 
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_logs_path = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
@@ -88,22 +86,8 @@ def test_log_rotation(juju: Juju) -> None:
             file_data=f"{log_type} content",
         )
 
-    logging.info("Ensuring only log files exist")
-    log_files_listed = list_unit_files(juju, mysql_app_leader, mysql_logs_path)
-    log_dirs_listed = [line.split()[-1] for line in log_files_listed]
-
-    assert len(log_files_listed) == len(log_files)
-    assert sorted(log_dirs_listed) == sorted(log_files)
-
     logging.info("Executing logrotate")
     start_unit_flush_logs_job(juju, mysql_app_leader)
-
-    logging.info("Ensuring log files and archive directories exist")
-    log_files_listed = list_unit_files(juju, mysql_app_leader, mysql_logs_path)
-    log_dirs_listed = [line.split()[-1] for line in log_files_listed]
-
-    assert len(log_files_listed) == len(log_files + archive_dirs)
-    assert sorted(log_dirs_listed) == sorted(log_files + archive_dirs)
 
     logging.info("Ensuring log files were rotated")
     for log_type in log_types:

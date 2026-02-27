@@ -19,10 +19,10 @@ A quorum loss will typically look like this in the juju status output:
 
 ```
 Model   Controller  Cloud/Region             Version  SLA          Timestamp
-mymodel localhost   default                  3.6.8    unsupported  17:52:19Z
+mymodel localhost   default                  3.6.13   unsupported  17:52:19Z
 
-App    Version                  Status   Scale  Charm      Channel           Rev  Address        Exposed  Message
-mysql  8.0.42-0ubuntu0.22.04.2  waiting      3  mysql-k8s  8.0/edge          279  10.152.183.61  no       waiting for units to settle down
+App    Version  Status   Scale  Charm      Channel           Rev  Address        Exposed  Message
+mysql  8.4.7    waiting      3  mysql-k8s  8.4/edge          XXX  10.152.183.61  no       waiting for units to settle down
 
 Unit      Workload     Agent  Address     Ports  Message
 mysql/0*  maintenance  idle   10.1.2.48          offline
@@ -62,7 +62,7 @@ status:
         mode: n/a
         role: ha
         status: unreachable
-        version: 8.0.42
+        version: 8.4.7
       mysql-1:
         address: mysql-1.mysql-endpoints.m3.svc.cluster.local.:3306
         instanceerrors: '[''note: group_replication is stopped.'']'
@@ -71,7 +71,7 @@ status:
         mode: n/a
         role: ha
         status: unreachable
-        version: 8.0.42
+        version: 8.4.7
       mysql-2:
         address: mysql-2.mysql-endpoints.m3.svc.cluster.local.:3306
         memberrole: secondary
@@ -80,7 +80,7 @@ status:
         replicationlagfromoriginalsource: ""
         role: ha
         status: online
-        version: 8.0.42
+        version: 8.4.7
     topologymode: single-primary
   domainname: cluster-set-3eab807dee6797402ecfc52b5a84d15b
   groupinformationsourcemember: mysql-2.mysql-endpoints.m3.svc.cluster.local.:3306

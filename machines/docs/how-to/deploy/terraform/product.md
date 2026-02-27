@@ -105,7 +105,7 @@ Sample output:
 
 ```shell
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
-my-model  lxd-controller  localhost/localhost  3.5.3    unsupported  12:49:34Z
+my-model  lxd-controller  localhost/localhost  3.6.14   unsupported  12:49:34Z
 
 App            Version          Status  Scale  Charm          Channel        Rev  Exposed  Message                                
 mysql          8.0.41-0ubun...  active      3  mysql          8.0/stable     366  no

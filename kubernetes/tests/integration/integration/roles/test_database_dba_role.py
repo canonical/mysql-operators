@@ -31,7 +31,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         DATABASE_APP_NAME,
         num_units=3,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"profile": "testing"},
     )
     juju.deploy(

@@ -27,7 +27,7 @@ class TestDatabase(unittest.TestCase):
         "charm.MySQLOperatorCharm.get_cluster_endpoints",
         return_value=("2.2.2.2:3306", "2.2.2.1:3306,2.2.2.3:3306", ""),
     )
-    @patch("mysql_vm_helpers.MySQL.get_mysql_version", return_value="8.0.29-0ubuntu0.20.04.3")
+    @patch("mysql_vm_helpers.MySQL.get_mysql_version", return_value="8.4.0")
     @patch("mysql_vm_helpers.MySQL.create_database")
     @patch("mysql_vm_helpers.MySQL.create_scoped_user")
     @patch(
@@ -77,7 +77,7 @@ class TestDatabase(unittest.TestCase):
                 "password": "super_secure_password",
                 "username": username,
                 "endpoints": "2.2.2.2:3306",
-                "version": "8.0.29-0ubuntu0.20.04.3",
+                "version": "8.4.0",
                 "database": "test_db",
                 "read-only-endpoints": "2.2.2.1:3306,2.2.2.3:3306",
             },

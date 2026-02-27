@@ -76,7 +76,7 @@ def build_and_deploy_operations(
     juju.deploy(
         charm,
         MYSQL_APPLICATION_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},

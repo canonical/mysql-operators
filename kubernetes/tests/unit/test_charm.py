@@ -145,9 +145,8 @@ class TestCharm(unittest.TestCase):
                 and len(secret_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
-    @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
-    @patch("mysql_k8s_helpers.MySQL.install_plugins")
+    @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.rescan_cluster")
     @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
@@ -156,7 +155,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.create_cluster_set")
     @patch("mysql_k8s_helpers.MySQL.initialize_juju_units_operations_table")
-    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.0.0")
+    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.4.0")
     @patch("mysql_k8s_helpers.MySQL.wait_until_mysql_connection")
     @patch("mysql_k8s_helpers.MySQL.configure_mysql_router_roles")
     @patch("mysql_k8s_helpers.MySQL.configure_mysql_system_roles")
@@ -201,9 +200,8 @@ class TestCharm(unittest.TestCase):
         _active_status_message,
         _rescan_cluster,
         _cluster_metadata_exists,
-        _install_plugins,
-        _get_unit_address,
         _install_components,
+        _get_unit_address,
     ):
         # Check if initial plan is empty
         self.harness.set_can_connect("mysql", True)
@@ -264,15 +262,15 @@ class TestCharm(unittest.TestCase):
         # test on leader
         self.harness.set_leader(is_leader=True)
         self.harness.container_pebble_ready("mysql")
-        self.assertEqual(self.charm.unit_peer_data["member-state"], "online")
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "primary")
+        self.assertEqual(self.charm.unit_peer_data["member-state"], "ONLINE")
+        self.assertEqual(self.charm.unit_peer_data["member-role"], "PRIMARY")
 
         _cluster_initialized.return_value = True
 
         # test on non leader
         self.harness.set_leader(is_leader=False)
         self.harness.container_pebble_ready("mysql")
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
+        self.assertEqual(self.charm.unit_peer_data["member-role"], "SECONDARY")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
@@ -283,7 +281,7 @@ class TestCharm(unittest.TestCase):
         self.harness.update_relation_data(
             self.peer_relation_id, f"{APP_NAME}/1", {"configured": "True"}
         )
-        _mysql_mock.get_mysql_version.return_value = "8.0.25"
+        _mysql_mock.get_mysql_version.return_value = "8.4.0"
         self.charm._mysql = _mysql_mock
         self.harness.container_pebble_ready("mysql")
         self.assertTrue(isinstance(self.charm.unit.status, WaitingStatus))

@@ -12,7 +12,7 @@ juju add-model <model name>
 
 Deploy MySQL:
 ```shell
-juju deploy mysql-k8s --channel 8.0/stable --trust
+juju deploy mysql-k8s --channel 8.4/edge --trust
 ```
 > :warning: The `--trust` flag is necessary to create some K8s resources.
 
@@ -23,12 +23,11 @@ juju deploy mysql-k8s --channel 8.0/stable --trust
 Sample output of `juju status --watch 1s`:
 ```shell
 Model   Controller  Cloud/Region        Version  SLA          Timestamp
-mysql   overlord    microk8s/localhost  2.9.38   unsupported  22:48:57+01:00
+mysql   overlord    microk8s/localhost  3.6.14   unsupported  22:48:57+01:00
 
-App        Version    Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.0.31     active      1  mysql-k8s  8.0/stable  75   10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      1  mysql-k8s  8.4/edge    XXX  10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74          Primary
 ```
-

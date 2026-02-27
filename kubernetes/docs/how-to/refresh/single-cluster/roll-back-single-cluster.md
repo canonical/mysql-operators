@@ -44,11 +44,11 @@ juju refresh mysql-k8s --path=<path to charm file> --resource mysql-image=<image
 For example:
 
 ```shell
-juju refresh mysql-k8s --path=./mysql-k8s_ubuntu-22.04-amd64.charm \
+juju refresh mysql-k8s --path=./mysql-k8s_ubuntu-24.04-amd64.charm \
        --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:753477ce39712221f008955b746fcf01a215785a215fe3de56f525380d14ad97
 ```
 
-where `mysql-k8s_ubuntu-22.04-amd64.charm` is the previous revision charm file. 
+where `mysql-k8s_ubuntu-24.04-amd64.charm` is the previous revision charm file. 
 
 The reference for the resource for a given revision can be found in the [`metadata.yaml`](https://github.com/canonical/mysql-k8s-operator/blob/e4beca6b34313a977eab5ab2c74fa43586f1154c/metadata.yaml) file in the charm's repository under the key `upstream-source`.
 
@@ -67,4 +67,3 @@ This will roll out the pods in the remaining units to the same charm revision.
 ## Step 4: Check
 
 Check `juju status` to make sure the cluster [state](/reference/charm-statuses) is OK.
-

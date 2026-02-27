@@ -31,7 +31,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"profile": "testing"},
         num_units=3,
     )

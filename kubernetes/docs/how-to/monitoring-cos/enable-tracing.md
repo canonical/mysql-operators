@@ -8,8 +8,6 @@ This is feature is in development. It is **not recommended** for production envi
 
 ## Prerequisites
 
-* Charmed MySQL K8s revision 146 or higher 
-  * See [](/how-to/refresh/index)
 * `cos-lite` bundle deployed in a Kubernetes environment
   * See the [COS Microk8s tutorial](https://charmhub.io/topics/canonical-observability-stack/tutorials/install-microk8s)
 
@@ -91,14 +89,14 @@ Wait until the model settles. The following is an example of the `juju status --
 
 ```shell
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-database  k8s         microk8s/localhost  3.5.4    unsupported  16:33:26Z
+database  k8s         microk8s/localhost  3.6.14   unsupported  16:33:26Z
 
 SAAS   Status  Store       URL
 tempo  active  k8s         admin/cos.tempo
 
-App                Version                  Status  Scale  Charm              Channel      Rev  Address         Exposed  Message
-grafana-agent-k8s  0.40.4                   active      1  grafana-agent-k8s  1/stable     115  10.152.183.63   no       grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
-mysql-k8s          8.0.37-0ubuntu0.22.04.3  active      1  mysql-k8s                         0  10.152.183.135  no       Primary
+App                Version  Status  Scale  Charm              Channel      Rev  Address         Exposed  Message
+grafana-agent-k8s  0.40.4   active      1  grafana-agent-k8s  1/stable     115  10.152.183.63   no       grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
+mysql-k8s          8.4.7    active      1  mysql-k8s                         0  10.152.183.135  no       Primary
 
 Unit                  Workload  Agent      Address       Ports  Message
 grafana-agent-k8s/0*  active    idle       10.1.241.255         grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
@@ -130,4 +128,3 @@ The Tempo traces will be accessible from Grafana under the `Explore` section wit
 
 
 Feel free to read through the [Tempo HA documentation](https://discourse.charmhub.io/t/charmed-tempo-ha/15531) at your leisure to explore its deployment and its integrations.
-

@@ -142,13 +142,13 @@ class TestUpgrade(unittest.TestCase):
         assert mock_set_dynamic_variable.call_count == 2
 
     @patch("charm.MySQLOperatorCharm.recover_unit_after_restart")
-    @patch("mysql_vm_helpers.MySQL.install_plugins")
+    @patch("mysql_vm_helpers.MySQL.install_components")
     @patch("upgrade.set_cron_daemon")
     @patch("upgrade.MySQLVMUpgrade._check_server_unsupported_downgrade")
     @patch("upgrade.MySQLVMUpgrade._reset_on_unsupported_downgrade")
     @patch("mysql_vm_helpers.MySQL.hold_if_recovering")
     @patch("pathlib.Path.exists", return_value=True)
-    @patch("mysql_vm_helpers.MySQL.get_mysql_version", return_value="8.0.33")
+    @patch("mysql_vm_helpers.MySQL.get_mysql_version", return_value="8.4.0")
     @patch("charm.MySQLOperatorCharm.install_workload", return_value=True)
     @patch("charm.MySQLOperatorCharm.unit_fqdn", return_value="10.0.1.1")
     @patch("mysql_vm_helpers.MySQL.stop_mysqld")
@@ -169,7 +169,7 @@ class TestUpgrade(unittest.TestCase):
         mock_reset_on_unsupported_downgrade,
         mock_check_server_unsupported_downgrade,
         mock_set_cron_daemon,
-        mock_install_plugins,
+        mock_install_components,
         mock_recover_unit_after_restart,
     ):
         """Test upgrade-granted hook."""
@@ -244,7 +244,7 @@ class TestUpgrade(unittest.TestCase):
         mock_join_unit,
     ):
         self.charm.upgrade._reset_on_unsupported_downgrade()
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
+        self.assertEqual(self.charm.unit_peer_data["member-role"], "SECONDARY")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
     @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")

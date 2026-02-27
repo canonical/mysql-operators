@@ -25,7 +25,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         MYSQL_APP_NAME,
         config={"profile-limit-memory": "2000", "experimental-max-connections": CONNECTIONS},
         num_units=1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         trust=True,
     )
 

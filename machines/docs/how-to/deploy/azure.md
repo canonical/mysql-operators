@@ -5,8 +5,9 @@
 
 ## Set up Juju and Azure tooling
 ```{caution}
-**Warning**: The described `Azure interactive` method (with web browser authentication `service-principal-secret-via-browser`) described here is only supported starting Juju 3.6-rc1+!
+**Warning**: The described `Azure interactive` method (with web browser authentication `service-principal-secret-via-browser`) described here is only supported starting Juju 3.6+!
 ```
+
 ### Install Juju and Azure CLI
 Install Juju via snap:
 ```shell
@@ -20,7 +21,7 @@ To check they are all correctly installed, you can run the commands demonstrated
 
 ```console
 > juju version
-3.6-rc1-genericlinux-amd64
+3.6.13-genericlinux-amd64
 
 > az --version
 azure-cli                         2.65.0
@@ -119,7 +120,7 @@ Once successfully completed, bootstrap the new Juju controller on Azure:
 > juju bootstrap azure azure
 
 Creating Juju controller "azure" on azure/centralus
-Looking for packaged Juju agent version 3.6-rc1 for amd64
+Looking for packaged Juju agent version 3.6.13 for amd64
 No packaged binary found, preparing local Juju agent binary
 Launching controller instance(s) on azure/centralus...
  - juju-aeb5ea-0 (arch=amd64 mem=3.5G cores=1)
@@ -166,20 +167,20 @@ juju integrate mysql data-integrator
 Check the status:
 ```shell
 > juju status
-Model    Controller       Cloud/Region     Version    SLA          Timestamp
-welcome  azure-centralus  azure/centralus  3.6-rc1.1  unsupported  16:05:59+02:00
+Model    Controller       Cloud/Region     Version  SLA          Timestamp
+welcome  azure-centralus  azure/centralus  3.6.13   unsupported  16:05:59+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.0.36-0ubun...  active      1  mysql            8.0/stable     240  no
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable  41   no
+mysql            8.4.7    active      1  mysql            8.4/edge       XXX  no
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@22.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@22.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
 ```
 
 Once deployed, request the credentials for your newly bootstrapped MySQL database:
@@ -197,7 +198,7 @@ mysql:
   endpoints: 192.168.0.5:3306
   password: 1yGJ2KqtN4Qlf6KgeJDLOVES
   username: relation-14
-  version: 8.0.36-0ubuntu0.22.04.1
+  version: 8.4.7
 ```
 
 At this point, you can access your DB inside Azure VM using the internal IP address. All further Juju applications will use the database through the internal network:
@@ -218,20 +219,20 @@ juju expose mysql
 Once exposed, you can connect your database using the same credentials as above. This time use the Azure VM public IP assigned to the MySQL instance. You can see this with `juju status`:
 ```shell
 > juju status mysql
-Model    Controller       Cloud/Region     Version    SLA          Timestamp
-welcome  azure-centralus  azure/centralus  3.6-rc1.1  unsupported  16:05:59+02:00
+Model    Controller       Cloud/Region     Version  SLA          Timestamp
+welcome  azure-centralus  azure/centralus  3.6.13   unsupported  16:05:59+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.0.36-0ubun...  active      1  mysql            8.0/stable     240  yes
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable  41   no
+mysql            8.4.7    active      1  mysql            8.4/edge       XXX  yes
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@22.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@22.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
 ```
 
 Note the IP and port (`20.83.9.99:3306`) and connect via `mysql`:
@@ -254,7 +255,7 @@ See all controllers in your machine with the following command:
 > juju controllers
 ...
 Controller  Model    User   Access     Cloud/Region     Models  Nodes    HA  Version
-azure*      welcome  admin  superuser  azure/centralus       2      1  none  3.6-rc1.1  
+azure*      welcome  admin  superuser  azure/centralus       2      1  none  3.6.13  
 ```
 
 To destroy the `azure` Juju controller and remove the Azure instance, run the command below. **All your data will be permanently removed.**
@@ -308,4 +309,3 @@ Finally, log out of the Azure CLI user credentials to prevent any credential lea
 ```shell
 az logout 
 ```
-

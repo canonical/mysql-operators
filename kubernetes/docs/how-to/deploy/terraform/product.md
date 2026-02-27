@@ -104,12 +104,12 @@ Sample output:
 
 ```shell
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
-my-model  k8s-controller  microk8s/localhost   3.5.3    unsupported  12:49:34Z
+my-model  k8s-controller  microk8s/localhost   3.6.14   unsupported  12:49:34Z
 
-App               Version          Status  Scale  Charm              Channel        Rev  Address         Exposed  Message                                
-mysql-k8s         8.0.41-0ubun...  active      3  mysql-k8s          8.0/stable     255  10.152.183.112  no
-mysql-router-k8s                   blocked     1  mysql-router-k8s   8.0/stable     748  10.152.183.140  no       Missing relation: database
-s3-integrator                      active      1  s3-integrator      1/stable       241  10.152.183.160  no
+App               Version  Status   Scale  Charm             Channel   Rev  Address         Exposed  Message                                
+mysql-k8s         8.4.7    active       3  mysql-k8s         8.4/edge  255  10.152.183.112  no
+mysql-router-k8s           blocked      1  mysql-router-k8s  8.4/edge  748  10.152.183.140  no       Missing relation: database
+s3-integrator              active       1  s3-integrator     1/stable  241  10.152.183.160  no
 
 Unit                 Workload  Agent  Address         Ports           Message
 mysql-k8s/0*         active    idle   10.1.77.76      3306,33060/tcp  Primary

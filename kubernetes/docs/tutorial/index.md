@@ -87,7 +87,7 @@ You can now view the model you created by running the command [`juju status`](ht
 :host: my-vm
 
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial overlord    microk8s/localhost   3.5.2    unsupported  23:20:53+01:00
+tutorial overlord    microk8s/localhost   3.6.13    unsupported  23:20:53+01:00
 
 Model "admin/tutorial" is empty.
 ```
@@ -104,7 +104,7 @@ To deploy Charmed MySQL K8s, run the following command:
 
 The `--trust` flag is necessary to create some K8s resources.
 
-Juju will now fetch Charmed MySQL K8s from [Charmhub](https://charmhub.io/mysql-k8s?channel=8.0) and deploy it to MicroK8s. This process can take several minutes depending on how provisioned (RAM, CPU, etc) your machine is.
+Juju will now fetch Charmed MySQL K8s from [Charmhub](https://charmhub.io/mysql-k8s?channel=8.4) and deploy it to MicroK8s. This process can take several minutes depending on how provisioned (RAM, CPU, etc) your machine is.
 
 ```{terminal}
 :input: juju status --watch 1s
@@ -120,10 +120,10 @@ When the application is ready, `juju status` will show something similar to the 
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2   unsupported  22:33:45+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:33:45+01:00
 
-App        Version   Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.0.31    active      1  mysql-k8s  8.0/stable  36   10.152.183.234  no       Unit is ready: Mode: RW
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      1  mysql-k8s  8.4/edge  XXX  10.152.183.234  no       Unit is ready: Mode: RW
 
 Unit          Workload  Agent  Address     Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74         Unit is ready: Mode: RW
@@ -145,7 +145,7 @@ This part of the tutorial accesses MySQL via the charm's `root` user.
 In a later section, we will cover how to safely access MySQL more safely.
 ```
 
-The easiest way to access MySQL is via the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
+The easiest way to access MySQL is via the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.4/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
 
 ### Retrieve credentials
 
@@ -215,7 +215,7 @@ As an example, using the password we obtained earlier:
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
-Server version: 8.0.32-0ubuntu0.22.04.2 (Ubuntu)
+Server version: 8.4.7 (Ubuntu)
 
 Copyright (c) 2000, 2023, Oracle and/or its affiliates.
 
@@ -228,7 +228,7 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 mysql>
 ```
 
-You can now interact with MySQL directly using any [MySQL Queries](https://dev.mysql.com/doc/refman/8.0/en/entering-queries.html). 
+You can now interact with MySQL directly using any [MySQL Queries](https://dev.mysql.com/doc/refman/8.4/en/entering-queries.html). 
 
 For example:
 
@@ -240,7 +240,7 @@ SELECT VERSION(), CURRENT_DATE;
 +-------------------------+--------------+
 | VERSION()               | CURRENT_DATE |
 +-------------------------+--------------+
-| 8.0.32-0ubuntu0.22.04.2 | 2023-01-29   |
+| 8.4.7-0ubuntu0.24.04.1  | 2026-01-22   |
 +-------------------------+--------------+
 1 row in set (0.00 sec)
 ```
@@ -254,7 +254,7 @@ Exit this host by once again typing `exit`. Now you will be in your original she
 (scale-replicas)=
 ## Scale your replicas
 
-The Charmed MySQL K8s operator uses [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html) for scaling. It is built on MySQL [group replication](https://dev.mysql.com/doc/refman/8.0/en/group-replication.html), providing features such as automatic membership management, fault tolerance, and automatic failover. 
+The Charmed MySQL K8s operator uses [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.4/en/mysql-innodb-cluster-introduction.html) for scaling. It is built on MySQL [group replication](https://dev.mysql.com/doc/refman/8.4/en/group-replication.html), providing features such as automatic membership management, fault tolerance, and automatic failover. 
 
 An InnoDB Cluster usually runs in a single-primary mode, with one primary instance (read-write) and multiple secondary instances (read-only). 
 
@@ -284,10 +284,10 @@ You’ll know that all three nodes are in sync when `juju status` reports `Workl
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2   unsupported  22:48:57+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:48:57+01:00
 
-App        Version    Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.0.31     active      3  mysql-k8s  8.0/stable  36   10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge  XXX  10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74          Unit is ready: Mode: RW
@@ -298,7 +298,7 @@ mysql-k8s/2   active    idle   10.1.84.73          Unit is ready: Mode: RO
 ```{note}
 The maximum possible number of Charmed MySQL units in a single Juju application is 9. This is a limitation of MySQL group replication. 
 
-Read more about all limitations in the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/group-replication-limitations.html).
+Read more about all limitations in the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.4/en/group-replication-limitations.html).
 ```
 
 ### Remove units
@@ -319,10 +319,10 @@ You’ll know that the replica was successfully removed when you no longer see t
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2   unsupported  22:48:57+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:48:57+01:00
 
-App        Version    Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.0.31     active      3  mysql-k8s  8.0/stable  36   10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
+mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge  XXX  10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74          Unit is ready: Mode: RW
@@ -352,11 +352,11 @@ Running `juju status` will show you `data-integrator` in a `blocked` state. This
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2   unsupported  22:54:31+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:54:31+01:00
 
-App              Version    Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
-data-integrator             waiting      1  data-integrator  edge        4    10.152.183.180  no       installing agent
-mysql-k8s        8.0.31     active       2  mysql-k8s        8.0/stable  36   10.152.183.234  no       
+App              Version  Status   Scale  Charm            Channel   Rev  Address         Exposed  Message
+data-integrator           waiting      1  data-integrator  edge      4    10.152.183.180  no       installing agent
+mysql-k8s        8.4.7    active       2  mysql-k8s        8.4/edge  XXX  10.152.183.234  no       
 
 Unit                Workload  Agent  Address      Ports  Message
 data-integrator/0*  blocked   idle   10.1.84.66          Please relate the data-integrator with the desired product
@@ -376,11 +376,11 @@ Wait for `juju status` to show all applications/units as `active`:
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2   unsupported  22:55:44+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:55:44+01:00
 
-App              Version    Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
-data-integrator             waiting      1  data-integrator  edge        4    10.152.183.180  no       installing agent
-mysql-k8s        8.0.31     active       2  mysql-k8s        8.0/stable  36   10.152.183.234  no       
+App              Version  Status   Scale  Charm            Channel   Rev  Address         Exposed  Message
+data-integrator           waiting      1  data-integrator  edge      4    10.152.183.180  no       installing agent
+mysql-k8s        8.4.7    active       2  mysql-k8s        8.4/edge  XXX  10.152.183.234  no       
 
 Unit                Workload  Agent  Address      Ports  Message
 data-integrator/0*  active    idle   10.1.84.66          
@@ -401,7 +401,7 @@ mysql:
   password: 7VRfmGjfUI1pVUPsfbMwmHFm
   read-only-endpoints: mysql-k8s-0.mysql-k8s-endpoints:3306,mysql-k8s-1.mysql-k8s-endpoints:3306
   username: relation-3
-  version: 8.0.31-0ubuntu0.22.04.1
+  version: 8.4.7
 ok: "True"
 ```
 
@@ -493,11 +493,11 @@ Wait until `self-signed-certificates` is up and active, using `juju status --wat
 
 ```text
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
-tutorial  overlord    microk8s/localhost  3.5.2  unsupported  23:04:02+01:00
+tutorial  overlord    microk8s/localhost  3.6.13   unsupported  23:04:02+01:00
 
-App                        Version   Status  Scale  Charm                      Channel      Rev  Address         Exposed  Message
-mysql-k8s                  8.0.31    active      2  mysql-k8s                  8.0/stable   36   10.152.183.234  no       
-self-signed-certificates             active      1  self-signed-certificates   stable   72   10.152.183.76   no       
+App                        Version  Status  Scale  Charm                      Channel   Rev  Address         Exposed  Message
+mysql-k8s                  8.4.7    active      2  mysql-k8s                  8.4/edge  XXX  10.152.183.234  no       
+self-signed-certificates            active      1  self-signed-certificates   1/stable  72   10.152.183.76   no       
 
 Unit                          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*                  active    idle   10.1.84.74          Unit is ready: Mode: RW
@@ -545,7 +545,7 @@ If you once again check the TLS certificates in use via the OpenSSL client, you 
 :host: my-vm
 
 ...
-Issuer: CN = MySQL_Server_8.0.31_Auto_Generated_CA_Certificate
+Issuer: CN = MySQL_Server_8.4.7_Auto_Generated_CA_Certificate
 ...
 ```
 
@@ -587,4 +587,3 @@ For more information, see the docs for [`multipass delete`](https://multipass.ru
 - [Report](https://github.com/canonical/mysql-k8s-operator/issues) any problems you encountered.
 - [Give us your feedback](/reference/contacts).
 - [Contribute to the code base](https://github.com/canonical/mysql-k8s-operator)
-

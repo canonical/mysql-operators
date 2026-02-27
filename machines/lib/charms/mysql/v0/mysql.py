@@ -66,12 +66,11 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
     Literal,
     Type,
     get_args,
@@ -172,13 +171,10 @@ FORBIDDEN_EXTRA_ROLES = {
     ROLE_BACKUP,
 }
 
-ALLOWED_PLUGINS = {
-    "audit_log": "audit_log.so",
-    "audit_log_filter": "audit_log_filter.so",
-    "binlog_utils_udf": "binlog_utils_udf.so",
-}
 ALLOWED_COMPONENTS = {
-    "file://component_validate_password": "component_validate_password.so",
+    "audit_log_filter": "file://component_audit_log_filter",
+    "binlog_utils_udf": "file://component_binlog_utils_udf",
+    "validate_password": "file://component_validate_password",
 }
 
 APP_SCOPE = "app"
@@ -427,8 +423,8 @@ class MySQLRejoinClusterError(Error):
     """Exception raised when there is an issue trying to rejoin a cluster to the cluster set."""
 
 
-class MySQLPluginInstallError(Error):
-    """Exception raised when there is an issue installing a MySQL plugin."""
+class MySQLComponentInstallError(Error):
+    """Exception raised when there is an issue installing a MySQL component."""
 
 
 class MySQLGetGroupReplicationIDError(Error):
@@ -591,16 +587,9 @@ class MySQLCharmBase(CharmBase, ABC):
                 event.fail("Failed to read cluster status. See logs for more information.")
                 return
 
-            # TODO:
-            #   Remove `.lower()` when migrating to MySQL 8.4
-            #   (when breaking changes are allowed)
-            status = json.dumps(status)
-            status = status.lower()
-            status = json.loads(status)
-
             event.set_results({
                 "success": True,
-                "status": status,
+                "status": json.dumps(status),
             })
         except Exception:
             logger.exception("Error while reading cluster status")
@@ -682,15 +671,9 @@ class MySQLCharmBase(CharmBase, ABC):
         # recovery users
         self._mysql.rescan_cluster()
 
-        role = self._mysql.get_member_role()
-        state = self._mysql.get_member_state()
-
-        # TODO:
-        #   Remove `.lower()` when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
         self.unit_peer_data.update({
-            "member-state": state.lower(),
-            "member-role": role.lower(),
+            "member-state": self._mysql.get_member_state(),
+            "member-role": self._mysql.get_member_role(),
         })
 
     @abstractmethod
@@ -899,6 +882,11 @@ class MySQLCharmBase(CharmBase, ABC):
             # When a replica instance is catching up with the primary instance,
             # the custom label assigned by the operator code has not yet been applied.
             if v["status"] == InstanceState.RECOVERING:
+                continue
+
+            # Early calls for endpoint update can be run before unit joined the relation
+            # so we skip when unit (k) not unit_labels dict
+            if k not in unit_labels:
                 continue
 
             address = f"{self.get_unit_address(unit_labels[k], relation_name)}:3306"
@@ -1165,6 +1153,7 @@ class MySQLBase(ABC):
                 # disable memory instruments if we have less than 2GiB of RAM
                 performance_schema_instrument = "'memory/%=OFF'"
 
+        logging_path = f"{snap_common}/var/log/mysql"
         binlog_retention_seconds = binlog_retention_days * 24 * 60 * 60
         config = configparser.ConfigParser(interpolation=None)
 
@@ -1179,14 +1168,12 @@ class MySQLBase(ABC):
             "max_connections": max_connections,
             "innodb_buffer_pool_size": innodb_buffer_pool_size,
             "log_error_services": "log_filter_internal;log_sink_internal",
-            "log_error": f"{snap_common}/var/log/mysql/error.log",
+            "log_error": f"{logging_path}/error.log",
             "general_log": "OFF",
-            "general_log_file": f"{snap_common}/var/log/mysql/general.log",
+            "general_log_file": f"{logging_path}/general.log",
             "loose-group_replication_paxos_single_leader": "ON",
-            "slow_query_log_file": f"{snap_common}/var/log/mysql/slow.log",
+            "slow_query_log_file": f"{logging_path}/slow.log",
             "binlog_expire_logs_seconds": f"{binlog_retention_seconds}",
-            "loose-audit_log_policy": audit_log_policy.upper(),
-            "loose-audit_log_file": f"{snap_common}/var/log/mysql/audit.log",
             "gtid_mode": "ON",
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
@@ -1201,13 +1188,13 @@ class MySQLBase(ABC):
         }
 
         if audit_log_enabled:
-            # This is used for being able to know the current state of the
-            # audit plugin on config changes
-            config["mysqld"]["loose-audit_log_format"] = "JSON"
+            config["mysqld"]["loose-audit_log_filter.file"] = f"{logging_path}/audit.log"
+            config["mysqld"]["loose-audit_log_filter.format"] = "JSON"
+            config["mysqld"]["loose-audit_log_filter.policy"] = audit_log_policy.upper()
         if audit_log_strategy == "async":
-            config["mysqld"]["loose-audit_log_strategy"] = "ASYNCHRONOUS"
+            config["mysqld"]["loose-audit_log_filter.strategy"] = "ASYNCHRONOUS"
         else:
-            config["mysqld"]["loose-audit_log_strategy"] = "SEMISYNCHRONOUS"
+            config["mysqld"]["loose-audit_log_filter.strategy"] = "SEMISYNCHRONOUS"
 
         if innodb_buffer_pool_chunk_size:
             config["mysqld"]["innodb_buffer_pool_chunk_size"] = str(innodb_buffer_pool_chunk_size)
@@ -1238,22 +1225,6 @@ class MySQLBase(ABC):
             role_name_description,
             str(len(role_name_collisions)).zfill(len(role_suffix)),
         ))
-
-    def _plugin_file_exists(self, file_name: str) -> bool:
-        """Check if the plugin file exists."""
-        path = self._instance_client_tcp.get_instance_variable(Scope.GLOBAL, "plugin_dir")
-        return self._file_exists(f"{path}/{file_name}")
-
-    @contextmanager
-    def _read_only_disabled(self) -> Generator:
-        """Temporarily disables the super-read-only mode."""
-        value = self._instance_client_tcp.get_instance_variable(Scope.GLOBAL, "super_read_only")
-
-        try:
-            self._instance_client_tcp.set_instance_variable(Scope.GLOBAL, "super_read_only", "OFF")
-            yield
-        finally:
-            self._instance_client_tcp.set_instance_variable(Scope.GLOBAL, "super_read_only", value)
 
     def configure_mysql_router_roles(self) -> None:
         """Configure the MySQL Router roles for the instance."""
@@ -1352,70 +1323,38 @@ class MySQLBase(ABC):
             logger.error(f"Failed to configure users for: {self.instance_address}")
             raise MySQLConfigureMySQLUsersError from e
 
-    def install_plugins(self, plugins: list[str]) -> None:
-        """Install extra plugins."""
-        # TODO:
-        #   Remove this context-manager when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
-        with self._read_only_disabled():
-            installed_plugins = self._instance_client_tcp.search_instance_plugins("%")
-
-            for plugin in plugins:
-                plugin_path = ALLOWED_PLUGINS.get(plugin)
-                if not self._plugin_file_exists(plugin_path):
-                    logger.warning(f"{plugin=} file not found. Skip installation")
-                    continue
-
-                if plugin in installed_plugins:
-                    logger.info(f"{plugin=} already installed")
-                    continue
-                if plugin not in ALLOWED_PLUGINS:
-                    logger.warning(f"{plugin=} is not supported")
-                    continue
-
-                try:
-                    self._instance_client_tcp.install_instance_plugin(plugin, plugin_path)
-                except ExecutionError as e:
-                    raise MySQLPluginInstallError() from e
-
-    def uninstall_plugins(self, plugins: list[str]) -> None:
-        """Uninstall plugins."""
-        # TODO:
-        #   Remove this context-manager when migrating to MySQL 8.4
-        #   (when breaking changes are allowed)
-        with self._read_only_disabled():
-            installed_plugins = self._instance_client_tcp.search_instance_plugins("%")
-
-            for plugin in plugins:
-                if plugin not in installed_plugins:
-                    logger.info(f"{plugin=} not installed")
-                    continue
-
-                try:
-                    self._instance_client_tcp.uninstall_instance_plugin(plugin)
-                except ExecutionError as e:
-                    raise MySQLPluginInstallError() from e
-
     def install_components(self, components: list[str]) -> None:
         """Install components."""
         installed_components = self._instance_client_tcp.search_instance_components("%")
 
         for component in components:
-            if component in installed_components:
-                logger.debug(f"Skipping already installed component {component=}")
+            component_urn = ALLOWED_COMPONENTS.get(component)
+            if component_urn in installed_components:
+                logger.debug(f"{component=} already installed")
                 continue
-
-            if component not in ALLOWED_COMPONENTS:
+            if component_urn is None:
                 logger.warning(f"{component=} is not supported")
                 continue
 
-            # Since we're checking ALLOWED_COMPONENTS already,
-            # we do not check for file existence
+            try:
+                self._instance_client_tcp.install_instance_component(component_urn)
+            except ExecutionError as e:
+                raise MySQLComponentInstallError() from e
+
+    def uninstall_components(self, components: list[str]) -> None:
+        """Uninstall plugins."""
+        installed_components = self._instance_client_tcp.search_instance_components("%")
+
+        for component in components:
+            component_urn = ALLOWED_COMPONENTS.get(component)
+            if component_urn not in installed_components:
+                logger.info(f"{component=} not installed")
+                continue
 
             try:
-                self._instance_client_tcp.install_instance_component(component)
+                self._instance_client_tcp.uninstall_instance_component(component_urn)
             except ExecutionError as e:
-                raise MySQLPluginInstallError() from e
+                raise MySQLComponentInstallError() from e
 
     def does_mysql_user_exist(self, username: str, hostname: str) -> bool:
         """Checks if a mysql user already exists."""
@@ -2365,17 +2304,10 @@ class MySQLBase(ABC):
 
         Recovery for cases where majority loss put the cluster in defunct state.
         """
-        # This is the ONLY operation in MySQL Shell 8.0 that requires
-        # an explicit username + password in the instance definition string.
-        # Otherwise, the `ubuntu` user is used.
-        instance_def = (
-            f"{self.cluster_admin_user}:{self.cluster_admin_password}@{self.instance_address}"
-        )
-
         try:
             self._cluster_client_tcp.force_instance_quorum_into_cluster(
                 cluster_name=self.cluster_name,
-                instance_host=instance_def,
+                instance_host=self.instance_address,
                 instance_port=str(3306),
             )
         except ExecutionError as e:
@@ -2957,8 +2889,11 @@ class MySQLBase(ABC):
 
     def flush_mysql_audit_log(self) -> None:
         """Flushes the audit log type."""
+        query = "SELECT audit_log_rotate()"
+        executor = self._build_instance_tcp_executor(self.instance_address)
+
         with suppress(ExecutionError):
-            self._instance_client_tcp.set_instance_variable(Scope.GLOBAL, "audit_log_flush", "ON")
+            executor.execute_sql(query)
 
     def get_non_system_databases(self) -> set[str]:
         """Return a set with all non system databases on the server."""
@@ -2997,11 +2932,6 @@ class MySQLBase(ABC):
             raise MySQLGetGroupReplicationIDError() from e
         else:
             return group_id
-
-    @abstractmethod
-    def _file_exists(self, path: str) -> bool:
-        """Check if a file exists."""
-        raise NotImplementedError
 
     @abstractmethod
     def is_mysqld_running(self) -> bool:

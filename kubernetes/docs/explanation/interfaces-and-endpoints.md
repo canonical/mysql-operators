@@ -14,7 +14,7 @@ Example:
 
 ```shell
 # Deploy Charmed MySQL cluster with 3 nodes
-juju deploy mysql-k8s -n 3 --trust --channel 8.0
+juju deploy mysql-k8s -n 3 --trust --channel 8.4/edge
 
 # Deploy the relevant charms, e.g. mysql-test-app
 juju deploy mysql-test-app
@@ -33,5 +33,5 @@ juju status --relations
 See details about database user roles in [](/explanation/users).
 
 ```{note}
-In order to integrate with this charm, every table created by the integrated application must have a primary key. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.0/en/group-replication-requirements.html) enabled in this charm.
+In order to integrate with this charm, every table created by the integrated application must have a primary key. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.4/en/group-replication-requirements.html) enabled in this charm.
 ```

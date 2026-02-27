@@ -46,11 +46,11 @@ juju deploy mysql -n 3 \
 After a successful deployment, `juju status` will show an active application:
 
 ```shell
-Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  00:59:53+02:00
+Model    Controller  Cloud/Region     Version  SLA          Timestamp
+mymodel  gce         google/us-east1  3.6.13   unsupported  00:59:53+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.36-0ubun...  active      3  mysql  8.0/stable  240  no       
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql  8.4.7    active      3  mysql  8.4/edge  XXX  no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0   active    idle   0        34.23.202.220   3306,33060/tcp  
@@ -58,9 +58,9 @@ mysql/1*  active    idle   1        34.148.44.51    3306,33060/tcp  Primary
 mysql/2   active    idle   2        34.23.252.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@22.04  us-east1-c  RUNNING
-1        started  34.148.44.51   juju-5fe1b7-1  ubuntu@22.04  us-east1-d  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@22.04  us-east1-b  RUNNING
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
+1        started  34.148.44.51   juju-5fe1b7-1  ubuntu@24.04  us-east1-d  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
 ```
 
 and each unit/vm will sit in the separate AZ out of the box:
@@ -90,11 +90,11 @@ Deleted [https://www.googleapis.com/compute/v1/projects/data-platform-testing-35
 
 The new MySQL Primary elected automatically:
 ```shell
-Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:03:13+02:00
+Model    Controller  Cloud/Region     Version  SLA          Timestamp
+mymodel  gce         google/us-east1  3.6.13   unsupported  01:03:13+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.36-0ubun...  active    2/3  mysql  8.0/stable  240  no       
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql  8.4.7    active    2/3  mysql  8.4/edge  XXX  no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        34.23.202.220   3306,33060/tcp  Primary
@@ -116,19 +116,19 @@ will remove unit mysql/1
 
 The command `juju status` shows the machines in a healthy state, but MySQL HA recovery is necessary:
 ```shell
-Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:04:42+02:00
+Model    Controller  Cloud/Region     Version  SLA          Timestamp
+mymodel  gce         google/us-east1  3.6.13   unsupported  01:04:42+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.36-0ubun...  active      2  mysql  8.0/stable  240  no       
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql  8.4.7    active      2  mysql  8.4/edge  XXX  no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        34.23.202.220   3306,33060/tcp  Primary
 mysql/2   active    idle   2        34.23.252.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@22.04  us-east1-c  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@22.04  us-east1-b  RUNNING
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
 ```
 
 Request Juju to add a new unit in the proper AZ:
@@ -138,11 +138,11 @@ juju add-unit mysql -n 1
 
 Juju uses the right AZ where the node is missing. Run `juju status`:
 ```shell
-Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:05:12+02:00
+Model    Controller  Cloud/Region     Version  SLA          Timestamp
+mymodel  gce         google/us-east1  3.6.13   unsupported  01:05:12+02:00
 
-App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql           active    2/3  mysql  8.0/stable  240  no       
+App    Version  Status  Scale  Charm  Channel   Rev  Exposed  Message
+mysql           active    2/3  mysql  8.4/edge  XXX  no       
 
 Unit      Workload  Agent       Machine  Public address  Ports           Message
 mysql/0*  active    idle        0        34.23.202.220   3306,33060/tcp  Primary
@@ -150,9 +150,9 @@ mysql/2   active    idle        2        34.23.252.144   3306,33060/tcp
 mysql/3   waiting   allocating  3                                        waiting for machine
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@22.04  us-east1-c  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@22.04  us-east1-b  RUNNING
-3        pending                 juju-5fe1b7-3  ubuntu@22.04  us-east1-d  starting
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
+3        pending                 juju-5fe1b7-3  ubuntu@24.04  us-east1-d  starting
 ```
 
 ## Remove GCE setup
@@ -180,4 +180,3 @@ Re-check that there are no running GCE instances left (it should be empty):
 ```shell
 gcloud compute instances list
 ```
-

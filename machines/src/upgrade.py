@@ -8,7 +8,7 @@ import json
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from charms.data_platform_libs.v0.upgrade import (
     ClusterNotReadyError,
@@ -18,18 +18,18 @@ from charms.data_platform_libs.v0.upgrade import (
     VersionError,
 )
 from charms.mysql.v0.mysql import (
+    InstanceRole,
+    InstanceState,
+    MySQLComponentInstallError,
     MySQLGetMySQLVersionError,
-    MySQLPluginInstallError,
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
     MySQLStartMySQLDError,
     MySQLStopMySQLDError,
 )
-from mysql_shell import InstanceState
 from ops import RelationDataContent
 from ops.model import BlockedStatus, MaintenanceStatus, Unit
 from pydantic import BaseModel
-from typing_extensions import override
 
 from constants import CHARMED_MYSQL_COMMON_DIRECTORY, MYSQL_DATA_DIR, MYSQL_SYSTEM_USER, PEER
 
@@ -187,9 +187,16 @@ class MySQLVMUpgrade(DataUpgrade):
             # stop cron daemon to be able to query `error.log`
             set_cron_daemon("stop")
             self.charm._mysql.start_mysqld()
+
+            default_components = ["binlog_utils_udf", "validate_password"]
+            optional_components = []
             if self.charm.config.plugin_audit_enabled:
-                self.charm._mysql.install_plugins(["audit_log"])
-            self.charm._mysql.install_plugins(["binlog_utils_udf"])
+                optional_components.append("audit_log_filter")
+
+            self.charm._mysql.install_components([
+                *default_components,
+                *optional_components,
+            ])
         except VersionError:
             logger.exception("Failed to upgrade MySQL dependencies")
             self.set_unit_failed()
@@ -214,15 +221,15 @@ class MySQLVMUpgrade(DataUpgrade):
             logger.exception("Failed to stop MySQL server")
             self.set_unit_failed()
             return
-        except MySQLPluginInstallError:
-            logger.exception("Failed to install MySQL plugins")
+        except MySQLComponentInstallError:
+            logger.exception("Failed to install MySQL components")
             self.set_unit_failed()
             return
         finally:
             set_cron_daemon("start")
 
         try:
-            self.charm.unit.set_workload_version(self.charm._mysql.get_mysql_version() or "unset")
+            self.charm.unit.set_workload_version(self.charm._mysql.get_mysql_version())
         except MySQLGetMySQLVersionError:
             # don't fail on this, just log it
             logger.warning("Failed to get MySQL version")
@@ -284,7 +291,7 @@ class MySQLVMUpgrade(DataUpgrade):
     def _check_server_unsupported_downgrade(self) -> bool:
         """Check error log for unsupported downgrade.
 
-        https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
+        https://dev.mysql.com/doc/mysql-errors/8.4/en/server-error-reference.html
         """
         if log_content := self.charm._mysql.fetch_error_log():
             return "MY-013171" in log_content
@@ -307,7 +314,7 @@ class MySQLVMUpgrade(DataUpgrade):
         )
         self.charm.workload_initialise()
         # reset flags
-        self.charm.unit_peer_data["member-role"] = "secondary"
+        self.charm.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
         self.charm.unit_peer_data["member-state"] = "waiting"
 
         # rescan is needed to remove the instance old incarnation from the cluster

@@ -75,7 +75,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     model_1.deploy(
         charm=charm,
         app=MYSQL_APP_1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={**configuration, "cluster-name": "lima"},
         constraints=constraints,
         num_units=3,
@@ -84,7 +84,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     model_2.deploy(
         charm=charm,
         app=MYSQL_APP_2,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={**configuration, "cluster-name": "cuzco"},
         constraints=constraints,
         num_units=3,

@@ -67,8 +67,8 @@ Make sure the snap `charmed-mysql` if installed and functional:
 
 ```shell
 ubuntu@juju-6692b6-0:~$ sudo snap list charmed-mysql
-Name           Version  Rev  Tracking       Publisher        Notes
-charmed-mysql  8.0.34   69   latest/stable  dataplatformbot  held
+Name           Version  Rev  Tracking  Publisher        Notes
+charmed-mysql  8.4.7    XXX  8.4/edge  dataplatformbot  held
 ```
 
 From here you can make sure all snap (systemd) services are running.

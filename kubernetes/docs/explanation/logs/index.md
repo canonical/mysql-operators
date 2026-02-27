@@ -60,13 +60,13 @@ For more details, see the [Audit Logs explanation].
 2023-10-24T23:28:07.048728Z mysqld_safe Number of processes running now: 0
 2023-10-24T23:28:07.063027Z mysqld_safe mysqld restarted
 2023-10-24T23:28:07.472084Z 0 [Warning] [MY-010101] [Server] Insecure configuration for --secure-file-priv: Location is accessible to all OS users. Consider choosing a different directory.
-2023-10-24T23:28:07.472149Z 0 [System] [MY-010116] [Server] /snap/charmed-mysql/69/usr/sbin/mysqld (mysqld 8.0.34-0ubuntu0.22.04.1) starting as process 4134
+2023-10-24T23:28:07.472149Z 0 [System] [MY-010116] [Server] /snap/charmed-mysql/69/usr/sbin/mysqld (mysqld 8.4.7-0ubuntu0.24.04.1) starting as process 4134
 2023-10-24T23:28:07.482044Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
 2023-10-24T23:28:11.219123Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
 2023-10-24T23:28:11.486308Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
 2023-10-24T23:28:11.487473Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
 2023-10-24T23:28:11.538807Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '0.0.0.0' port: 33060, socket: /var/snap/charmed-mysql/common/var/run/mysqld/mysqlx.sock
-2023-10-24T23:28:11.538957Z 0 [System] [MY-010931] [Server] /snap/charmed-mysql/69/usr/sbin/mysqld: ready for connections. Version: '8.0.34-0ubuntu0.22.04.1'  socket: '/var/snap/charmed-mysql/common/var/run/mysqld/mysqld.sock'  port: 3306  (Ubuntu).
+2023-10-24T23:28:11.538957Z 0 [System] [MY-010931] [Server] /snap/charmed-mysql/69/usr/sbin/mysqld: ready for connections. Version: '8.4.7-0ubuntu0.24.04.1'  socket: '/var/snap/charmed-mysql/common/var/run/mysqld/mysqld.sock'  port: 3306  (Ubuntu).
 2023-10-24T23:28:17.983851Z 12 [Warning] [MY-010604] [Repl] Neither --relay-log nor --relay-log-index were used; so replication may break when this MySQL server acts as a replica and has his hostname changed!! Please use '--relay-log=juju-9860bb-0-relay-bin' to avoid this problem.
 2023-10-24T23:28:17.999093Z 12 [System] [MY-010597] [Repl] 'CHANGE REPLICATION SOURCE TO FOR CHANNEL 'mysqlsh.test' executed'. Previous state source_host='', source_port= 3306, source_log_file='', source_log_pos= 4, source_bind=''. New state source_host='juju-9860bb-0.lxd', source_port= 3306, source_log_file='', source_log_pos= 4, source_bind=''.
 2023-10-24T23:28:18.025941Z 15 [Warning] [MY-010897] [Repl] Storing MySQL user name or password information in the connection metadata repository is not secure and is therefore not recommended. Please consider using the USER and PASSWORD connection options for START REPLICA; see the 'START REPLICA Syntax' in the MySQL Manual for more information.
@@ -135,7 +135,7 @@ The following are logrotate config values used for log rotation:
 
 ## High Level Design
 
-There is a cron job on the machine where the charm exists that is triggered every minute and runs `logrotate`. The logrotate utility does *not* use `copytruncate`. Instead, the existing log file is moved into the archive directory by logrotate, and then the logrotate's postrotate script invokes `juju-run` (or `juju-exec` depending on the juju version) to dispatch a custom event. This custom event's handler flushes the MySQL log with the [FLUSH](https://dev.mysql.com/doc/refman/8.0/en/flush.html) statement that will result in a new and empty log file being created under `/var/log/mysql` and the rotated file's descriptor being closed.
+There is a cron job on the machine where the charm exists that is triggered every minute and runs `logrotate`. The logrotate utility does *not* use `copytruncate`. Instead, the existing log file is moved into the archive directory by logrotate, and then the logrotate's postrotate script invokes `juju-run` (or `juju-exec` depending on the juju version) to dispatch a custom event. This custom event's handler flushes the MySQL log with the [FLUSH](https://dev.mysql.com/doc/refman/8.4/en/flush.html) statement that will result in a new and empty log file being created under `/var/log/mysql` and the rotated file's descriptor being closed.
 
 We use a custom event in juju to execute the FLUSH statement in order to avoid storing any credentials on the disk. The charm code has a mechanism that will retrieve credentials from the peer relation databag or juju secrets backend, if available, and keep these credentials in memory for the duration of the event handler.
 

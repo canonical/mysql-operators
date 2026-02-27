@@ -39,10 +39,10 @@ Future improvements are planned to the `store-admin` tool so that it could poten
 The bundle export example:
 
 <details> 
-<summary><code>store-admin export bundle mysql-bundle --channel=8.0/edge --series=jammy --arch=amd64</code></summary>
+<summary><code>store-admin export bundle mysql-bundle --channel=8.4/edge --series=jammy --arch=amd64</code></summary>
 
 ```
-Downloading mysql-bundle revision 52 (8.0/edge)
+Downloading mysql-bundle revision 52 (8.4/edge)
   [####################################]  100%
 Downloading data-integrator revision 71 (edge)
   [####################################]  100%
@@ -81,9 +81,9 @@ Downloading grafana-agent revision 51 (latest/stable amd64)
   [####################################]  100%          
 Downloading grafana-agent revision 82 (latest/stable amd64)
   [####################################]  100%          
-Downloading charmed-mysql revision 109 (8.0/edge amd64)
+Downloading charmed-mysql revision 109 (8.4/edge amd64)
   [####################################]  100%          
-Downloading charmed-mysql revision 114 (8.0/edge amd64)
+Downloading charmed-mysql revision 114 (8.4/edge amd64)
   [####################################]  100%          
 Downloading canonical-livepatch revision 282 (latest/stable amd64)
   [####################################]  100%          
@@ -141,4 +141,3 @@ Use [the official release notes](/reference/releases) as a reference.
 * https://ubuntu.com/kubernetes/docs/install-offline
 * [Charmed Kubeflow > Install in an air-gapped environment](https://documentation.ubuntu.com/charmed-kubeflow/how-to/install/install-air-gapped/)
 *  [Wikipedia > Air gap (networking)](https://en.wikipedia.org/wiki/Air_gap_(networking))
-
