@@ -1,8 +1,8 @@
 # MySQL operators
-[![Charmhub](https://charmhub.io/mysql/badge.svg)](https://charmhub.io/mysql)
-[![Charmhub](https://charmhub.io/mysql-k8s/badge.svg)](https://charmhub.io/mysql-k8s)
-[![Release](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml/badge.svg?branch=8.0/edge)](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml)
-[![Tests](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml/badge.svg?branch=8.0/edge)](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml)
+[![Charmhub](https://charmhub.io/mysql/badge.svg?channel=8.4/edge)](https://charmhub.io/mysql)
+[![Charmhub](https://charmhub.io/mysql-k8s/badge.svg?channel=8.4/edge)](https://charmhub.io/mysql-k8s)
+[![Release](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml/badge.svg?branch=8.4/edge)](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml)
+[![Tests](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml/badge.svg?branch=8.4/edge)](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml)
 
 ## Description
 
