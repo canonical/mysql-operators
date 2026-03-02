@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "How-to guides for Charmed MySQL covering deployment, backup and restore, monitoring, upgrades, charm development, and cluster replication."
+---
+
 (how-to)=
 # How-to guides
 

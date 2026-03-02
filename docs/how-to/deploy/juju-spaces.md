@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL using Juju network spaces to control network binding and isolate traffic between application components."
+---
+
 (juju-spaces)=
 # Deploy on Juju spaces
 

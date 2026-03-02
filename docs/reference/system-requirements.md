@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "System requirements for Charmed MySQL: Ubuntu and Kubernetes versions, supported Juju releases, MySQL group replication requirements, and hardware specs."
+---
+
 (system-requirements)=
 # System requirements
 

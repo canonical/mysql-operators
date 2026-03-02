@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s across three availability zones on Google Kubernetes Engine using Juju zone constraints and pod anti-affinity rules."
+---
+
 (multi-az-gke)=
 # Multi-AZ example on GKE
 

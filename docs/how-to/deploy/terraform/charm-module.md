@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy the Charmed MySQL Terraform charm module using the Juju provider: install Terraform, clone the repo, initialize, and verify deployment."
+---
+
 (charm-module)=
 # Deploy charm module
 

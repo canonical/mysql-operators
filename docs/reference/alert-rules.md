@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Complete reference for Prometheus alert rules bundled with Charmed MySQL, covering connectivity, connection, slow query, and replication alerts."
+---
+
 (alert-rules)=
 # Alert rules
 

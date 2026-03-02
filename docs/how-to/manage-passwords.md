@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Learn how to retrieve and rotate passwords for Charmed MySQL users using the get-password and set-password Juju actions on the leader unit."
+---
+
 (manage-passwords)=
 # How to manage passwords
 

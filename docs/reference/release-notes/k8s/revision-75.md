@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revision 75 (MySQL 8.0.32): HA via InnoDB Group replication, S3 backups, TLS, and legacy interface support."
+---
+
 (revision-75)=
 # Revision 75
 

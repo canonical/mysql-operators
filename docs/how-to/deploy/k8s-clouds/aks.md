@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s on Azure Kubernetes Service (AKS): install tooling, authenticate, and bootstrap a Juju controller on AKS."
+---
+
 (aks)=
 # How to deploy on AKS
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Manually recover a Charmed MySQL cluster from quorum loss when a majority of nodes are unavailable, with data loss warnings and recovery steps."
+---
+
 (recover-from-quorum-loss)=
 # Recover from quorum loss
 

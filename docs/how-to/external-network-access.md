@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Connect to Charmed MySQL from outside the local network using MySQL Router with virtual IPs or cross-controller Juju relations."
+---
+
 (external-network-access)=
 # How to connect to your database outside the local network
 

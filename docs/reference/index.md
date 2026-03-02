@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference documentation for Charmed MySQL including release notes, system requirements, profiles, plugins, alert rules, statuses, and contacts."
+---
+
 (reference)=
 # Reference
 

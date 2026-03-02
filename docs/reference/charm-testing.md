@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference overview of software test types for Charmed MySQL, including smoke and integration tests, for charm developers and contributors."
+---
+
 (charm-testing)=
 # Charm testing
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on LXD with an existing Juju and LXD environment. See the tutorial for a complete step-by-step walkthrough."
+---
+
 (lxd)=
 # Deploy on LXD
 

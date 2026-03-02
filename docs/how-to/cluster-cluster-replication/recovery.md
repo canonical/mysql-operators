@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Recover a Charmed MySQL ClusterSet from failure scenarios including detached clusters, lost clusters, and invalidated replication states."
+---
+
 (cluster-cluster-recovery)=
 # Recovery
 

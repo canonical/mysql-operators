@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revisions 312 and 313 (MySQL 8.0.39): ARM64 support, Audit Log plugin, and Prometheus alert rules."
+---
+
 (revisions-312-313)=
 # Revisions 312, 313
 

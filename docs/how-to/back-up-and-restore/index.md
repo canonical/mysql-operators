@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "How-to guides for backing up and restoring Charmed MySQL, covering S3 configuration, creating backups, restoring, and cluster migration."
+---
+
 (back-up-and-restore)=
 # How to back up and restore
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand how the Audit Log plugin works in Charmed MySQL, including output samples, storage paths, rotation frequency, and configuration options."
+---
+
 (audit-logs)=
 # Audit logs
 

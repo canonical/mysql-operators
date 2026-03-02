@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand the architecture of Charmed MySQL for VM and Kubernetes deployments, built on the charmed-mysql snap and MySQL InnoDB ClusterSet."
+---
+
 (architecture)=
 # Architecture
 

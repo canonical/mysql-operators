@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revision 196 (MySQL 8.0.34): Juju 3 support, Juju secrets, in-place upgrades, and profiles configuration."
+---
+
 (revision-196)=
 # Revision 196
 

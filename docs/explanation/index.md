@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Conceptual documentation for Charmed MySQL covering architecture, Juju integration, users, roles, logs, security, and key interfaces."
+---
+
 (explanation)=
 # Explanation
 

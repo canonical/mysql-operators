@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revision 153 (MySQL 8.0.36): async cluster-cluster replication, COS Tempo tracing, and max connections config."
+---
+
 (revision-153)=
 # Revision 153
 

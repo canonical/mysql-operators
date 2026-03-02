@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Contact information for Charmed MySQL: GitHub for bug reports, Launchpad for security issues, Matrix channel, and other useful resources."
+---
+
 (contacts)=
 # Contact
 

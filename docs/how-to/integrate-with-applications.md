@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Integrate Charmed MySQL with charmed applications via mysql_client interface or with non-charmed apps using the data-integrator charm."
+---
+
 (integrate-with-applications)=
 # How to integrate with applications
 

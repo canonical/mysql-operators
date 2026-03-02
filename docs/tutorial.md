@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Follow this hands-on tutorial to deploy, scale, and manage Charmed MySQL on virtual machines using Juju from setup to clean up."
+---
+
 (tutorial)=
 # Tutorial
 

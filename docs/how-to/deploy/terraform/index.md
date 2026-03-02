@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL using Terraform and the Juju Terraform Provider, using either a charm module or a full product module."
+---
+
 (terraform)=
 # How to deploy using Terraform
 

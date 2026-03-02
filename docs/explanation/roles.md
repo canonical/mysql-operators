@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference for predefined roles in Charmed MySQL, including charmed_backup, charmed_dba, charmed_router, and other custom MySQL roles."
+---
+
 (roles)=
 # Roles
 

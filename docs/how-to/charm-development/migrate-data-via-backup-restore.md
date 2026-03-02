@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Migrate database data to Charmed MySQL using Percona XtraBackup and S3 storage, applicable to legacy charm migrations and external MySQL imports."
+---
+
 (migrate-data-backup-restore)=
 # How to migrate data via backup/restore
 

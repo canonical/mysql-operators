@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Connect client applications to a Charmed MySQL cluster-cluster replication setup by offering and consuming database endpoints across Juju models."
+---
+
 (cluster-cluster-clients)=
 # Clients
 
