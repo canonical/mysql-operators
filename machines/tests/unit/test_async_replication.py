@@ -511,6 +511,7 @@ class TestAsyncRelation(unittest.TestCase):
 
     def test_consumer_relation_created_deferred_when_peer_data_not_set(self, _):
         """Test that consumer relation created event is deferred when peer data is not set."""
+        self.harness.set_leader(True)
         with (
             patch.object(
                 type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)
@@ -524,6 +525,7 @@ class TestAsyncRelation(unittest.TestCase):
 
     def test_consumer_relation_changed_deferred_when_peer_data_not_set(self, _):
         """Test that consumer relation changed event is deferred when peer data is not set."""
+        self.harness.set_leader(True)
         with (
             patch.object(
                 type(self.harness.charm), "_is_peer_data_set", property(lambda self: False)
