@@ -19,9 +19,8 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v40.0.0
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v42.0.1
     with:
-      cache: false  # TODO: cleanup
       path-to-charm-directory: ${{ matrix.path }}
 
   integration-test:
@@ -86,20 +85,20 @@ jobs:
       # git push origin gh-pages-beta
       # )
       - name: Checkout GitHub pages branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: gh-pages-beta
           path: repo/
       - name: Download default test results
         # Default test results in case the integration tests time out or runner set up fails
         # (So that Allure report will show "unknown"/"failed" test result, instead of omitting the test)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: allure-default-results/
           pattern: allure-default-results-integration-test-*
           merge-multiple: true
       - name: Download test results
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: allure-results/
           pattern: allure-results-integration-test-*

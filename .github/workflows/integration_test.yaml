@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up environment
         run: |
           sudo snap install go --classic
@@ -83,7 +83,7 @@ jobs:
         # Default test results in case the integration tests time out or runner set up fails
         # (So that Allure report will show "unknown"/"failed" test result, instead of omitting the test)
         if: ${{ github.event_name == 'schedule' && github.run_attempt == '1' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-default-results-integration-test-${{ inputs.path-to-charm-directory }}
           path: ${{ inputs.path-to-charm-directory }}/allure-default-results/
@@ -113,7 +113,7 @@ jobs:
           df --human-readable
       - name: Checkout
         timeout-minutes: 3
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up environment
         timeout-minutes: 5
         run: |
@@ -122,7 +122,7 @@ jobs:
           go install github.com/snapcore/spread/cmd/spread@latest
       - name: Download packed charm(s)
         timeout-minutes: 5
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: ${{ inputs.artifact-prefix }}-*
           merge-multiple: true
@@ -145,7 +145,7 @@ jobs:
         # Allure can only process one result per pytest test ID. If parameterization is done via
         # spread instead of pytest, there will be overlapping pytest test IDs.
         if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) && startsWith(matrix.job.spread_job, 'github-ci:ubuntu-24.04:') && github.event_name == 'schedule' && github.run_attempt == '1' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-results-integration-test-${{ inputs.path-to-charm-directory }}-${{ matrix.job.name_in_artifact }}
           path: ${{ inputs.path-to-charm-directory }}/artifacts/${{ matrix.job.spread_job }}/allure-results/
@@ -186,7 +186,7 @@ jobs:
       - name: Upload logs
         timeout-minutes: 5
         if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-integration-test-${{ inputs.path-to-charm-directory }}-${{ matrix.job.name_in_artifact }}
           path: ~/logs/
