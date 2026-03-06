@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 # The unique Charmhub library identifier, never change it
 LIBID = "4de21f1a022c4e2c87ac8e672ec16f6a"
 LIBAPI = 0
-LIBPATCH = 12
+LIBPATCH = 13
 
 PYDEPS = ["mysql_shell_client ~= 0.7"]
 
@@ -73,7 +73,7 @@ class ClusterSetInstanceState(typing.NamedTuple):
     relation_side: str  # primary or replica
 
 
-class States(str, enum.Enum):
+class States(enum.StrEnum):
     """States for the relation."""
 
     UNINITIALIZED = "uninitialized"  # relation is not initialized
@@ -104,18 +104,12 @@ class MySQLAsyncReplication(Object):
         """Current cluster set role of the unit, after the relation is established."""
         is_replica = self._charm._mysql.is_cluster_replica()
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         if is_replica:
-            cluster_role = ClusterRole.REPLICA.lower()
+            cluster_role = ClusterRole.REPLICA
         elif is_replica is False:
-            cluster_role = ClusterRole.PRIMARY.lower()
+            cluster_role = ClusterRole.PRIMARY
         else:
-            # TODO:
-            #  Uppercase when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
-            cluster_role = "unset"
+            cluster_role = "UNSET"
 
         instance_role = self._charm._mysql.get_member_role()
 
@@ -124,10 +118,7 @@ class MySQLAsyncReplication(Object):
         else:
             relation_side = RELATION_OFFER
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
-        return ClusterSetInstanceState(cluster_role, instance_role.lower(), relation_side)
+        return ClusterSetInstanceState(cluster_role, instance_role, relation_side)
 
     @property
     def cluster_name(self) -> str:
@@ -195,11 +186,8 @@ class MySQLAsyncReplication(Object):
         """Handle the async relation being broken from either side."""
         # Remove the replica cluster, if this is the primary
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
         if (
-            self.role.cluster_role in (ClusterRole.REPLICA.lower(), "unset")
+            self.role.cluster_role in (ClusterRole.REPLICA, "UNSET")
             and not self._charm.removing_unit
         ):
             # The cluster being removed is a replica cluster
@@ -242,10 +230,7 @@ class MySQLAsyncReplication(Object):
             # set flag to persist removed from cluster-set state
             self._charm.app_peer_data["removed-from-cluster-set"] = "true"
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
-        elif self.role.cluster_role == ClusterRole.PRIMARY.lower():
+        elif self.role.cluster_role == ClusterRole.PRIMARY:
             if self._charm.unit.is_leader():
                 # only leader units can remove replica clusters
                 remote_data = event.relation.data.get(event.relation.app) or {}
@@ -273,7 +258,7 @@ class MySQLAsyncReplication(Object):
             elif self._charm.unit_peer_data.get("member-state") == "waiting":
                 # set member-state to allow status update
                 # needed for secondaries status update when removing due to replica with user data
-                self._charm.unit_peer_data["member-state"] = "unknown"
+                self._charm.unit_peer_data["member-state"] = "UNKNOWN"
             self._charm._on_update_status(None)
 
         if self._charm.app_peer_data.get("async-ready"):
@@ -679,10 +664,7 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
 
     def _check_version(self) -> bool:
         """Check if the MySQL version is compatible with the primary cluster."""
-        # TODO:
-        #  Remove `.split("-")[0]` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
-        remote_version = self.remote_relation_data.get("mysql-version").split("-")[0]
+        remote_version = self.remote_relation_data.get("mysql-version")
         local_version = self._charm._mysql.get_mysql_version()
 
         if not remote_version:
@@ -867,12 +849,9 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
             )
             logger.debug("Awaiting other units to join the cluster")
 
-            # TODO:
-            #  Remove `.lower()` when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
             # set state flags to allow secondaries to join the cluster
-            self._charm.unit_peer_data["member-state"] = InstanceState.ONLINE.lower()
-            self._charm.unit_peer_data["member-role"] = InstanceRole.PRIMARY.lower()
+            self._charm.unit_peer_data["member-state"] = InstanceState.ONLINE
+            self._charm.unit_peer_data["member-role"] = InstanceRole.PRIMARY
             event.defer()
 
     def _on_consumer_non_leader_created(self, _):

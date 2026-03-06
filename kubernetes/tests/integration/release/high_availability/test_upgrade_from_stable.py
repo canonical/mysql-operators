@@ -83,9 +83,9 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
     juju.deploy(
         charm=MYSQL_APP_NAME,
         app=MYSQL_APP_NAME,
-        base="ubuntu@22.04",
-        channel="8.0/stable",
-        config={"profile": "testing"} if revision >= 99 else {},
+        base="ubuntu@24.04",
+        channel="8.4/stable",
+        config={"profile": "testing"},
         resources={"mysql-image": image},
         revision=revision,
         num_units=3,

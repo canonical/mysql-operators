@@ -21,8 +21,8 @@ Otherwise, you must run the `create-backup` action on a non-primary unit. To fin
 run `juju run mysql-k8s/leader get-cluster-status` to find the primary unit.
 
 The `create-backup` action validates that the unit in charge of the backup is healthy, by:
-- Checking that the MySQL cluster is in a valid state (`OK` or `OK_PARTIAL` from the InnoDB [cluster status](https://dev.mysql.com/doc/mysql-shell/8.0/en/monitoring-innodb-cluster.html))
-- Checking that the MySQL instance is in a valid state (`ONLINE` from Replication [member states](https://dev.mysql.com/doc/refman/8.0/en/group-replication-server-states.html).
+- Checking that the MySQL cluster is in a valid state (`OK` or `OK_PARTIAL` from the InnoDB [cluster status](https://dev.mysql.com/doc/mysql-shell/8.4/en/monitoring-innodb-cluster.html))
+- Checking that the MySQL instance is in a valid state (`ONLINE` from Replication [member states](https://dev.mysql.com/doc/refman/8.4/en/group-replication-server-states.html).
 
 In order to override these precautions, use the `force` flag:
 ```shell
@@ -35,4 +35,3 @@ You can list your available, failed, and in progress backups by running the `lis
 ```shell
 juju run mysql-k8s/leader list-backups
 ```
-

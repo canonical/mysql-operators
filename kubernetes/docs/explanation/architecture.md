@@ -1,6 +1,6 @@
 # Architecture
 
-[MySQL](https://www.mysql.com/) is the world’s most popular open source database. The “[Charmed MySQL K8s](https://charmhub.io/mysql-k8s)” is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/), it is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.0/en/innodb-clusterset.html).
+[MySQL](https://www.mysql.com/) is the world’s most popular open source database. The “[Charmed MySQL K8s](https://charmhub.io/mysql-k8s)” is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/), it is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-clusterset.html).
 
 ## Juju K8s Concept
 
@@ -71,7 +71,7 @@ services:
 
 The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
 
-The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.0/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
+The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
 
 All `exporter` services are activated after the relation with [COS Monitoring](/how-to/monitoring-cos/enable-monitoring) only.
 
@@ -81,7 +81,7 @@ All `exporter` services are activated after the relation with [COS Monitoring](/
 
 The ROCK "charmed-mysql" also ships list of tools used by charm:
 * `mysql` - mysql client to connect `mysqld`.
-* `mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) client to configure MySQL cluster.
+* `mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.4/en/) client to configure MySQL cluster.
 * `xbcloud` - a tool to download and upload full or part of xbstream archive from/to the cloud.
 * `xbstream` - a tool to support simultaneous compression and streaming.
 * `xtrabackup` - a tool to backup/restore MySQL DB.
@@ -93,7 +93,7 @@ The `xtrabackup (xbcloud+xbstream)` used for [MySQL Backups](/how-to/back-up-and
 
 ### MySQL Router
 
-[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.0/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The "[Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s)" is an independent charm "Charmed MySQL K8s" can be related with.
+[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.4/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The "[Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s)" is an independent charm "Charmed MySQL K8s" can be related with.
 
 ### TLS Certificates Operator
 
@@ -160,4 +160,3 @@ mysql           0      45
 s3_helpers      0      4                                                                                                                                                                                                                              
 tls             0      2                                     
 ```
-

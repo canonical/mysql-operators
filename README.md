@@ -1,8 +1,8 @@
 # MySQL operators
-[![Charmhub](https://charmhub.io/mysql/badge.svg)](https://charmhub.io/mysql)
-[![Charmhub](https://charmhub.io/mysql-k8s/badge.svg)](https://charmhub.io/mysql-k8s)
-[![Release](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml/badge.svg?branch=8.0/edge)](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml)
-[![Tests](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml/badge.svg?branch=8.0/edge)](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml)
+[![Charmhub](https://charmhub.io/mysql/badge.svg?channel=8.4/edge)](https://charmhub.io/mysql)
+[![Charmhub](https://charmhub.io/mysql-k8s/badge.svg?channel=8.4/edge)](https://charmhub.io/mysql-k8s)
+[![Release](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml/badge.svg?branch=8.4/edge)](https://github.com/canonical/mysql-operators/actions/workflows/release.yaml)
+[![Tests](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml/badge.svg?branch=8.4/edge)](https://github.com/canonical/mysql-operators/actions/workflows/ci.yaml)
 
 ## Description
 
@@ -17,14 +17,14 @@ Deploying this charm depends on the substrate of choice
 ### Kubernetes
 ```shell
 juju add-model mysql
-juju deploy mysql-k8s --channel 8.0/stable
+juju deploy mysql-k8s --channel 8.4/stable
 juju status --watch 1s
 ```
 
 ### Bare metal
 ```shell
 juju add-model mysql
-juju deploy mysql --channel 8.0/stable
+juju deploy mysql --channel 8.4/stable
 juju status --watch 1s
 ```
 
@@ -46,7 +46,7 @@ There relations are defined over well-defined interfaces, that both _requirer_ a
 Example:
 ```shell
 juju add-model mysql
-juju deploy mysql --channel 8.0/stable
+juju deploy mysql --channel 8.4/stable
 juju deploy mysql-test-app
 
 # Relate MySQL with your application

@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, call, patch
 
 import tenacity
 from charms.mysql.v0.mysql import (
+    ALLOWED_COMPONENTS,
     ROLE_BACKUP,
     ROLE_DBA,
     ROLE_DDL,
@@ -854,14 +855,12 @@ class TestMySQLBase(unittest.TestCase):
 
     def test_get_mysql_version(self):
         """Test get_mysql_version() method."""
-        self.mock_executor.execute_sql.return_value = [
-            {"version": "8.0.29-0ubuntu0.20.04.3"},
-        ]
+        self.mock_executor.execute_sql.return_value = [{"version": "8.4.0"}]
 
         query = "SELECT @@GLOBAL.`version` AS `version`"
 
         version = self.mysql.get_mysql_version()
-        self.assertEqual(version, "8.0.29")
+        self.assertEqual(version, "8.4.0")
         self.mock_executor.execute_sql.assert_called_once_with(query)
 
         self.mock_executor.execute_sql.reset_mock()
@@ -1689,10 +1688,10 @@ class TestMySQLBase(unittest.TestCase):
             "general_log_file": "/var/log/mysql/general.log",
             "slow_query_log_file": "/var/log/mysql/slow.log",
             "binlog_expire_logs_seconds": "604800",
-            "loose-audit_log_format": "JSON",
-            "loose-audit_log_policy": "LOGINS",
-            "loose-audit_log_strategy": "ASYNCHRONOUS",
-            "loose-audit_log_file": "/var/log/mysql/audit.log",
+            "loose-audit_log_filter.format": "JSON",
+            "loose-audit_log_filter.policy": "LOGINS",
+            "loose-audit_log_filter.strategy": "ASYNCHRONOUS",
+            "loose-audit_log_filter.file": "/var/log/mysql/audit.log",
             "loose-group_replication_paxos_single_leader": "ON",
             "innodb_buffer_pool_chunk_size": "2902458368",
             "gtid_mode": "ON",
@@ -1926,52 +1925,55 @@ class TestMySQLBase(unittest.TestCase):
 
         self.assertEqual(self.mysql.get_cluster_set_name(), self.mysql.cluster_set_name)
 
-    @patch("charms.mysql.v0.mysql.MySQLBase._plugin_file_exists", return_value=True)
-    @patch("charms.mysql.v0.mysql.MySQLBase._read_only_disabled")
-    def test_install_plugin(self, _read_only_disabled, _plugin_file_exists):
-        """Test install_plugin."""
+    def test_install_components(self):
+        """Test install_components."""
         # ensure no install if already installed
-        self.mock_executor.execute_sql.return_value = [{"name": "plugin1"}]
-        self.mysql.install_plugins(["plugin1"])
+        self.mock_executor.execute_sql.return_value = [{"component_urn": "file://component_1"}]
+        self.mysql.install_components(["component_1"])
         self.mock_executor.execute_sql.assert_has_calls([
-            call("SELECT name FROM mysql.plugin WHERE name LIKE '%'"),
+            call("SELECT component_urn FROM mysql.component WHERE component_urn LIKE '%'"),
         ])
         self.mock_executor.execute_sql.reset_mock()
 
         # ensure not installed if unsupported
         self.mock_executor.execute_sql.return_value = []
-        self.mysql.install_plugins(["plugin1"])
+        self.mysql.install_components(["component_1"])
         self.mock_executor.execute_sql.assert_has_calls([
-            call("SELECT name FROM mysql.plugin WHERE name LIKE '%'"),
+            call("SELECT component_urn FROM mysql.component WHERE component_urn LIKE '%'"),
         ])
         self.mock_executor.execute_sql.reset_mock()
+
+        component_name = "binlog_utils_udf"
+        component_urn = ALLOWED_COMPONENTS[component_name]
 
         # ensure installed
         self.mock_executor.execute_sql.return_value = []
-        self.mysql.install_plugins(["audit_log"])
+        self.mysql.install_components([component_name])
         self.mock_executor.execute_sql.assert_has_calls([
-            call("SELECT name FROM mysql.plugin WHERE name LIKE '%'"),
-            call("INSTALL PLUGIN `audit_log` SONAME 'audit_log.so'"),
+            call("SELECT component_urn FROM mysql.component WHERE component_urn LIKE '%'"),
+            call(f"INSTALL COMPONENT '{component_urn}'"),
         ])
 
-    @patch("charms.mysql.v0.mysql.MySQLBase._read_only_disabled")
-    def test_uninstall_plugin(self, _read_only_disabled):
-        """Test uninstall_plugin."""
+    def test_uninstall_components(self):
+        """Test uninstall_components."""
         # ensure not uninstalled if not installed
         self.mock_executor.execute_sql.return_value = []
-        self.mysql.uninstall_plugins(["plugin1"])
+        self.mysql.uninstall_components(["component_1"])
         self.mock_executor.execute_sql.assert_has_calls([
-            call("SELECT name FROM mysql.plugin WHERE name LIKE '%'"),
+            call("SELECT component_urn FROM mysql.component WHERE component_urn LIKE '%'"),
         ])
 
         self.mock_executor.execute_sql.reset_mock()
 
+        component_name = "audit_log_filter"
+        component_urn = ALLOWED_COMPONENTS[component_name]
+
         # ensure uninstalled
-        self.mock_executor.execute_sql.return_value = [{"name": "audit_log"}]
-        self.mysql.uninstall_plugins(["audit_log"])
+        self.mock_executor.execute_sql.return_value = [{"component_urn": component_urn}]
+        self.mysql.uninstall_components([component_name])
         self.mock_executor.execute_sql.assert_has_calls([
-            call("SELECT name FROM mysql.plugin WHERE name LIKE '%'"),
-            call("UNINSTALL PLUGIN `audit_log`"),
+            call("SELECT component_urn FROM mysql.component WHERE component_urn LIKE '%'"),
+            call(f"UNINSTALL COMPONENT '{component_urn}'"),
         ])
 
     def test_strip_off_password(self):

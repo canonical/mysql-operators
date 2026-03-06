@@ -61,7 +61,7 @@ class TestDatabase(unittest.TestCase):
     @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
     @patch("mysql_k8s_helpers.MySQL.update_endpoints")
     @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")
-    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.0.29-0ubuntu0.20.04.3")
+    @patch("mysql_k8s_helpers.MySQL.get_mysql_version", return_value="8.4.0")
     @patch("mysql_k8s_helpers.MySQL.create_database")
     @patch("mysql_k8s_helpers.MySQL.create_scoped_user")
     @patch(
@@ -111,7 +111,7 @@ class TestDatabase(unittest.TestCase):
                 "password": "super_secure_password",
                 "username": username,
                 "endpoints": "mysql-k8s-primary.:3306",
-                "version": "8.0.29-0ubuntu0.20.04.3",
+                "version": "8.4.0",
                 "read-only-endpoints": "mysql-k8s-replicas.:3306",
                 "database": "test_db",
             },

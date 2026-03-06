@@ -7,15 +7,9 @@
 
 Both tools use multi-threading capabilities and support S3 storage to write/read dumps. <!--MyDumper is Open Source and maintained by the community, it is not a Percona, MariaDB, MySQL or Canonical product.-->
 
-```{note}
-For data stored in [legacy charms](/explanation/legacy-charm), see [How to migrate data via `mysqldump`](/how-to/development/migrate-data-via-mysqldump)
-```
-
 ## Prepare
 
-Before migrating data:
-* check all [limitations of the modern Charmed MySQL](/reference/system-requirements) charm
-* check [your application's compatibility](/explanation/legacy-charm) with Charmed MySQL
+Before migrating data check all [limitations](/reference/system-requirements) of the modern Charmed MySQL charm.
 
 ## Install `mydumper`
 
@@ -68,4 +62,3 @@ NEW_DB_PASS=...
 
 myloader -h ${NEW_DB_IP} -u ${NEW_DB_USER} -p ${NEW_DB_PASS} --directory=export-20230927-123337 --overwrite-tables
 ```
-

@@ -75,7 +75,7 @@ For more information on encryption, see the [Cryptography](https://discourse.cha
 
 ### Authentication
 
-Charmed MySQL uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
+Charmed MySQL uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
 
 ### Monitoring
 

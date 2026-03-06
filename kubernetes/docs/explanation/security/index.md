@@ -57,7 +57,7 @@ In the following sections, we provide guidance on how to harden your deployment 
 
 ### Base images
 
-Charmed MySQL K8s and Charmed MySQL Router K8s run on top of the same rock (OCI-compliant rockcraft-based image). The rock is based on Ubuntu 22.04 and ships the MySQL distribution binaries built by Canonical. It is stored in a [GitHub registry](https://github.com/canonical/charmed-mysql-rock/pkgs/container/charmed-mysql) and is used as the base image for different pods providing MySQL services. 
+Charmed MySQL K8s and Charmed MySQL Router K8s run on top of the same rock (OCI-compliant rockcraft-based image). The rock is based on Ubuntu 24.04 and ships the MySQL distribution binaries built by Canonical. It is stored in a [GitHub registry](https://github.com/canonical/charmed-mysql-rock/pkgs/container/charmed-mysql) and is used as the base image for different pods providing MySQL services. 
 
 ### Charmed operator security upgrades
 
@@ -77,7 +77,7 @@ For more information on encryption, see the [Cryptography](https://discourse.cha
 
 ### Authentication
 
-Charmed MySQL K8s uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
+Charmed MySQL K8s uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
 
 ### Monitoring and auditing
 

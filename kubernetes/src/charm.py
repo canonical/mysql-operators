@@ -31,6 +31,7 @@ from charms.mysql.v0.backups import S3_INTEGRATOR_RELATION_NAME, MySQLBackups
 from charms.mysql.v0.mysql import (
     BYTES_1MB,
     UNIT_ADD_LOCKNAME,
+    InstanceRole,
     InstanceState,
     MySQLAddInstanceToClusterError,
     MySQLCharmBase,
@@ -371,10 +372,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _get_primary_from_online_peer(self) -> str | None:
         """Get the primary address from an online peer."""
         for unit in self.peers.units:
-            # TODO:
-            #  Remove `.lower()` when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
-            if self.peers.data[unit].get("member-state") == InstanceState.ONLINE.lower():
+            if self.peers.data[unit].get("member-state") == InstanceState.ONLINE:
                 try:
                     return self._mysql.get_cluster_primary_address(
                         from_instance=self.get_unit_address(unit),
@@ -480,10 +478,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info("waiting: failed to acquire lock when adding instance to cluster")
                 return
 
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
-        self.unit_peer_data["member-state"] = InstanceState.ONLINE.lower()
+        self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
         self.unit.status = ActiveStatus(self.active_status_message)
         logger.info(f"Instance {instance_label} added to cluster")
 
@@ -596,7 +591,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _on_peer_relation_joined(self, _) -> None:
         """Handle the peer relation joined event."""
         # set some initial unit data
-        self.unit_peer_data.setdefault("member-role", "unknown")
+        self.unit_peer_data.setdefault("member-role", "UNKNOWN")
         self.unit_peer_data.setdefault("member-state", "waiting")
 
     def _on_config_changed(self, _: EventBase) -> None:
@@ -634,12 +629,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             and self._mysql.is_mysqld_running()
         ):
             logger.info("Configuration change requires restart")
-            if "loose-audit_log_format" in changed_config:
-                # plugins are manipulated running daemon
-                if self.config.plugin_audit_enabled:
-                    self._mysql.install_plugins(["audit_log"])
-                else:
-                    self._mysql.uninstall_plugins(["audit_log"])
             # restart the service
             self.on[f"{self.restart.name}"].acquire_lock.emit()
             return
@@ -723,12 +712,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self._mysql.configure_mysql_system_roles()
             self._mysql.configure_mysql_system_users()
 
+            default_components = ["binlog_utils_udf", "validate_password"]
+            optional_components = []
             if self.config.plugin_audit_enabled:
-                # Enable the audit plugin
-                self._mysql.install_plugins(["audit_log"])
-            self._mysql.install_plugins(["binlog_utils_udf"])
+                optional_components.append("audit_log_filter")
 
-            self._mysql.install_components(["file://component_validate_password"])
+            self._mysql.install_components([
+                *default_components,
+                *optional_components,
+            ])
 
             # Configure instance as a cluster node
             self._mysql.configure_instance()
@@ -812,7 +804,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     # Non-leader units try to join cluster
                     self.unit.status = WaitingStatus("Waiting for instance to join the cluster")
                     self.unit_peer_data.update({
-                        "member-role": "secondary",
+                        "member-role": InstanceRole.SECONDARY.value,
                         "member-state": "waiting",
                     })
             return
@@ -830,7 +822,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         ):
             # Non-leader units try to join cluster
             self.unit.status = WaitingStatus("Waiting for instance to join the cluster")
-            self.unit_peer_data.update({"member-role": "secondary", "member-state": "waiting"})
+            self.unit_peer_data.update({
+                "member-role": InstanceRole.SECONDARY.value,
+                "member-state": "waiting",
+            })
             self.join_unit_to_cluster()
             return
 
@@ -863,14 +858,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.error("Error getting member state. Avoiding potential cluster crash recovery")
             self.unit.status = MaintenanceStatus("Unable to get member state")
             return True
-
-        logger.info(f"Unit workload member-state is {state} with member-role {role}")
-
-        # TODO:
-        #  Remove `.lower()` when migrating to MySQL 8.4
-        #  (when breaking changes are allowed)
-        self.unit_peer_data["member-state"] = state.lower()
-        self.unit_peer_data["member-role"] = role.lower()
+        else:
+            logger.info(f"Unit workload member-state is {state} with member-role {role}")
+            self.unit_peer_data["member-role"] = role
+            self.unit_peer_data["member-state"] = state
 
         # set unit status based on member-{state,role}
         self.unit.status = (
@@ -885,14 +876,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if state == InstanceState.OFFLINE:
             # Group Replication is active but the member does not belong to any group
             all_states = {
-                self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
+                self.peers.data[unit].get("member-state", "UNKNOWN") for unit in self.peers.units
             }
 
-            # TODO:
-            #  Use InstanceState.OFFLINE when migrating to MySQL 8.4
-            #  (when breaking changes are allowed)
-            # Add state 'offline' for this unit (self.peers.unit does not include this unit)
-            if (all_states | {"offline"} == {"offline"} and self.unit.is_leader()) or (
+            if (all_states | {state} == {state} and self.unit.is_leader()) or (
                 only_single_uninitialized_node_across_cluster and all_states == {"waiting"}
             ):
                 # All instance are off, reboot cluster from outage from the leader unit
@@ -926,7 +913,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _execute_manual_rejoin(self) -> None:
         """Executes an instance manual rejoin.
 
-        It is supposed to be called when the MySQL 8.0.21+ auto-rejoin attempts have been exhausted,
+        It is supposed to be called when the MySQL auto-rejoin attempts have been exhausted,
         on an OFFLINE replica that still belongs to the cluster
         """
         if not self._mysql.instance_belongs_to_cluster(self.unit_label):

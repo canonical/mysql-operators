@@ -24,7 +24,7 @@ juju consume lisbon.db2-database
 juju switch app
 
 juju deploy mysql-test-app
-juju deploy mysql-router-k8s --trust --channel 8.0/edge
+juju deploy mysql-router-k8s --trust --channel 8.4/edge
 
 juju relate mysql-test-app mysql-router-k8s
 juju relate mysql-router-k8s db1-database
@@ -36,11 +36,10 @@ juju relate mysql-router-k8s db1-database
 juju switch app
 
 juju deploy data-integrator --config database-name=mydatabase
-juju deploy mysql-router-k8s mysql-router-external --trust --channel 8.0/edge
+juju deploy mysql-router-k8s mysql-router-external --trust --channel 8.4/edge
 
 juju relate data-integrator mysql-router-external
 juju relate mysql-router-external db1-database
 
 juju run data-integrator/leader get-credentials
 ```
-

@@ -7,10 +7,10 @@ juju add-model rome    # 1st cluster location: Rome
 juju add-model lisbon  # 2nd cluster location: Lisbon
 
 juju switch rome
-juju deploy mysql db1 --channel=8.0/edge --config profile=testing --config cluster-name=rome --base ubuntu@22.04
+juju deploy mysql db1 --channel=8.4/edge --config profile=testing --config cluster-name=rome --base ubuntu@22.04
 
 juju switch lisbon
-juju deploy mysql db2 --channel=8.0/edge --config profile=testing --config cluster-name=lisbon --base ubuntu@22.04
+juju deploy mysql db2 --channel=8.4/edge --config profile=testing --config cluster-name=lisbon --base ubuntu@22.04
 ```
 
 ```{caution}

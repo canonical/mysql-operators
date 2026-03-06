@@ -41,7 +41,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         charm,
         APP_NAME,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
         trust=True,

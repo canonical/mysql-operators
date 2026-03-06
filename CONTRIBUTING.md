@@ -75,8 +75,8 @@ juju add-model dev
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 
 # Deploy the K8s or VM charm
-(cd kubernetes && juju deploy ./mysql-k8s_ubuntu-22.04-amd64.charm --resource mysql-image=...)
-(cd machines && juju deploy ./mysql_ubuntu-22.04-amd64.charm)
+(cd kubernetes && juju deploy ./mysql-k8s_ubuntu-24.04-amd64.charm --resource mysql-image=...)
+(cd machines && juju deploy ./mysql_ubuntu-24.04-amd64.charm)
 ```
 
 ## Canonical Contributor Agreement

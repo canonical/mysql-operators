@@ -32,14 +32,14 @@ Canonical does not prescribe how you should set up your specific air-gapped envi
 
 At the moment, the store-admin exports (and includes into the blob) all the OCI resources metadata only:
 ```shell
-store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --base=ubuntu@22.04 --arch=amd64
+store-admin export bundle mysql-k8s-bundle --channel=8.4/edge --base=ubuntu@24.04 --arch=amd64
 ```
 
 [details="Example output"]
 
 ```shell
-> store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --base=ubuntu@22.04 --arch=amd64
-Downloading mysql-k8s-bundle revision 45 (8.0/edge)
+> store-admin export bundle mysql-k8s-bundle --channel=8.4/edge --base=ubuntu@24.04 --arch=amd64
+Downloading mysql-k8s-bundle revision 45 (8.4/edge)
   [####################################]  100%
 Downloading data-integrator revision 71 (edge)
   [####################################]  100%          
@@ -49,13 +49,13 @@ Downloading resources for grafana-agent-k8s
 Downloading oci-image resource agent-image revision 45
   [####################################]  100%
 Falling back to OCI image subpath from online Charmhub for 'agent-image' in charm 'grafana-agent-k8s'.
-Downloading mysql-k8s revision 201 (8.0/edge)
+Downloading mysql-k8s revision 201 (8.4/edge)
   [####################################]  100%          
 Downloading resources for mysql-k8s
 Downloading oci-image resource mysql-image revision 113
   [####################################]  100%
 Falling back to OCI image subpath from online Charmhub for 'mysql-image' in charm 'mysql-k8s'.
-Downloading mysql-router-k8s revision 164 (8.0/edge)
+Downloading mysql-router-k8s revision 164 (8.4/edge)
   [####################################]  100%          
 Downloading resources for mysql-router-k8s
 Downloading oci-image resource mysql-router-image revision 57

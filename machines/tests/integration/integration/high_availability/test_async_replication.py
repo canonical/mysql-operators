@@ -74,7 +74,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     model_1.deploy(
         charm=charm,
         app=MYSQL_APP_1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={**configuration, "cluster-name": "lima"},
         constraints=constraints,
         num_units=3,
@@ -83,7 +83,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     model_2.deploy(
         charm=charm,
         app=MYSQL_APP_2,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config={**configuration, "cluster-name": "cuzco"},
         constraints=constraints,
         num_units=3,
@@ -220,7 +220,7 @@ def test_standby_promotion(first_model: str, second_model: str, continuous_write
         cluster_set=True,
     )
 
-    assert cluster_set_status["clusters"]["cuzco"]["clusterrole"] == "primary", (
+    assert cluster_set_status["clusters"]["cuzco"]["clusterRole"] == "PRIMARY", (
         "standby not promoted to primary"
     )
 
@@ -258,10 +258,10 @@ def test_failover(first_model: str, second_model: str) -> None:
         cluster_set=True,
     )
 
-    assert cluster_set_status["clusters"]["lima"]["clusterrole"] == "primary", (
+    assert cluster_set_status["clusters"]["lima"]["clusterRole"] == "PRIMARY", (
         "standby not promoted to primary",
     )
-    assert cluster_set_status["clusters"]["cuzco"]["globalstatus"] == "invalidated", (
+    assert cluster_set_status["clusters"]["cuzco"]["globalStatus"] == "INVALIDATED", (
         "old primary not invalidated"
     )
 

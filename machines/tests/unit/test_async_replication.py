@@ -44,7 +44,7 @@ class TestAsyncRelation(unittest.TestCase):
 
         self.assertEqual(
             self.async_primary.role,
-            ClusterSetInstanceState("replica", "primary", "replication-offer"),
+            ClusterSetInstanceState("REPLICA", "PRIMARY", "replication-offer"),
         )
         # reset cached value
         del self.async_primary.role
@@ -53,7 +53,7 @@ class TestAsyncRelation(unittest.TestCase):
         _mysql.get_member_state.return_value = None
         self.assertEqual(
             self.async_primary.role,
-            ClusterSetInstanceState("primary", "secondary", "replication-offer"),
+            ClusterSetInstanceState("PRIMARY", "SECONDARY", "replication-offer"),
         )
         del self.async_primary.role
 
@@ -145,7 +145,7 @@ class TestAsyncRelation(unittest.TestCase):
         self.charm.on.config_changed.emit()
 
         _mysql.is_cluster_replica.return_value = False
-        _mysql.get_mysql_version.return_value = "8.0.36-0ubuntu0.22.04.1"
+        _mysql.get_mysql_version.return_value = "8.4.0"
         _mysql.get_member_state.return_value = ("ONLINE", "PRIMARY")
 
         async_primary_relation_id = self.harness.add_relation(
@@ -158,7 +158,7 @@ class TestAsyncRelation(unittest.TestCase):
             async_primary_relation_id, self.charm.app.name
         )
         self.assertIn("secret-id", relation_data)
-        self.assertEqual(relation_data["mysql-version"], "8.0.36-0ubuntu0.22.04.1")
+        self.assertEqual(relation_data["mysql-version"], "8.4.0")
 
     @patch(
         "charms.mysql.v0.async_replication.MySQLAsyncReplicationOffer.state",
@@ -337,8 +337,8 @@ class TestAsyncRelation(unittest.TestCase):
         # 3. incompat version
         _defer.reset_mock()
         _mysql.get_cluster_node_count.return_value = 1
-        _mysql.get_mysql_version.return_value = "8.0.36"
-        self.harness.update_relation_data(async_relation_id, "db1", {"mysql-version": "8.0.35"})
+        _mysql.get_mysql_version.return_value = "8.4.0"
+        self.harness.update_relation_data(async_relation_id, "db1", {"mysql-version": "8.0.0"})
 
         self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
         _defer.assert_not_called()
@@ -359,7 +359,7 @@ class TestAsyncRelation(unittest.TestCase):
             async_relation_id,
             "db1",
             {
-                "mysql-version": "8.0.36",
+                "mysql-version": "8.4.0",
                 "secret-id": secret.id,
                 "cluster-name": original_cluster_name,
             },
