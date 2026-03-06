@@ -86,19 +86,18 @@ from charms.mysql.v0.s3_helpers import (
     list_backups_in_s3_path,
     upload_content_to_s3,
 )
-from mysql_shell.models.cluster import ClusterStatus
-from mysql_shell.models.instance import InstanceRole, InstanceState
-from ops.charm import ActionEvent
-from ops.framework import Object
-from ops.jujuversion import JujuVersion
-from ops.model import BlockedStatus, MaintenanceStatus
-
 from constants import (
     MYSQL_DATA_DIR,
     OPERATOR_PASSWORD_KEY,
     OPERATOR_USERNAME,
     PEER,
 )
+from mysql_shell.models.cluster import ClusterStatus
+from mysql_shell.models.instance import InstanceRole, InstanceState
+from ops.charm import ActionEvent
+from ops.framework import Object
+from ops.jujuversion import JujuVersion
+from ops.model import BlockedStatus, MaintenanceStatus
 
 logger = logging.getLogger(__name__)
 

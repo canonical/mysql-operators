@@ -56,7 +56,6 @@ class TestMySQL(unittest.TestCase):
             MYSQLD_SOCK_FILE,
             "test_cluster",
             "test_cluster_set",
-            "password",
             "charmed-operator",
             "charmed-operatorpassword",
             "charmed-replication",
@@ -79,7 +78,7 @@ class TestMySQL(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("mysql_vm_helpers.snap_service_operation")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld(
+    def test_set_operator_user_and_start_mysqld(
         self,
         _wait_until_mysql_connection,
         _snap_service_operation,

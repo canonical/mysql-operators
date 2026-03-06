@@ -301,7 +301,7 @@ def get_mysql_server_credentials(
 
     Args:
         juju: The Juju model
-        unit_name: The juju unit on which to run the get-password action for server-config credentials
+        unit_name: The juju unit on which to run the get-password action for operator credentials
         username: The username to use
 
     Returns:
@@ -326,7 +326,7 @@ def rotate_mysql_server_credentials(
 
     Args:
         juju: The Juju model
-        unit_name: The juju unit on which to run the rotate-password action for server-config credentials
+        unit_name: The juju unit on which to run the rotate-password action for operator credentials
         username: The username to rotate the password for
         password: The new password to set
     """

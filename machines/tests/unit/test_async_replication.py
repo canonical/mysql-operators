@@ -20,7 +20,6 @@ from constants import (
     MONITORING_PASSWORD_KEY,
     OPERATOR_PASSWORD_KEY,
     REPLICATION_PASSWORD_KEY,
-    ROOT_PASSWORD_KEY,
 )
 
 
@@ -349,7 +348,6 @@ class TestAsyncRelation(unittest.TestCase):
             REPLICATION_PASSWORD_KEY: "pass",
             MONITORING_PASSWORD_KEY: "pass",
             BACKUPS_PASSWORD_KEY: "pass",
-            ROOT_PASSWORD_KEY: "pass",
         }
         secret = self.harness.charm.app.add_secret(secret_dict, label="async-secret")
         assert secret.id

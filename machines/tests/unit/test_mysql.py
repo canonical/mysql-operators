@@ -128,7 +128,6 @@ class TestMySQLBase(unittest.TestCase):
             MYSQLD_SOCK_FILE,
             "test_cluster",
             "test_cluster_set",
-            "password",
             "charmed-operator",
             "charmed-operatorpassword",
             "charmed-replication",
@@ -208,15 +207,12 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_sql.return_value = []
 
         queries = ";".join([
-            "UPDATE mysql.user SET authentication_string=null WHERE User='root' and Host='localhost'",
-            "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password'",
             "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword'",
             "CREATE USER 'charmed-stats'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
             "CREATE USER 'charmed-backup'@'%' IDENTIFIED BY 'backupspassword'",
             "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION",
             "GRANT charmed_stats TO 'charmed-stats'@'%'",
             "GRANT charmed_backup TO 'charmed-backup'@'%'",
-            "REVOKE BINLOG_ADMIN, CONNECTION_ADMIN, ENCRYPTION_KEY_ADMIN, GROUP_REPLICATION_ADMIN, REPLICATION_SLAVE_ADMIN, SET_USER_ID, SUPER, SYSTEM_USER, SYSTEM_VARIABLES_ADMIN, VERSION_TOKEN_ADMIN ON *.* FROM 'root'@'localhost'",
             "FLUSH PRIVILEGES",
         ])
 
