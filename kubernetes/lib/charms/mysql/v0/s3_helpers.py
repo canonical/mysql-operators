@@ -19,7 +19,8 @@ import logging
 import pathlib
 import tempfile
 import time
-from contextlib import nullcontext
+from collections.abc import Iterator
+from contextlib import contextmanager, nullcontext
 from io import BytesIO
 
 import boto3
@@ -189,6 +190,76 @@ def _compile_backups_from_file_ids(
     return backups
 
 
+@contextmanager
+def _temporary_ca_file(ca_chain: list[str] | None) -> Iterator[str | None]:
+    """Create a temporary CA bundle file and ensure cleanup."""
+    if not ca_chain:
+        yield None
+        return
+
+    with tempfile.NamedTemporaryFile(delete=False) as ca_file:
+        ca = "\n".join(ca_chain)
+        ca_file.write(ca.encode())
+        ca_file.flush()
+        ca_file_name = ca_file.name
+
+    try:
+        yield ca_file_name
+    finally:
+        pathlib.Path(ca_file_name).unlink(missing_ok=True)
+
+
+def _collect_backup_ids(
+    pages: list[dict], s3_path_directory: str
+) -> tuple[list[str], list[str], list[str]]:
+    """Collect backup ids from S3 listing pages."""
+    metadata_ids: list[str] = []
+    md5_ids: list[str] = []
+    log_ids: list[str] = []
+
+    for page in pages:
+        for content in page.get("Contents", []):
+            key = content["Key"]
+            filename = key.removeprefix(s3_path_directory)
+
+            if ".metadata" in filename:
+                try:
+                    backup_id = filename.split(".metadata")[0]
+                    time.strptime(backup_id, "%Y-%m-%dT%H:%M:%SZ")
+                except ValueError:
+                    continue
+                metadata_ids.append(backup_id)
+                continue
+
+            if ".md5" in key:
+                md5_ids.append(filename.split(".md5")[0])
+                continue
+
+            if ".backup.log" in key:
+                log_ids.append(filename.split(".backup.log")[0])
+
+    return metadata_ids, md5_ids, log_ids
+
+
+def _list_backups_from_s3(s3_client: boto3.client, s3_parameters: dict) -> list[tuple[str, str]]:
+    """List backup ids from S3 and compile their statuses."""
+    list_objects_v2_paginator = s3_client.get_paginator("list_objects_v2")
+    s3_path_directory = (
+        s3_parameters["path"]
+        if s3_parameters["path"][-1] == "/"
+        else f"{s3_parameters['path']}/"
+    )
+
+    pages = list_objects_v2_paginator.paginate(
+        Bucket=s3_parameters["bucket"],
+        Prefix=s3_path_directory,
+        Delimiter="/",
+    )
+
+    metadata_ids, md5_ids, log_ids = _collect_backup_ids(pages, s3_path_directory)
+    return _compile_backups_from_file_ids(metadata_ids, md5_ids, log_ids)
+
+
 def list_backups_in_s3_path(s3_parameters: dict) -> list[tuple[str, str]]:
     """Retrieve subdirectories in an S3 path.
 
@@ -205,47 +276,17 @@ def list_backups_in_s3_path(s3_parameters: dict) -> list[tuple[str, str]]:
         logger.info(
             f"Listing subdirectories from S3 bucket={s3_parameters['bucket']}, path={s3_parameters['path']}"
         )
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=s3_parameters["access-key"],
-            aws_secret_access_key=s3_parameters["secret-key"],
-            endpoint_url=_construct_endpoint(s3_parameters),
-            region_name=s3_parameters["region"] or None,
-        )
-        list_objects_v2_paginator = s3_client.get_paginator("list_objects_v2")
-        s3_path_directory = (
-            s3_parameters["path"]
-            if s3_parameters["path"][-1] == "/"
-            else f"{s3_parameters['path']}/"
-        )
-
-        metadata_ids = []
-        md5_ids = []
-        log_ids = []
-
-        for page in list_objects_v2_paginator.paginate(
-            Bucket=s3_parameters["bucket"],
-            Prefix=s3_path_directory,
-            Delimiter="/",
-        ):
-            for content in page.get("Contents", []):
-                key = content["Key"]
-
-                filename = key.removeprefix(s3_path_directory)
-
-                if ".metadata" in filename:
-                    try:
-                        backup_id = filename.split(".metadata")[0]
-                        time.strptime(backup_id, "%Y-%m-%dT%H:%M:%SZ")
-                        metadata_ids.append(backup_id)
-                    except ValueError:
-                        pass
-                elif ".md5" in key:
-                    md5_ids.append(filename.split(".md5")[0])
-                elif ".backup.log" in key:
-                    log_ids.append(filename.split(".backup.log")[0])
-
-        return _compile_backups_from_file_ids(metadata_ids, md5_ids, log_ids)
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        with _temporary_ca_file(ca_chain) as ca_file_name:
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=s3_parameters["access-key"],
+                aws_secret_access_key=s3_parameters["secret-key"],
+                endpoint_url=_construct_endpoint(s3_parameters),
+                region_name=s3_parameters["region"] or None,
+                verify=ca_file_name if ca_file_name else True,
+            )
+            return _list_backups_from_s3(s3_client, s3_parameters)
     except Exception as e:
         try:
             # botocore raises dynamically generated exceptions
@@ -277,25 +318,29 @@ def fetch_and_check_existence_of_s3_path(path: str, s3_parameters: dict[str, str
 
     Raises: any exceptions raised by boto3
     """
-    s3_client = boto3.client(
-        "s3",
-        aws_access_key_id=s3_parameters["access-key"],
-        aws_secret_access_key=s3_parameters["secret-key"],
-        endpoint_url=_construct_endpoint(s3_parameters),
-        region_name=s3_parameters["region"] or None,
-    )
-
-    try:
-        response = s3_client.get_object(Bucket=s3_parameters["bucket"], Key=path, Range="0-1")
-        return "ContentLength" in response  # return True even if object is empty
-    except s3_client.exceptions.NoSuchKey:
-        return False
-    except Exception as e:
-        logger.exception(
-            f"Failed to fetch and check existence of path {path} in S3 bucket {s3_parameters['bucket']}",
-            exc_info=e,
+    ca_chain = s3_parameters.get("tls-ca-chain")
+    with _temporary_ca_file(ca_chain) as ca_file_name:
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=s3_parameters["access-key"],
+            aws_secret_access_key=s3_parameters["secret-key"],
+            endpoint_url=_construct_endpoint(s3_parameters),
+            region_name=s3_parameters["region"] or None,
+            verify=ca_file_name if ca_file_name else True,
         )
-        raise
+        try:
+            response = s3_client.get_object(
+                Bucket=s3_parameters["bucket"], Key=path, Range="0-1"
+            )
+            return "ContentLength" in response  # return True even if object is empty
+        except s3_client.exceptions.NoSuchKey:
+            return False
+        except Exception as e:
+            logger.exception(
+                f"Failed to fetch and check existence of path {path} in S3 bucket {s3_parameters['bucket']}",
+                exc_info=e,
+            )
+            raise
 
 
 def ensure_s3_compatible_group_replication_id(
