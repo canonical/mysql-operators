@@ -13,6 +13,17 @@ from charms.mysql.v0.mysql import (
     MySQLPromoteClusterToPrimaryError,
     MySQLRejoinClusterError,
 )
+from constants import (
+    BACKUPS_PASSWORD_KEY,
+    BACKUPS_USERNAME,
+    MONITORING_PASSWORD_KEY,
+    MONITORING_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
+    PEER,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
+)
 from mysql_shell.models import (
     ClusterGlobalStatus,
     ClusterRole,
@@ -35,20 +46,6 @@ from ops import (
 )
 from ops.framework import Object
 from tenacity import RetryError, Retrying, stop_after_attempt, wait_fixed
-
-from constants import (
-    BACKUPS_PASSWORD_KEY,
-    BACKUPS_USERNAME,
-    MONITORING_PASSWORD_KEY,
-    MONITORING_USERNAME,
-    OPERATOR_PASSWORD_KEY,
-    OPERATOR_USERNAME,
-    PEER,
-    REPLICATION_PASSWORD_KEY,
-    REPLICATION_USERNAME,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-)
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -791,17 +788,15 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
                 REPLICATION_PASSWORD_KEY: REPLICATION_USERNAME,
                 MONITORING_PASSWORD_KEY: MONITORING_USERNAME,
                 BACKUPS_PASSWORD_KEY: BACKUPS_USERNAME,
-                ROOT_PASSWORD_KEY: ROOT_USERNAME,
             }
 
             for key, password in credentials.items():
                 # sync credentials only for necessary users
                 user = sync_keys[key]
-                if user == ROOT_USERNAME:
-                    # root user is only local
+                if user == OPERATOR_USERNAME:
+                    # charmed-operator user has localhost user
                     self._charm._mysql.update_user_password(user, password, host="localhost")
-                else:
-                    self._charm._mysql.update_user_password(user, password)
+                self._charm._mysql.update_user_password(user, password)
                 self._charm.set_secret("app", key, password)
                 logger.debug(f"Synced {user=} password")
 

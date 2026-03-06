@@ -95,7 +95,6 @@ from constants import (
     PEER,
     REPLICATION_PASSWORD_KEY,
     REPLICATION_USERNAME,
-    ROOT_PASSWORD_KEY,
     TRACING_PROTOCOL,
 )
 from flush_mysql_logs import FlushMySQLLogsCharmEvents, MySQLLogs
@@ -214,7 +213,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Handle the leader elected event."""
         # Set MySQL config values in the peer relation databag
         required_passwords = [
-            ROOT_PASSWORD_KEY,
             OPERATOR_PASSWORD_KEY,
             REPLICATION_PASSWORD_KEY,
             MONITORING_PASSWORD_KEY,
@@ -605,7 +603,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             MYSQLD_SOCK_FILE,
             self.app_peer_data["cluster-name"],
             self.app_peer_data["cluster-set-domain-name"],
-            self.get_secret("app", ROOT_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             OPERATOR_USERNAME,
             self.get_secret("app", OPERATOR_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             REPLICATION_USERNAME,
@@ -736,10 +733,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()
-        self._mysql.reset_root_password_and_start_mysqld()
+        self._mysql.set_operator_user_and_start_mysqld()
         self._mysql.configure_mysql_router_roles()
         self._mysql.configure_mysql_system_roles()
         self._mysql.configure_mysql_system_users()
+        self._mysql.drop_root_user()
 
         default_components = ["binlog_utils_udf", "validate_password"]
         optional_components = []

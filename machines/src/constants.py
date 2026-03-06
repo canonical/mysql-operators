@@ -3,7 +3,6 @@
 
 """File containing constants to be used in the charm."""
 
-ROOT_USERNAME = "root"
 REPLICATION_USERNAME = "charmed-replication"
 OPERATOR_USERNAME = "charmed-operator"
 MONITORING_USERNAME = "charmed-stats"
@@ -15,7 +14,6 @@ DB_RELATION_NAME = "database"
 
 
 # Labels are not confidential
-ROOT_PASSWORD_KEY = "root-password"  # noqa: S105
 OPERATOR_PASSWORD_KEY = "operator-password"  # noqa: S105
 REPLICATION_PASSWORD_KEY = "replication-password"  # noqa: S105
 MONITORING_PASSWORD_KEY = "monitoring-password"  # noqa: S105
@@ -50,7 +48,6 @@ GR_MAX_MEMBERS = 9
 HOSTNAME_DETAILS = "hostname-details"
 COS_AGENT_RELATION_NAME = "cos-agent"
 SECRET_KEY_FALLBACKS = {
-    "root-password": "root_password",
     "server-config-password": "server_config_password",
     "cluster-admin-password": "cluster_admin_password",
     "monitoring-password": "monitoring_password",

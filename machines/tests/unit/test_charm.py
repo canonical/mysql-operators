@@ -18,7 +18,7 @@ from tenacity import Retrying, stop_after_attempt
 from charm import MySQLOperatorCharm
 from mysql_vm_helpers import (
     MySQLCreateCustomMySQLDConfigError,
-    MySQLResetRootPasswordAndStartMySQLDError,
+    MySQLSetOperatorUserAndStartMySQLDError,
 )
 
 
@@ -220,7 +220,7 @@ class TestCharm(unittest.TestCase):
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
 
         # test an exception with resetting the root password and starting mysqld
-        _create_cluster.side_effect = MySQLResetRootPasswordAndStartMySQLDError
+        _create_cluster.side_effect = MySQLSetOperatorUserAndStartMySQLDError
 
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))

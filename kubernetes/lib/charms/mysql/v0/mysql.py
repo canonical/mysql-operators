@@ -31,7 +31,6 @@ class MySQL(MySQLBase):
         self,
         instance_address: str,
         cluster_name: str,
-        root_password: str,
         server_config_user: str,
         server_config_password: str,
         cluster_admin_user: str,
@@ -41,7 +40,6 @@ class MySQL(MySQLBase):
         super().__init__(
                 instance_address=instance_address,
                 cluster_name=cluster_name,
-                root_password=root_password,
                 server_config_user=server_config_user,
                 server_config_password=server_config_password,
                 cluster_admin_user=cluster_admin_user,
@@ -77,6 +75,23 @@ from typing import (
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerUnitData
+from constants import (
+    BACKUPS_PASSWORD_KEY,
+    BACKUPS_USERNAME,
+    CHARMED_MYSQL_PITR_HELPER,
+    COS_AGENT_RELATION_NAME,
+    DEFAULT_PASSWORD_LENGTH,
+    GR_MAX_MEMBERS,
+    MAX_PASSWORD_LENGTH,
+    MONITORING_PASSWORD_KEY,
+    MONITORING_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
+    PEER,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
+    SECRET_KEY_FALLBACKS,
+)
 from mysql_shell.builders import (
     CharmAuthorizationQueryBuilder,
     CharmLockingQueryBuilder,
@@ -103,26 +118,6 @@ from tenacity import (
     stop_after_attempt,
     wait_fixed,
     wait_random,
-)
-
-from constants import (
-    BACKUPS_PASSWORD_KEY,
-    BACKUPS_USERNAME,
-    CHARMED_MYSQL_PITR_HELPER,
-    COS_AGENT_RELATION_NAME,
-    DEFAULT_PASSWORD_LENGTH,
-    GR_MAX_MEMBERS,
-    MAX_PASSWORD_LENGTH,
-    MONITORING_PASSWORD_KEY,
-    MONITORING_USERNAME,
-    OPERATOR_PASSWORD_KEY,
-    OPERATOR_USERNAME,
-    PEER,
-    REPLICATION_PASSWORD_KEY,
-    REPLICATION_USERNAME,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-    SECRET_KEY_FALLBACKS,
 )
 from utils import generate_random_password
 
@@ -435,6 +430,10 @@ class MySQLClusterMetadataExistsError(Error):
     """Exception raised when there is an issue checking if cluster metadata exists."""
 
 
+class MySQLDropRootUserError(Error):
+    """Exception raised when there is an issue dropping the root user."""
+
+
 class MySQLCharmBase(CharmBase, ABC):
     """Base class to encapsulate charm related functionality.
 
@@ -512,10 +511,9 @@ class MySQLCharmBase(CharmBase, ABC):
 
     def _on_get_password(self, event: ActionEvent) -> None:
         """Action used to retrieve the system user's password."""
-        username = event.params.get("username") or ROOT_USERNAME
+        username = event.params.get("username")
 
         valid_usernames = {
-            ROOT_USERNAME: ROOT_PASSWORD_KEY,
             OPERATOR_USERNAME: OPERATOR_PASSWORD_KEY,
             REPLICATION_USERNAME: REPLICATION_PASSWORD_KEY,
             MONITORING_USERNAME: MONITORING_PASSWORD_KEY,
@@ -541,10 +539,9 @@ class MySQLCharmBase(CharmBase, ABC):
             event.fail("Only offer side can change password when replications is enabled")
             return
 
-        username = event.params.get("username") or ROOT_USERNAME
+        username = event.params.get("username")
 
         valid_usernames = {
-            ROOT_USERNAME: ROOT_PASSWORD_KEY,
             OPERATOR_USERNAME: OPERATOR_PASSWORD_KEY,
             REPLICATION_USERNAME: REPLICATION_PASSWORD_KEY,
             MONITORING_USERNAME: MONITORING_PASSWORD_KEY,
@@ -564,9 +561,10 @@ class MySQLCharmBase(CharmBase, ABC):
         if len(new_password) > MAX_PASSWORD_LENGTH:
             raise MySQLUpdateUserError("Password is too long")
 
-        host = "%" if username != ROOT_USERNAME else "localhost"
-
-        self._mysql.update_user_password(username, new_password, host=host)
+        if username == OPERATOR_USERNAME:
+            # charmed-operator user has localhost user
+            self._mysql.update_user_password(username, new_password, host="localhost")
+        self._mysql.update_user_password(username, new_password)
 
         self.set_secret("app", secret_key, new_password)
 
@@ -803,7 +801,6 @@ class MySQLCharmBase(CharmBase, ABC):
     def _is_peer_data_set(self) -> bool:
         return bool(
             self.app_peer_data.get("cluster-name")
-            and self.get_secret("app", ROOT_PASSWORD_KEY)
             and self.get_secret("app", OPERATOR_PASSWORD_KEY)
             and self.get_secret("app", REPLICATION_PASSWORD_KEY)
             and self.get_secret("app", MONITORING_PASSWORD_KEY)
@@ -831,7 +828,7 @@ class MySQLCharmBase(CharmBase, ABC):
     @property
     def active_status_message(self) -> str:
         """Active status message."""
-        if self.unit_peer_data.get("member-role") != "primary":
+        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY.value:
             return ""
 
         if self._mysql.is_cluster_replica() is False:
@@ -995,7 +992,6 @@ class MySQLBase(ABC):
         socket_path: str,
         cluster_name: str,
         cluster_set_name: str,
-        root_password: str,
         server_config_user: str,
         server_config_password: str,
         cluster_admin_user: str,
@@ -1012,8 +1008,6 @@ class MySQLBase(ABC):
         self.socket_path = socket_path
         self.cluster_name = cluster_name
         self.cluster_set_name = cluster_set_name
-        self.root_user = ROOT_USERNAME
-        self.root_password = root_password
         self.server_config_user = server_config_user
         self.server_config_password = server_config_password
         self.cluster_admin_user = cluster_admin_user
@@ -1025,7 +1019,6 @@ class MySQLBase(ABC):
         self.mysqlsh_path = mysqlsh_path
         self.executor_class = executor_class
         self.passwords = [
-            self.root_password,
             self.server_config_password,
             self.cluster_admin_password,
             self.monitoring_password,
@@ -1087,8 +1080,8 @@ class MySQLBase(ABC):
         """Build a socket executor for the instance operations."""
         return self.executor_class(
             conn_details=ConnectionDetails(
-                username=self.root_user,
-                password=self.root_password,
+                username=self.server_config_user,
+                password=self.server_config_password,
                 socket=self.socket_path,
             ),
             shell_path=self.mysqlsh_path,
@@ -1289,23 +1282,33 @@ class MySQLBase(ABC):
             logger.error(f"Failed to configure roles for {self.instance_address}")
             raise MySQLConfigureMySQLRolesError() from e
 
+    def drop_root_user(self) -> None:
+        """Drop the root user from the instance."""
+        logger.debug("Dropping root user after initial setup")
+        client = MySQLInstanceClient(
+            self._build_instance_tcp_executor(self.instance_address),
+            self._quoter,
+        )
+        user = User("root", "localhost")
+        try:
+            client.delete_instance_user(user)
+        except ExecutionError as e:
+            logger.error(f"Failed to drop root user for {self.instance_address}")
+            raise MySQLDropRootUserError() from e
+
     def configure_mysql_system_users(self) -> None:
         """Configure the MySQL system users for the instance."""
         configure_users_commands = [
-            f"UPDATE mysql.user SET authentication_string=null WHERE User='{self.root_user}' and Host='localhost'",  # noqa: S608
-            f"ALTER USER '{self.root_user}'@'localhost' IDENTIFIED BY '{self.root_password}'",
             f"CREATE USER '{self.server_config_user}'@'%' IDENTIFIED BY '{self.server_config_password}'",
             f"CREATE USER '{self.monitoring_user}'@'%' IDENTIFIED BY '{self.monitoring_password}' WITH MAX_USER_CONNECTIONS 3",
             f"CREATE USER '{self.backups_user}'@'%' IDENTIFIED BY '{self.backups_password}'",
         ]
 
-        # SYSTEM_USER and SUPER privileges to revoke from the root users
         # Reference: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_super
         configure_privs_commands = [
             f"GRANT ALL ON *.* TO '{self.server_config_user}'@'%' WITH GRANT OPTION",
             f"GRANT charmed_stats TO '{self.monitoring_user}'@'%'",
             f"GRANT charmed_backup TO '{self.backups_user}'@'%'",
-            f"REVOKE BINLOG_ADMIN, CONNECTION_ADMIN, ENCRYPTION_KEY_ADMIN, GROUP_REPLICATION_ADMIN, REPLICATION_SLAVE_ADMIN, SET_USER_ID, SUPER, SYSTEM_USER, SYSTEM_VARIABLES_ADMIN, VERSION_TOKEN_ADMIN ON *.* FROM '{self.root_user}'@'localhost'",
             "FLUSH PRIVILEGES",
         ]
 
@@ -1666,8 +1669,7 @@ class MySQLBase(ABC):
 
         Use mysqlsh when querying clusters from remote instances. However, use
         mysqlcli when querying locally since this method can be called before
-        the cluster is initialized (before charmed-operator and root users are set up
-        correctly)
+        the cluster is initialized.
         """
         if from_instance:
             client = MySQLInstanceClient(

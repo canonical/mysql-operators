@@ -184,7 +184,7 @@ class TestMySQL(unittest.TestCase):
     def test_reset_root_password_and_start_mysqld(self, _wait_until_mysql_connection, _container):
         """Test for reset_root_password_and_start_mysqld()."""
         self.mysql.container = _container
-        self.mysql.reset_root_password_and_start_mysqld()
+        self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(
@@ -224,7 +224,7 @@ class TestMySQL(unittest.TestCase):
         ]
 
         with self.assertRaises(PathError):
-            self.mysql.reset_root_password_and_start_mysqld()
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(
@@ -248,7 +248,7 @@ class TestMySQL(unittest.TestCase):
         ]
 
         with self.assertRaises(MySQLServiceNotRunningError):
-            self.mysql.reset_root_password_and_start_mysqld()
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(

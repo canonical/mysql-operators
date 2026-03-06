@@ -40,6 +40,7 @@ from charms.mysql.v0.mysql import (
     MySQLConfigureMySQLUsersError,
     MySQLCreateClusterError,
     MySQLCreateClusterSetError,
+    MySQLDropRootUserError,
     MySQLGetClusterPrimaryAddressError,
     MySQLInitializeJujuOperationsTableError,
     MySQLLockAcquisitionError,
@@ -92,7 +93,6 @@ from constants import (
     PEER,
     REPLICATION_PASSWORD_KEY,
     REPLICATION_USERNAME,
-    ROOT_PASSWORD_KEY,
 )
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager
@@ -181,7 +181,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.unit_address,
             self.app_peer_data["cluster-name"],
             self.app_peer_data["cluster-set-domain-name"],
-            self.get_secret("app", ROOT_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             OPERATOR_USERNAME,
             self.get_secret("app", OPERATOR_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             REPLICATION_USERNAME,
@@ -648,7 +647,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """
         # Set required passwords if not already set
         required_passwords = [
-            ROOT_PASSWORD_KEY,
             OPERATOR_PASSWORD_KEY,
             REPLICATION_PASSWORD_KEY,
             MONITORING_PASSWORD_KEY,
@@ -703,14 +701,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("Waiting for instance to be ready")
             self._mysql.wait_until_mysql_connection(check_port=False)
 
-            logger.info("Resetting root password and starting mysqld")
-            self._mysql.reset_root_password_and_start_mysqld()
+            logger.info("Set operator user and restart mysqld")
+            self._mysql.set_operator_user_and_start_mysqld()
 
             logger.info("Configuring initialized mysqld")
             # Configure all base users and revoke privileges from the root users
             self._mysql.configure_mysql_router_roles()
             self._mysql.configure_mysql_system_roles()
             self._mysql.configure_mysql_system_users()
+            self._mysql.drop_root_user()
 
             default_components = ["binlog_utils_udf", "validate_password"]
             optional_components = []
@@ -731,6 +730,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             MySQLConfigureMySQLRolesError,
             MySQLConfigureMySQLUsersError,
             MySQLConfigureInstanceError,
+            MySQLDropRootUserError,
             ChangeError,
             TimeoutError,
             ModelError,
