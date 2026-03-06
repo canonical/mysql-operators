@@ -10,11 +10,10 @@ There are two main types of users in MySQL:
 
 The operator uses the following internal database users:
 
-* `root` - the initial/default MySQL user. Used for very initial bootstrap only.
 * `charmed-replication` - the user to manage replication in the MySQL InnoDB ClusterSet.
 * `charmed-operator` - the user that operates MySQL instances.
-* `monitoring` - the user for [COS integration](/how-to/monitoring-cos/enable-monitoring).
-* `backups` - the user to [perform/list/restore backups](/how-to/back-up-and-restore/create-a-backup).
+* `charmed-stats` - the user for [COS integration](/how-to/monitoring-cos/enable-monitoring).
+* `charmed-backups` - the user to [perform/list/restore backups](/how-to/back-up-and-restore/create-a-backup).
 * `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
 * `mysql_innodb_cs_#######` - the internal recovery user which enable connections between MySQl InnoDB Clusters in ClusterSet. One user is created for entire MySQL ClusterSet.
 
@@ -33,20 +32,36 @@ mysql> select Host,User,account_locked from mysql.user;
 +-----------+---------------------------------+----------------+
 | Host      | User                            | account_locked |
 +-----------+---------------------------------+----------------+
-| %         | backups                         | N              |
-| %         | charmed-replication             | N              |
-| %         | monitoring                      | N              |
-| %         | mysql_innodb_cluster_2277159443 | N              |
+| %         | charmed-backup                  | N              |
 | %         | charmed-operator                | N              |
+| %         | charmed-replication             | N              |
+| %         | charmed-stats                   | N              |
+| %         | charmed_backup                  | Y              |
+| %         | charmed_dba                     | Y              |
+| %         | charmed_ddl                     | Y              |
+| %         | charmed_dml                     | Y              |
+| %         | charmed_read                    | Y              |
+| %         | charmed_router                  | Y              |
+| %         | charmed_stats                   | Y              |
+| %         | mysql_innodb_cluster_1533758336 | N              |
+| %         | mysql_innodb_cluster_1925735211 | N              |
+| %         | mysql_innodb_cluster_2639109780 | N              |
+| %         | mysql_innodb_cs_72c8632b        | N              |
+| localhost | charmed-operator                | N              |
 | localhost | mysql.infoschema                | Y              |
 | localhost | mysql.session                   | Y              |
 | localhost | mysql.sys                       | Y              |
-| localhost | root                            | N              |
 +-----------+---------------------------------+----------------+
-10 rows in set (0.00 sec)
+
+19 rows in set (0.00 sec)
 ```
 
 Passwords for *internal* users can be rotated using the action `set-password` on the juju leader unit.
+
+```{caution}
+The `root` user is removed on the Charmed MySQL operator.
+```
+
 
 ```{seealso}
 [How to manage passwords](/how-to/manage-passwords)
