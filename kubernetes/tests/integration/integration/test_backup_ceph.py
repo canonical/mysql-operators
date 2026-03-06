@@ -282,7 +282,6 @@ def clean_backups_from_buckets(cloud_credentials, cloud_configs):
         aws_secret_access_key=cloud_credentials["secret-key"],
         region_name=cloud_configs["region"],
     )
-    ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
     with tempfile.NamedTemporaryFile() as ca_file:
         ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
         ca_file.write(ca_chain)
