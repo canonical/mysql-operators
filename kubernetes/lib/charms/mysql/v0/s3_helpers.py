@@ -69,13 +69,14 @@ def _construct_endpoint(s3_parameters: dict) -> str:
     return endpoint
 
 
-def _get_bucket(s3_parameters: dict) -> boto3.resources.base.ServiceResource:
+def _get_bucket(s3_parameters: dict, ca_file: str | None = None) -> boto3.resources.base.ServiceResource:
     """Get an S3 bucket resource.
 
     Args:
         s3_parameters: A dictionary containing the S3 parameters
             The following are expected keys in the dictionary: bucket, region,
             endpoint, access-key and secret-key
+        ca_file: Optional path to a CA bundle file for TLS verification. If not provided, defaults to True (system CAs).
 
     Returns: an S3 bucket resource
     """
@@ -85,19 +86,11 @@ def _get_bucket(s3_parameters: dict) -> boto3.resources.base.ServiceResource:
         region_name=s3_parameters["region"] or None,
     )
 
-    ca_chain = s3_parameters.get("tls-ca-chain")
-
-    with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
-        if ca_file:
-            ca = "\n".join(ca_chain)
-            ca_file.write(ca.encode())
-            ca_file.flush()
-
-        s3 = session.resource(
-            "s3",
-            endpoint_url=_construct_endpoint(s3_parameters),
-            verify=ca_file.name if ca_file else True,
-        )
+    s3 = session.resource(
+        "s3",
+        endpoint_url=_construct_endpoint(s3_parameters),
+        verify=ca_file if ca_file else True,
+    )
 
     return s3.Bucket(s3_parameters["bucket"])
 
@@ -117,12 +110,17 @@ def upload_content_to_s3(content: str, content_path: str, s3_parameters: dict) -
     try:
         logger.info(f"Uploading content to bucket={s3_parameters['bucket']}, path={content_path}")
 
-        bucket = _get_bucket(s3_parameters)
-
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(content.encode("utf-8"))
-            temp_file.flush()
-            bucket.upload_file(temp_file.name, content_path)
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        with tempfile.NamedTemporaryFile() as content_file, tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
+            content_file.write(content.encode("utf-8"))
+            content_file.flush()
+            if ca_file:
+                ca = "\n".join(ca_chain)
+                ca_file.write(ca.encode())
+                ca_file.flush()
+    
+            bucket = _get_bucket(s3_parameters, ca_file=ca_file.name if ca_file else None)
+            bucket.upload_file(content_file.name, content_path)
     except Exception as e:
         logger.exception(
             f"Failed to upload content to S3 bucket={s3_parameters['bucket']}, path={content_path}",
@@ -148,10 +146,13 @@ def _read_content_from_s3(content_path: str, s3_parameters: dict) -> str | None:
     """
     try:
         logger.info(f"Reading content from bucket={s3_parameters['bucket']}, path={content_path}")
-
-        bucket = _get_bucket(s3_parameters)
-
-        with BytesIO() as buf:
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file, BytesIO() as buf:
+            if ca_file:
+                ca = "\n".join(ca_chain)
+                ca_file.write(ca.encode())
+                ca_file.flush()
+            bucket = _get_bucket(s3_parameters, ca_file=ca_file.name if ca_file else None)
             bucket.download_fileobj(content_path, buf)
             return buf.getvalue().decode("utf-8")
     except botocore.exceptions.ClientError as e:
