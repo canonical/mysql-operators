@@ -62,8 +62,10 @@ import io
 import json
 import logging
 import os
+import pathlib
 import re
 import sys
+import tempfile
 import time
 from abc import ABC, abstractmethod
 from contextlib import contextmanager, suppress
@@ -72,6 +74,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generator,
+    Iterator,
     Literal,
     Type,
     get_args,
@@ -2614,6 +2617,26 @@ class MySQLBase(ABC):
             logger.error("Failed to delete temp backup directory")
             raise MySQLDeleteTempBackupDirectoryError from e
 
+
+    @contextmanager
+    def _temporary_ca_file(self, ca_chain: list[str] | None) -> Iterator[str | None]:
+        """Create a temporary CA bundle file and ensure cleanup."""
+        if not ca_chain:
+            yield None
+            return
+
+        with tempfile.NamedTemporaryFile(delete=False) as ca_file:
+            ca = "\n".join(ca_chain)
+            ca_file.write(ca.encode())
+            ca_file.flush()
+            ca_file_name = ca_file.name
+
+        try:
+            yield ca_file_name
+        finally:
+            pathlib.Path(ca_file_name).unlink(missing_ok=True)
+
+
     def retrieve_backup_with_xbcloud(
         self,
         backup_id: str,
@@ -2641,47 +2664,50 @@ class MySQLBase(ABC):
         except MySQLExecError as e:
             logger.error("Failed to execute commands prior to running xbcloud get")
             raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        with self._temporary_ca_file(ca_chain) as ca_file:
+            retrieve_backup_command = [
+                f"{xbcloud_location} get",
+                "--curl-retriable-errors=7",
+                "--parallel=10",
+                "--storage=S3",
+                f"--s3-region={s3_parameters['region']}",
+                f"--s3-bucket={s3_parameters['bucket']}",
+                f"--s3-endpoint={s3_parameters['endpoint']}",
+                f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
+                f"--s3-api-version={s3_parameters['s3-api-version']}",
+                f"{s3_parameters['path']}/{backup_id}",
+                f"| {xbstream_location}",
+                "--decompress",
+                "-x",
+                f"-C {tmp_dir}",
+                f"--parallel={nproc}",
+            ]
+            if ca_file:
+                retrieve_backup_command.append(f"--cacert={ca_file}")
 
-        retrieve_backup_command = [
-            f"{xbcloud_location} get",
-            "--curl-retriable-errors=7",
-            "--parallel=10",
-            "--storage=S3",
-            f"--s3-region={s3_parameters['region']}",
-            f"--s3-bucket={s3_parameters['bucket']}",
-            f"--s3-endpoint={s3_parameters['endpoint']}",
-            f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
-            f"--s3-api-version={s3_parameters['s3-api-version']}",
-            f"{s3_parameters['path']}/{backup_id}",
-            f"| {xbstream_location}",
-            "--decompress",
-            "-x",
-            f"-C {tmp_dir}",
-            f"--parallel={nproc}",
-        ]
+            try:
+                logger.debug(f"Command to retrieve backup: {' '.join(retrieve_backup_command)}")
 
-        try:
-            logger.debug(f"Command to retrieve backup: {' '.join(retrieve_backup_command)}")
-
-            # ACCESS_KEY_ID and SECRET_ACCESS_KEY envs auto picked by xbcloud
-            stdout, stderr = self._execute_commands(
-                retrieve_backup_command,
-                bash=True,
-                env_extra={
-                    "ACCESS_KEY_ID": s3_parameters["access-key"],
-                    "SECRET_ACCESS_KEY": s3_parameters["secret-key"],
-                },
-                user=user,
-                group=group,
-                stream_output="stderr",
-            )
-            return (stdout, stderr, tmp_dir)
-        except MySQLExecError as e:
-            logger.error("Failed to retrieve backup")
-            raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
-        except Exception as e:
-            logger.error("Failed to retrieve backup")
-            raise MySQLRetrieveBackupWithXBCloudError from e
+                # ACCESS_KEY_ID and SECRET_ACCESS_KEY envs auto picked by xbcloud
+                stdout, stderr = self._execute_commands(
+                    retrieve_backup_command,
+                    bash=True,
+                    env_extra={
+                        "ACCESS_KEY_ID": s3_parameters["access-key"],
+                        "SECRET_ACCESS_KEY": s3_parameters["secret-key"],
+                    },
+                    user=user,
+                    group=group,
+                    stream_output="stderr",
+                )
+                return (stdout, stderr, tmp_dir)
+            except MySQLExecError as e:
+                logger.error("Failed to retrieve backup")
+                raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
+            except Exception as e:
+                logger.error("Failed to retrieve backup")
+                raise MySQLRetrieveBackupWithXBCloudError from e
 
     def prepare_backup_for_restore(
         self,
