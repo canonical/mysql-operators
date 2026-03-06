@@ -220,7 +220,7 @@ def microceph(certs_path) -> MicrocephConnectionInformation:
         try:
             boto3.client(
                 "s3",
-                endpoint_url="http://localhost",
+                endpoint_url=f"http://{host_ip}",
                 aws_access_key_id=key_id,
                 aws_secret_access_key=secret_key,
                 verify=str(certs_path / "ca.crt"),
