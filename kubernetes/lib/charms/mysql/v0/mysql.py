@@ -92,7 +92,6 @@ from constants import (
     PEER,
     REPLICATION_PASSWORD_KEY,
     REPLICATION_USERNAME,
-    SECRET_KEY_FALLBACKS,
 )
 from mysql_shell.builders import (
     CharmAuthorizationQueryBuilder,
@@ -941,19 +940,10 @@ class MySQLCharmBase(CharmBase, ABC):
             raise ValueError("Unknown secret scope")
 
         if not (peers := self.model.get_relation(PEER)):
-            logger.warning("Peer relation unavailable.")
+            logger.warning("Peer relation unavailable when getting secret.")
             return
 
-        # NOTE: here we purposefully search both in secrets and in databag by using
-        # the fetch_my_relation_field instead of peer_relation_data(scope).get_secrets().
-        if (
-            not (value := self.peer_relation_data(scope).fetch_my_relation_field(peers.id, key))
-            and key in SECRET_KEY_FALLBACKS
-        ):
-            value = self.peer_relation_data(scope).fetch_my_relation_field(
-                peers.id, SECRET_KEY_FALLBACKS[key]
-            )
-        return value
+        return self.peer_relation_data(scope).get_secret(peers.id, key)
 
     def set_secret(self, scope: Scopes, key: str, value: str | None) -> None:
         """Set a secret in the secret storage."""
@@ -968,20 +958,10 @@ class MySQLCharmBase(CharmBase, ABC):
             return
 
         if not value:
-            if key in SECRET_KEY_FALLBACKS:
-                self.remove_secret(scope, SECRET_KEY_FALLBACKS[key])
             self.remove_secret(scope, key)
             return
 
-        fallback_key_to_secret_key = {v: k for k, v in SECRET_KEY_FALLBACKS.items()}
-        if key in fallback_key_to_secret_key:
-            if self.peer_relation_data(scope).fetch_my_relation_field(peers.id, key):
-                self.remove_secret(scope, key)
-            self.peer_relation_data(scope).set_secret(
-                peers.id, fallback_key_to_secret_key[key], value
-            )
-        else:
-            self.peer_relation_data(scope).set_secret(peers.id, key, value)
+        self.peer_relation_data(scope).set_secret(peers.id, key, value)
 
     def remove_secret(self, scope: Scopes, key: str) -> None:
         """Removing a secret."""
