@@ -101,10 +101,10 @@ class MySQL(MySQLBase):
         socket_path: str,
         cluster_name: str,
         cluster_set_name: str,
-        server_config_user: str,
-        server_config_password: str,
-        cluster_admin_user: str,
-        cluster_admin_password: str,
+        operator_user: str,
+        operator_password: str,
+        replication_user: str,
+        replication_password: str,
         monitoring_user: str,
         monitoring_password: str,
         backups_user: str,
@@ -118,10 +118,10 @@ class MySQL(MySQLBase):
             socket_path: path to the MySQL socket
             cluster_name: cluster name
             cluster_set_name: cluster set domain name
-            server_config_user: user name for the server config user
-            server_config_password: password for the server config user
-            cluster_admin_user: user name for the cluster admin user
-            cluster_admin_password: password for the cluster admin user
+            operator_user: user name for the server config user
+            operator_password: password for the server config user
+            replication_user: user name for the cluster admin user
+            replication_password: password for the cluster admin user
             monitoring_user: user name for the mysql exporter
             monitoring_password: password for the monitoring user
             backups_user: user name used to create backups
@@ -133,10 +133,10 @@ class MySQL(MySQLBase):
             socket_path=socket_path,
             cluster_name=cluster_name,
             cluster_set_name=cluster_set_name,
-            server_config_user=server_config_user,
-            server_config_password=server_config_password,
-            cluster_admin_user=cluster_admin_user,
-            cluster_admin_password=cluster_admin_password,
+            operator_user=operator_user,
+            operator_password=operator_password,
+            replication_user=replication_user,
+            replication_password=replication_password,
             monitoring_user=monitoring_user,
             monitoring_password=monitoring_password,
             backups_user=backups_user,
@@ -351,8 +351,8 @@ class MySQL(MySQLBase):
                 ) from e
 
             _sql_file.write(
-                f"CREATE USER '{self.server_config_user}'@'localhost' IDENTIFIED BY '{self.server_config_password}';\n"
-                f"GRANT ALL ON *.* TO '{self.server_config_user}'@'localhost' WITH GRANT OPTION;\n"
+                f"CREATE USER '{self.operator_user}'@'localhost' IDENTIFIED BY '{self.operator_password}';\n"
+                f"GRANT ALL ON *.* TO '{self.operator_user}'@'localhost' WITH GRANT OPTION;\n"
                 "FLUSH PRIVILEGES;",
             )
             _sql_file.flush()

@@ -86,18 +86,19 @@ from charms.mysql.v0.s3_helpers import (
     list_backups_in_s3_path,
     upload_content_to_s3,
 )
-from constants import (
-    MYSQL_DATA_DIR,
-    OPERATOR_PASSWORD_KEY,
-    OPERATOR_USERNAME,
-    PEER,
-)
 from mysql_shell.models.cluster import ClusterStatus
 from mysql_shell.models.instance import InstanceRole, InstanceState
 from ops.charm import ActionEvent
 from ops.framework import Object
 from ops.jujuversion import JujuVersion
 from ops.model import BlockedStatus, MaintenanceStatus
+
+from constants import (
+    MYSQL_DATA_DIR,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
+    PEER,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -735,8 +736,8 @@ class MySQLBackups(Object):
             logger.info("Restoring point-in-time-recovery")
             stdout, stderr = self.charm._mysql.restore_pitr(
                 host=self.charm.get_unit_address(self.charm.unit, PEER),
-                mysql_user=self.charm._mysql.server_config_user,
-                password=self.charm._mysql.server_config_password,
+                mysql_user=self.charm._mysql.operator_user,
+                password=self.charm._mysql.operator_password,
                 s3_parameters=s3_parameters,
                 restore_to_time=restore_to_time,
             )

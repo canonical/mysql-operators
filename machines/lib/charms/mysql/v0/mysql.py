@@ -31,19 +31,19 @@ class MySQL(MySQLBase):
         self,
         instance_address: str,
         cluster_name: str,
-        server_config_user: str,
-        server_config_password: str,
-        cluster_admin_user: str,
-        cluster_admin_password: str,
+        operator_user: str,
+        operator_password: str,
+        replication_user: str,
+        replication_password: str,
         new_parameter: str
     ):
         super().__init__(
                 instance_address=instance_address,
                 cluster_name=cluster_name,
-                server_config_user=server_config_user,
-                server_config_password=server_config_password,
-                cluster_admin_user=cluster_admin_user,
-                cluster_admin_password=cluster_admin_password,
+                operator_user=operator_user,
+                operator_password=operator_password,
+                replication_user=replication_user,
+                replication_password=replication_password,
             )
         # Add new attribute
         self.new_parameter = new_parameter
@@ -992,10 +992,10 @@ class MySQLBase(ABC):
         socket_path: str,
         cluster_name: str,
         cluster_set_name: str,
-        server_config_user: str,
-        server_config_password: str,
-        cluster_admin_user: str,
-        cluster_admin_password: str,
+        operator_user: str,
+        operator_password: str,
+        replication_user: str,
+        replication_password: str,
         monitoring_user: str,
         monitoring_password: str,
         backups_user: str,
@@ -1008,10 +1008,10 @@ class MySQLBase(ABC):
         self.socket_path = socket_path
         self.cluster_name = cluster_name
         self.cluster_set_name = cluster_set_name
-        self.server_config_user = server_config_user
-        self.server_config_password = server_config_password
-        self.cluster_admin_user = cluster_admin_user
-        self.cluster_admin_password = cluster_admin_password
+        self.operator_user = operator_user
+        self.operator_password = operator_password
+        self.replication_user = replication_user
+        self.replication_password = replication_password
         self.monitoring_user = monitoring_user
         self.monitoring_password = monitoring_password
         self.backups_user = backups_user
@@ -1019,8 +1019,8 @@ class MySQLBase(ABC):
         self.mysqlsh_path = mysqlsh_path
         self.executor_class = executor_class
         self.passwords = [
-            self.server_config_password,
-            self.cluster_admin_password,
+            self.operator_password,
+            self.replication_password,
             self.monitoring_password,
             self.backups_password,
         ]
@@ -1056,8 +1056,8 @@ class MySQLBase(ABC):
         """Build a TCP executor for the cluster operations."""
         return self.executor_class(
             conn_details=ConnectionDetails(
-                username=self.cluster_admin_user,
-                password=self.cluster_admin_password,
+                username=self.replication_user,
+                password=self.replication_password,
                 host=host,
                 port=str(port),
             ),
@@ -1068,8 +1068,8 @@ class MySQLBase(ABC):
         """Build a TCP executor for the instance operations."""
         return self.executor_class(
             conn_details=ConnectionDetails(
-                username=self.server_config_user,
-                password=self.server_config_password,
+                username=self.operator_user,
+                password=self.operator_password,
                 host=host,
                 port=str(port),
             ),
@@ -1080,8 +1080,8 @@ class MySQLBase(ABC):
         """Build a socket executor for the instance operations."""
         return self.executor_class(
             conn_details=ConnectionDetails(
-                username=self.server_config_user,
-                password=self.server_config_password,
+                username=self.operator_user,
+                password=self.operator_password,
                 socket=self.socket_path,
             ),
             shell_path=self.mysqlsh_path,
@@ -1299,14 +1299,14 @@ class MySQLBase(ABC):
     def configure_mysql_system_users(self) -> None:
         """Configure the MySQL system users for the instance."""
         configure_users_commands = [
-            f"CREATE USER '{self.server_config_user}'@'%' IDENTIFIED BY '{self.server_config_password}'",
+            f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}'",
             f"CREATE USER '{self.monitoring_user}'@'%' IDENTIFIED BY '{self.monitoring_password}' WITH MAX_USER_CONNECTIONS 3",
             f"CREATE USER '{self.backups_user}'@'%' IDENTIFIED BY '{self.backups_password}'",
         ]
 
         # Reference: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_super
         configure_privs_commands = [
-            f"GRANT ALL ON *.* TO '{self.server_config_user}'@'%' WITH GRANT OPTION",
+            f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION",
             f"GRANT charmed_stats TO '{self.monitoring_user}'@'%'",
             f"GRANT charmed_backup TO '{self.backups_user}'@'%'",
             "FLUSH PRIVILEGES",
@@ -1553,8 +1553,8 @@ class MySQLBase(ABC):
 
         if create_cluster_admin:
             options.update({
-                "clusterAdmin": self.cluster_admin_user,
-                "clusterAdminPassword": self.cluster_admin_password,
+                "clusterAdmin": self.replication_user,
+                "clusterAdminPassword": self.replication_password,
             })
 
         client = MySQLClusterClient(
