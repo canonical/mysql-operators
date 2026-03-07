@@ -97,7 +97,7 @@ class TestMySQL(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("mysql_vm_helpers.snap_service_operation")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld_exception(
+    def test_set_user_operator_and_start_mysqld_exception(
         self,
         _wait_until_mysql_connection,
         _snap_service_operation,

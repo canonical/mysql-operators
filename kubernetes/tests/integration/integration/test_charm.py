@@ -8,7 +8,7 @@ import jubilant
 import urllib3
 from jubilant import Juju
 
-from constants import DEFAULT_PASSWORD_LENGTH, REPLICATION_USERNAME, ROOT_USERNAME
+from constants import BACKUPS_USERNAME, DEFAULT_PASSWORD_LENGTH, REPLICATION_USERNAME
 from utils import generate_random_password
 
 from ..helpers import execute_queries_on_unit
@@ -164,15 +164,15 @@ def test_password_rotation_silent(juju: Juju):
     )
 
 
-def test_password_rotation_root_user_implicit(juju: Juju):
+def test_password_rotation_backup_user_implicit(juju: Juju):
     """Rotate password and confirm changes."""
     app_units = get_app_units(juju, APP_NAME)
     random_unit_name = app_units[-1]
 
-    root_credentials = get_mysql_server_credentials(juju, random_unit_name, ROOT_USERNAME)
+    backup_credentials = get_mysql_server_credentials(juju, random_unit_name, BACKUPS_USERNAME)
 
-    old_credentials = get_mysql_server_credentials(juju, random_unit_name, ROOT_USERNAME)
-    assert old_credentials["password"] == root_credentials["password"]
+    old_credentials = get_mysql_server_credentials(juju, random_unit_name, BACKUPS_USERNAME)
+    assert old_credentials["password"] == backup_credentials["password"]
 
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, APP_NAME)
@@ -181,12 +181,14 @@ def test_password_rotation_root_user_implicit(juju: Juju):
         f"Test succeeded Primary unit detected before password rotation is {primary_unit_address}"
     )
 
-    rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME)
+    rotate_mysql_server_credentials(juju, primary_unit_name, BACKUPS_USERNAME)
 
-    updated_credentials = get_mysql_server_credentials(juju, random_unit_name, ROOT_USERNAME)
+    updated_credentials = get_mysql_server_credentials(juju, random_unit_name, BACKUPS_USERNAME)
     assert updated_credentials["password"] != old_credentials["password"]
 
-    updated_root_credentials = get_mysql_server_credentials(juju, random_unit_name, ROOT_USERNAME)
+    updated_root_credentials = get_mysql_server_credentials(
+        juju, random_unit_name, BACKUPS_USERNAME
+    )
     assert updated_credentials["password"] == updated_root_credentials["password"]
 
 
