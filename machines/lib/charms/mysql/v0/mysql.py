@@ -2469,61 +2469,65 @@ class MySQLBase(ABC):
             logger.error("Failed unexpectedly to execute commands prior to running backup")
             raise MySQLExecuteBackupCommandsError from e
 
-        # TODO: remove flags --no-server-version-check
-        # when MySQL and XtraBackup versions are in sync
-        xtrabackup_commands = [
-            f"{xtrabackup_location} --defaults-file={defaults_config_file}",
-            "--defaults-group=mysqld",
-            "--no-version-check",
-            f"--parallel={nproc}",
-            f"--user={self.backups_user}",
-            f"--password={self.backups_password}",
-            f"--socket={mysqld_socket_file}",
-            "--lock-ddl",
-            "--backup",
-            "--stream=xbstream",
-            f"--xtrabackup-plugin-dir={xtrabackup_plugin_dir}",
-            f"--target-dir={tmp_dir}",
-            "--no-server-version-check",
-            f"| {xbcloud_location} put",
-            "--curl-retriable-errors=7",
-            "--insecure",
-            "--parallel=10",
-            "--md5",
-            "--storage=S3",
-            f"--s3-region={s3_parameters['region']}",
-            f"--s3-bucket={s3_parameters['bucket']}",
-            f"--s3-endpoint={s3_parameters['endpoint']}",
-            f"--s3-api-version={s3_parameters['s3-api-version']}",
-            f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
-            f"{s3_path}",
-        ]
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        with self._temporary_ca_file(ca_chain) as ca_file:
+            # TODO: remove flags --no-server-version-check
+            # when MySQL and XtraBackup versions are in sync
+            xtrabackup_commands = [
+                f"{xtrabackup_location} --defaults-file={defaults_config_file}",
+                "--defaults-group=mysqld",
+                "--no-version-check",
+                f"--parallel={nproc}",
+                f"--user={self.backups_user}",
+                f"--password={self.backups_password}",
+                f"--socket={mysqld_socket_file}",
+                "--lock-ddl",
+                "--backup",
+                "--stream=xbstream",
+                f"--xtrabackup-plugin-dir={xtrabackup_plugin_dir}",
+                f"--target-dir={tmp_dir}",
+                "--no-server-version-check",
+                f"| {xbcloud_location} put",
+                "--curl-retriable-errors=7",
+                "--insecure",
+                "--parallel=10",
+                "--md5",
+                "--storage=S3",
+                f"--s3-region={s3_parameters['region']}",
+                f"--s3-bucket={s3_parameters['bucket']}",
+                f"--s3-endpoint={s3_parameters['endpoint']}",
+                f"--s3-api-version={s3_parameters['s3-api-version']}",
+                f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
+                f"{s3_path}",
+            ]
+            if ca_file:
+                xtrabackup_commands.append(f"--cacert={ca_file}")
 
-        try:
-            logger.debug(
-                f"Command to create backup: {' '.join(xtrabackup_commands).replace(self.backups_password, 'xxxxxxxxxxxx')}"
-            )
+            try:
+                logger.debug(
+                    f"Command to create backup: {' '.join(xtrabackup_commands).replace(self.backups_password, 'xxxxxxxxxxxx')}"
+                )
 
-            # ACCESS_KEY_ID and SECRET_ACCESS_KEY envs auto picked by xbcloud
-            return self._execute_commands(
-                xtrabackup_commands,
-                bash=True,
-                user=user,
-                group=group,
-                env_extra={
-                    "ACCESS_KEY_ID": s3_parameters["access-key"],
-                    "SECRET_ACCESS_KEY": s3_parameters["secret-key"],
-                },
-                stream_output="stderr",
-            )
-        except MySQLExecError as e:
-            logger.error("Failed to execute backup commands")
-            raise MySQLExecuteBackupCommandsError from e
-        except Exception as e:
-            # Catch all other exceptions to prevent the database being stuck in
-            # a bad state due to pre-backup operations
-            logger.error("Failed unexpectedly to execute backup commands")
-            raise MySQLExecuteBackupCommandsError from e
+                # ACCESS_KEY_ID and SECRET_ACCESS_KEY envs auto picked by xbcloud
+                return self._execute_commands(
+                    xtrabackup_commands,
+                    bash=True,
+                    user=user,
+                    group=group,
+                    env_extra={
+                        "ACCESS_KEY_ID": s3_parameters["access-key"],
+                        "SECRET_ACCESS_KEY": s3_parameters["secret-key"],
+                    },
+                    stream_output="stderr",
+                )
+            except MySQLExecError as e:
+                logger.error("Failed to execute backup commands")
+                raise MySQLExecuteBackupCommandsError from e
+            except Exception as e:
+                # Catch all other exceptions to prevent the database being stuck in
+                # a bad state due to pre-backup operations
+                logger.error("Failed unexpectedly to execute backup commands")
+                raise MySQLExecuteBackupCommandsError from e
 
     def delete_temp_backup_directory(
         self,
@@ -2610,14 +2614,17 @@ class MySQLBase(ABC):
                 f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
                 f"--s3-api-version={s3_parameters['s3-api-version']}",
                 f"{s3_parameters['path']}/{backup_id}",
+            ]
+            if ca_file:
+                retrieve_backup_command.append(f"--cacert={ca_file}")
+
+            retrieve_backup_command += [
                 f"| {xbstream_location}",
                 "--decompress",
                 "-x",
                 f"-C {tmp_dir}",
                 f"--parallel={nproc}",
             ]
-            if ca_file:
-                retrieve_backup_command.append(f"--cacert={ca_file}")
 
             try:
                 logger.debug(f"Command to retrieve backup: {' '.join(retrieve_backup_command)}")

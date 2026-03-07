@@ -45,8 +45,6 @@ from .helpers_backups import local_tmp_folder
 
 logger = logging.getLogger(__name__)
 
-host_ip = socket.gethostbyname(socket.gethostname())
-
 DATABASE_APP_NAME = "mysql-k8s"
 S3_INTEGRATOR = "s3-integrator"
 TIMEOUT = 10 * MINUTE_SECS
@@ -94,7 +92,15 @@ def certs_path() -> Iterable[Path]:
 
 
 @pytest.fixture(scope="session")
-def microceph(certs_path) -> MicrocephConnectionInformation:
+def host_ip() -> str:
+    """The IP address of the host running these tests."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect(("1.1.1.1", 80))
+        return s.getsockname()[0]
+
+
+@pytest.fixture(scope="session")
+def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
     if os.environ.get("CI") != "true":
         logging.info("Not running on CI. Skipping microceph installation")
         return MicrocephConnectionInformation(
@@ -241,6 +247,7 @@ def microceph(certs_path) -> MicrocephConnectionInformation:
         text=True,
         capture_output=True,
     ).stdout.strip()
+
     return MicrocephConnectionInformation(
         endpoint_url=f"https://{host_ip}",
         access_key_id=key_id,
