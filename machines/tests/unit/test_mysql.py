@@ -1031,7 +1031,10 @@ class TestMySQLBase(unittest.TestCase):
         ]
         _exepected_ca_content_commands = [
             "echo",
-            "'foobar_ca_chain'",
+            "Zm9vYmFyX2NhX2NoYWlu",
+            "|",
+            "base64",
+            "-d",
             ">",
             "/tmp/base/directory/s3_ca_ABCD/s3-ca.pem",
         ]
@@ -1219,7 +1222,10 @@ class TestMySQLBase(unittest.TestCase):
         ]
         _exepected_ca_content_commands = [
             "echo",
-            "'foobar_ca_chain'",
+            "Zm9vYmFyX2NhX2NoYWlu",
+            "|",
+            "base64",
+            "-d",
             ">",
             "mysql/data/directory/#s3_ca_ABCD/s3-ca.pem",
         ]

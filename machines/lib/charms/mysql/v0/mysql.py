@@ -56,6 +56,7 @@ The module also provides a set of custom exceptions, used to trigger specific
 error handling on the subclass and in the charm code.
 """
 
+import base64
 import configparser
 import hashlib
 import io
@@ -2464,12 +2465,13 @@ class MySQLBase(ABC):
             tmp_dir_ca, _ = self._execute_commands(make_ca_dir_command, user=user, group=group)
             ca_file_location = f"{tmp_dir_ca}/s3-ca.pem"
             if ca_chain:
-                ca_file_content = "\n".join(ca_chain)
+                ca_file_content_b64 = base64.b64encode("\n".join(ca_chain).encode()).decode()
                 write_ca_file_content_command = (
-                    f"echo '{ca_file_content}' > {ca_file_location}".split()
+                    f"echo {ca_file_content_b64} | base64 -d > {ca_file_location}".split()
                 )
                 _, _ = self._execute_commands(
                     write_ca_file_content_command,
+                    bash=True,
                     user=user,
                     group=group,
                 )
@@ -2600,12 +2602,13 @@ class MySQLBase(ABC):
             )
             ca_file_location = f"{tmp_dir_ca}/s3-ca.pem"
             if ca_chain:
-                ca_file_content = "\n".join(ca_chain)
+                ca_file_content_b64 = base64.b64encode("\n".join(ca_chain).encode()).decode()
                 write_ca_file_content_command = (
-                    f"echo '{ca_file_content}' > {ca_file_location}".split()
+                    f"echo {ca_file_content_b64} | base64 -d > {ca_file_location}".split()
                 )
                 _, _ = self._execute_commands(
                     write_ca_file_content_command,
+                    bash=True,
                     user=user,
                     group=group,
                 )

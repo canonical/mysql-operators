@@ -66,4 +66,4 @@ def cloud_configs_gcp() -> tuple[dict[str, str], dict[str, str]]:
 
 @pytest.fixture(scope="module")
 def juju() -> jubilant.Juju:
-    return jubilant.Juju(model="testing")
+    return jubilant.Juju(model="head")
