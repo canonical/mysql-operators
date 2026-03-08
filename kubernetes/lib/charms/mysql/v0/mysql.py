@@ -63,18 +63,15 @@ import io
 import json
 import logging
 import os
-import pathlib
 import re
 import sys
-import tempfile
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Iterator,
     Literal,
     Type,
     get_args,
