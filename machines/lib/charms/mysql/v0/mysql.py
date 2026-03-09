@@ -539,7 +539,7 @@ class MySQLCharmBase(CharmBase, ABC):
             event.fail("Only offer side can change password when replications is enabled")
             return
 
-        username = event.params.get("username")
+        username = event.params.get("username", "")
 
         valid_usernames = {
             OPERATOR_USERNAME: OPERATOR_PASSWORD_KEY,
@@ -561,9 +561,6 @@ class MySQLCharmBase(CharmBase, ABC):
         if len(new_password) > MAX_PASSWORD_LENGTH:
             raise MySQLUpdateUserError("Password is too long")
 
-        if username == OPERATOR_USERNAME:
-            # charmed-operator user has localhost user
-            self._mysql.update_user_password(username, new_password, host="localhost")
         self._mysql.update_user_password(username, new_password)
 
         self.set_secret("app", secret_key, new_password)
@@ -1297,16 +1294,17 @@ class MySQLBase(ABC):
             raise MySQLDropRootUserError() from e
 
     def configure_mysql_system_users(self) -> None:
-        """Configure the MySQL system users for the instance."""
+        """Configure the MySQL system users for the instance.
+
+        Note: operator user is created at initialization and replication user is created at instance configuration
+        """
         configure_users_commands = [
-            f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}'",
             f"CREATE USER '{self.monitoring_user}'@'%' IDENTIFIED BY '{self.monitoring_password}' WITH MAX_USER_CONNECTIONS 3",
             f"CREATE USER '{self.backups_user}'@'%' IDENTIFIED BY '{self.backups_password}'",
         ]
 
         # Reference: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_super
         configure_privs_commands = [
-            f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION",
             f"GRANT charmed_stats TO '{self.monitoring_user}'@'%'",
             f"GRANT charmed_backup TO '{self.backups_user}'@'%'",
             "FLUSH PRIVILEGES",

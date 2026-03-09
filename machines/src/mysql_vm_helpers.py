@@ -351,8 +351,8 @@ class MySQL(MySQLBase):
                 ) from e
 
             _sql_file.write(
-                f"CREATE USER '{self.operator_user}'@'localhost' IDENTIFIED BY '{self.operator_password}';\n"
-                f"GRANT ALL ON *.* TO '{self.operator_user}'@'localhost' WITH GRANT OPTION;\n"
+                f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}';\n"
+                f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION;\n"
                 "FLUSH PRIVILEGES;",
             )
             _sql_file.flush()
