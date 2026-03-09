@@ -189,8 +189,8 @@ class TestMySQL(unittest.TestCase):
             call(
                 "/create-operator-user.sql",
                 (
-                    "CREATE USER 'charmed-operator'@'localhost' IDENTIFIED BY 'charmed-operatorpassword';\n"
-                    "GRANT ALL ON *.* TO 'charmed-operator'@'localhost' WITH GRANT OPTION;\n"
+                    "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
+                    "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
                     "FLUSH PRIVILEGES;"
                 ),
                 encoding="utf-8",
@@ -233,8 +233,8 @@ class TestMySQL(unittest.TestCase):
             call(
                 "/create-operator-user.sql",
                 (
-                    "CREATE USER 'charmed-operator'@'localhost' IDENTIFIED BY 'charmed-operatorpassword';\n"
-                    "GRANT ALL ON *.* TO 'charmed-operator'@'localhost' WITH GRANT OPTION;\n"
+                    "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
+                    "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
                     "FLUSH PRIVILEGES;"
                 ),
                 encoding="utf-8",
@@ -261,8 +261,8 @@ class TestMySQL(unittest.TestCase):
             call(
                 "/create-operator-user.sql",
                 (
-                    "CREATE USER 'charmed-operator'@'localhost' IDENTIFIED BY 'charmed-operatorpassword';\n"
-                    "GRANT ALL ON *.* TO 'charmed-operator'@'localhost' WITH GRANT OPTION;\n"
+                    "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
+                    "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
                     "FLUSH PRIVILEGES;"
                 ),
                 encoding="utf-8",

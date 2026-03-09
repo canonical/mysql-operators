@@ -207,10 +207,8 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_sql.return_value = []
 
         queries = ";".join([
-            "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword'",
             "CREATE USER 'charmed-stats'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
             "CREATE USER 'charmed-backup'@'%' IDENTIFIED BY 'backupspassword'",
-            "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION",
             "GRANT charmed_stats TO 'charmed-stats'@'%'",
             "GRANT charmed_backup TO 'charmed-backup'@'%'",
             "FLUSH PRIVILEGES",
