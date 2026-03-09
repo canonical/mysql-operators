@@ -825,7 +825,7 @@ class MySQLCharmBase(CharmBase, ABC):
     @property
     def active_status_message(self) -> str:
         """Active status message."""
-        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY.value:
+        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY:
             return ""
 
         if self._mysql.is_cluster_replica() is False:
