@@ -54,7 +54,6 @@ from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
-    ActiveStatus,
     BlockedStatus,
     Container,
     MaintenanceStatus,
@@ -358,7 +357,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
             self.unit.set_ports(3306, 33060)
-            self.unit.status = ops.ActiveStatus(self.active_status_message)
+            self.unit.status = self.unit_workload_status
         except (
             MySQLCreateClusterError,
             MySQLCreateClusterSetError,
@@ -478,7 +477,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 return
 
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
-        self.unit.status = ActiveStatus(self.active_status_message)
+        self.unit.status = self.unit_workload_status
         logger.info(f"Instance {instance_label} added to cluster")
 
     def _reconcile_pebble_layer(self, container: Container) -> None:
@@ -827,43 +826,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self._create_cluster()
         self._mysql.reconcile_binlogs_collection(force_restart=True)
 
-    def _handle_potential_cluster_crash_scenario(self) -> bool:  # noqa: C901
+    def _handle_potential_cluster_crash_scenario(self, state: str) -> bool:
         """Handle potential full cluster crash scenarios.
 
         Returns:
             bool indicating whether the caller should return
         """
-        if not self._mysql.is_mysqld_running():
+        single_node_cluster = self.only_one_cluster_node_thats_uninitialized
+        if not single_node_cluster and not self.cluster_initialized:
             return True
-
-        only_single_uninitialized_node_across_cluster = (
-            self.only_one_cluster_node_thats_uninitialized
-        )
-
-        if (
-            not self.cluster_initialized and not only_single_uninitialized_node_across_cluster
-        ) or not self.unit_peer_data.get("member-role"):
-            return True
-
-        # retrieve and persist state for every unit
-        try:
-            role = self._mysql.get_member_role()
-            state = self._mysql.get_member_state()
-        except MySQLUnableToGetMemberStateError:
-            logger.error("Error getting member state. Avoiding potential cluster crash recovery")
-            self.unit.status = MaintenanceStatus("Unable to get member state")
-            return True
-        else:
-            logger.info(f"Unit workload member-state is {state} with member-role {role}")
-            self.unit_peer_data["member-role"] = role
-            self.unit_peer_data["member-state"] = state
-
-        # set unit status based on member-{state,role}
-        self.unit.status = (
-            ActiveStatus(self.active_status_message)
-            if state == InstanceState.ONLINE
-            else MaintenanceStatus(state)
-        )
 
         if state == InstanceState.RECOVERING:
             return True
@@ -875,22 +846,21 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             }
 
             if (all_states | {state} == {state} and self.unit.is_leader()) or (
-                only_single_uninitialized_node_across_cluster and all_states == {"waiting"}
+                single_node_cluster and all_states == {"waiting"}
             ):
                 # All instance are off, reboot cluster from outage from the leader unit
-
                 logger.info("Attempting reboot from complete outage.")
                 try:
                     # Need condition to avoid rebooting on all units of application
-                    if self.unit.is_leader() or only_single_uninitialized_node_across_cluster:
+                    if self.unit.is_leader() or single_node_cluster:
                         self._mysql.reboot_from_complete_outage()
                 except MySQLRebootFromCompleteOutageError:
                     logger.error("Failed to reboot cluster from complete outage.")
 
-                    if only_single_uninitialized_node_across_cluster and all_states == {"waiting"}:
+                    if single_node_cluster and all_states == {"waiting"}:
                         self._mysql.drop_group_replication_metadata_schema()
                         self.create_cluster()
-                        self.unit.status = ActiveStatus(self.active_status_message)
+                        self.unit.status = self.unit_workload_status
                     else:
                         self.unit.status = BlockedStatus("failed to recover cluster.")
                 return True
@@ -994,39 +964,43 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._is_cluster_blocked():
             logger.info("Cluster is blocked. Skipping.")
             return
+
         del self.restart_peers.data[self.unit]["state"]
 
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not container.can_connect():
+        if not self._mysql.is_mysqld_running():
             logger.info("Cannot connect to pebble in the mysql container")
             return
 
-        if self._handle_potential_cluster_crash_scenario():
-            return
-
-        if not self.unit.is_leader():
-            return
-
-        self._set_app_status()
-
-    def _set_app_status(self) -> None:
-        """Set the application status based on the cluster state."""
+        # retrieve and persist state for every unit
         try:
-            primary_address = self._mysql.get_cluster_primary_address()
-        except MySQLGetClusterPrimaryAddressError:
+            role = self._mysql.get_member_role()
+            state = self._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Error getting member state. Avoiding potential cluster crash recovery")
+            self.unit.status = MaintenanceStatus("Unable to get member state")
             return
 
-        if not primary_address:
-            logger.error("Cluster has no primary. Check cluster status on online units.")
-            self.app.status = MaintenanceStatus("Cluster has no primary.")
+        logger.info(f"Unit workload member-state is {state} with member-role {role}")
+        self.unit_peer_data["member-role"] = role
+        self.unit_peer_data["member-state"] = state
+        self.unit.status = self.unit_workload_status
+
+        if self._handle_potential_cluster_crash_scenario(state):
             return
 
-        if "s3-block-message" in self.app_peer_data:
-            self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
+        self._set_app_status(state)
+
+    def _set_app_status(self, state: str) -> None:
+        """Set the application status based on the cluster state."""
+        if not self.unit.is_leader() or state != InstanceState.ONLINE:
             return
 
-        # Set active status when primary is known
-        self.app.status = ActiveStatus()
+        block_message = self.app_peer_data.get("s3-block-message")
+        if block_message:
+            self.app.status = BlockedStatus(block_message)
+            return
+
+        self.app.status = self.app_workload_status
 
     def _on_peer_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle the relation changed event."""

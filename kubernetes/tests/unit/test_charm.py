@@ -149,7 +149,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.rescan_cluster")
-    @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.unit_workload_status", new_callable=PropertyMock)
     @patch("upgrade.MySQLK8sUpgrade.idle", return_value=True)
     @patch("mysql_k8s_helpers.MySQL.write_content_to_file")
     @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)
@@ -197,12 +197,14 @@ class TestCharm(unittest.TestCase):
         _is_data_dir_initialised,
         _write_content_to_file,
         _upgrade_idle,
-        _active_status_message,
+        _unit_workload_status,
         _rescan_cluster,
         _cluster_metadata_exists,
         _install_components,
         _get_unit_address,
     ):
+        _unit_workload_status.return_value = ActiveStatus()
+
         # Check if initial plan is empty
         self.harness.set_can_connect("mysql", True)
         initial_plan = self.harness.get_container_pebble_plan("mysql")
