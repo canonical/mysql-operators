@@ -829,19 +829,44 @@ class MySQLCharmBase(CharmBase, ABC):
         return len(active_cos_relations) > 0
 
     @property
-    def active_status_message(self) -> str:
-        """Active status message."""
-        if self.unit_peer_data.get("member-role") != "primary":
-            return ""
+    def app_workload_status(self) -> ops.StatusBase:
+        """App status generated from the workload."""
+        status = self._mysql.get_cluster_status()
+        if not status:
+            return ops.MaintenanceStatus("Unknown")
+
+        units = status["defaultReplicaSet"]["topology"].keys()
+        status = status["defaultReplicaSet"]["status"]
+
+        if status in [ClusterStatus.OK, ClusterStatus.OK_PARTIAL]:
+            return ops.ActiveStatus("Healthy")
+        if status in [ClusterStatus.OK_NO_TOLERANCE, ClusterStatus.OK_NO_TOLERANCE_PARTIAL]:
+            return ops.ActiveStatus("Healthy") if len(units) < 3 else ops.ActiveStatus("Degraded")
+        if status in [ClusterStatus.NO_QUORUM]:
+            return ops.BlockedStatus("No quorum")
+        if status in [ClusterStatus.OFFLINE, ClusterStatus.ERROR]:
+            return ops.BlockedStatus("No online members")
+        if status in [ClusterStatus.UNREACHABLE]:
+            return ops.BlockedStatus("No connectivity")
+
+        return ops.MaintenanceStatus("Unknown")
+
+    @property
+    def unit_workload_status(self) -> ops.StatusBase:
+        """Unit status generated from the workload."""
+        if self.unit_peer_data.get("member-state") != InstanceState.ONLINE:
+            return ops.MaintenanceStatus("")
+        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY:
+            return ops.ActiveStatus("")
 
         if self._mysql.is_cluster_replica() is False:
-            return "Primary"
+            return ops.ActiveStatus("Primary")
 
         status = self._mysql.get_replica_cluster_status()
         if status == ClusterGlobalStatus.OK:
-            return "Standby"
+            return ops.ActiveStatus("Standby")
         else:
-            return f"Standby ({status})"
+            return ops.ActiveStatus(f"Standby ({status})")
 
     @property
     def removing_unit(self) -> bool:

@@ -168,7 +168,7 @@ class TestCharm(unittest.TestCase):
         _create_cluster.assert_called_once()
         _can_start.assert_called_once()
 
-        self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
+        self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
 
         self.harness.set_leader(False)
         self.charm.on.start.emit()
@@ -236,10 +236,10 @@ class TestCharm(unittest.TestCase):
         new_callable=PropertyMock(return_value=True),
     )
     @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
-    @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.unit_workload_status", new_callable=PropertyMock)
     @patch("mysql_vm_helpers.MySQL.get_member_state")
     @patch("mysql_vm_helpers.MySQL.get_member_role")
-    @patch("mysql_vm_helpers.MySQL.get_cluster_primary_address")
+    @patch("mysql_vm_helpers.MySQL.get_cluster_status")
     @patch("charm.is_volume_mounted", return_value=True)
     @patch("mysql_vm_helpers.MySQL.reboot_from_complete_outage")
     @patch("charm.snap_service_operation")
@@ -258,10 +258,10 @@ class TestCharm(unittest.TestCase):
         _snap_service_operation,
         _reboot_from_complete_outage,
         _is_volume_mounted,
-        _get_cluster_primary_address,
+        _get_cluster_status,
         _get_member_role,
         _get_member_state,
-        _active_status_message,
+        _unit_workload_status,
         _unit_initialized,
         _cluster_initialized,
     ):
@@ -286,6 +286,7 @@ class TestCharm(unittest.TestCase):
         )
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "ONLINE"
+        _unit_workload_status.return_value = ActiveStatus()
 
         self.charm.on.update_status.emit()
         _get_member_role.assert_called_once()
@@ -293,17 +294,19 @@ class TestCharm(unittest.TestCase):
         _reboot_from_complete_outage.assert_not_called()
         _snap_service_operation.assert_not_called()
         _is_volume_mounted.assert_called_once()
-        _get_cluster_primary_address.assert_called_once()
+        _get_cluster_status.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
 
         # test instance state = offline
         _get_member_role.reset_mock()
         _get_member_state.reset_mock()
-        _get_cluster_primary_address.reset_mock()
+        _unit_workload_status.reset_mock()
+        _get_cluster_status.reset_mock()
 
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "OFFLINE"
+        _unit_workload_status.return_value = MaintenanceStatus()
         self.harness.update_relation_data(
             self.peer_relation_id,
             self.charm.unit.name,
@@ -317,25 +320,27 @@ class TestCharm(unittest.TestCase):
         _get_member_state.assert_called_once()
         _reboot_from_complete_outage.assert_called_once()
         _snap_service_operation.assert_called()
-        _get_cluster_primary_address.assert_not_called()
+        _get_cluster_status.assert_not_called()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
         # test instance state = unreachable
         _get_member_role.reset_mock()
         _get_member_state.reset_mock()
-        _get_cluster_primary_address.reset_mock()
+        _unit_workload_status.reset_mock()
+        _get_cluster_status.reset_mock()
         _snap_service_operation.reset_mock()
 
         _reboot_from_complete_outage.reset_mock()
         _snap_service_operation.return_value = False
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "UNREACHABLE"
+        _unit_workload_status.return_value = BlockedStatus()
 
         self.charm.on.update_status.emit()
         _get_member_role.assert_called_once()
         _get_member_state.assert_called_once()
         _reboot_from_complete_outage.assert_not_called()
         _snap_service_operation.assert_called_once()
-        _get_cluster_primary_address.assert_not_called()
+        _get_cluster_status.assert_not_called()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
