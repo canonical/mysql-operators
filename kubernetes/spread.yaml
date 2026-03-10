@@ -60,7 +60,7 @@ backends:
       # For example, with microk8s, using `concierge restore` takes twice as long as this (e.g. 6
       # min instead of 3 min between every spread job)
       juju destroy-model --force --no-wait --destroy-storage --no-prompt testing
-      juju kill-controller --no-prompt concierge-microk8s
+      juju kill-controller --no-prompt concierge-k8s
     restore: |
       rm -rf "$SPREAD_PATH"
 
@@ -110,9 +110,20 @@ environment:
   PATH: $PATH:$(pipx environment --value PIPX_BIN_DIR)
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
 prepare: |
+  # Avoid conflicts with existing Docker and containerd installations
+  apt-get remove -y docker-ce docker-ce-cli containerd.io || true
+  rm -rf /run/containerd
+  # Ubuntu 24.04 runners ship podman with a CNI bridge config
+  # that sorts before Cilium's config,
+  # causing pods to land on the wrong network.
+  # Remove it before k8s bootstrap
+  # so Cilium is the only CNI plugin from the start.
+  rm -f /etc/cni/net.d/87-podman-bridge.conflist
+
   snap refresh --hold
   chown -R root:root "$SPREAD_PATH"
   cd "$SPREAD_PATH"
+
   snap install --classic concierge
 
   # Install charmcraft & pipx (on lxd-vm backend)
