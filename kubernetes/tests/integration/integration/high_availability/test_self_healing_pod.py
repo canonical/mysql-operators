@@ -6,7 +6,6 @@ import logging
 import jubilant_backports
 from jubilant_backports import Juju
 
-from ... import architecture
 from ...helpers import generate_random_string
 from ...helpers_ha import (
     CHARM_METADATA,
@@ -35,9 +34,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
-        trust=True,
     )
-    constraints = {"arch": architecture.architecture}
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
@@ -45,7 +42,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
-        constraints=constraints,
     )
 
     juju.integrate(
@@ -60,7 +56,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -79,7 +74,6 @@ def test_single_unit_pod_delete(juju: Juju) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Write data to unit and verify that data was written")

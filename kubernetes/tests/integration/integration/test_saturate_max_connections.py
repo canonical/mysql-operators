@@ -8,7 +8,6 @@ import pytest
 from jubilant_backports import Juju
 from mysql.connector.errors import OperationalError
 
-from .. import architecture
 from ..connector import create_db_connections
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, get_app_units, get_unit_address
 
@@ -34,7 +33,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 def test_deploy_and_relate_test_app(juju: Juju) -> None:
     config = {"auto_start_writes": False, "sleep_interval": "500"}
-    constraints = {"arch": architecture.architecture}
     logger.info("Deploying test app")
     juju.deploy(
         "mysql-test-app",
@@ -43,7 +41,6 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
         base="ubuntu@22.04",
         config=config,
         channel="latest/edge",
-        constraints=constraints,
     )
 
     logger.info("Relating test app to mysql")
@@ -53,7 +50,6 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
     juju.wait(
         jubilant_backports.all_active,
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
 

@@ -264,14 +264,12 @@ def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     juju.wait(
         ready=lambda status: jubilant_backports.any_maintenance(status, app_name),
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
         ready=lambda status: jubilant_backports.all_active(status, app_name),
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")

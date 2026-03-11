@@ -11,7 +11,6 @@ from pathlib import Path
 import jubilant_backports
 from jubilant_backports import Juju, TaskError
 
-from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
@@ -45,7 +44,6 @@ def test_deploy_latest(juju: Juju) -> None:
         num_units=3,
         trust=True,
     )
-    constraints = {"arch": architecture.architecture}
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
@@ -53,7 +51,6 @@ def test_deploy_latest(juju: Juju) -> None:
         channel="latest/edge",
         num_units=1,
         trust=False,
-        constraints=constraints,
     )
 
     juju.integrate(
@@ -68,7 +65,6 @@ def test_deploy_latest(juju: Juju) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -112,7 +108,6 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_unit_message(MYSQL_APP_NAME, mysql_upgrade_unit, "upgrade completed"),
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Resume upgrade")
@@ -128,7 +123,6 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=lambda status: jubilant_backports.all_active(status, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")
@@ -160,7 +154,6 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_upgrade_unit, "blocked"),
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Ensure continuous writes on remaining units")
@@ -177,7 +170,6 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=wait_for_unit_message(MYSQL_APP_NAME, mysql_upgrade_unit, "upgrade completed"),
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Resume upgrade")
@@ -193,7 +185,6 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     juju.wait(
         ready=lambda status: jubilant_backports.all_active(status, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Ensure continuous writes after rollback procedure")

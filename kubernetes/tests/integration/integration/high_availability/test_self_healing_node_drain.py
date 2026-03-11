@@ -9,7 +9,6 @@ from lightkube.core.client import Client
 from lightkube.models.meta_v1 import ObjectMeta
 from lightkube.resources.core_v1 import PersistentVolume, PersistentVolumeClaim, Pod
 
-from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
@@ -37,9 +36,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
-        trust=True,
     )
-    constraints = {"arch": architecture.architecture}
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
@@ -47,7 +44,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
-        constraints=constraints,
     )
 
     juju.integrate(
@@ -62,7 +58,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -87,7 +82,6 @@ def test_pod_eviction_and_pvc_deletion(juju: Juju, continuous_writes) -> None:
             ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
             error=jubilant_backports.any_blocked,
             timeout=20 * MINUTE_SECS,
-            delay=2,
         )
 
     logging.info("Ensuring that all instances have incrementing continuous writes")
