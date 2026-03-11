@@ -247,7 +247,7 @@ class MySQLAsyncReplication(Object):
 
                         self._charm._mysql.remove_replica_cluster(cluster_name, force=force)
                         logger.info(f"Replica cluster {cluster_name} removed")
-                        self._charm.unit.status = self._charm.unit_workload_status
+                        self._charm.unit.status = self._charm.build_unit_workload_status()
                     else:
                         logger.warning(
                             f"Replica cluster {cluster_name} not found in cluster set, skipping removal"

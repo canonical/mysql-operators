@@ -521,7 +521,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.app.status = BlockedStatus(block_message)
             return
 
-        self.app.status = self.app_workload_status
+        self.app.status = self.build_app_workload_status()
 
     def _on_update_status(self, _) -> None:
         """Handle update status.
@@ -574,7 +574,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role
         self.unit_peer_data["member-state"] = state
-        self.unit.status = self.unit_workload_status
+        self.unit.status = self.build_unit_workload_status()
 
         if not self._handle_non_online_instance_status(state):
             return
@@ -846,7 +846,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
             self.unit.set_ports(3306, 33060)
-            self.unit.status = self.unit_workload_status
+            self.unit.status = self.build_unit_workload_status()
         except (
             MySQLCreateClusterError,
             MySQLCreateClusterSetError,
@@ -945,7 +945,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 return
 
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
-        self.unit.status = self.unit_workload_status
+        self.unit.status = self.build_unit_workload_status()
         logger.info(f"Instance {instance_label} added to cluster")
 
     def recover_unit_after_restart(self) -> None:

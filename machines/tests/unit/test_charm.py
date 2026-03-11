@@ -236,7 +236,7 @@ class TestCharm(unittest.TestCase):
         new_callable=PropertyMock(return_value=True),
     )
     @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
-    @patch("charms.mysql.v0.mysql.MySQLCharmBase.unit_workload_status", new_callable=PropertyMock)
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.build_unit_workload_status")
     @patch("mysql_vm_helpers.MySQL.get_member_state")
     @patch("mysql_vm_helpers.MySQL.get_member_role")
     @patch("mysql_vm_helpers.MySQL.get_cluster_status")
@@ -261,7 +261,7 @@ class TestCharm(unittest.TestCase):
         _get_cluster_status,
         _get_member_role,
         _get_member_state,
-        _unit_workload_status,
+        _build_unit_workload_status,
         _unit_initialized,
         _cluster_initialized,
     ):
@@ -286,7 +286,7 @@ class TestCharm(unittest.TestCase):
         )
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "ONLINE"
-        _unit_workload_status.return_value = ActiveStatus()
+        _build_unit_workload_status.return_value = ActiveStatus()
 
         self.charm.on.update_status.emit()
         _get_member_role.assert_called_once()
@@ -301,12 +301,12 @@ class TestCharm(unittest.TestCase):
         # test instance state = offline
         _get_member_role.reset_mock()
         _get_member_state.reset_mock()
-        _unit_workload_status.reset_mock()
+        _build_unit_workload_status.reset_mock()
         _get_cluster_status.reset_mock()
 
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "OFFLINE"
-        _unit_workload_status.return_value = MaintenanceStatus()
+        _build_unit_workload_status.return_value = MaintenanceStatus()
         self.harness.update_relation_data(
             self.peer_relation_id,
             self.charm.unit.name,
@@ -326,7 +326,7 @@ class TestCharm(unittest.TestCase):
         # test instance state = unreachable
         _get_member_role.reset_mock()
         _get_member_state.reset_mock()
-        _unit_workload_status.reset_mock()
+        _build_unit_workload_status.reset_mock()
         _get_cluster_status.reset_mock()
         _snap_service_operation.reset_mock()
 
@@ -334,7 +334,7 @@ class TestCharm(unittest.TestCase):
         _snap_service_operation.return_value = False
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "UNREACHABLE"
-        _unit_workload_status.return_value = BlockedStatus()
+        _build_unit_workload_status.return_value = BlockedStatus()
 
         self.charm.on.update_status.emit()
         _get_member_role.assert_called_once()

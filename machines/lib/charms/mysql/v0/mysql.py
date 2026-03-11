@@ -653,8 +653,8 @@ class MySQLCharmBase(CharmBase, ABC):
         logger.info("Recreating cluster")
         try:
             self.create_cluster()
-            self.unit.status = ops.ActiveStatus(self.active_status_message)
-            self.app.status = ops.ActiveStatus()
+            self.unit.status = self.build_unit_workload_status()
+            self.app.status = self.build_app_workload_status()
         except (MySQLCreateClusterError, MySQLCreateClusterSetError) as e:
             logger.exception("Failed to recreate cluster")
             event.fail(str(e))
@@ -829,7 +829,11 @@ class MySQLCharmBase(CharmBase, ABC):
         return len(active_cos_relations) > 0
 
     @property
-    def app_workload_status(self) -> ops.StatusBase:
+    def removing_unit(self) -> bool:
+        """Check if the unit is being removed."""
+        return self.unit_peer_data.get("unit-status") == "removing"
+
+    def build_app_workload_status(self) -> ops.StatusBase:
         """App status generated from the workload."""
         status = self._mysql.get_cluster_status()
         if not status:
@@ -851,8 +855,7 @@ class MySQLCharmBase(CharmBase, ABC):
 
         return ops.MaintenanceStatus("Unknown")
 
-    @property
-    def unit_workload_status(self) -> ops.StatusBase:
+    def build_unit_workload_status(self) -> ops.StatusBase:
         """Unit status generated from the workload."""
         if self.unit_peer_data.get("member-state") != InstanceState.ONLINE:
             return ops.MaintenanceStatus("")
@@ -867,11 +870,6 @@ class MySQLCharmBase(CharmBase, ABC):
             return ops.ActiveStatus("Standby")
         else:
             return ops.ActiveStatus(f"Standby ({status})")
-
-    @property
-    def removing_unit(self) -> bool:
-        """Check if the unit is being removed."""
-        return self.unit_peer_data.get("unit-status") == "removing"
 
     def unit_initialized(self, raise_exceptions: bool = False) -> bool:
         """Check if the unit is added to the cluster."""
