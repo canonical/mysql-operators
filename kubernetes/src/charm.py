@@ -15,7 +15,6 @@ if is_wrong_architecture() and __name__ == "__main__":
 
 import logging
 import random
-from socket import getfqdn
 from time import sleep
 
 import ops
@@ -100,7 +99,7 @@ from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from relations.mysql_provider import MySQLProvider
 from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
 from upgrade import MySQLK8sUpgrade, get_mysql_k8s_dependencies_model
-from utils import compare_dictionaries, dotappend, generate_random_password
+from utils import compare_dictionaries, dotappend, generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +330,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         Translate juju unit name to resolvable hostname.
         """
         unit_hostname = self.get_unit_hostname(unit.name)
-        unit_dns_domain = getfqdn(self.get_unit_hostname(unit.name))
+        unit_dns_domain = get_k8s_fqdn(self.get_unit_hostname(unit.name))
 
         # When fully propagated, DNS domain name should contain unit hostname.
         # For example:
@@ -1063,7 +1062,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("Switching primary to unit 0")
             try:
                 self._mysql.set_cluster_primary(
-                    new_primary_address=getfqdn(self.get_unit_hostname(f"{self.app.name}/0"))
+                    new_primary_address=get_k8s_fqdn(self.get_unit_hostname(f"{self.app.name}/0"))
                 )
             except MySQLSetClusterPrimaryError:
                 logger.warning("Failed to switch primary to unit 0")
