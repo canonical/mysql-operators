@@ -258,9 +258,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not config_content:
             return
 
-        old_config = self.mysql_config.custom_config(config_content)
+        logger.info("Persisting configuration changes to file")
+        old_config = self.mysql_config.get_custom_config(config_content)
         new_config = self._mysql.write_mysqld_config()
-
         changed_config = compare_dictionaries(old_config, new_config)
 
         # Override log rotation
