@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on MAAS (Metal as a Service) using a test environment with Multipass, pre-configured MAAS, and LXD cloud-init."
+---
+
 (maas)=
 # How to deploy on MAAS
 

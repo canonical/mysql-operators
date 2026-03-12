@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Upgrade a single Charmed MySQL cluster using juju refresh, with pre-upgrade checks, revision recording, optional K8s scale-up, and health verification."
+---
+
 (refresh-single-cluster)=
 # How to refresh a single cluster
 

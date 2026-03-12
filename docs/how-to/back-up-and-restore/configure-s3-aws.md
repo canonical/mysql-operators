@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Configure the s3-integrator charm for AWS S3 to enable Charmed MySQL backups, including credentials, bucket setup, and application integration."
+---
+
 (configure-s3-aws)=
 # Configure S3 for AWS
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Complete reference listing all plugins and extensions supported by Charmed MySQL, with the charm revision that introduced each one for VM and K8s."
+---
+
 (plugins-extensions)=
 # Supported plugins/extensions
 

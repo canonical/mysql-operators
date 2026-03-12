@@ -67,8 +67,10 @@ class TestDatabase(unittest.TestCase):
     @patch(
         "relations.mysql_provider.generate_random_password", return_value="super_secure_password"
     )
+    @patch("relations.mysql_provider.get_k8s_fqdn")
     def test_database_requested(
         self,
+        mock_get_k8s_fqdn,
         _generate_random_password,
         _create_scoped_user,
         _create_database,
@@ -80,6 +82,8 @@ class TestDatabase(unittest.TestCase):
         _cluster_metadata_exists,
         _get_unit_address,
     ):
+        mock_get_k8s_fqdn.side_effect = ["mysql-k8s-primary", "mysql-k8s-replicas"]
+
         # run start-up events to enable usage of the helper class
         self.harness.set_leader(True)
         self.harness.container_pebble_ready("mysql")
@@ -124,3 +128,4 @@ class TestDatabase(unittest.TestCase):
         _create_endpoint_services.assert_called_once()
         _update_endpoints.assert_called()
         _wait_service_ready.assert_called_once()
+        self.assertEqual(mock_get_k8s_fqdn.call_count, 2)

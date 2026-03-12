@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Integrate your Juju charm with Charmed MySQL using data-platform-libs, supported interfaces, and mysql-test-app as a reference implementation."
+---
+
 (integrate-with-your-charm)=
 # How to integrate a database with your charm
 

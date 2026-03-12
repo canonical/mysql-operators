@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Learn how to contribute to Charmed MySQL by reporting bugs, submitting code changes, and providing documentation feedback via GitHub and Matrix."
+---
+
 (contribute)=
 # How to contribute
 

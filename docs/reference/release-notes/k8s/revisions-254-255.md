@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revisions 254 and 255 (MySQL 8.0.41), fixing root user password reset initialization behavior."
+---
+
 (revisions-254-255)=
 # Revisions 254, 255
 

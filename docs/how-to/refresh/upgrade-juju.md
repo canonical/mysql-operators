@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Upgrade Juju for Charmed MySQL deployments, covering patch upgrades and major/minor version upgrades with model migration steps."
+---
+
 (upgrade-juju)=
 # How to upgrade Juju for a new database revision
 

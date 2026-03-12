@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Overview of in-place charm upgrades for Charmed MySQL using juju refresh, with upgrade paths for VM and K8s single and multi-cluster deployments."
+---
+
 (refresh)=
 # Refresh (upgrade)
 

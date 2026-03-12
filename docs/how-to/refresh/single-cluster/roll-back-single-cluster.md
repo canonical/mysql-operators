@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Roll back a failed Charmed MySQL upgrade to a previous revision using prepare, rollback, and post-rollback health check steps."
+---
+
 (roll-back-single-cluster)=
 # How to roll back a single cluster
 

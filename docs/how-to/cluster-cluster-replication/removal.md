@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Remove or detach a Charmed MySQL cluster from a ClusterSet, with options to rejoin, permanently remove, or recreate as a standalone cluster."
+---
+
 (cluster-cluster-removal)=
 # Removal
 

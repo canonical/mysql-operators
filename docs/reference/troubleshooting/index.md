@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Troubleshoot Charmed MySQL by checking Juju statuses, logs, and running services, with links to specific known scenarios and recovery guides."
+---
+
 (troubleshooting)=
 # Troubleshooting
 

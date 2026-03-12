@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Learn about cryptographic mechanisms in Charmed MySQL including resource verification, signed commits, and TLS encryption for cluster connections."
+---
+
 (cryptography)=
 # Cryptography
 

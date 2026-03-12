@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Create and manage Charmed MySQL backups using the create-backup Juju action, with cluster state validation and force override option."
+---
+
 (create-a-backup)=
 # How to create a backup
 

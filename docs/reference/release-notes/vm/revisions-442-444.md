@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revisions 442–444 (MySQL 8.0.44): point-in-time backup recovery and Juju network spaces support added."
+---
+
 (revisions-442-444)=
 # Revisions 442, 443, 444
 

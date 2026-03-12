@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand the types of MySQL users in Charmed MySQL: internal operator users and relation users created for integrated applications."
+---
+
 (users)=
 # Users
 

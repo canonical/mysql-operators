@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on Google Compute Engine: install Juju and gcloud CLI, create a service account, and bootstrap a Juju controller."
+---
+
 (gce)=
 # How to deploy on GCE
 

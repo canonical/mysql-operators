@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Upgrade a Charmed MySQL ClusterSet by refreshing each cluster starting with standbys and ending with the primary to minimize disruption."
+---
+
 (refresh-multi-cluster)=
 # How to refresh a multi-cluster deployment
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s on Amazon Elastic Kubernetes Service (EKS): install tools, authenticate with AWS, and bootstrap Juju."
+---
+
 (eks)=
 # How to deploy on EKS
 

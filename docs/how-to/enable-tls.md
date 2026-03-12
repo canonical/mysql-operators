@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Learn how to enable TLS encryption for Charmed MySQL using the self-signed-certificates operator, including deployment and key rotation steps."
+---
+
 (enable-tls)=
 # How to enable TLS encryption
 

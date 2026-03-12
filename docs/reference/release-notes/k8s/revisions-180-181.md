@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revisions 180/181 (MySQL 8.0.37): first ARM64 support, Audit Log plugin, and Prometheus alert rules."
+---
+
 (revisions-180-181)=
 # Revisions 180, 181
 

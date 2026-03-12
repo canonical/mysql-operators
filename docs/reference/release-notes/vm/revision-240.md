@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revision 240 (MySQL 8.0.36): async cluster-cluster replication, Ubuntu Pro support, and COS Tempo tracing."
+---
+
 (revision-240)=
 # Revision 240
 

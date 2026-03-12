@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL on Sunbeam (OpenStack): install Sunbeam, enable image sync, set up a Juju bastion, and deploy the MySQL charm."
+---
+
 (sunbeam)=
 # How to deploy on Sunbeam
 

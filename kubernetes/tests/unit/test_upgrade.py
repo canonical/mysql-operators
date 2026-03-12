@@ -144,10 +144,14 @@ class TestUpgrade(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.set_dynamic_variable")
     @patch("mysql_k8s_helpers.MySQL.get_primary_label", return_value="mysql-k8s-1")
     @patch("mysql_k8s_helpers.MySQL.set_cluster_primary")
+    @patch(
+        "upgrade.get_k8s_fqdn", return_value="mysql-k8s-0.mysql-k8s-endpoints.svc.cluster.local"
+    )
     @patch("k8s_helpers.KubernetesHelpers.set_rolling_update_partition")
     def test_pre_upgrade_prepare(
         self,
         mock_set_rolling_update_partition,
+        mock_get_k8s_fqdn,
         mock_set_cluster_primary,
         mock_get_primary_label,
         mock_set_dynamic_variable,
@@ -159,7 +163,10 @@ class TestUpgrade(unittest.TestCase):
 
         self.charm.upgrade._pre_upgrade_prepare()
 
-        mock_set_cluster_primary.assert_called_once()
+        mock_set_cluster_primary.assert_called_once_with(
+            "mysql-k8s-0.mysql-k8s-endpoints.svc.cluster.local"
+        )
+        mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints")
         mock_get_primary_label.assert_called_once()
         mock_set_rolling_update_partition.assert_called_once()
         assert mock_set_dynamic_variable.call_count == 2

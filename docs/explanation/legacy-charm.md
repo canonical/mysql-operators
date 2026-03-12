@@ -1,5 +1,8 @@
 ---
 relatedlinks: "[Charm&#32generations](https://documentation.ubuntu.com/charmcraft/stable/)"
+myst:
+  html_meta:
+    description: "Learn about legacy MySQL and MariaDB charms, their history, and how to migrate from them to the modern Charmed MySQL operator."
 ---
 
 (legacy-charm)=

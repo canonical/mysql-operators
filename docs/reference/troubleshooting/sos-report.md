@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Collect support data and logs from Charmed MySQL units using the SoS reporting tool, with options for built-in or latest SoS plugin versions."
+---
+
 (sos-report)=
 # SoS report
 

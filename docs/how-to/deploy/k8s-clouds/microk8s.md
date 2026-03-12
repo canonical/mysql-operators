@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Deploy Charmed MySQL K8s on MicroK8s with an existing Juju and MicroK8s setup. See the tutorial for a full end-to-end walkthrough."
+---
+
 (microk8s)=
 # How to deploy on MicroK8s
 

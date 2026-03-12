@@ -19,7 +19,7 @@ from time import sleep
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
 from charms.data_platform_libs.v0.s3 import S3Requirer
-from charms.grafana_agent.v0.cos_agent import COSAgentProvider
+from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
 from charms.mysql.v0.async_replication import (
     RELATION_CONSUMER,
     RELATION_OFFER,
@@ -64,7 +64,7 @@ from ops import (
     Unit,
     WaitingStatus,
 )
-from ops_tracing import Tracing
+from ops_tracing import Tracing, set_destination
 from tenacity import (
     RetryError,
     Retrying,
@@ -197,6 +197,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
         self.tracing = Tracing(self, tracing_relation_name="tracing")
+        self._charm_tracing_config()
 
     # =======================
     #  Charm Lifecycle Hooks
@@ -403,6 +404,29 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         # Inform other hooks of current status
         self.unit_peer_data["unit-status"] = "removing"
+
+    def _charm_tracing_config(self) -> None:
+        """Utility function to set tracing destination."""
+        if not self._grafana_agent.is_ready():
+            return
+
+        try:
+            endpoint = self._grafana_agent.get_tracing_endpoint("otlp_http")
+            if not endpoint:
+                return
+        except ProtocolNotFoundError:
+            logger.warning(
+                "Endpoint for tracing wasn't provided as tracing backend isn't ready yet."
+                "If grafana-agent isn't connected to a tracing backend, integrate it."
+                "Otherwise this issue should resolve itself in a few events."
+            )
+            return
+
+        if endpoint.startswith("https://"):
+            logger.warning("Cannot send traces to an https endpoint without a certificate.")
+            return
+
+        set_destination(f"{endpoint}/v1/traces", None)
 
     def _handle_non_online_instance_status(self, state: str) -> bool:
         """Helper method to handle non-online instance statuses.

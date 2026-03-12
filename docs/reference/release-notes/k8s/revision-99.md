@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL K8s revision 99 (MySQL 8.0.34): Juju 3 support, Juju secrets, in-place upgrades, profiles, and bug fixes."
+---
+
 (revision-99)=
 # Revision 99
 

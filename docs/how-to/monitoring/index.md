@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "How-to guides for monitoring Charmed MySQL using COS, covering COS Lite integration, alert rules configuration, and Grafana Tempo tracing."
+---
+
 (monitoring)=
 # Monitoring (COS)
 

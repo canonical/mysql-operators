@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Restore a Charmed MySQL backup from S3 storage by listing available backups and running the restore Juju action, with point-in-time recovery notes."
+---
+
 (restore-a-backup)=
 # How to restore a local backup
 

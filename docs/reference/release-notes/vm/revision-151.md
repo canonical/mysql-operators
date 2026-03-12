@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Release notes for Charmed MySQL VM revision 151 (MySQL 8.0.32): first stable VM release with HA, S3 backups, TLS, and LXD/MAAS support."
+---
+
 (revision-151)=
 # Revision 151
 

@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Reference of known Charmed MySQL operational issues with step-by-step solutions, including K8s primary reelection failures and read-only unit scenarios."
+---
+
 (known-scenarios)=
 # Known scenarios
 

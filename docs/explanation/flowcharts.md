@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Explore Mermaid flowchart diagrams illustrating the Charmed MySQL charm lifecycle, including leader election and pebble ready hook events."
+---
+
 (flowcharts)=
 # Charm lifecycle flowcharts
 
