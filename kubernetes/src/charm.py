@@ -6,9 +6,6 @@
 
 from charms.mysql.v0.architecture import WrongArchitectureWarningCharm, is_wrong_architecture
 from ops.main import main
-from tenacity import retry, stop_after_delay, wait_fixed
-
-from log_rotation_setup import LogRotationSetup
 
 if is_wrong_architecture() and __name__ == "__main__":
     main(WrongArchitectureWarningCharm)
@@ -17,6 +14,7 @@ import logging
 import random
 from time import sleep
 
+import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
 from charms.data_platform_libs.v0.s3 import S3Requirer
@@ -54,6 +52,7 @@ from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
+    ActiveStatus,
     BlockedStatus,
     Container,
     MaintenanceStatus,
@@ -62,7 +61,7 @@ from ops.model import (
 )
 from ops.pebble import ChangeError, Layer
 from ops_tracing import Tracing
-from tenacity import RetryError, Retrying, stop_after_attempt
+from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 from config import CharmConfig, MySQLConfig
 from constants import (
@@ -94,13 +93,16 @@ from constants import (
 )
 from k8s_helpers import KubernetesHelpers
 from log_rotate_manager import LogRotateManager
+from log_rotation_setup import LogRotationSetup
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
+from refresh import KubernetesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
 from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
-from upgrade import MySQLK8sUpgrade, get_mysql_k8s_dependencies_model
 from utils import compare_dictionaries, dotappend, generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
@@ -114,6 +116,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def __init__(self, *args):
         super().__init__(*args)
+
+        # Show logger name (module name) in logs
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers:
+            if isinstance(handler, ops.log.JujuLogHandler):
+                handler.setFormatter(logging.Formatter("{name}:{message}", style="{"))
 
         # Lifecycle events
         self.framework.observe(self.on.mysql_pebble_ready, self._on_mysql_pebble_ready)
@@ -141,12 +149,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.tls = MySQLTLS(self)
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)
-        self.upgrade = MySQLK8sUpgrade(
-            self,
-            dependency_model=get_mysql_k8s_dependencies_model(),
-            relation_name="upgrade",
-            substrate="k8s",
-        )
         self.grafana_dashboards = GrafanaDashboardProvider(self)
         self.metrics_endpoint = MetricsEndpointProvider(
             self,
@@ -160,6 +162,28 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             relation_name="logging",
             container_name="mysql",
         )
+
+        try:
+            self._refresh = charm_refresh.Kubernetes(
+                KubernetesMySQLRefresh(
+                    workload_name="MySQL",
+                    charm_name="mysql-k8s",
+                    oci_resource_name="mysql-image",
+                    _charm=self,
+                )
+            )
+        except charm_refresh.KubernetesJujuAppNotTrusted:
+            self._refresh = None
+        except charm_refresh.PeerRelationNotReady:
+            self.unit.status = MaintenanceStatus("Waiting for peer relation")
+            self._refresh = None
+        except charm_refresh.UnitTearingDown:
+            self.unit.status = MaintenanceStatus("Tearing down")
+            self._refresh = None
+        else:
+            if self._refresh.workload_allowed_to_start:
+                self._refresh.next_unit_allowed_to_refresh = True
+
         self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
 
         self.log_rotate_manager = LogRotateManager(self)
@@ -192,6 +216,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.k8s_helpers,
             self,
         )
+
+    @property
+    def refresh(self) -> charm_refresh.Kubernetes | None:
+        """Return the Kubernetes refresh instance."""
+        return self._refresh
 
     @property
     def _pebble_layer(self) -> Layer:
@@ -357,7 +386,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
             self.unit.set_ports(3306, 33060)
-            self.unit.status = self.build_unit_workload_status()
+            self.set_unit_status(self.build_unit_workload_status())
         except (
             MySQLCreateClusterError,
             MySQLCreateClusterSetError,
@@ -411,20 +440,17 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             try:
                 cluster_primary = self._get_primary_from_online_peer()
                 if not cluster_primary:
-                    self.unit.status = WaitingStatus("waiting to get cluster primary from peers")
-                    logger.info("waiting: unable to retrieve the cluster primary from peers")
+                    self.set_unit_status(WaitingStatus("waiting to get cluster primary from peer"))
+                    logger.info("waiting: unable to retrieve the cluster primary from peer")
                     return
 
                 from_instance = cluster_primary
                 lock_instance = cluster_primary
 
                 if self._mysql.get_cluster_node_count(from_instance) == GR_MAX_MEMBERS:
-                    self.unit.status = WaitingStatus(
-                        f"Cluster reached max size of {GR_MAX_MEMBERS} units. Standby."
-                    )
-                    logger.warning(
-                        f"Cluster reached max size of {GR_MAX_MEMBERS} units. This unit will stay as standby."
-                    )
+                    message = f"Cluster reached max size of {GR_MAX_MEMBERS} units. Standby."
+                    self.set_unit_status(WaitingStatus(message))
+                    logger.warning(message)
                     return
 
                 # If instance is part of a replica cluster, locks are managed by
@@ -438,11 +464,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 sleep(random.uniform(0, 1.5))  # noqa: S311
 
                 if self._mysql.are_locks_acquired(lock_instance, UNIT_ADD_LOCKNAME):
-                    self.unit.status = WaitingStatus("waiting to join the cluster")
+                    self.set_unit_status(WaitingStatus("waiting to join the cluster"))
                     logger.info("waiting: cluster lock is held")
                     return
 
-                self.unit.status = MaintenanceStatus("joining the cluster")
+                self.set_unit_status(MaintenanceStatus("joining the cluster"))
 
                 # Stop GR for cases where the instance was previously part of the cluster
                 # harmless otherwise
@@ -472,12 +498,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info(f"Unable to add instance {instance_address} to cluster.")
                 return
             except MySQLLockAcquisitionError:
-                self.unit.status = WaitingStatus("waiting to join the cluster")
+                self.set_unit_status(WaitingStatus("waiting to join the cluster"))
                 logger.info("waiting: failed to acquire lock when adding instance to cluster")
                 return
 
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
-        self.unit.status = self.build_unit_workload_status()
+        self.set_unit_status(self.build_unit_workload_status())
         logger.info(f"Instance {instance_label} added to cluster")
 
     def _reconcile_pebble_layer(self, container: Container) -> None:
@@ -544,9 +570,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.warning("Changing primary failed")
 
         logger.debug("Restarting mysqld")
-        self.unit.status = MaintenanceStatus("restarting MySQL")
+        self.set_unit_status(MaintenanceStatus("restarting MySQL"))
         container.pebble.restart_services([MYSQLD_SERVICE], timeout=3600)
-        self.unit.status = MaintenanceStatus("recovering unit after restart")
+        self.set_unit_status(MaintenanceStatus("recovering unit after restart"))
         sleep(10)
         self.recover_unit_after_restart()
 
@@ -603,9 +629,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # skip when not initialized
             return
 
-        if not self.upgrade.idle:
-            # skip when upgrade is in progress
-            # the upgrade already restart the daemon
+        if self._refresh is None:
+            logger.warning("Refresh could be in progress")
+        if self._refresh and self._refresh.in_progress:
+            logger.debug("Refresh in progress")
             return
 
         config_content = self._mysql.read_file_content(MYSQLD_CONFIG_FILE)
@@ -744,14 +771,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             else:
                 container.start(MYSQLD_EXPORTER_SERVICE)
 
-        # Set workload version
-        if workload_version := self._mysql.get_mysql_version():
-            self.unit.set_workload_version(workload_version)
-
     def _mysql_pebble_ready_checks(self, event) -> bool:
         """Executes some checks to see if it is safe to execute the pebble ready handler."""
         if not self._is_peer_data_set:
-            self.unit.status = WaitingStatus("Waiting for leader election.")
+            self.set_unit_status(WaitingStatus("Waiting for leader election."))
             logger.debug("Leader not ready yet, waiting...")
             return True
 
@@ -771,10 +794,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             event.defer()
             return
 
-        if not self.upgrade.idle:
-            # when upgrading pebble ready is
-            # task delegated to upgrade code
-            return
+        if self._refresh is None:
+            logger.warning("Refresh could be in progress")
+        if self._refresh and self._refresh.in_progress:  # noqa: SIM102
+            if not self._refresh.workload_allowed_to_start:
+                logger.debug("Refresh in progress")
+                event.defer()
+                return
 
         container = event.workload
         self._write_mysqld_configuration()
@@ -783,7 +809,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._mysql.is_data_dir_initialised():
             # Data directory is already initialised, skip configuration
-            self.unit.status = MaintenanceStatus("Starting mysqld")
+            self.set_unit_status(MaintenanceStatus("Starting mysqld"))
             logger.info("Data directory is already initialised, skipping configuration")
             self._reconcile_pebble_layer(container)
             if self.is_new_unit:
@@ -796,14 +822,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     self._on_update_status(None)
                 else:
                     # Non-leader units try to join cluster
-                    self.unit.status = WaitingStatus("Waiting for instance to join the cluster")
+                    self.set_unit_status(WaitingStatus("Waiting for instance to join the cluster"))
                     self.unit_peer_data.update({
                         "member-role": InstanceRole.SECONDARY.value,
                         "member-state": "waiting",
                     })
             return
 
-        self.unit.status = MaintenanceStatus("Initialising mysqld")
+        self.set_unit_status(MaintenanceStatus("Initialising mysqld"))
 
         # First run setup
         self._configure_instance(container)
@@ -815,7 +841,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.cluster_initialized and self._get_primary_from_online_peer()
         ):
             # Non-leader units try to join cluster
-            self.unit.status = WaitingStatus("Waiting for instance to join the cluster")
+            self.set_unit_status(WaitingStatus("Waiting for instance to join the cluster"))
             self.unit_peer_data.update({
                 "member-role": InstanceRole.SECONDARY.value,
                 "member-state": "waiting",
@@ -860,9 +886,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     if single_node_cluster and all_states == {"waiting"}:
                         self._mysql.drop_group_replication_metadata_schema()
                         self.create_cluster()
-                        self.unit.status = self.build_unit_workload_status()
+                        self.set_unit_status(self.build_unit_workload_status())
                     else:
-                        self.unit.status = BlockedStatus("failed to recover cluster.")
+                        self.set_unit_status(BlockedStatus("failed to recover cluster."))
                 return True
 
             if self._mysql.is_cluster_auto_rejoin_ongoing():
@@ -937,7 +963,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             member_state = self._mysql.get_member_state()
         except MySQLUnableToGetMemberStateError:
             logger.error("Error getting member state while checking if cluster is blocked")
-            self.unit.status = MaintenanceStatus("Unable to get member state")
+            self.set_unit_status(MaintenanceStatus("Unable to get member state"))
             return True
 
         if member_state == "UNKNOWN" or member_state == InstanceState.RECOVERING:
@@ -950,10 +976,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def _on_update_status(self, _: UpdateStatusEvent | None) -> None:
         """Handle the update status event."""
-        if not self.upgrade.idle:
-            # avoid changing status while upgrade is in progress
-            logger.info("Application is upgrading. Skipping.")
+        if self._refresh is None:
+            logger.debug("Refresh could be in progress")
             return
+        if self._refresh and self._refresh.in_progress:
+            logger.debug("Refresh in progress")
+            return
+
         if not self.unit.is_leader() and self._is_unit_waiting_to_join_cluster():
             # join cluster test takes precedence over blocked test
             # due to matching criteria
@@ -977,13 +1006,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             state = self._mysql.get_member_state()
         except MySQLUnableToGetMemberStateError:
             logger.error("Error getting member state. Avoiding potential cluster crash recovery")
-            self.unit.status = MaintenanceStatus("Unable to get member state")
+            self.set_unit_status(MaintenanceStatus("Unable to get member state"))
             return
 
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role
         self.unit_peer_data["member-state"] = state
-        self.unit.status = self.build_unit_workload_status()
+        self.set_unit_status(self.build_unit_workload_status())
 
         if self._handle_potential_cluster_crash_scenario(state):
             return
@@ -1001,6 +1030,21 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         self.app.status = self.build_app_workload_status()
+
+    def set_unit_status(self, status: ops.StatusBase):
+        """Set unit status without overriding higher priority refresh status."""
+        if self._refresh is None:
+            self.unit.status = status
+            return
+
+        if self._refresh.unit_status_higher_priority:
+            return
+
+        refresh_status = self._refresh.unit_status_lower_priority()
+        if refresh_status and isinstance(status, ActiveStatus):
+            status = refresh_status
+
+        self.unit.status = status
 
     def _on_peer_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle the relation changed event."""
