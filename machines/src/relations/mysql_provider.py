@@ -130,15 +130,19 @@ class MySQLProvider(Object):
         # get unit label that joined
         event_unit_label = self.charm.get_unit_label(event.unit)
 
-        # defer if upgrading
-        if not self.charm.upgrade.idle:
-            logger.debug("Defer relation join while upgrading")
+        # defer if refreshing
+        if self.charm.refresh is None:
+            logger.debug("Refresh could be in progress")
+        if self.charm.refresh and self.charm.refresh.in_progress:
+            logger.debug("Refresh in progress")
+            event.defer()
             return
 
         # defer if the added unit is not in the cluster
         if not self.charm._mysql.is_instance_in_cluster(event_unit_label):
             event.defer()
             return
+
         relation_data = self.database.fetch_relation_data()
         # for all relations update the read-only-endpoints
         for relation in relations:
@@ -249,7 +253,7 @@ class MySQLProvider(Object):
             MySQLGetMySQLVersionError,
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
-            self.charm.unit.status = BlockedStatus("Failed to set up relation")
+            self.charm.set_unit_status(BlockedStatus("Failed to set up relation"))
             return
 
         rw_endpoints, ro_endpoints, _ = self.charm.get_cluster_endpoints(DB_RELATION_NAME)
@@ -260,7 +264,7 @@ class MySQLProvider(Object):
         self.database.set_read_only_endpoints(relation_id, ro_endpoints)
 
         logger.info(f"Created user for app {app_name}")
-        self.charm.unit.status = ActiveStatus()
+        self.charm.set_unit_status(ActiveStatus())
 
     def _on_database_broken(self, event: RelationBrokenEvent) -> None:
         """Handle the removal of database relation.
