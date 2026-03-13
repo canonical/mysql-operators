@@ -2438,7 +2438,7 @@ class MySQLBase(ABC):
         """Platform dependent method to get the available memory for mysql-server."""
         raise NotImplementedError
 
-    def crete_ca_pem_file(
+    def create_ca_pem_file(
         self,
         ca_chain: list[str],
         tmp_base_directory: str,
@@ -2484,7 +2484,7 @@ class MySQLBase(ABC):
             nproc, _ = self._execute_commands(nproc_command)
             tmp_dir, _ = self._execute_commands(make_temp_dir_command, user=user, group=group)
             if ca_chain:
-                ca_file_location = self.crete_ca_pem_file(
+                ca_file_location = self.create_ca_pem_file(
                     ca_chain, tmp_base_directory, user=user, group=group
                 )
         except MySQLExecError as e:
@@ -2524,12 +2524,10 @@ class MySQLBase(ABC):
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
         ]
-        if ca_chain and ca_file_location:
-            xtrabackup_commands += [
-                f"--cacert={ca_file_location}",
-            ]
-        xtrabackup_commands += [f"{s3_path}"]
-
+        xtrabackup_commands.append(
+            f"--cacert={ca_file_location}"
+        ) if ca_chain and ca_file_location else None
+        xtrabackup_commands.append(f"{s3_path}")
         try:
             logger.debug(
                 f"Command to create backup: {' '.join(xtrabackup_commands).replace(self.backups_password, 'xxxxxxxxxxxx')}"
@@ -2607,7 +2605,7 @@ class MySQLBase(ABC):
                 group=group,
             )
             if ca_chain:
-                ca_file_location = self.crete_ca_pem_file(
+                ca_file_location = self.create_ca_pem_file(
                     ca_chain, temp_restore_directory, user=user, group=group
                 )
         except MySQLExecError as e:
@@ -2626,9 +2624,9 @@ class MySQLBase(ABC):
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"{s3_parameters['path']}/{backup_id}",
         ]
-        if ca_chain and ca_file_location:
-            retrieve_backup_command.append(f"--cacert={ca_file_location}")
-
+        retrieve_backup_command.append(
+            f"--cacert={ca_file_location}"
+        ) if ca_chain and ca_file_location else None
         retrieve_backup_command += [
             f"| {xbstream_location}",
             "--decompress",

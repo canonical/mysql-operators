@@ -110,97 +110,53 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
             MICROCEPH_BUCKET,
         )
     logger.info("Setting up TLS certificates")
-    subprocess.run(["openssl", "genrsa", "-out", str(certs_path / "ca.key"), "2048"], check=True)
+    subprocess.run(f"openssl genrsa -out {certs_path}/ca.key 2048".split(), check=True)
+    ca_key_path = str(certs_path / "ca.key")
+    ca_crt_path = str(certs_path / "ca.crt")
+    ca_subject = f"/C=US/ST=Denial/L=Springfield/O=Dis/CN={host_ip}"
     subprocess.run(
-        [
-            "openssl",
-            "req",
-            "-x509",
-            "-new",
-            "-nodes",
-            "-key",
-            str(certs_path / "ca.key"),
-            "-days",
-            "1024",
-            "-out",
-            str(certs_path / "ca.crt"),
-            "-outform",
-            "PEM",
-            "-subj",
-            f"/C=US/ST=Denial/L=Springfield/O=Dis/CN={host_ip}",
-        ],
+        f"openssl req -x509 -new -nodes -key {ca_key_path} -days 1024 -out {ca_crt_path} -outform PEM -subj {ca_subject}".split(),
+        check=True,
+    )
+    server_key_path = str(certs_path / "server.key")
+    server_csr_path = str(certs_path / "server.csr")
+    subprocess.run(
+        f"openssl genrsa -out {server_key_path} 2048".split(),
         check=True,
     )
     subprocess.run(
-        ["openssl", "genrsa", "-out", str(certs_path / "server.key"), "2048"],
-        check=True,
-    )
-    subprocess.run(
-        [
-            "openssl",
-            "req",
-            "-new",
-            "-key",
-            str(certs_path / "server.key"),
-            "-out",
-            str(certs_path / "server.csr"),
-            "-subj",
-            f"/C=US/ST=Denial/L=Springfield/O=Dis/CN={host_ip}",
-        ],
+        f"openssl req -new -key {server_key_path} -out {server_csr_path} -subj {ca_subject}".split(),
         check=True,
     )
 
     with open(certs_path / "extfile.cnf", "w") as extfile:
         extfile.write(f"subjectAltName = DNS:{host_ip}, IP:{host_ip}")
 
+    server_crt_path = str(certs_path / "server.crt")
+    extfile_path = str(certs_path / "extfile.cnf")
     subprocess.run(
-        [
-            "openssl",
-            "x509",
-            "-req",
-            "-in",
-            str(certs_path / "server.csr"),
-            "-CA",
-            str(certs_path / "ca.crt"),
-            "-CAkey",
-            str(certs_path / "ca.key"),
-            "-CAcreateserial",
-            "-out",
-            str(certs_path / "server.crt"),
-            "-days",
-            "365",
-            "-extfile",
-            str(certs_path / "extfile.cnf"),
-        ],
+        f"openssl x509 -req -in {server_csr_path} -CA {ca_crt_path} -CAkey {ca_key_path} -CAcreateserial -out {server_crt_path} -days 365 -extfile {extfile_path}".split(),
+        check=True,
     )
     logger.info("Setting up microceph")
     subprocess.run(["sudo", "snap", "install", "microceph"], check=True)
     subprocess.run(["sudo", "microceph", "cluster", "bootstrap"], check=True)
     subprocess.run(["sudo", "microceph", "disk", "add", "loop,4G,3"], check=True)
     server_crt_base64 = subprocess.run(
-        ["sudo", "base64", "-w0", str(certs_path / "server.crt")],
+        f"sudo base64 -w0 {server_crt_path}".split(),
         check=True,
         text=True,
         capture_output=True,
     ).stdout.strip()
     server_key_base64 = subprocess.run(
-        ["sudo", "base64", "-w0", str(certs_path / "server.key")],
+        f"sudo base64 -w0 {server_key_path}".split(),
         check=True,
         text=True,
         capture_output=True,
     ).stdout.strip()
     logger.info("Enabling rest gateway")
     subprocess.run(
-        [
-            "sudo",
-            "microceph",
-            "enable",
-            "rgw",
-            "--ssl-certificate",
-            server_crt_base64,
-            "--ssl-private-key",
-            server_key_base64,
-        ],
+        f"sudo microceph enable rgw --ssl-certificate {server_crt_base64} --ssl-private-key {server_key_base64}".split(),
         check=True,
     )
     wait_for_rgw_ready()
@@ -242,12 +198,11 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
             break
     logger.info("Set up microceph")
     ca_crt_base64 = subprocess.run(
-        ["sudo", "base64", "-w0", str(certs_path / "ca.crt")],
+        f"sudo base64 -w0 {ca_crt_path}".split(),
         check=True,
         text=True,
         capture_output=True,
     ).stdout.strip()
-
     return MicrocephConnectionInformation(
         endpoint_url=f"https://{host_ip}",
         access_key_id=key_id,
