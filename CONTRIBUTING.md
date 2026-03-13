@@ -16,12 +16,13 @@ this operator.
   - Test coverage
   - User experience for Juju administrators of this charm.
 - Please help us out in ensuring easy to review branches by rebasing your pull request branch onto
-  the `main` branch. This also avoids merge commits and creates a linear Git commit history.
+  the `8.0/edge` branch. This also avoids merge commits and creates a linear Git commit history.
 
 ## Develop
-Install `tox`, `poetry`, and `charmcraftcache`
+Install `yq`, `tox`, `poetry`, and `charmcraftcache`
 
 ```shell
+pipx install yq
 pipx install tox
 pipx install poetry
 pipx install charmcraftcache
@@ -63,9 +64,12 @@ Build the charm in this git repository using:
 juju add-model dev
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 
+# Extract the K8s image
+export MYSQL_IMAGE=$(yq -r '.["resources"]["mysql-image"]["upstream-source"]' kubernetes/metadata.yaml)
+
 # Deploy the K8s or VM charm
-(cd kubernetes && juju deploy ./mysql-k8s_ubuntu-22.04-amd64.charm --resource mysql-image=...)
-(cd machines && juju deploy ./mysql_ubuntu-22.04-amd64.charm)
+(cd kubernetes && juju deploy ./mysql-k8s_ubuntu@22.04-amd64.charm --resource mysql-image=${MYSQL_IMAGE})
+(cd machines && juju deploy ./mysql_ubuntu@22.04-amd64.charm)
 ```
 
 ## Canonical Contributor Agreement
