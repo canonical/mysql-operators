@@ -16,7 +16,7 @@ this operator.
   - Test coverage
   - User experience for Juju administrators of this charm.
 - Please help us out in ensuring easy to review branches by rebasing your pull request branch onto
-  the `main` branch. This also avoids merge commits and creates a linear Git commit history.
+  the `8.4/edge` branch. This also avoids merge commits and creates a linear Git commit history.
 
 ## Develop
 Install `tox`, `poetry`, and `charmcraftcache`
