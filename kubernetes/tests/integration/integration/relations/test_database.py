@@ -38,7 +38,7 @@ def test_build_and_deploy(juju: Juju, charm):
         APPLICATION_APP_NAME,
         num_units=2,
         channel="latest/edge",
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
     )
 
 

@@ -39,7 +39,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm="mysql-test-app",
         app=MYSQL_TEST_APP_NAME_1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
@@ -78,7 +78,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm="mysql-test-app",
         app=MYSQL_TEST_APP_NAME_2,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
