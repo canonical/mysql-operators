@@ -38,7 +38,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
         "mysql-test-app",
         TEST_APP_NAME,
         num_units=1,
-        base="ubuntu@22.04",
+        base="ubuntu@24.04",
         config=config,
         channel="latest/edge",
     )
