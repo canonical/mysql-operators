@@ -1186,7 +1186,7 @@ class TestMySQLBase(unittest.TestCase):
         _execute_commands.side_effect = [
             ("16", None),
             ("mysql/data/directory/#mysql_sst_ABCD", None),
-            ("mysql/data/directory/#s3_ca_ABCD", None),
+            ("mysql/data/directory/s3_ca_ABCD", None),
             (None, None),
             ("", None),
         ]
@@ -1220,7 +1220,7 @@ class TestMySQLBase(unittest.TestCase):
         _expected_ca_dir_commands = [
             "mktemp",
             "--directory",
-            "mysql/data/directory/#s3_ca_XXXX",
+            "mysql/data/directory/s3_ca_XXXX",
         ]
         _exepected_ca_content_commands = [
             "echo",
@@ -1229,7 +1229,7 @@ class TestMySQLBase(unittest.TestCase):
             "base64",
             "-d",
             ">",
-            "mysql/data/directory/#s3_ca_ABCD/s3-ca.pem",
+            "mysql/data/directory/s3_ca_ABCD/s3-ca.pem",
         ]
         _expected_retrieve_backup_commands = [
             "xbcloud/location get",
@@ -1242,7 +1242,7 @@ class TestMySQLBase(unittest.TestCase):
             "--s3-bucket-lookup=s3_uri_style",
             "--s3-api-version=s3_api_version",
             "s3_path/backup-id",
-            "--cacert=mysql/data/directory/#s3_ca_ABCD/s3-ca.pem",
+            "--cacert=mysql/data/directory/s3_ca_ABCD/s3-ca.pem",
             "| xbstream/location",
             "--decompress",
             "-x",
