@@ -16,12 +16,13 @@ this operator.
   - Test coverage
   - User experience for Juju administrators of this charm.
 - Please help us out in ensuring easy to review branches by rebasing your pull request branch onto
-  the `main` branch. This also avoids merge commits and creates a linear Git commit history.
+  the `8.4/edge` branch. This also avoids merge commits and creates a linear Git commit history.
 
 ## Develop
-Install `tox`, `poetry`, and `charmcraftcache`
+Install `yq`, `tox`, `poetry`, and `charmcraftcache`
 
 ```shell
+pipx install yq
 pipx install tox
 pipx install poetry
 pipx install charmcraftcache
@@ -40,24 +41,13 @@ You can create an environment for development:
 (cd kubernetes && tox run -e format)
 (cd kubernetes && tox run -e lint)
 (cd kubernetes && tox run -e unit)
+(cd kubernetes && charmcraft test lxd-vm)
 
 (cd machines && tox run -e format)
 (cd machines && tox run -e lint)
 (cd machines && tox run -e unit)
+(cd machines && charmcraft test lxd-vm)
 ```
-
-To run integration tests, you can run `tox run -e integration`,
-but you will need a full local setup depending on the substrate.
-Alternatively, you can use [spread], which will take care of that for you.
-For example, to run a single test with spread, do
-
-```shell
-~/go/bin/spread lxd-vm:ubuntu-24.04:tests/spread/integration/test_database.py:juju36
-```
-
-See the [spread] repository for more information.
-
-[spread]: https://github.com/canonical/spread/
 
 ## Build charm
 
@@ -74,9 +64,12 @@ Build the charm in this git repository using:
 juju add-model dev
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 
+# Extract the K8s image
+export MYSQL_IMAGE=$(yq -r '.["resources"]["mysql-image"]["upstream-source"]' kubernetes/metadata.yaml)
+
 # Deploy the K8s or VM charm
-(cd kubernetes && juju deploy ./mysql-k8s_ubuntu-24.04-amd64.charm --resource mysql-image=...)
-(cd machines && juju deploy ./mysql_ubuntu-24.04-amd64.charm)
+(cd kubernetes && juju deploy ./mysql-k8s_ubuntu@24.04-amd64.charm --resource mysql-image=${MYSQL_IMAGE})
+(cd machines && juju deploy ./mysql_ubuntu@24.04-amd64.charm)
 ```
 
 ## Canonical Contributor Agreement
