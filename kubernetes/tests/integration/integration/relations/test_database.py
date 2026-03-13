@@ -119,3 +119,57 @@ def test_relation_broken(juju: Juju):
         timeout=15 * MINUTE_SECS,
         delay=2,
     )
+
+    juju.remove_application(APPLICATION_APP_NAME, destroy_storage=True, force=True)
+
+
+def test_relation_broken_connectivity(juju: Juju):
+    """Remove one out of multiple relation and check expected connectivity."""
+    test_app_1 = f"{APPLICATION_APP_NAME}1"
+    test_app_2 = f"{APPLICATION_APP_NAME}2"
+
+    logging.info("Deploying applications...")
+    juju.deploy(
+        APPLICATION_APP_NAME,
+        test_app_1,
+        num_units=1,
+        channel="latest/edge",
+        config={"database_name": "test_database_1"},
+        base="ubuntu@22.04",
+    )
+
+    juju.deploy(
+        APPLICATION_APP_NAME,
+        test_app_2,
+        num_units=1,
+        channel="latest/edge",
+        config={"database_name": "test_database_2"},
+        base="ubuntu@22.04",
+    )
+
+    logging.info("Creating relations...")
+    juju.integrate(
+        f"{test_app_1}:{APPLICATION_ENDPOINT}",
+        f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
+    )
+    juju.integrate(
+        f"{test_app_2}:{APPLICATION_ENDPOINT}",
+        f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
+    )
+
+    logging.info("Waiting for application app to be active...")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, test_app_1, test_app_2),
+        error=jubilant_backports.any_blocked,
+        timeout=5 * MINUTE_SECS,
+        delay=2,
+    )
+
+    logging.info("Removing relation...")
+    juju.remove_relation(
+        f"{test_app_2}:{APPLICATION_ENDPOINT}",
+        f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
+    )
+
+    juju.run(f"{test_app_1}/0", "clear-continuous-writes")
+    juju.run(f"{test_app_1}/0", "start-continuous-writes")
