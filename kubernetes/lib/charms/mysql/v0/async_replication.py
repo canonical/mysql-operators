@@ -793,9 +793,6 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
             for key, password in credentials.items():
                 # sync credentials only for necessary users
                 user = sync_keys[key]
-                if user == OPERATOR_USERNAME:
-                    # charmed-operator user has localhost user
-                    self._charm._mysql.update_user_password(user, password, host="localhost")
                 self._charm._mysql.update_user_password(user, password)
                 self._charm.set_secret("app", key, password)
                 logger.debug(f"Synced {user=} password")
