@@ -153,7 +153,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
         self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
-        self.mysql_config = MySQLConfig(MYSQLD_CUSTOM_CONFIG_FILE)
+        self.mysql_config = MySQLConfig()
         self.database_relation = MySQLProvider(self)
         self.tls = MySQLTLS(self)
         self._grafana_agent = COSAgentProvider(
@@ -254,15 +254,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # the upgrade already restart the daemon
             return
 
-        previous_config = self.mysql_config.custom_config
-        if not previous_config:
-            # empty config means not initialized, skipping
+        config_content = self._mysql.read_file_content(MYSQLD_CUSTOM_CONFIG_FILE)
+        if not config_content:
             return
 
-        # render the new config
-        new_config_dict = self._mysql.write_mysqld_config()
-
-        changed_config = compare_dictionaries(previous_config, new_config_dict)
+        logger.info("Persisting configuration changes to file")
+        old_config = self.mysql_config.get_custom_config(config_content)
+        new_config = self._mysql.write_mysqld_config()
+        changed_config = compare_dictionaries(old_config, new_config)
 
         # Override log rotation
         self.log_rotation_setup.setup()
@@ -278,12 +277,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # if only dynamic config changed, apply it
             logger.info("Configuration does not requires restart")
             for config in dynamic_config:
-                if config not in new_config_dict:
+                if config not in new_config:
                     # skip removed configs
                     continue
-                self._mysql.set_dynamic_variable(
-                    config.removeprefix("loose-"), new_config_dict[config]
-                )
+                self._mysql.set_dynamic_variable(config.removeprefix("loose-"), new_config[config])
 
     def _on_start(self, event: StartEvent) -> None:
         """Handle the start event.
@@ -832,7 +829,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.error("Data directory not attached.")
             raise StorageUnavailableError
 
-        if not self.mysql_config.custom_config:
+        if not self._mysql.read_file_content(MYSQLD_CUSTOM_CONFIG_FILE):
             # empty config mean start never ran, skip next checks
             return True
 

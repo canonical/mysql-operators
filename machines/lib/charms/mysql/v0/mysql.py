@@ -2967,6 +2967,23 @@ class MySQLBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def write_content_to_file(
+        self,
+        path: str,
+        content: str,
+        owner: str,
+        group: str,
+        permission: int,
+    ) -> None:
+        """Write content to file."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def read_file_content(self, path: str) -> str | None:
+        """Reads a file content."""
+        raise NotImplementedError
+
+    @abstractmethod
     def reset_data_dir(self) -> None:
         """Reset the data directory."""
         raise NotImplementedError

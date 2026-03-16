@@ -6,7 +6,6 @@
 
 import configparser
 import logging
-import os
 import re
 from typing import ClassVar
 
@@ -31,10 +30,6 @@ class MySQLConfig:
         "admin_address",
     }
 
-    def __init__(self, config_file_path: str):
-        """Initialize config."""
-        self.config_file_path = config_file_path
-
     def keys_requires_restart(self, keys: set) -> bool:
         """Check if keys require restart."""
         return bool(keys & self.static_config)
@@ -43,16 +38,11 @@ class MySQLConfig:
         """Filter static keys."""
         return keys - self.static_config
 
-    @property
-    def custom_config(self) -> dict | None:
-        """Return current custom config dict."""
-        if not os.path.exists(self.config_file_path):
-            return None
-
+    @staticmethod
+    def get_custom_config(config_content: str) -> dict:
+        """Convert config content to dict."""
         cp = configparser.ConfigParser(interpolation=None)
-
-        with open(self.config_file_path) as config_file:
-            cp.read_file(config_file)
+        cp.read_string(config_content)
 
         return dict(cp["mysqld"])
 
