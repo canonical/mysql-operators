@@ -7,12 +7,6 @@ myst:
 (charm-module)=
 # Deploy charm module
 
-```{admonition} This feature requires Juju 3
-:class: warning
-
-The feature described in this page is **not** available on Juju 2.9.
-```
-
 The MySQL **charm** Terraform module is the smallest unit that can be deployed using Terraform, containing only the MySQL Server charm. It is designed to be deployed alongside other charms to build a more complex setup.
 
 ## Install Terraform tooling
@@ -86,7 +80,7 @@ Sample output on machines, where the cloud provider is LXD:
 
 ```shell
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
-my-model  lxd-controller  localhost/localhost  3.5.3    unsupported  12:49:34Z
+my-model  lxd-controller  localhost/localhost  3.6.14    unsupported  12:49:34Z
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7    active      1  mysql  8.4/edge         no

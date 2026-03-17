@@ -43,13 +43,6 @@ In this example, from an active unit, you would check the cluster status with:
 juju run mysql/2 get-cluster-status
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 Which will output the current status of the cluster.
 

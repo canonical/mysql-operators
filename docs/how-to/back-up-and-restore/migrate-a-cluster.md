@@ -48,13 +48,6 @@ Set the password of your current cluster to the previous cluster’s password:
     juju run mysql-k8s/leader set-password username=monitoring password=<previous cluster password>
 ```
 ````
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 ## Restore cluster
 

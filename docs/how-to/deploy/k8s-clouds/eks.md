@@ -24,7 +24,7 @@ To check they are all correctly installed, you can run the commands demonstrated
 
 ```console
 > juju version
-3.1.7-ubuntu-amd64
+3.6.14-ubuntu-amd64
 
 > kubectl version --client
 Client Version: v1.28.2
@@ -119,10 +119,6 @@ Sample output:
 
 
 ## Bootstrap Juju on EKS
-```{caution}
-There is a known bug for `juju v.3.1` users: 
-bugs.launchpad.net/juju/+bug/2007848
-```
 
 Add Juju k8s clouds:
 ```shell
@@ -162,7 +158,7 @@ Display information about the current deployments with the following commands:
 ```shell
 > juju controllers
 Controller         Model    User   Access     Cloud/Region      Models  Nodes  HA  Version
-eks-taurus-27506*  welcome  admin  superuser  eks-taurus-27506       2      1   -  2.9.45  
+eks-taurus-27506*  welcome  admin  superuser  eks-taurus-27506       2      1   -  3.6.14  
 
 > kubectl cluster-info 
 Kubernetes control plane is running at https://AAAAAAAAAAAAAAAAAAAAAAA.gr7.eu-west-3.eks.amazonaws.com

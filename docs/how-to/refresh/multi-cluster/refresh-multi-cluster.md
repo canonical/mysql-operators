@@ -35,13 +35,6 @@ To identify the primary cluster, run
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 ## Refresh each cluster
 

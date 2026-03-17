@@ -30,8 +30,6 @@ The following are the minimum software and hardware requirements to run Charmed 
 
 ### Juju
 
-The charm supports several Juju releases from [2.9 LTS](https://documentation.ubuntu.com/juju/3.6/reference/juju/juju-roadmap-and-releases/#juju-2-9) onward. The table below shows which minor versions of each major Juju release are supported by the stable Charmhub releases of MySQL. 
-
 Always check the {ref}`release notes <release-notes>` to find the minimum Juju version for your deployment.
 
 ````{tab-set}
@@ -83,8 +81,8 @@ The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/
 
 It currently supports:
 * `amd64`
-* `arm64` (charm revision 181+)
-* `s390x` (charm revision 342+)
+* `arm64`
+* `s390x`
 ```
 ````
 
@@ -97,19 +95,3 @@ It currently supports:
 * Only IPv4 is supported at the moment
   * See more information about this limitation in [this Jira issue](https://warthogs.atlassian.net/browse/DPE-4695)
   * {ref}`Contact us <contacts>` if you are interested in IPv6!
-
-<!-- BADGES -->
-[2.9 LTS]: https://img.shields.io/badge/2.9_LTS-%23E95420?label=Juju
-[3.1]: https://img.shields.io/badge/3.1-%23E95420?label=Juju
-[3.4]: https://img.shields.io/badge/3.4-%23E95420?label=Juju
-[3.5]: https://img.shields.io/badge/3.5-%23E95420?label=Juju
-[3.6 LTS]: https://img.shields.io/badge/3.6_LTS-%23E95420?label=Juju
-
-<!-- LINKS -->
-[240]: release-notes/vm/revision-240.md
-[196]: release-notes/vm/revision-196.md
-[151]: release-notes/vm/revision-151.md
-
-[153]: release-notes/k8s/revision-153.md
-[99]: release-notes/k8s/revision-99.md
-[75]: release-notes/k8s/revision-75.md

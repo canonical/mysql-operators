@@ -33,13 +33,6 @@ Once `juju status` shows Charmed MySQL as `active` and `idle`, you can create yo
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 If you have a cluster of one unit, you can run the `create-backup` action on the leader (which will also be the primary unit). Otherwise, you must run the `create-backup` action on a non-primary unit. 
 

@@ -7,12 +7,6 @@ myst:
 (cluster-cluster-replication)=
 # Cluster-cluster replication
 
-```{admonition} This feature requires Juju 3
-:class: warning
-
-The feature described in this section is **not** available on Juju 2.9.
-```
-
 Cluster-cluster asynchronous replication focuses on disaster recovery by distributing data across different servers.
 
 For increased safety, it is recommended to deploy each cluster in a different geographical region.

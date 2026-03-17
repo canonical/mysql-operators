@@ -72,14 +72,6 @@ Apply the newly generated internal key on each `juju` unit:
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
-
 Updates can also be done with auto-generated keys:
 
 ````{tab-set}

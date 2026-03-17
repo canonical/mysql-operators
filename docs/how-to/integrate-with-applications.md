@@ -83,14 +83,6 @@ Use the `get-credentials` action to retrieve credentials from `data-integrator`:
 juju run data-integrator/leader get-credentials
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
-
 ## Rotate applications password
 
 To rotate the passwords of users created for related applications, the relation should be removed and related again. That process will generate a new user and password for the application.

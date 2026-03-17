@@ -69,7 +69,7 @@ Always perform the migration in a test environment before performing it in produ
 ## Prerequisites
 
 - Client machine with access to deployed legacy charm
-- Juju 2.9 or later
+- Juju 3.6 or later
   - See also: {ref}`juju`
 - Enough storage in the cluster to support backup/restore of the databases
 - `mysql-client` on client machine (install by running `sudo apt install mysql-client`)
@@ -115,13 +115,6 @@ OLD_DB_PASS=$(bash -c "juju run --unit ${DB_APP} 'relation-get -r ${OLD_DB_RELAT
 OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[] | .address')
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 ## Deploy new MySQL databases and obtain credentials
 

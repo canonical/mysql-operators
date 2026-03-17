@@ -137,7 +137,7 @@ When the application is ready, `juju status` will show something similar to the 
 
 ```text
 Model      Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial   overlord    localhost/localhost  3.5.2    unsupported  00:52:59+02:00
+tutorial   overlord    localhost/localhost 3.6.14   unsupported  00:52:59+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary
@@ -309,7 +309,7 @@ You’ll know that all three nodes are in sync when `juju status` reports `Workl
 
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:33:55+01:00
+tutorial  overlord    localhost/localhost  3.6.14   unsupported  23:33:55+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      3  mysql  8.4/edge         no
@@ -350,7 +350,7 @@ You’ll know that the replica was successfully removed when you no longer see t
 
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:46:43+01:00
+tutorial  overlord    localhost/localhost  3.6.14   unsupported  23:46:43+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      2  mysql  8.4/edge         no
@@ -414,7 +414,7 @@ Wait for `juju status` to show all applications/units as `active`:
 
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:10:27+01:00
+tutorial  overlord    localhost/localhost  3.6.14   unsupported  00:10:27+01:00
 
 App              Version          Status  Scale  Charm            Channel     Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  edge       13    no
@@ -555,7 +555,7 @@ Wait until `self-signed-certificates` is up and active, using `juju status --wat
 
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:40:42+01:00
+tutorial  overlord    localhost/localhost  3.6.14   unsupported  00:40:42+01:00
 
 App                        Version          Status  Scale  Charm                      Channel     Rev  Exposed  Message
 mysql                      8.4.7            active      2  mysql                      8.4/edge        no

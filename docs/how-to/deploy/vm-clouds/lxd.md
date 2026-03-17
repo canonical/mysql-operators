@@ -29,7 +29,7 @@ juju deploy mysql --channel 8.4/edge
 Sample output of `juju status --watch 1s`:
 ```shell
 Model   Controller  Cloud/Region         Version  SLA          Timestamp
-mysql   overlord    localhost/localhost  3.1.6    unsupported  00:52:59+02:00
+mysql   overlord    localhost/localhost  3.6.14   unsupported  00:52:59+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary

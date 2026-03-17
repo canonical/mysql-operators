@@ -7,12 +7,6 @@ myst:
 (sunbeam)=
 # How to deploy on Sunbeam
 
-```{admonition} This feature requires Juju 3
-:class: warning
-
-The feature described in this page is **not** available on Juju 2.9.
-```
-
 This guide goes through the steps for setting up Sunbeam and deploying Charmed MySQL. 
 
 ## Prerequisites
@@ -52,7 +46,7 @@ juju deploy mysql --base ubuntu@24.04 -n 3
 Sample output of `juju status --watch 1s`:
 ```shell
 Model  Controller     Cloud/Region       Version  SLA          Timestamp
-mysql  my-controller  sunbeam/RegionOne  3.5.4    unsupported  20:22:42Z
+mysql  my-controller  sunbeam/RegionOne  3.6.14    unsupported  20:22:42Z
 
 App    Version   Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7     active      3  mysql  8.4/edge         no       

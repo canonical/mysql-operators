@@ -7,12 +7,6 @@ myst:
 (cluster-cluster-recovery)=
 # Recovery
 
-```{admonition} This feature requires Juju 3
-:class: warning
-
-The feature described in this page is **not** available on Juju 2.9.
-```
-
 This guide assumes both `Rome` and `Lisbon` Clusters are deployed using the {ref}`cluster-cluster-deploy`.
 
 ## Recover detached cluster
@@ -34,7 +28,7 @@ If the invalidated cluster connections is restored, it's status will be displaye
 :sync: vm
 
     App  Version  Status  Scale  Charm  Channel   Rev  Address         Exposed  Message
-    db2  8.4.7    active      3  mysql  8.0/edge       10.152.183.241  no
+    db2  8.4.7    active      3  mysql  8.4/edge       10.152.183.241  no
 
     Unit    Workload  Agent  Address       Ports  Message
     db2/0   active    idle   10.1.124.208      
@@ -46,7 +40,7 @@ If the invalidated cluster connections is restored, it's status will be displaye
 :sync: k8s
 
     App  Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
-    db2  8.4.7    active      3  mysql-k8s  8.0/edge       10.152.183.241  no
+    db2  8.4.7    active      3  mysql-k8s  8.4/edge       10.152.183.241  no
 
     Unit    Workload  Agent  Address       Ports  Message
     db2/0   active    idle   10.1.124.208      

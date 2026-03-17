@@ -138,7 +138,7 @@ services:
 
 The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
 
-The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.0/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
+The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 

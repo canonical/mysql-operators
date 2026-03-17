@@ -35,7 +35,7 @@ Example output for Charmed MySQL on a machine controller:
 
 ```shell
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
-example  lxd         localhost/localhost  3.5.2    unsupported  17:58:37Z
+example  lxd         localhost/localhost  3.6.14   unsupported  17:58:37Z
 
 App    Version   Status  Scale  Charm  Channel  Rev  Exposed  Message
 mysql  8.4.7     active      3  mysql                no       
@@ -102,13 +102,6 @@ The output of the action should look like:
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 The action will configure the charm to minimize the amount of primary switchover, among other preparations for a safe refresh process. After successful execution, the charm is ready to be refreshed.
 
@@ -180,7 +173,7 @@ Example `juju status` during an refresh:
 
 
     Model    Controller  Cloud/Region         Version  SLA          Timestamp
-    example  lxd         localhost/localhost  3.5.2    unsupported  18:11:21Z
+    example  lxd         localhost/localhost  3.6.14   unsupported  18:11:21Z
 
     App    Version  Status  Scale  Charm  Channel  Rev  Exposed  Message
     mysql  8.4.7    active      3  mysql                no       
@@ -208,10 +201,10 @@ If the unit is healthy within the cluster, the next step is to resume the upgrad
 `resume-upgrade` will rollout the upgrade for the following unit, always from highest ordinal number to lowest, and for each successful upgraded unit, the process will rollout the next automatically.
 
     Model      Controller  Cloud/Region        Version  SLA          Timestamp
-    example    k8s         microk8s/localhost  3.5.2    unsupported  01:20:47Z
+    example    k8s         microk8s/localhost  3.6.14   unsupported  01:20:47Z
 
     App        Version     Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-    mysql-k8s  8.4.7        waiting     3  mysql-k8s  8.0/edge      10.152.183.102  no       waiting for units to settle down
+    mysql-k8s  8.4.7        waiting     3  mysql-k8s  8.4/edge      10.152.183.102  no       waiting for units to settle down
 
     Unit          Workload     Agent      Address       Ports  Message
     mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...

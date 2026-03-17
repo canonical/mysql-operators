@@ -35,14 +35,6 @@ The Amazon S3 endpoint must be specified as `s3.<region>.amazonaws.com ` within 
 See [this post](https://repost.aws/knowledge-center/s3-http-307-response) for more information. 
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
-
 To pass these configurations to Charmed MySQL, relate the two applications:
 
 

@@ -111,7 +111,7 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 
     ubuntu@localhost:~$ juju status
     Model      Controller  Cloud/Region         Version  SLA          Timestamp
-    mysql      local       localhost/localhost  3.1.6    unsupported  00:12:18+02:00
+    mysql      local       localhost/localhost  3.6.14   unsupported  00:12:18+02:00
 
     SAAS         Status  Store    URL
     grafana      active  k8s      admin/cos.grafana
@@ -132,7 +132,7 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 ```{tab-item} K8s
 :sync: k8s
     Model  Controller   Cloud/Region        Version  SLA          Timestamp
-    mysql  charmed-dev  microk8s/localhost  3.1.6    unsupported  02:20:09+02:00
+    mysql  charmed-dev  microk8s/localhost  3.6.14   unsupported  02:20:09+02:00
 
     SAAS        Status  Store        URL
     grafana     active  charmed-dev  admin/cos.grafana
@@ -153,7 +153,7 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 ```shell
 ubuntu@localhost:~$ juju status
 Model  Controller   Cloud/Region        Version  SLA          Timestamp
-cos    k8s          microk8s/localhost  3.1.6    unsupported  00:15:31+02:00
+cos    k8s          microk8s/localhost  3.6.14   unsupported  00:15:31+02:00
 
 App           Version  Status  Scale  Charm             Channel  Rev  Address         Exposed  Message
 alertmanager  0.23.0   active      1  alertmanager-k8s  stable    47  10.152.183.206  no
@@ -187,13 +187,6 @@ To connect the Grafana web interface, follow the [Browse dashboards](https://cha
 juju run grafana/leader get-admin-password --model <cos_k8s_controller>:<cos_model_name>
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 ## Full example of COS integration (MySQL K8s)
 

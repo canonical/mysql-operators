@@ -43,13 +43,6 @@ It is necessary to re-run `pre-upgrade-check` action on the leader unit in order
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 ## Step 2: Rollback
 

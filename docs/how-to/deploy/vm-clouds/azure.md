@@ -195,13 +195,6 @@ Once deployed, request the credentials for your newly bootstrapped MySQL databas
 juju run data-integrator/leader get-credentials
 ```
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 Example output:
 ```shell

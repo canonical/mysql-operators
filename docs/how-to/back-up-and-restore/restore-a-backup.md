@@ -43,13 +43,6 @@ To view the available backups to restore you can enter the command `list-backups
 ```
 ````
 
-```{admonition} Juju 2.9 users
-:class: tip
-
-Remember that `juju run <action name>` becomes `juju run-action <action name> --wait`.
-
-See also: {ref}`breaking-changes-juju`
-```
 
 This should show your available backups
 ```shell

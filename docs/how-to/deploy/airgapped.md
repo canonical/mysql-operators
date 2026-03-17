@@ -7,12 +7,6 @@ myst:
 (airgapped)=
 # Deploy in an offline or airgapped environment
 
-```{admonition} This feature requires Juju 3
-:class: warning
-
-The feature described in this page is **not** available on Juju 2.9.
-```
-
 An airgapped environment refers to a system that does not have access to the public internet.
 This guide goes through the special configuration steps for installing Charmed MySQL VM in an airgapped environment.
 
