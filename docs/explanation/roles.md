@@ -1,0 +1,78 @@
+---
+myst:
+  html_meta:
+    description: "Reference for predefined roles in Charmed MySQL, including charmed_backup, charmed_dba, charmed_router, and other custom MySQL roles."
+---
+
+(roles)=
+# Roles
+
+```{note}
+The following roles are available in `8.0` starting from:
+* Revision 412 for the {ref}`VM charm <release-notes-vm>`
+* Revision 284 for the {ref}`K8s charm <release-notes-k8s>`
+```
+
+There are several definitions of roles in Charmed MySQL:
+* Predefined instance-level roles
+* Predefined database-level roles
+
+```{seealso}
+{ref}`users`
+```
+
+## MySQL roles
+
+MySQL does not provide any built-in roles for users to get permissions from.
+
+## Charmed MySQL instance-level roles
+
+Charmed MySQL introduces the following instance-level predefined roles:
+
+* `charmed_backup`: used for the `backups` user.
+* `charmed_stats`: used for the `monitoring` user.
+* `charmed_read`: used to provide data read permissions to all databases.
+* `charmed_dml`: used to provide data read / write permissions to all databases.
+* `charmed_ddl`: used to provide schema modification permissions to all databases.
+* `charmed_dba`: used to provide data, schema, and system configuration permissions to all databases.
+ 
+Currently, `charmed_backup` cannot be requested through the relation as extra user roles.
+
+```text
+mysql> SELECT host, user FROM mysql.user;
++-----------+------------------+
+| host      | user             |
++-----------+------------------+
+| ...       | ...              |
+| %         | charmed_backup   |
+| %         | charmed_dba      |
+| %         | charmed_ddl      |
+| %         | charmed_dml      |
+| %         | charmed_read     |
+| %         | charmed_stats    |
+| ...       | ...              |
++-----------+------------------+
+```
+
+Additionally, the role `charmed_router` is available to ease the integration with Charmed MySQL Router ([VM](https://charmhub.io/mysql-router) | [K8s](https://charmhub.io/mysql-router-k8s)).
+
+This role contains all the necessary permissions for a MySQL Router relation user to operate.
+
+## Charmed MySQL database-level roles
+
+Charmed MySQL also introduces database level roles, with permissions tied to each database that is created.
+
+Example for a database named `test`:
+
+```text
+mysql> SELECT host, user FROM mysql.user WHERE user LIKE '%_test_%';
++-----------+---------------------+
+| host      | user                |
++-----------+---------------------+
+| %         | charmed_dba_test_00 |
++-----------+---------------------+
+```
+
+The `charmed_dba_<database>_<num>` role contains every data and schema related permission, scoped to the database it references.
+The numeric part is introduced in order to differentiate across DBA roles whose first set of characters is the same,
+given that database names will be pruned in order to fit into the MySQL role length limit (32 characters).
