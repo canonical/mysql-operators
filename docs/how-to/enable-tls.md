@@ -29,13 +29,13 @@ To enable TLS, integrate it with your MySQL application:
 ```{tab-item} VM
 :sync: vm
 
-    juju relate self-signed-certificates mysql
+    juju integrate self-signed-certificates mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate self-signed-certificates mysql-k8s
+    juju integrate self-signed-certificates mysql-k8s
 ```
 ````
 

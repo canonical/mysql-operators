@@ -140,7 +140,7 @@ The following command deploys MySQL and [Data-Integrator](https://charmhub.io/da
 ```shell
 juju deploy mysql
 juju deploy data-integrator --config database-name=test123
-juju relate mysql data-integrator
+juju integrate mysql data-integrator
 ```
 Check the status:
 ```shell

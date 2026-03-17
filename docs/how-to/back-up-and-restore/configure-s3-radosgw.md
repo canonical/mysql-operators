@@ -68,7 +68,7 @@ juju config s3-integrator \
 To pass these configurations to Charmed MySQL, integrate the two applications:
 
 ```shell
-juju relate s3-integrator mysql
+juju integrate s3-integrator mysql
 ```
 
 You can create, list, and restore backups now:

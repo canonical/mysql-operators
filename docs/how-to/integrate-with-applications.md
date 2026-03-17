@@ -25,13 +25,13 @@ To integrate with a charmed application that supports the `mysql_client` interfa
 ```{tab-item} VM
 :sync: vm
 
-    juju relate mysql <charm>
+    juju integrate mysql <charm>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate mysql-k8s <charm>
+    juju integrate mysql-k8s <charm>
 ```
 ````
 
@@ -67,13 +67,13 @@ Integrate with MySQL:
 ```{tab-item} VM
 :sync: vm
 
-    juju relate data-integrator mysql
+    juju integrate data-integrator mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate data-integrator mysql-k8s
+    juju integrate data-integrator mysql-k8s
 ```
 ````
 
@@ -92,14 +92,14 @@ To rotate the passwords of users created for related applications, the relation 
 :sync: vm
 
     juju remove-relation <charm> mysql
-    juju relate <charm> mysql
+    juju integrate <charm> mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
     juju remove-relation <charm> mysql-k8s
-    juju relate <charm> mysql-k8s
+    juju integrate <charm> mysql-k8s
 ```
 ````
 

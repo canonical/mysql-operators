@@ -7,9 +7,13 @@ myst:
 (upgrade-juju)=
 # How to upgrade Juju for a new database revision
 
-This guide contains instructions to perform a patch or major/minor Juju upgrade to a controller and model containing a database charm. 
+Newly released charm revisions might require a new Juju version. This is usually because the new revision requires new Juju features, e.g. [Juju secrets](https://juju.is/docs/juju/secret).
 
-For more background about Juju upgrades in the context of database charms, see {ref}`juju`.
+Information about Juju requirements will be clearly indicated in the charm's {ref}`release notes <release-notes>` and in the repository's `metadata.yaml` file.
+
+When upgrading your database charm with {command}`juju refresh` Juju checks that its version is compatible with the target revision. If not, it stops the upgrade and prevents further changes to keep the installation safe. 
+
+This guide contains instructions to perform a patch or major/minor Juju upgrade to a controller and model containing a database charm. 
 
 ## Patch version upgrade
 
@@ -63,8 +67,6 @@ The following is a summary of commands that upgrade Juju to `3.6/stable`:
     # wait until complete
 ```
 ````
-
-
 
 Once the model has finished upgrading, you can proceed with the {ref}`charm upgrade <refresh-single-cluster>`.
 

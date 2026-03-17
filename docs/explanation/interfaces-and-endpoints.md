@@ -21,7 +21,7 @@ This charm provides the modern [`mysql_client`](https://github.com/canonical/cha
 
 ### `mysql_client` interface, `database` endpoint
 
-Adding a [Juju relation](https://documentation.ubuntu.com/juju/3.6/reference/relation/) is accomplished with `juju relate` via endpoint `database`.
+Adding a [Juju relation](https://documentation.ubuntu.com/juju/3.6/reference/relation/) is accomplished with `juju integrate` via endpoint `database`.
 
 Example:
 
@@ -36,7 +36,7 @@ Example:
     juju deploy mysql-test-app
 
     # Relate MySQL with your application
-    juju relate mysql:database mysql-test-app:database
+    juju integrate mysql:database mysql-test-app:database
 
     # Check established relation (using mysql_client interface):
     juju status --relations
@@ -56,7 +56,7 @@ Example:
     juju deploy mysql-test-app
 
     # Relate MySQL with your application
-    juju relate mysql-k8s:database mysql-test-app:database
+    juju integrate mysql-k8s:database mysql-test-app:database
 
     # Check established relation (using mysql_client interface):
     juju status --relations

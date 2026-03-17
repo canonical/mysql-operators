@@ -37,7 +37,7 @@ Create a Juju model for testing, deploy a database with a test application and s
     juju add-unit mysql -n 2 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
-    juju relate mysql-test-app mysql:database
+    juju integrate mysql-test-app mysql:database
 
     # Make sure random data inserted into DB by test application:
     juju run mysql-test-app/leader get-inserted-data
@@ -59,7 +59,7 @@ Create a Juju model for testing, deploy a database with a test application and s
     juju scale-application mysql-k8s 3 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
-    juju relate mysql-test-app mysql-k8s:database
+    juju integrate mysql-test-app mysql-k8s:database
 
     # Make sure random data inserted into DB by test application:
     juju run mysql-test-app/leader get-inserted-data

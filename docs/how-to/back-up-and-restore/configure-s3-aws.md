@@ -42,13 +42,13 @@ To pass these configurations to Charmed MySQL, relate the two applications:
 ```{tab-item} VM
 :sync: vm
 
-    juju relate s3-integrator mysql
+    juju integrate s3-integrator mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate s3-integrator mysql-k8s
+    juju integrate s3-integrator mysql-k8s
 ```
 ````
 
