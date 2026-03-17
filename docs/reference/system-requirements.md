@@ -70,8 +70,8 @@ The charm is based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysq
 
 It currently supports:
 * `amd64`
-* `arm64` (charm revision 312+)
-* `s390x` (charm revision 443+)
+* `arm64`
+* `s390x`
 ```
 
 ```{tab-item} K8s

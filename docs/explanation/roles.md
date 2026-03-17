@@ -7,12 +7,6 @@ myst:
 (roles)=
 # Roles
 
-```{note}
-The following roles are available in `8.0` starting from:
-* Revision 412 for the {ref}`VM charm <release-notes-vm>`
-* Revision 284 for the {ref}`K8s charm <release-notes-k8s>`
-```
-
 There are several definitions of roles in Charmed MySQL:
 * Predefined instance-level roles
 * Predefined database-level roles
