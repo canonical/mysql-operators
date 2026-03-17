@@ -70,7 +70,7 @@ Always perform the migration in a test environment before performing it in produ
 
 - Client machine with access to deployed legacy charm
 - Juju 3.6 or later
-  - See also: {ref}`juju`
+  - See also: {ref}`upgrade-juju`
 - Enough storage in the cluster to support backup/restore of the databases
 - `mysql-client` on client machine (install by running `sudo apt install mysql-client`)
 
@@ -214,13 +214,13 @@ Integrate your application and new MySQL database charm (using the `database` or
 ```{tab-item} VM
 :sync: vm
 
-    juju relate <your_application> mysql:database
+    juju integrate <your_application> mysql:database
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate <your_application> mysql-k8s:database
+    juju integrate <your_application> mysql-k8s:database
 ```
 ````
 
@@ -230,13 +230,13 @@ If the `mysql_client` interface is not yet supported, use the legacy mysql inter
 ```{tab-item} VM
 :sync: vm
 
-    juju relate <your_application> mysql:mysql
+    juju integrate <your_application> mysql:mysql
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate <your_application> mysql-k8s:mysql
+    juju integrate <your_application> mysql-k8s:mysql
 ```
 ````
 

@@ -17,7 +17,6 @@ Additional context about key concepts behind the MySQL charm.
 
 Architecture <architecture>
 Interfaces and endpoints <interfaces-and-endpoints>
-Juju <juju>
 ```
 
 ## Operational concepts
