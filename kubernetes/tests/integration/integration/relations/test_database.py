@@ -7,6 +7,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
+from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -34,11 +35,13 @@ def test_build_and_deploy(juju: Juju, charm):
         trust=True,
     )
 
+    constraints = {"arch": architecture.architecture}
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=2,
         channel="latest/edge",
         base="ubuntu@24.04",
+        constraints=constraints,
     )
 
 
