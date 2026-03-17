@@ -24,7 +24,7 @@ To upgrade Juju, see {ref}`upgrade-juju`
 ## Step 1: Record revision information
 
 ```{note}
-This step is only valid when deploying from [Charmhub](https://charmhub.io/mysql). 
+This step is only valid when deploying from [Charmhub](https://charmhub.io/mysql).
 
 If a [local charm](https://juju.is/docs/sdk/deploy-a-charm) is deployed (revision is small, e.g. 0-10), make sure the proper/current local revision of the `.charm` file is available BEFORE going further. You might need it for a rollback.
 ```
@@ -53,19 +53,35 @@ Machine  State    Address         Inst id         Series  AZ  Message
 
 For this example, the current revision is `XXX`. Store it safely to use in case of rollback!
 
-## Step 2: Scale up (optional)
+## Step 2: Scale up
 
-With Charmed MySQL for Kubernetes, it is recommended to scale the application up by one unit before starting the upgrade process.
+It is mandatory to have at least 3 units of MySQL before refreshing. This ensures that the MySQL cluster can refresh regardless of whether a MySQL Router application is connected, as the quorum criteria within the cluster varies based on this condition.
 
-The new unit will be the first one to be updated, and it will assert that the upgrade is possible. In case of failure, having the extra unit will ease a future rollback procedure without disrupting service. 
+In case of failure, having extra units will ease a future rollback procedure without disrupting service. To scale up the application:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```shell
-juju scale-application mysql-k8s <total number of units desired>
+juju add-unit mysql --num-units <amount of units to add>
 ```
+````
 
-To scale up by 1 unit, `<total number of units desired>` would be the current number of units + 1 
+````{tab-item} K8s
+:sync: k8s
 
-Wait for the new unit to be ready.
+```shell
+juju scale-application mysql-k8s <total number of units>
+```
+````
+`````
+
+Wait for the new units to be ready.
+
+```{tip}
+It is recommended to use an odd number to prevent a [split-brain](https://en.wikipedia.org/wiki/Split-brain_(computing)) scenario.
+```
 
 ## Step 3: Pre-upgrade check
 
@@ -192,7 +208,7 @@ Example `juju status` during an refresh:
 ```{tab-item} K8s
 :sync: k8s
 
-After the unit is upgraded, the charm will set the unit upgrade state as completed. 
+After the unit is upgraded, the charm will set the unit upgrade state as completed.
 
 If the unit is healthy within the cluster, the next step is to resume the upgrade process by running:
 
