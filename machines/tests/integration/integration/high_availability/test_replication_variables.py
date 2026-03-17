@@ -49,7 +49,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 

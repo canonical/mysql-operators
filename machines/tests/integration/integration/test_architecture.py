@@ -28,11 +28,7 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
     # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
     sleep(30)
 
-    juju.wait(
-        ready=jubilant_backports.all_error,
-        timeout=300,
-        delay=2,
-    )
+    juju.wait(ready=jubilant_backports.all_error, timeout=300)
 
 
 @markers.arm64_only
@@ -51,11 +47,7 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
     # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
     sleep(30)
 
-    juju.wait(
-        ready=jubilant_backports.all_error,
-        timeout=300,
-        delay=2,
-    )
+    juju.wait(ready=jubilant_backports.all_error, timeout=300)
 
 
 # TODO: add s390x test

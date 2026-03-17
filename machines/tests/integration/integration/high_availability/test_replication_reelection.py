@@ -54,7 +54,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -71,13 +70,11 @@ def test_kill_primary_check_reelection(juju: Juju) -> None:
     juju.wait(
         ready=lambda status: len(status.apps[MYSQL_APP_NAME].units) == 2,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     # Confirm that the new primary unit is different

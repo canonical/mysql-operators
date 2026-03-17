@@ -62,7 +62,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -87,7 +86,6 @@ def test_pod_eviction_and_pvc_deletion(juju: Juju, continuous_writes) -> None:
             ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
             error=jubilant_backports.any_blocked,
             timeout=20 * MINUTE_SECS,
-            delay=2,
         )
 
     logging.info("Ensuring that all instances have incrementing continuous writes")

@@ -48,12 +48,10 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         timeout=TIMEOUT,
-        delay=2,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
         timeout=TIMEOUT,
-        delay=2,
     )
 
 
@@ -66,7 +64,6 @@ def test_integrate_with_spaces(juju: Juju):
     juju.wait(
         ready=jubilant_backports.all_active,
         timeout=TIMEOUT,
-        delay=2,
     )
 
     unit = get_app_units(juju, APPLICATION_APP_NAME)[0]
@@ -85,7 +82,6 @@ def test_integrate_with_spaces(juju: Juju):
     juju.wait(
         ready=lambda status: APPLICATION_APP_NAME not in status.apps,
         timeout=TIMEOUT,
-        delay=2,
     )
 
 
@@ -105,7 +101,6 @@ def test_integrate_with_isolated_space(juju: Juju):
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_waiting, isolated_app_name),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     # Relate the database to the application
@@ -118,7 +113,6 @@ def test_integrate_with_isolated_space(juju: Juju):
             jubilant_backports.all_active, DATABASE_APP_NAME, isolated_app_name
         ),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     unit = get_app_units(juju, isolated_app_name)[0]
@@ -147,5 +141,4 @@ def test_integrate_with_isolated_space(juju: Juju):
     juju.wait(
         ready=lambda status: isolated_app_name not in status.apps,
         timeout=TIMEOUT,
-        delay=2,
     )
