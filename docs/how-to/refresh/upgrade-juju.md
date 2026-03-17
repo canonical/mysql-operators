@@ -35,16 +35,36 @@ The easiest way to perform a [major/minor](https://semver.org/#summary) Juju ver
 
 The following is a summary of commands that upgrade Juju to `3.6/stable`:
 
-```text
-sudo snap refresh juju --channel 3.6/stable
 
-juju bootstrap microk8s k8s_3.6.14 # --agent-version 3.6.14
+````{tab-set}
+```{tab-item} VM
+:sync: vm
 
-juju migrate k8s_3.5.3:mydatabase k8s_3.6.14
+    sudo snap refresh juju --channel 3.6/stable
 
-juju upgrade-model -m k8s_3.6.14:mydatabase 
-# wait until complete
+    juju bootstrap lxd lxd_3.6.14 # --agent-version 3.6.14
+
+    juju migrate lxd_3.5.3:mydatabase lxd_3.6.14
+
+    juju upgrade-model -m lxd_3.6.14:mydatabase 
+    # wait until complete
 ```
+
+```{tab-item} K8s
+:sync: k8s
+
+    sudo snap refresh juju --channel 3.6/stable
+
+    juju bootstrap microk8s k8s_3.6.14 # --agent-version 3.6.14
+
+    juju migrate k8s_3.5.3:mydatabase k8s_3.6.14
+
+    juju upgrade-model -m k8s_3.6.14:mydatabase 
+    # wait until complete
+```
+````
+
+
 
 Once the model has finished upgrading, you can proceed with the {ref}`charm upgrade <refresh-single-cluster>`.
 
