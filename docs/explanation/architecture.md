@@ -7,7 +7,7 @@ myst:
 (architecture)=
 # Architecture
 
-[MySQL](https://www.mysql.com/) is the world’s most popular open source database. Charmed MySQL is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/). It is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.0/en/innodb-clusterset.html).
+[MySQL](https://www.mysql.com/) is the world’s most popular open source database. Charmed MySQL is a Juju-based operator to deploy and support MySQL from [day 0 to day 2](https://codilime.com/blog/day-0-day-1-day-2-the-software-lifecycle-in-the-cloud-age/). It is based on the [MySQL Community Edition](https://www.mysql.com/products/community/) using the built-in cluster functionality: [MySQL InnoDB ClusterSet](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-clusterset.html).
 
 ## High-level design
 
@@ -63,7 +63,7 @@ All `exporter` services are activated only after relating with {ref}`COS <enable
 
 The snap "charmed-mysql" also ships list of tools used by charm:
 * `charmed-mysql.mysql` (alias `mysql`) - mysql client to connect `mysqld`.
-* `charmed-mysql.mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) client to configure MySQL cluster.
+* `charmed-mysql.mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.4/en/) client to configure MySQL cluster.
 * `charmed-mysql.xbcloud` - a tool to download and upload full or part of xbstream archive from/to the cloud.
 * `charmed-mysql.xbstream` - a tool to support simultaneous compression and streaming.
 * `charmed-mysql.xtrabackup` - a tool to backup/restore MySQL DB.
@@ -93,7 +93,7 @@ This shows there are 2 containers in the pod: `charm` and `workload` mentioned a
 
 And if you run `kubectl describe pod mysql-k8s-0`, all the containers will have as Command `/charm/bin/pebble`. That’s because Pebble is responsible for the processes startup as explained above.
 
-The Charmed MySQL K8s (`workload` container) based on the `mysql-image` resource defined in the [charm metadata.yaml](https://github.com/canonical/mysql-operators/blob/8.0/edge/kubernetes/metadata.yaml). It is an official Canonical "[charmed-mysql](https://github.com/canonical/charmed-mysql-rock)" [OCI/ROCK](https://documentation.ubuntu.com/server/explanation/virtualisation/about-rock-images/) image, which is recursively based on Canonical SNAP “[charmed-mysql](https://snapcraft.io/charmed-mysql)” (read more about the snap details in {ref}`machine-charm`).
+The Charmed MySQL K8s (`workload` container) based on the `mysql-image` resource defined in the [charm metadata.yaml](https://github.com/canonical/mysql-operators/blob/8.4/edge/kubernetes/metadata.yaml). It is an official Canonical "[charmed-mysql](https://github.com/canonical/charmed-mysql-rock)" [OCI/ROCK](https://documentation.ubuntu.com/server/explanation/virtualisation/about-rock-images/) image, which is recursively based on Canonical SNAP “[charmed-mysql](https://snapcraft.io/charmed-mysql)” (read more about the snap details in {ref}`machine-charm`).
 
 [Charmcraft](https://juju.is/docs/sdk/install-charmcraft) uploads an image as a [charm resource](https://charmhub.io/mysql-k8s/resources/mysql-image) to [Charmhub](https://charmhub.io/mysql-k8s) during the [publishing](https://github.com/canonical/mysql-k8s-operator/blob/main/.github/workflows/release.yaml#L40-L53), as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
@@ -150,7 +150,7 @@ All `exporter` services are activated only after relating with {ref}`COS <enable
 The ROCK "charmed-mysql" also ships list of tools used by charm:
 
 * `mysql` - mysql client to connect `mysqld`.
-* `mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) client to configure MySQL cluster.
+* `mysqlsh` - new [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.4/en/) client to configure MySQL cluster.
 * `xbcloud` - a tool to download and upload full or part of xbstream archive from/to the cloud.
 * `xbstream` - a tool to support simultaneous compression and streaming.
 * `xtrabackup` - a tool to backup/restore MySQL DB.
@@ -163,7 +163,7 @@ The `xtrabackup (xbcloud+xbstream)` is used only to store {ref}`backups <create-
 
 ### MySQL Router
 
-[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.0/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The MySQL Router charm ([VM](https://charmhub.io/mysql-router) | [K8s](https://charmhub.io/mysql-router-k8s)) is an independent charm that can be related with MySQL.
+[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.4/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The MySQL Router charm ([VM](https://charmhub.io/mysql-router) | [K8s](https://charmhub.io/mysql-router-k8s)) is an independent charm that can be related with MySQL.
 
 ### TLS Certificates Operator
 
@@ -217,7 +217,7 @@ For this charm, the following events are observed:
 
 ### Charm code overview
 
-The code for both VM and K8s charms is located in the same repository, [`mysql-operators`](https://github.com/canonical/mysql-operators/tree/8.0/edge) under the `machines` and `kubernetes` directories respectively.
+The code for both VM and K8s charms is located in the same repository, [`mysql-operators`](https://github.com/canonical/mysql-operators/tree/8.4/edge) under the `machines` and `kubernetes` directories respectively.
 
 For each substrate, `src/charm.py` is the default entry point for a charm and has the `MySQLCharmBase` Python class which inherits from `CharmBase`.
 

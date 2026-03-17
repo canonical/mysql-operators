@@ -61,7 +61,7 @@ In the following, we provide guidance on how to harden your deployment using:
 
 ### Operating system
 
-Charmed MySQL and Charmed MySQL Router run on top of Ubuntu 22.04 LTS (Jammy). Deploy a [Landscape Client Charm](https://charmhub.io/landscape-client?) to connect the underlying VM to a Landscape User Account to manage security upgrades and integrate [Ubuntu Pro](https://ubuntu.com/pro) subscriptions. 
+Charmed MySQL and Charmed MySQL Router run on top of Ubuntu 24.04 LTS (Noble). Deploy a [Landscape Client Charm](https://charmhub.io/landscape-client?) to connect the underlying VM to a Landscape User Account to manage security upgrades and integrate [Ubuntu Pro](https://ubuntu.com/pro) subscriptions. 
 
 ### Security upgrades
 
@@ -81,7 +81,7 @@ For more information on encryption, see {ref}`cryptography` and {ref}`enable-tls
 
 ### Authentication
 
-Charmed MySQL uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
+Charmed MySQL uses the [caching_sha2_password](https://dev.mysql.com/doc/refman/8.4/en/caching-sha2-pluggable-authentication.html) plugin for authentication. 
 
 ### Monitoring
 
