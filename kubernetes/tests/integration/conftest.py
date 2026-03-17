@@ -10,6 +10,8 @@ import pytest
 
 from . import architecture
 
+logging.getLogger("jubilant.wait").setLevel(logging.WARNING)
+
 
 def pytest_configure(config):
     """Configure pytest logging format with timestamps."""
@@ -21,9 +23,6 @@ def pytest_configure(config):
         "%(asctime)s %(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s"
     )
     config.option.log_date_format = "%b %d %H:%M:%S"
-
-
-logging.getLogger("jubilant.wait").setLevel(logging.WARNING)
 
 
 @pytest.fixture(scope="session")

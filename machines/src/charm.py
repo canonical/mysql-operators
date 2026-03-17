@@ -51,7 +51,6 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops import (
-    ActiveStatus,
     BlockedStatus,
     EventBase,
     InstallEvent,
@@ -512,7 +511,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             from_instance=cluster_primary,
         )
 
-    def _on_update_status(self, _) -> None:  # noqa: C901
+    def _set_app_status(self, state: str) -> None:
+        """Set the application status based on the cluster state."""
+        if not self.unit.is_leader() or state != InstanceState.ONLINE:
+            return
+
+        block_message = self.app_peer_data.get("s3-block-message")
+        if block_message:
+            self.app.status = BlockedStatus(block_message)
+            return
+
+        self.app.status = self.build_app_workload_status()
+
+    def _on_update_status(self, _) -> None:
         """Handle update status.
 
         Takes care of workload health checks.
@@ -563,34 +574,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role
         self.unit_peer_data["member-state"] = state
-
-        # set unit status based on member-{state,role}
-        self.unit.status = (
-            ActiveStatus(self.active_status_message)
-            if state == InstanceState.ONLINE
-            else MaintenanceStatus(state)
-        )
+        self.unit.status = self.build_unit_workload_status()
 
         if not self._handle_non_online_instance_status(state):
             return
 
-        if self.unit.is_leader() and state == InstanceState.ONLINE:
-            try:
-                primary_address = self._mysql.get_cluster_primary_address()
-            except MySQLGetClusterPrimaryAddressError:
-                primary_address = None
-
-            if not primary_address:
-                logger.error("Cluster has no primary. Check cluster status on online units.")
-                self.app.status = MaintenanceStatus("Cluster has no primary.")
-                return
-
-            if "s3-block-message" in self.app_peer_data:
-                self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
-                return
-
-            # Set active status when primary is known
-            self.app.status = ActiveStatus()
+        self._set_app_status(state)
 
     def _on_cos_agent_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the cos_agent relation created event.
@@ -857,7 +846,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
             self.unit.set_ports(3306, 33060)
-            self.unit.status = ActiveStatus(self.active_status_message)
+            self.unit.status = self.build_unit_workload_status()
         except (
             MySQLCreateClusterError,
             MySQLCreateClusterSetError,
@@ -956,7 +945,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 return
 
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
-        self.unit.status = ActiveStatus(self.active_status_message)
+        self.unit.status = self.build_unit_workload_status()
         logger.info(f"Instance {instance_label} added to cluster")
 
     def recover_unit_after_restart(self) -> None:

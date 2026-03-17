@@ -5,7 +5,6 @@
 
 import json
 import logging
-from socket import getfqdn
 from typing import TYPE_CHECKING, override
 
 from charms.data_platform_libs.v0.upgrade import (
@@ -33,6 +32,7 @@ from tenacity import RetryError
 
 import k8s_helpers
 from constants import CONTAINER_NAME, MYSQLD_SERVICE
+from utils import get_k8s_fqdn
 
 if TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -156,7 +156,7 @@ class MySQLK8sUpgrade(DataUpgrade):
         """
         if self.charm._mysql.get_primary_label() != f"{self.charm.app.name}-0":
             # set the primary to the first unit for switchover mitigation
-            new_primary = getfqdn(self.charm.get_unit_hostname(f"{self.charm.app.name}/0"))
+            new_primary = get_k8s_fqdn(self.charm.get_unit_hostname(f"{self.charm.app.name}/0"))
             self.charm._mysql.set_cluster_primary(new_primary)
 
         # set slow shutdown on all instances

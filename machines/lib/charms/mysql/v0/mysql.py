@@ -653,8 +653,8 @@ class MySQLCharmBase(CharmBase, ABC):
         logger.info("Recreating cluster")
         try:
             self.create_cluster()
-            self.unit.status = ops.ActiveStatus(self.active_status_message)
-            self.app.status = ops.ActiveStatus()
+            self.unit.status = self.build_unit_workload_status()
+            self.app.status = self.build_app_workload_status()
         except (MySQLCreateClusterError, MySQLCreateClusterSetError) as e:
             logger.exception("Failed to recreate cluster")
             event.fail(str(e))
@@ -829,24 +829,47 @@ class MySQLCharmBase(CharmBase, ABC):
         return len(active_cos_relations) > 0
 
     @property
-    def active_status_message(self) -> str:
-        """Active status message."""
-        if self.unit_peer_data.get("member-role") != "primary":
-            return ""
-
-        if self._mysql.is_cluster_replica() is False:
-            return "Primary"
-
-        status = self._mysql.get_replica_cluster_status()
-        if status == ClusterGlobalStatus.OK:
-            return "Standby"
-        else:
-            return f"Standby ({status})"
-
-    @property
     def removing_unit(self) -> bool:
         """Check if the unit is being removed."""
         return self.unit_peer_data.get("unit-status") == "removing"
+
+    def build_app_workload_status(self) -> ops.StatusBase:
+        """App status generated from the workload."""
+        status = self._mysql.get_cluster_status()
+        if not status:
+            return ops.MaintenanceStatus("Unknown")
+
+        units = status["defaultReplicaSet"]["topology"].keys()
+        status = status["defaultReplicaSet"]["status"]
+
+        if status in [ClusterStatus.OK, ClusterStatus.OK_PARTIAL]:
+            return ops.ActiveStatus("Healthy")
+        if status in [ClusterStatus.OK_NO_TOLERANCE, ClusterStatus.OK_NO_TOLERANCE_PARTIAL]:
+            return ops.ActiveStatus("Healthy") if len(units) < 3 else ops.ActiveStatus("Degraded")
+        if status in [ClusterStatus.NO_QUORUM]:
+            return ops.BlockedStatus("No quorum")
+        if status in [ClusterStatus.OFFLINE, ClusterStatus.ERROR]:
+            return ops.BlockedStatus("No online members")
+        if status in [ClusterStatus.UNREACHABLE]:
+            return ops.BlockedStatus("No connectivity")
+
+        return ops.MaintenanceStatus("Unknown")
+
+    def build_unit_workload_status(self) -> ops.StatusBase:
+        """Unit status generated from the workload."""
+        if self.unit_peer_data.get("member-state") != InstanceState.ONLINE:
+            return ops.MaintenanceStatus("")
+        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY:
+            return ops.ActiveStatus("")
+
+        if self._mysql.is_cluster_replica() is False:
+            return ops.ActiveStatus("Primary")
+
+        status = self._mysql.get_replica_cluster_status()
+        if status == ClusterGlobalStatus.OK:
+            return ops.ActiveStatus("Standby")
+        else:
+            return ops.ActiveStatus(f"Standby ({status})")
 
     def unit_initialized(self, raise_exceptions: bool = False) -> bool:
         """Check if the unit is added to the cluster."""
