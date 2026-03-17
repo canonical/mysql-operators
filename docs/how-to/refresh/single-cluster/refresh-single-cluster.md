@@ -55,7 +55,7 @@ For this example, the current revision is `182`. Store it safely to use in case 
 
 ## Step 2: Scale up
 
-With Charmed MySQL, it is mandatory to have at least 3 units. This ensures that the MySQL cluster can refresh regardless of whether a MySQL Router application is connected, as the quorum criteria within the cluster changes on this condition.
+It is mandatory to have at least 3 units of MySQL before refreshing. This ensures that the MySQL cluster can refresh regardless of whether a MySQL Router application is connected, as the quorum criteria within the cluster varies based on this condition.
 
 In case of failure, having extra units will ease a future rollback procedure without disrupting service. To scale up the application:
 
