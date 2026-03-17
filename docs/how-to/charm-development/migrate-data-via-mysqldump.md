@@ -75,7 +75,7 @@ Always perform the migration in a test environment before performing it in produ
 - `mysql-client` on client machine (install by running `sudo apt install mysql-client`)
 
 ```{caution}
-Most legacy database charms support old Ubuntu series only, while [Juju 3.x does NOT support Ubuntu Bionic](https://documentation.ubuntu.com/juju/3.6/reference/juju/juju-roadmap-and-releases/#juju-3-0-0-22-oct-2022).
+Most legacy database charms support old Ubuntu series only, while [Juju 3.x does NOT support Ubuntu Bionic](https://documentation.ubuntu.com/juju/3.6/releasenotes/unsupported/juju_3.x.x/#juju-3-0-0-22-oct-2022).
 
 It is recommended to use the latest stable revision of the charm on Ubuntu Jammy and Juju 3.x
 ```

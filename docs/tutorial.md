@@ -137,7 +137,7 @@ When the application is ready, `juju status` will show something similar to the 
 
 ```text
 Model      Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial   overlord    localhost/localhost 3.6.14   unsupported  00:52:59+02:00
+tutorial   overlord    localhost/localhost  3.6.14   unsupported  00:52:59+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary
@@ -264,7 +264,7 @@ SELECT VERSION(), CURRENT_DATE;
 +-------------------------+--------------+
 | VERSION()               | CURRENT_DATE |
 +-------------------------+--------------+
-| 8.4.7-0ubuntu0.24.04    | 2026-01-29   |
+| 8.4.7-0ubuntu0.24.04.1  | 2026-01-22   |
 +-------------------------+--------------+
 1 row in set (0.00 sec)
 ```
@@ -319,10 +319,10 @@ mysql/0*  active    idle   0        10.234.188.135         Primary
 mysql/1   active    idle   1        10.234.188.214
 mysql/2   active    idle   2        10.234.188.6
 
-Machine  State    Address         Inst id        Series  AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  jammy       Running
-1        started  10.234.188.214  juju-ff9064-1  jammy       Running
-2        started  10.234.188.6    juju-ff9064-2  jammy       Running
+Machine  State    Address         Inst id        Series         AZ  Message
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
+2        started  10.234.188.6    juju-ff9064-2  ubuntu@24.04       Running
 ```
 
 ```{note}
@@ -359,9 +359,9 @@ Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
 mysql/1   active    idle   1        10.234.188.214
 
-Machine  State    Address         Inst id        Series  AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  jammy       Running
-1        started  10.234.188.214  juju-ff9064-1  jammy       Running
+Machine  State    Address         Inst id        Series         AZ  Message
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
 ```
 
 ## Integrate with other applications
@@ -389,8 +389,8 @@ Running `juju status` will show you `data-integrator` in a `blocked` state. This
 ```text
 ...
 App              Version          Status   Scale  Charm            Channel     Rev  Exposed  Message
-data-integrator                   blocked      1  data-integrator  stable     13    no       Please relate the data-integrator with the desired product
-mysql            8.4.7            active       2  mysql            8.4/edge        no
+data-integrator                   blocked      1  data-integrator  stable      13   no       Please relate the data-integrator with the desired product
+mysql            8.4.7            active       2  mysql            8.4/edge         no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
 data-integrator/1*  blocked   idle   4        10.234.188.85          Please relate the data-integrator with the desired product
@@ -425,10 +425,10 @@ data-integrator/1*  active    idle   4        10.234.188.85
 mysql/0*            active    idle   0        10.234.188.135         Primary
 mysql/1             active    idle   1        10.234.188.214
 
-Machine  State    Address         Inst id        Series  AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  jammy       Running
-1        started  10.234.188.214  juju-ff9064-1  jammy       Running
-4        started  10.234.188.85   juju-ff9064-4  jammy       Running
+Machine  State    Address         Inst id        Series         AZ  Message
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
+4        started  10.234.188.85   juju-ff9064-4  ubuntu@24.04       Running
 ```
 
 To retrieve the username, password and database name, run the `get-credentials` Juju action:
@@ -548,7 +548,7 @@ Before enabling TLS on Charmed MySQL, we must deploy the `self-signed-certificat
 :user: ubuntu
 :host: my-vm
 
-juju deploy self-signed-certificates --config ca-common-name="Tutorial CA"
+juju deploy self-signed-certificates --channel 1/stable --config ca-common-name="Tutorial CA"
 ```
 
 Wait until `self-signed-certificates` is up and active, using `juju status --watch 1s` to monitor its progress:
@@ -558,18 +558,18 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.14   unsupported  00:40:42+01:00
 
 App                        Version          Status  Scale  Charm                      Channel     Rev  Exposed  Message
-mysql                      8.4.7            active      2  mysql                      8.4/edge        no
-self-signed-certificates                    active      1  self-signed-certificates   edge        77   no
+mysql                      8.4.7            active      2  mysql                      8.4/edge         no
+self-signed-certificates                    active      1  self-signed-certificates   1/stable    77   no
 
 Unit                          Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*                      active    idle   0        10.234.188.135         Primary
 mysql/1                       active    idle   1        10.234.188.214
-self-signed-certificates/1*   active    idle   6        10.234.188.19
+self-signed-certificates/0*   active    idle   6        10.234.188.19
 
-Machine  State    Address         Inst id        Series  AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  jammy       Running
-1        started  10.234.188.214  juju-ff9064-1  jammy       Running
-6        started  10.234.188.19   juju-ff9064-6  focal       Running
+Machine  State    Address         Inst id        Series         AZ  Message
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
+6        started  10.234.188.19   juju-ff9064-6  ubuntu@24.04       Running
 ```
 
 To enable TLS on Charmed MySQL, integrate the two applications:

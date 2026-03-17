@@ -15,9 +15,6 @@ This is feature is in development. It is **not recommended** for production envi
 
 ## Prerequisites
 
-* Charmed MySQL for machines: Revision 237+ or
-* Charmed MySQL for Kubernetes: Revision 146+
-  * See [](/how-to/refresh/index)
 * Fully configured monitoring with COS
   * See {ref}`enable-monitoring`
 

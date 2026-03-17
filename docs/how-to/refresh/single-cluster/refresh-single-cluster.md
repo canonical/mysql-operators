@@ -38,7 +38,7 @@ Model    Controller  Cloud/Region         Version  SLA          Timestamp
 example  lxd         localhost/localhost  3.6.14   unsupported  17:58:37Z
 
 App    Version   Status  Scale  Charm  Channel  Rev  Exposed  Message
-mysql  8.4.7     active      3  mysql                no       
+mysql  8.4.7     active      3  mysql           XXX  no       
 
 Unit       Workload  Agent  Machine  Public address  Ports               Message
 mysql/9    active    idle   13       10.169.158.70   3306/tcp,33060/tcp  
@@ -51,7 +51,7 @@ Machine  State    Address         Inst id         Series  AZ  Message
 13       started  10.169.158.70   juju-b72e25-13  jammy       Running
 ```
 
-For this example, the current revision is `182`. Store it safely to use in case of rollback!
+For this example, the current revision is `XXX`. Store it safely to use in case of rollback!
 
 ## Step 2: Scale up (optional)
 
@@ -122,12 +122,12 @@ Example with channel selection:
 
 Example with specific revision selection:
 
-    juju refresh mysql --revision=366
+    juju refresh mysql --revision=YYY
 
 
 Example with a local charm file:
 
-    juju refresh mysql --path ./mysql_ubuntu-22.04-amd64.charm
+    juju refresh mysql --path ./mysql_ubuntu-24.04-amd64.charm
 ```
 
 ```{tab-item} K8s
@@ -140,7 +140,7 @@ Example with channel selection:
 
 Example with specific revision selection( do not forget the OCI resource):
 
-    juju refresh mysql-k8s --revision=89 --resource mysql-image=...  --trust
+    juju refresh mysql-k8s --revision=YYY --resource mysql-image=...  --trust
 ```
 ````
 
@@ -203,8 +203,8 @@ If the unit is healthy within the cluster, the next step is to resume the upgrad
     Model      Controller  Cloud/Region        Version  SLA          Timestamp
     example    k8s         microk8s/localhost  3.6.14   unsupported  01:20:47Z
 
-    App        Version     Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-    mysql-k8s  8.4.7        waiting     3  mysql-k8s  8.4/edge      10.152.183.102  no       waiting for units to settle down
+    App        Version     Status  Scale  Charm      Channel    Rev  Address         Exposed  Message
+    mysql-k8s  8.4.7        waiting     3  mysql-k8s  8.4/edge       10.152.183.102  no       waiting for units to settle down
 
     Unit          Workload     Agent      Address       Ports  Message
     mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...
