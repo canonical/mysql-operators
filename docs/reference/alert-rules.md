@@ -11,8 +11,8 @@ This page contains a markdown version of the alert rules described in the `mysql
 
 GitHub source:
 
-* Machine charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.0/edge/machines/src/alert_rules/prometheus/)
-* Kubernetes charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.0/edge/kubernetes/src/alert_rules/prometheus/)
+* Machine charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.4/edge/machines/src/alert_rules/prometheus/)
+* Kubernetes charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.4/edge/kubernetes/src/alert_rules/prometheus/)
 
 ## MySQL General Alerts
 

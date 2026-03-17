@@ -105,14 +105,14 @@ Wait until the model settles. The following is an example of the `juju status --
 
     App            Version          Status   Scale  Charm          Channel      Rev  Exposed  Message
     grafana-agent                   blocked      1  grafana-agent  1/stable     452  no       Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
-    mysql          8.0.37-0ubun...  active       1  mysql                         0  no       
+    mysql          8.4.7            active       1  mysql                            no       
 
     Unit                Workload  Agent  Machine  Public address  Ports           Message
     mysql/0*            active    idle   0        10.205.193.32   3306,33060/tcp  Primary
       grafana-agent/0*  blocked   idle            10.205.193.32                   Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
 
     Machine  State    Address        Inst id        Base          AZ  Message
-    0        started  10.205.193.32  juju-4f3e50-0  ubuntu@22.04      Running
+    0        started  10.205.193.32  juju-4f3e50-0  ubuntu@24.04      Running
 
     Integration provider  Requirer                 Interface              Type         Message
     grafana-agent:peers   grafana-agent:peers      grafana_agent_replica  peer         
@@ -131,9 +131,9 @@ Wait until the model settles. The following is an example of the `juju status --
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
 
-    App                Version                  Status  Scale  Charm              Channel      Rev  Address         Exposed  Message
-    grafana-agent-k8s  0.40.4                   active      1  grafana-agent-k8s  1/stable     115  10.152.183.63   no       grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
-    mysql-k8s          8.0.37-0ubuntu0.22.04.3  active      1  mysql-k8s                         0  10.152.183.135  no       Primary
+    App                Version    Status  Scale  Charm              Channel      Rev  Address         Exposed  Message
+    grafana-agent-k8s  0.40.4     active      1  grafana-agent-k8s  1/stable     115  10.152.183.63   no       grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
+    mysql-k8s          8.4.7      active      1  mysql-k8s                            10.152.183.135  no       Primary
 
     Unit                  Workload  Agent      Address       Ports  Message
     grafana-agent-k8s/0*  active    idle       10.1.241.255         grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off

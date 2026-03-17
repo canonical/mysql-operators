@@ -33,7 +33,7 @@ Create a Juju model for testing, deploy a database with a test application and s
 
     juju add-model smoke-test
 
-    juju deploy mysql --channel 8.0/edge --config profile=testing
+    juju deploy mysql --channel 8.4/edge --config profile=testing
     juju add-unit mysql -n 2 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
@@ -55,7 +55,7 @@ Create a Juju model for testing, deploy a database with a test application and s
 
     juju add-model smoke-test
 
-    juju deploy mysql-k8s --trust --channel 8.0/edge --config profile=testing
+    juju deploy mysql-k8s --trust --channel 8.4/edge --config profile=testing
     juju scale-application mysql-k8s 3 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
@@ -100,13 +100,13 @@ juju run mysql-test-app/leader clear-continuous-writes
 
 <!--TODO: table-->
 
-Please check the [Contributing](https://github.com/canonical/mysql-operators/blob/8.0/edge/CONTRIBUTING.md) guide and follow the `tox` examples there.
+Please check the [Contributing](https://github.com/canonical/mysql-operators/blob/8.4/edge/CONTRIBUTING.md) guide and follow the `tox` examples there.
 
 ## Integration tests
 
 <!--TODO: table-->
 
-Please check the [Contributing](https://github.com/canonical/mysql-operators/blob/8.0/edge/CONTRIBUTING.md) guide and follow the `tox` examples there.
+Please check the [Contributing](https://github.com/canonical/mysql-operators/blob/8.4/edge/CONTRIBUTING.md) guide and follow the `tox` examples there.
 
 ## System test
 

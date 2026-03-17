@@ -150,15 +150,15 @@ welcome  gce         google/us-east1  3.5.4    unsupported  23:49:56+02:00
 
 App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  latest/stable   41  no       
-mysql            8.0.36-0ubun...  active      1  mysql            8.0/stable     240  no       
+mysql            8.4.7            active      1  mysql            8.4/edge            no       
 
 Unit                Workload  Agent  Machine  Public address   Ports           Message
 data-integrator/0*  active    idle   1        104.196.104.248                  
 mysql/0*            active    idle   0        34.138.135.20    3306,33060/tcp  Primary
 
 Machine  State    Address          Inst id        Base          AZ          Message
-0        started  34.138.135.20    juju-257803-0  ubuntu@22.04  us-east1-c  RUNNING
-1        started  104.196.104.248  juju-257803-1  ubuntu@22.04  us-east1-d  RUNNING
+0        started  34.138.135.20    juju-257803-0  ubuntu@24.04  us-east1-c  RUNNING
+1        started  104.196.104.248  juju-257803-1  ubuntu@24.04  us-east1-d  RUNNING
 
 Integration provider                   Requirer                               Interface              Type     Message
 data-integrator:data-integrator-peers  data-integrator:data-integrator-peers  data-integrator-peers  peer     
@@ -191,7 +191,7 @@ mysql:
   endpoints: 10.142.0.21:3306
   password: zDPalkEi1Uaj26oDSYjCoWYl
   username: relation-4
-  version: 8.0.36-0ubuntu0.22.04.1
+  version: 8.4.7
 ok: "True"
 ```
 

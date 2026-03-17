@@ -87,14 +87,14 @@ For example, to export all charms in the MySQL bundle:
 ```{tab-item} VM
 :sync: vm
 
-    store-admin export bundle mysql-bundle --channel=8.0/edge --series=jammy --arch=amd64
+    store-admin export bundle mysql-bundle --channel=8.4/edge --series=noble --arch=amd64
 
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    store-admin export bundle mysql-k8s-bundle --channel=8.0/edge --series=jammy --arch=amd64
+    store-admin export bundle mysql-k8s-bundle --channel=8.4/edge --series=noble --arch=amd64
 ```
 ````
 

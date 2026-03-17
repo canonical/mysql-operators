@@ -60,10 +60,7 @@ No migration is necessary if the output above is `mysql`.
 
 ## Prepare
 
-Before migrating data:
-
-* Verify the {ref}`system-requirements`
-* Verify your application's {ref}`compatibility <legacy-charm>` with Charmed MySQL
+Before migrating data, verify the {ref}`system-requirements`.
 
 ```{caution}
 Always perform the migration in a test environment before performing it in production!
@@ -135,7 +132,7 @@ Deploy new MySQL databases. In this example, 3 units are deployed:
 :sync: vm
 
 ```shell
-juju deploy mysql --channel 8.0/stable -n 3
+juju deploy mysql --channel 8.4/edge -n 3
 ```
 
 Obtain credentials for each new database by executing the following commands, once per database:
@@ -151,7 +148,7 @@ NEW_DB_IP=$(juju show-unit mysql/0 | yq '.[] | .address')
 :sync: k8s
 
 ```shell
-juju deploy mysql-k8s --trust --channel 8.0/stable -n 3
+juju deploy mysql-k8s --trust --channel 8.4/edge -n 3
 ```
 
 Obtain credentials for each new database by executing the following commands, once per database:
@@ -288,7 +285,7 @@ Output:
 5c5
 < -- Server version 5.5.5-10.3.17-MariaDB-1:10.3.17+maria~bionic
 ---
-> -- Server version 8.0.34-0ubuntu0.22.04.1
+> -- Server version 8.4.7-0ubuntu0.24.04.1
 16a17,26
 > SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
 > SET @@SESSION.SQL_LOG_BIN= 0;

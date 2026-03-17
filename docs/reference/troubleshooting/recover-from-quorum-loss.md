@@ -29,7 +29,7 @@ Model   Controller  Cloud/Region             Version  SLA          Timestamp
 mymodel localhost   default                  3.6.8    unsupported  17:52:19Z
 
 App    Version                  Status   Scale  Charm      Channel           Rev  Address        Exposed  Message
-mysql  8.0.42-0ubuntu0.22.04.2  waiting      3  mysql      8.0/edge          279  10.152.183.61  no       waiting for units to settle down
+mysql  8.0.42-0ubuntu0.22.04.2  waiting      3  mysql      8.4/edge               10.152.183.61  no       waiting for units to settle down
 
 Unit      Workload     Agent  Address     Ports  Message
 mysql/0*  maintenance  idle   10.1.2.48          offline

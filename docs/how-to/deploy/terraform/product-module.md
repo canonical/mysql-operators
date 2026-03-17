@@ -98,7 +98,7 @@ As an alternative, the [manual-tls-certificates](https://charmhub.io/manual-tls-
 terraform apply -auto-approve \
     -var 'model=<model-uuid>' \
     -var 'tls_offer=certificates' \
-    -var 'certificates={"app_name"="manual-tls-certificates","base"="ubuntu@22.04","channel"="latest/stable"}'
+    -var 'certificates={"app_name"="manual-tls-certificates","base"="ubuntu@24.04","channel"="latest/stable"}'
 ```
 
 ## Configure the deployment
@@ -130,10 +130,10 @@ Sample output on machines, where the cloud provider is LXD:
 Model     Controller      Cloud/Region         Version  SLA          Timestamp
 my-model  lxd-controller  localhost/localhost  3.5.3    unsupported  12:49:34Z
 
-App            Version          Status  Scale  Charm          Channel        Rev  Exposed  Message                                
-mysql          8.0.41-0ubun...  active      3  mysql          8.0/stable     366  no
-mysql-router                    unknown     0  mysql-router   dpe/candidate  355  no
-s3-integrator                   active      1  s3-integrator  1/stable       241  no
+App            Version  Status  Scale  Charm          Channel        Rev  Exposed  Message                                
+mysql          8.4.7    active      3  mysql          8.4/edge            no
+mysql-router            unknown     0  mysql-router   dpe/candidate  355  no
+s3-integrator           active      1  s3-integrator  1/stable       241  no
 
 Unit              Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*          active    idle   0        10.101.248.220  3306,33060/tcp  Primary
@@ -142,10 +142,10 @@ mysql/2           active    idle   2        10.101.248.222                  Prim
 s3-integrator/0*  active    idle   3        10.101.248.223
 
 Machine  State    Address         Inst id        Base          AZ  Message
-0        started  10.101.248.220  juju-c4a403-0  ubuntu@22.04      Running
-1        started  10.101.248.221  juju-c4a403-1  ubuntu@22.04      Running
-2        started  10.101.248.222  juju-c4a403-2  ubuntu@22.04      Running
-3        started  10.101.248.223  juju-c4a403-3  ubuntu@22.04      Running
+0        started  10.101.248.220  juju-c4a403-0  ubuntu@24.04      Running
+1        started  10.101.248.221  juju-c4a403-1  ubuntu@24.04      Running
+2        started  10.101.248.222  juju-c4a403-2  ubuntu@24.04      Running
+3        started  10.101.248.223  juju-c4a403-3  ubuntu@24.04      Running
 ```
 
 Continue to operate the charm as usual from here or apply further Terraform changes.

@@ -61,8 +61,8 @@ juju status
 Model       Controller  Cloud/Region         Version  SLA          Timestamp
 mydatabase  lxd_3.1.8   localhost/localhost  3.1.8    unsupported  22:54:48+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.34-0ubun...  active      3  mysql  8.0/stable  196  no       
+App    Version   Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.7     active      3  mysql  8.4/edge         no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        10.217.68.104   3306,33060/tcp  Primary
@@ -70,9 +70,9 @@ mysql/1   active    idle   1        10.217.68.118   3306,33060/tcp
 mysql/2   active    idle   2        10.217.68.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ  Message
-0        started  10.217.68.104  juju-a4598a-0  ubuntu@22.04      Running
-1        started  10.217.68.118  juju-a4598a-1  ubuntu@22.04      Running
-2        started  10.217.68.144  juju-a4598a-2  ubuntu@22.04      Running
+0        started  10.217.68.104  juju-a4598a-0  ubuntu@24.04      Running
+1        started  10.217.68.118  juju-a4598a-1  ubuntu@24.04      Running
+2        started  10.217.68.144  juju-a4598a-2  ubuntu@24.04      Running
 ```
 </details>
 

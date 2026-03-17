@@ -13,7 +13,7 @@ This guide shows you how to deploy Charmed MySQL K8s to Canonical Kubernetes.
 
 ## Prerequisites
 
-This guide assumes you have a spare hardware/VMs running Ubuntu 22.04 LTS (Jammy) or newer. 
+This guide assumes you have a spare hardware/VMs running Ubuntu 24.04 LTS (Noble) or newer. 
 
 ---
 
@@ -68,8 +68,8 @@ Example output:
 Model   Controller  Cloud/Region  Version  SLA          Timestamp
 mysql   ck8s        ck8s          3.6-rc1  unsupported  18:32:38+01:00
 
-App         Version                  Status  Scale  Charm           Channel     Rev  Address         Exposed  Message
-mysql-k8s   8.0.37-0ubuntu0.22.04.3  active      1  mysql-k8s       8.0/stable  180  10.152.183.146  no       
+App         Version   Status  Scale  Charm           Channel     Rev  Address         Exposed  Message
+mysql-k8s   8.4.7     active      1  mysql-k8s       8.4/edge         10.152.183.146  no       
 
 Unit           Workload  Agent  Address    Ports  Message
 mysql-k8s/0*   active    idle   10.1.0.11         Primary

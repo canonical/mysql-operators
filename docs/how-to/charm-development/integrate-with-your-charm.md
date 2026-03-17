@@ -15,10 +15,6 @@ First, we recommend that you check the {ref}`supported interfaces <interfaces-an
 
 For new charms, **Canonical recommends using [data-platform-libs](https://github.com/canonical/data-platform-libs).**
 
-```{seealso}
-{ref}`legacy-charm`
-```
-
 ## Integrate your charm with MySQL
 
 Refer to [mysql-test-app](https://github.com/canonical/mysql-test-app) as a practical example of implementing data-platform-libs interfaces to [integrate](https://documentation.ubuntu.com/juju/3.6/reference/relation/) a charm with Charmed MySQL.

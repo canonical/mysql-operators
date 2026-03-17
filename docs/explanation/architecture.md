@@ -24,7 +24,7 @@ The installed snap:
 $ juju ssh mysql/0
 $ snap list charmed-mysql
 Name           Version  Rev  Tracking       Publisher        Notes
-charmed-mysql  8.0.34   69   latest/stable  dataplatformbot  held
+charmed-mysql  8.4.7          latest/stable  dataplatformbot  held
 ```
 
 The snap ships the following components:

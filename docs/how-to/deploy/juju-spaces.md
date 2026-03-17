@@ -49,7 +49,7 @@ The space `alpha` is default and cannot be removed. To deploy Charmed MySQL oper
 
 ```shell
 juju deploy mysql \
-  --channel 8.0/edge \
+  --channel 8.4/edge \
   --constraints spaces=client,peers \
   --bind "database-peers=peers database=client"
 ```

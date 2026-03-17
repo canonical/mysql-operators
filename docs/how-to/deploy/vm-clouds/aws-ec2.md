@@ -110,7 +110,7 @@ welcome  aws-us-east-1  aws/us-east-1  3.5.4    unsupported  17:52:25+02:00
 
 App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  latest/stable   41  no       
-mysql            8.0.36-0ubun...  active      3  mysql            8.0/stable     240  no       
+mysql            8.4.7            active      3  mysql            8.4/edge            no       
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   9        34.207.85.249                   
@@ -119,10 +119,10 @@ mysql/1             active    idle   7        3.82.62.144     3306,33060/tcp
 mysql/2             active    idle   8        44.193.79.253   3306,33060/tcp  
 
 Machine  State    Address        Inst id              Base          AZ          Message
-6        started  107.21.70.243  i-0db4d16715a59f74d  ubuntu@22.04  us-east-1a  running
-7        started  3.82.62.144    i-038a7ca89b40f83bf  ubuntu@22.04  us-east-1b  running
-8        started  44.193.79.253  i-01dc0ad71d5607fdb  ubuntu@22.04  us-east-1c  running
-9        started  34.207.85.249  i-068d4d0d8b7ede754  ubuntu@22.04  us-east-1d  running
+6        started  107.21.70.243  i-0db4d16715a59f74d  ubuntu@24.04  us-east-1a  running
+7        started  3.82.62.144    i-038a7ca89b40f83bf  ubuntu@24.04  us-east-1b  running
+8        started  44.193.79.253  i-01dc0ad71d5607fdb  ubuntu@24.04  us-east-1c  running
+9        started  34.207.85.249  i-068d4d0d8b7ede754  ubuntu@24.04  us-east-1d  running
 
 Integration provider                   Requirer                               Interface              Type     Message
 data-integrator:data-integrator-peers  data-integrator:data-integrator-peers  data-integrator-peers  peer     
@@ -156,7 +156,7 @@ mysql:
   password: e7vOMyzj2FnrBDnXZdXScEOc
   read-only-endpoints: 172.31.10.167:3306,172.31.39.202:3306
   username: relation-16
-  version: 8.0.36-0ubuntu0.22.04.1
+  version: 8.4.7
 ok: "True"
 ```
 

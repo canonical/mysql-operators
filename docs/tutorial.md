@@ -140,13 +140,13 @@ Model      Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial   overlord    localhost/localhost  3.5.2    unsupported  00:52:59+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      1  mysql  8.0/stable  151  no       Primary
+mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-1        started  10.234.188.135  juju-ff9064-0  ubuntu@22.04      Running
+1        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04      Running
 ```
 
 You can also watch juju logs with the [`juju debug-log`](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/debug-log/) command.
@@ -165,7 +165,7 @@ This part of the tutorial accesses MySQL through the charm's `root` user.
 In a later section, we will cover how to safely access MySQL more safely.
 ```
 
-The easiest way to access MySQL is through the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
+The easiest way to access MySQL is through the [MySQL Command-Line Client](https://dev.mysql.com/doc/refman/8.4/en/mysql.html) (`mysql`). For this, we must first retrieve the credentials.
 
 ### Retrieve credentials
 
@@ -239,7 +239,7 @@ mysql -h 127.0.0.1 -uroot -pyWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
-Server version: 8.0.32-0ubuntu0.22.04.2 (Ubuntu)
+Server version: 8.4.7-0ubuntu0.24.04 (Ubuntu)
 
 Copyright (c) 2000, 2023, Oracle and/or its affiliates.
 
@@ -252,7 +252,7 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 mysql>
 ```
 
-You can now interact with MySQL directly using any [MySQL Queries](https://dev.mysql.com/doc/refman/8.0/en/entering-queries.html). 
+You can now interact with MySQL directly using any [MySQL Queries](https://dev.mysql.com/doc/refman/8.4/en/entering-queries.html). 
 
 For example:
 
@@ -264,7 +264,7 @@ SELECT VERSION(), CURRENT_DATE;
 +-------------------------+--------------+
 | VERSION()               | CURRENT_DATE |
 +-------------------------+--------------+
-| 8.0.32-0ubuntu0.22.04.2 | 2023-01-29   |
+| 8.4.7-0ubuntu0.24.04    | 2026-01-29   |
 +-------------------------+--------------+
 1 row in set (0.00 sec)
 ```
@@ -278,7 +278,7 @@ Exit this host by once again typing `exit`. Now you will be in your original she
 (scale-replicas)=
 ## Scale your replicas
 
-The Charmed MySQL operator uses [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html) for scaling. It is built on MySQL [group replication](https://dev.mysql.com/doc/refman/8.0/en/group-replication.html), providing features such as automatic membership management, fault tolerance, and automatic failover. 
+The Charmed MySQL operator uses [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.4/en/mysql-innodb-cluster-introduction.html) for scaling. It is built on MySQL [group replication](https://dev.mysql.com/doc/refman/8.4/en/group-replication.html), providing features such as automatic membership management, fault tolerance, and automatic failover. 
 
 An InnoDB Cluster usually runs in a single-primary mode, with one primary instance (read-write) and multiple secondary instances (read-only). 
 
@@ -312,7 +312,7 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:33:55+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      3  mysql  8.0/stable  147  no
+mysql  8.4.7            active      3  mysql  8.4/edge         no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -328,7 +328,7 @@ Machine  State    Address         Inst id        Series  AZ  Message
 ```{note}
 The maximum possible number of Charmed MySQL units in a single Juju application is 9. This is a limitation of MySQL group replication. 
 
-Read more about all limitations in the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/group-replication-limitations.html).
+Read more about all limitations in the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.4/en/group-replication-limitations.html).
 ```
 
 ### Remove units
@@ -353,7 +353,7 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:46:43+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      2  mysql  8.0/stable  147  no
+mysql  8.4.7            active      2  mysql  8.4/edge         no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -390,7 +390,7 @@ Running `juju status` will show you `data-integrator` in a `blocked` state. This
 ...
 App              Version          Status   Scale  Charm            Channel     Rev  Exposed  Message
 data-integrator                   blocked      1  data-integrator  stable     13    no       Please relate the data-integrator with the desired product
-mysql            8.0.32-0ubun...  active       2  mysql            8.0/stable  147  no
+mysql            8.4.7            active       2  mysql            8.4/edge        no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
 data-integrator/1*  blocked   idle   4        10.234.188.85          Please relate the data-integrator with the desired product
@@ -418,7 +418,7 @@ tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:10:27+01:00
 
 App              Version          Status  Scale  Charm            Channel     Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  edge       13    no
-mysql            8.0.32-0ubun...  active      2  mysql            8.0/stable  147  no
+mysql            8.4.7            active      2  mysql            8.4/edge        no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
 data-integrator/1*  active    idle   4        10.234.188.85
@@ -445,7 +445,7 @@ mysql:
   password: NZWCNOyfSElJW0u6bnQDOWAA
   read-only-endpoints: 10.234.188.214:10.234.188.85:3306
   username: relation-5
-  version: 8.0.32-0ubuntu0.22.04.2
+  version: 8.4.7-0ubuntu0.24.04
 ok: "True"
 ```
 
@@ -558,7 +558,7 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:40:42+01:00
 
 App                        Version          Status  Scale  Charm                      Channel     Rev  Exposed  Message
-mysql                      8.0.32-0ubun...  active      2  mysql                      8.0/stable  147  no
+mysql                      8.4.7            active      2  mysql                      8.4/edge        no
 self-signed-certificates                    active      1  self-signed-certificates   edge        77   no
 
 Unit                          Workload  Agent  Machine  Public address  Ports  Message
@@ -616,7 +616,7 @@ If you once again check the TLS certificates in use with the OpenSSL client, you
 openssl s_client -starttls mysql -connect 10.234.188.135:3306 | grep Issuer
 
 ...
-depth=1 CN = MySQL_Server_8.0.32_Auto_Generated_CA_Certificate
+depth=1 CN = MySQL_Server_8.4.7_Auto_Generated_CA_Certificate
 ...
 ```
 

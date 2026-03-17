@@ -20,10 +20,7 @@ For data stored in legacy charms, see {ref}`migrate-data-mysqldump`
 
 ## Prepare
 
-Before migrating data:
-
-* Verify the {ref}`system-requirements`
-* Verify your application's {ref}`compatibility <legacy-charm>` with Charmed MySQL
+Before migrating data, verify the {ref}`system-requirements`.
 
 ## Install `mydumper`
 

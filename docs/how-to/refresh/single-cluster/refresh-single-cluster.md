@@ -37,8 +37,8 @@ Example output for Charmed MySQL on a machine controller:
 Model    Controller  Cloud/Region         Version  SLA          Timestamp
 example  lxd         localhost/localhost  3.5.2    unsupported  17:58:37Z
 
-App    Version          Status  Scale  Charm  Channel  Rev  Exposed  Message
-mysql  8.0.39-0ubun...  active      3  mysql           182  no       
+App    Version   Status  Scale  Charm  Channel  Rev  Exposed  Message
+mysql  8.4.7     active      3  mysql                no       
 
 Unit       Workload  Agent  Machine  Public address  Ports               Message
 mysql/9    active    idle   13       10.169.158.70   3306/tcp,33060/tcp  
@@ -124,7 +124,7 @@ Use the [`juju refresh`](https://juju.is/docs/juju/juju-refresh) command to trig
 
 Example with channel selection:
 
-    juju refresh mysql --channel 8.0/stable
+    juju refresh mysql --channel 8.4/edge
 
 
 Example with specific revision selection:
@@ -142,7 +142,7 @@ Example with a local charm file:
 
 Example with channel selection:
 
-    juju refresh mysql-k8s --channel 8.0/edge --trust
+    juju refresh mysql-k8s --channel 8.4/edge --trust
 
 
 Example with specific revision selection( do not forget the OCI resource):
@@ -182,8 +182,8 @@ Example `juju status` during an refresh:
     Model    Controller  Cloud/Region         Version  SLA          Timestamp
     example  lxd         localhost/localhost  3.5.2    unsupported  18:11:21Z
 
-    App    Version          Status  Scale  Charm  Channel  Rev  Exposed  Message
-    mysql  8.0.39-0ubun...  active      3  mysql             7  no       
+    App    Version  Status  Scale  Charm  Channel  Rev  Exposed  Message
+    mysql  8.4.7    active      3  mysql                no       
 
     Unit       Workload     Agent      Machine  Public address  Ports               Message
     mysql/9    maintenance  executing  13       10.169.158.70   3306/tcp,33060/tcp  upgrading snap...
@@ -210,8 +210,8 @@ If the unit is healthy within the cluster, the next step is to resume the upgrad
     Model      Controller  Cloud/Region        Version  SLA          Timestamp
     example    k8s         microk8s/localhost  3.5.2    unsupported  01:20:47Z
 
-    App        Version                  Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
-    mysql-k8s  8.0.32-0ubuntu0.22.04.2  waiting     3  mysql-k8s  8.0/edge  89  10.152.183.102  no       waiting for units to settle down
+    App        Version     Status  Scale  Charm      Channel  Rev  Address         Exposed  Message
+    mysql-k8s  8.4.7        waiting     3  mysql-k8s  8.0/edge      10.152.183.102  no       waiting for units to settle down
 
     Unit          Workload     Agent      Address       Ports  Message
     mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...

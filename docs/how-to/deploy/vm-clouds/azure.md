@@ -179,15 +179,15 @@ welcome  azure-centralus  azure/centralus  3.6-rc1.1  unsupported  16:05:59+02:0
 
 App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.0.36-0ubun...  active      1  mysql            8.0/stable     240  no
+mysql            8.4.7            active      1  mysql            8.4/edge            no
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@22.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@22.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
 ```
 
 Once deployed, request the credentials for your newly bootstrapped MySQL database:
@@ -213,7 +213,7 @@ mysql:
   endpoints: 192.168.0.5:3306
   password: 1yGJ2KqtN4Qlf6KgeJDLOVES
   username: relation-14
-  version: 8.0.36-0ubuntu0.22.04.1
+  version: 8.4.7
 ```
 
 At this point, you can access your DB inside Azure VM using the internal IP address. All further Juju applications will use the database through the internal network:
@@ -239,15 +239,15 @@ welcome  azure-centralus  azure/centralus  3.6-rc1.1  unsupported  16:05:59+02:0
 
 App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.0.36-0ubun...  active      1  mysql            8.0/stable     240  yes
+mysql            8.4.7            active      1  mysql            8.4/edge            yes
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@22.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@22.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
 ```
 
 Note the IP and port (`20.83.9.99:3306`) and connect via `mysql`:

@@ -124,14 +124,14 @@ Sample `juju status` output:
 Model  Controller       Cloud/Region        Version  SLA          Timestamp
 mysql  maas-controller  maas-cloud/default  3.1.8    unsupported  12:57:06+02:00
 
-App    Version          Status  Scale  Charm  Channel        Rev  Exposed  Message
-mysql  8.0.36-0ubun...  active      1  mysql  8.0/candidate  234  no       
+App    Version          Status  Scale  Charm  Channel      Rev  Exposed  Message
+mysql  8.4.7            active      1  mysql  8.4/edge          no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/1*  active    idle   1        10.10.10.7      3306,33060/tcp  Primary
 
 Machine  State    Address     Inst id       Base          AZ       Message
-1        started  10.10.10.7  pumped-racer  ubuntu@22.04  default  Deployed
+1        started  10.10.10.7  pumped-racer  ubuntu@24.04  default  Deployed
 ```
 
 ## Test your Charmed MySQL deployment

@@ -120,7 +120,7 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
 
     App                   Version      Status  Scale  Charm               Channel   Rev  Exposed  Message
     grafana-agent                      active      1  grafana-agent       edge        5  no
-    mysql                 8.0.32       active      1  mysql               8.0/edge  144  no       Primary
+    mysql                 8.4.7        active      1  mysql               8.4/edge       no       Primary
 
     Unit                          Workload  Agent  Machine  Public address  Ports               Message
     mysql/3*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
@@ -139,8 +139,8 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     loki        active  charmed-dev  admin/cos.loki
     prometheus  active  charmed-dev  admin/cos.prometheus
 
-    App        Version                  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-    mysql-k8s  8.0.32-0ubuntu0.22.04.2  active      1  mysql-k8s  8.0/stable   61  10.152.183.115  no       Primary
+    App        Version       Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+    mysql-k8s  8.4.7         active      1  mysql-k8s  8.4/edge         10.152.183.115  no       Primary
 
     Unit          Workload  Agent  Address      Ports  Message
     mysql-k8s/0*  active    idle   10.1.84.116         Primary

@@ -20,7 +20,7 @@ juju add-model <model name>
 ```
 Deploy MySQL
 ```shell
-juju deploy mysql --channel 8.0/stable
+juju deploy mysql --channel 8.4/edge
 ```
 > See the [`juju deploy` documentation](https://juju.is/docs/juju/juju-deploy) for all available options at deploy time.
 > 
@@ -32,12 +32,12 @@ Model   Controller  Cloud/Region         Version  SLA          Timestamp
 mysql   overlord    localhost/localhost  3.1.6    unsupported  00:52:59+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      1  mysql  8.0/stable  151  no       Primary
+mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-1        started  10.234.188.135  juju-ff9064-0  ubuntu@22.04      Running
+1        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04      Running
 ```
 

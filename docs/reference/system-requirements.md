@@ -15,13 +15,13 @@ The following are the minimum software and hardware requirements to run Charmed 
 ```{tab-item} VM
 :sync: vm
 
-* Ubuntu 22.04 LTS (Jammy Jellyfish) or later
+* Ubuntu 24.04 LTS (Noble) or later
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-* Ubuntu 22.04 LTS (Jammy Jellyfish) or later
+* Ubuntu 24.04 LTS (Noble) or later
 * Kubernetes 1.27+
 * Canonical MicroK8s 1.27+
   * snap channel `1.27-strict/stable` and newer
@@ -40,11 +40,7 @@ Always check the {ref}`release notes <release-notes>` to find the minimum Juju v
 
 | Juju major release | Supported minor versions | Compatible charm revisions |Comment |
 |:--------|:-----|:-----|:-----|
-| ![3.6 LTS] | `3.6.1+` | 325+ |     |
-| ![3.5] | `3.5.2+` | [240]+ |     |
-| ![3.4] | `3.4.3+` | [240]+ | Known issues with `3.4.2`: [bug #1](https://bugs.launchpad.net/juju/+bug/2065284), [bug #2](https://bugs.launchpad.net/juju/+bug/2064772)   |
-| ![3.1] | `3.1.6+` | [196]+ |     |
-| ![2.9 LTS] | `2.9.32+` | [151]+ |     |
+|         |      |      |      |
 ```
 
 ```{tab-item} K8s
@@ -52,18 +48,14 @@ Always check the {ref}`release notes <release-notes>` to find the minimum Juju v
 
 | Juju major release | Supported minor versions | Compatible charm revisions |Comment |
 |:--------|:-----|:-----|:-----|
-| ![3.6 LTS] | `3.6.1+` | 213+ |     |
-| ![3.5] | `3.5.2+` | [153]+ |     |
-| ![3.4] | `3.4.3+` | [153]+ | Known issues with `3.4.2`: [bug #1](https://bugs.launchpad.net/juju/+bug/2065284), [bug #2](https://bugs.launchpad.net/juju/+bug/2064772)   |
-| ![3.1] | `3.1.6+` | [99]+ |     |
-| ![2.9 LTS] | `2.9.32+` | [75 ]+ |     |
+|         |      |      |      |
 ```
 ````
 
 ### MySQL group replication requirements
 
-* In order to integrate with this charm, every table created by the integrated application **must have a primary key**. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.0/en/group-replication-requirements.html) enabled in this charm.
-* The count of [Charmed MySQL units](https://dev.mysql.com/doc/refman/8.0/en/group-replication-limitations.html) in a single Juju application is limited to 9. Unit 10+ will start; however, they will not join the cluster but sleep in a hot-swap reserve.
+* In order to integrate with this charm, every table created by the integrated application **must have a primary key**. This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.4/en/group-replication-requirements.html) enabled in this charm.
+* The count of [Charmed MySQL units](https://dev.mysql.com/doc/refman/8.4/en/group-replication-limitations.html) in a single Juju application is limited to 9. Unit 10+ will start; however, they will not join the cluster but sleep in a hot-swap reserve.
 
 ## Hardware
 

@@ -28,13 +28,13 @@ Then, use the [`juju deploy`](https://canonical-juju.readthedocs-hosted.com/en/l
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy mysql --channel 8.0/stable
+    juju deploy mysql --channel 8.4/edge
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju deploy mysql-k8s --channel 8.0/stable --trust
+    juju deploy mysql-k8s --channel 8.4/edge --trust
 ```
 ````
 

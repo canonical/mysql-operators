@@ -17,10 +17,7 @@ For data stored in legacy charms, see {ref}`migrate-data-mysqldump`
 
 ## Prepare
 
-Before migrating data:
-
-* Verify the {ref}`system-requirements`
-* Verify your application's {ref}`compatibility <legacy-charm>` with Charmed MySQL
+Before migrating data, verify the {ref}`system-requirements`
 
 ## Migrate via backup/restore
 
@@ -31,7 +28,7 @@ And, as always, try it out in a test environment before migrating in production!
 * Retrieve root/admin level credentials from legacy charm.
   * Example: {ref}`mysqldump-obtain-legacy-credentials`
 * Install [Percona XtraBackup](https://www.percona.com/software/mysql-database/percona-xtrabackup) inside the old charm OR remotely.
-  * Ensure the version is compatible with xtrabackup in `Charmed MySQL` revision you are going to deploy. See [installation examples](https://docs.percona.com/percona-xtrabackup/8.0/installation.html).
+  * Ensure the version is compatible with xtrabackup in `Charmed MySQL` revision you are going to deploy. See [installation examples](https://docs.percona.com/percona-xtrabackup/8.4/installation.html).
   * You can also use the [`charmed-mysql` snap](https://snapcraft.io/charmed-mysql) or [rock](https://github.com/canonical/charmed-mysql-rock) directly. For more details, see {ref}`architecture`.
 * Configure storage for database backup
   * S3-based is recommended. See {ref}`configure-s3-aws`

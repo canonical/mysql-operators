@@ -17,7 +17,7 @@ This guide goes through the steps for setting up Sunbeam and deploying Charmed M
 
 ## Prerequisites
 
-* A physical or virtual machine running Ubuntu 22.04 LTS (Jammy) or newer
+* A physical or virtual machine running Ubuntu 24.04 LTS (Noble) or newer
   * If you'd like to follow this guide in an isolated test environment, you can [launch a Multipass](create-multipass-vm) instance.
 * Hardware requirements depend on planned deployment size.
   * Recommended: 8 CPU cores, 32GB RAM, 100GB of storage
@@ -46,7 +46,7 @@ To summarize, the relevant sections are:
 Add a model if you don't have one already, and deploy a MySQL cluster. Use the `-n` flag to specify number of units.
 ```shell
 juju add-model mysql
-juju deploy mysql --base ubuntu@22.04 -n 3
+juju deploy mysql --base ubuntu@24.04 -n 3
 ```
 
 Sample output of `juju status --watch 1s`:
@@ -55,7 +55,7 @@ Model  Controller     Cloud/Region       Version  SLA          Timestamp
 mysql  my-controller  sunbeam/RegionOne  3.5.4    unsupported  20:22:42Z
 
 App    Version   Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.36    active      3  mysql  8.0/stable  240  no       
+mysql  8.4.7     active      3  mysql  8.4/edge         no       
 
 Unit      Workload  Agent  Machine  Public address   Ports           Message
 mysql/0*  active    idle   0        192.168.122.211  3306,33060/tcp  Primary
@@ -63,9 +63,9 @@ mysql/1   active    idle   1        192.168.122.226  3306,33060/tcp
 mysql/2   active    idle   2        192.168.122.14   3306,33060/tcp  
 
 Machine  State    Address          Inst id                               Base          AZ    Message
-0        started  192.168.122.211  3f0a331c-bc08-4bae-af22-44087a7b74d6  ubuntu@22.04  nova  ACTIVE
-1        started  192.168.122.226  e6e908f8-0da1-4440-9bbd-9f1c1bc780df  ubuntu@22.04  nova  ACTIVE
-2        started  192.168.122.14   6f9ad7cd-2a9d-435e-a6d8-3e39bf2218cd  ubuntu@22.04  nova  ACTIVE
+0        started  192.168.122.211  3f0a331c-bc08-4bae-af22-44087a7b74d6  ubuntu@24.04  nova  ACTIVE
+1        started  192.168.122.226  e6e908f8-0da1-4440-9bbd-9f1c1bc780df  ubuntu@24.04  nova  ACTIVE
+2        started  192.168.122.14   6f9ad7cd-2a9d-435e-a6d8-3e39bf2218cd  ubuntu@24.04  nova  ACTIVE
 ```
 
 ## (Optional) Access the OpenStack dashboard 

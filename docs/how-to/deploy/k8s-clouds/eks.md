@@ -145,7 +145,7 @@ juju model-config logging-config='<root>=INFO;unit=DEBUG'
 
 The following commands deploy and integrate the [MySQL K8s Bundle](https://charmhub.io/mysql-k8s-bundle) and [MySQL Test App](https://charmhub.io/mysql-test-app):
 ```shell
-juju deploy mysql-k8s-bundle --channel 8.0/edge --trust
+juju deploy mysql-k8s-bundle --channel 8.4/edge --trust
 juju deploy mysql-test-app
 juju relate mysql-test-app mysql-k8s:database
 ```

@@ -51,45 +51,6 @@ To remove the integration, run
 ```
 ````
 
-### Legacy `mysql` interface
-
-```{caution}
-Note that this interface is **deprecated**.
-See more information in {ref}`legacy-charm`.
-```
-
-To integrate via the legacy interface, run
-
-````{tab-set}
-```{tab-item} VM
-:sync: vm
-
-    juju relate mysql:mysql <charm>
-```
-
-```{tab-item} K8s
-:sync: k8s
-
-    juju relate mysql-k8s:mysql <charm>
-```
-````
-
-Extended permissions can be requested using `mysql-root` endpoint:
-
-````{tab-set}
-```{tab-item} VM
-:sync: vm
-
-    juju relate mysql:mysql-root <charm>
-```
-
-```{tab-item} K8s
-:sync: k8s
-
-    juju relate mysql-k8s:mysql-root <charm>
-```
-````
-
 ## Integrate with a non-charmed application
 
 To integrate with an application outside of Juju, you must use the [`data-integrator` charm](https://charmhub.io/data-integrator) to create the required credentials and endpoints.
