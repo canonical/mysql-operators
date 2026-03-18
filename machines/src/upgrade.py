@@ -232,6 +232,10 @@ class MySQLVMUpgrade(DataUpgrade):
         try:
             self.charm.recover_unit_after_restart()
 
+            logger.info("Ensuring predefined roles exist")
+            self.charm._mysql.configure_mysql_router_roles()
+            self.charm._mysql.configure_mysql_system_roles()
+
             logger.debug("Upgraded unit is healthy. Set upgrade state to `completed`")
             self.set_unit_completed()
             # ensures leader gets it's own relation-changed when it upgrades

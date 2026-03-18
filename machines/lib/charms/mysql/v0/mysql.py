@@ -1244,7 +1244,7 @@ class MySQLBase(ABC):
         except ExecutionError as e:
             raise MySQLConfigureMySQLRolesError() from e
 
-        executor = self._build_instance_sock_executor()
+        executor = self._build_instance_tcp_executor(self.instance_address)
 
         for role in (LEGACY_ROLE_ROUTER, MODERN_ROLE_ROUTER):
             if role in router_roles:
@@ -1291,7 +1291,7 @@ class MySQLBase(ABC):
 
         logger.debug("Missing MySQL roles")
         query = self._auth_query_builder.build_instance_auth_roles_query()
-        executor = self._build_instance_sock_executor()
+        executor = self._build_instance_tcp_executor(self.instance_address)
 
         try:
             logger.debug(f"Configuring MySQL roles for {self.instance_address}")
