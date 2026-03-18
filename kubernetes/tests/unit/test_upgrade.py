@@ -173,6 +173,8 @@ class TestUpgrade(unittest.TestCase):
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("charm.MySQLOperatorCharm.recover_unit_after_restart")
+    @patch("mysql_k8s_helpers.MySQL.configure_mysql_system_roles")
+    @patch("mysql_k8s_helpers.MySQL.configure_mysql_router_roles")
     @patch("mysql_k8s_helpers.MySQL.install_plugins")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
     @patch("mysql_k8s_helpers.MySQL.setup_logrotate_config")
@@ -189,6 +191,8 @@ class TestUpgrade(unittest.TestCase):
         mock_setup_logrotate_config,
         mock_cluster_metadata_exists,
         mock_install_plugins,
+        mock_configure_mysql_router_roles,
+        mock_configure_mysql_system_roles,
         mock_recover_unit_after_restart,
         mock_get_unit_address,
     ):
@@ -213,6 +217,10 @@ class TestUpgrade(unittest.TestCase):
             self.harness.get_relation_data(self.upgrade_relation_id, "mysql-k8s/1")["state"],
             "idle",  # change to `completed` - behavior not yet set in the lib
         )
+
+        # Verify role configuration methods were called during upgrade
+        mock_configure_mysql_router_roles.assert_called_once()
+        mock_configure_mysql_system_roles.assert_called_once()
 
         self.harness.update_relation_data(
             self.upgrade_relation_id, "mysql-k8s/0", {"state": "upgrading"}

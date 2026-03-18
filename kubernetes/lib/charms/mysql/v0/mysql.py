@@ -1244,10 +1244,7 @@ class MySQLBase(ABC):
         except ExecutionError as e:
             raise MySQLConfigureMySQLRolesError() from e
 
-        # Try TCP executor first (for upgrades where root has reduced privileges)
-        # Fall back to socket executor (for initial deployment)
-        tcp_executor = self._build_instance_tcp_executor(self.instance_address)
-        sock_executor = self._build_instance_sock_executor()
+        executor = self._build_instance_tcp_executor(self.instance_address)
 
         for role in (LEGACY_ROLE_ROUTER, MODERN_ROLE_ROUTER):
             if role in router_roles:
@@ -1265,19 +1262,12 @@ class MySQLBase(ABC):
                 f"GRANT ALL ON *.* TO {role} WITH GRANT OPTION",
             ])
 
-            # Try TCP first (server_config_user), fall back to socket (root)
-            for executor, executor_name in [(tcp_executor, "TCP"), (sock_executor, "socket")]:
-                try:
-                    logger.debug(f"Configuring Router role via {executor_name} for {self.instance_address}")
-                    executor.execute_sql(configure_role_commands)
-                    break  # Success, exit the loop
-                except ExecutionError as e:
-                    if executor_name == "socket":
-                        # Both failed, raise error
-                        logger.error(f"Failed to configure Router role for {self.instance_address}")
-                        raise MySQLConfigureMySQLRolesError() from e
-                    # TCP failed, will try socket next
-                    logger.debug(f"TCP executor failed, trying socket: {e}")
+            try:
+                logger.debug(f"Configuring Router role for {self.instance_address}")
+                executor.execute_sql(configure_role_commands)
+            except ExecutionError as e:
+                logger.error(f"Failed to configure Router role for {self.instance_address}")
+                raise MySQLConfigureMySQLRolesError() from e
 
     def configure_mysql_system_roles(self) -> None:
         """Configure the MySQL system roles for the instance."""
@@ -1301,25 +1291,14 @@ class MySQLBase(ABC):
 
         logger.debug("Missing MySQL roles")
         query = self._auth_query_builder.build_instance_auth_roles_query()
+        executor = self._build_instance_tcp_executor(self.instance_address)
 
-        # Try TCP executor first (for upgrades where root has reduced privileges)
-        # Fall back to socket executor (for initial deployment)
-        tcp_executor = self._build_instance_tcp_executor(self.instance_address)
-        sock_executor = self._build_instance_sock_executor()
-
-        # Try TCP first (server_config_user), fall back to socket (root)
-        for executor, executor_name in [(tcp_executor, "TCP"), (sock_executor, "socket")]:
-            try:
-                logger.debug(f"Configuring MySQL roles via {executor_name} for {self.instance_address}")
-                executor.execute_sql(query)
-                break  # Success, exit the loop
-            except ExecutionError as e:
-                if executor_name == "socket":
-                    # Both failed, raise error
-                    logger.error(f"Failed to configure roles for {self.instance_address}")
-                    raise MySQLConfigureMySQLRolesError() from e
-                # TCP failed, will try socket next
-                logger.debug(f"TCP executor failed, trying socket: {e}")
+        try:
+            logger.debug(f"Configuring MySQL roles for {self.instance_address}")
+            executor.execute_sql(query)
+        except ExecutionError as e:
+            logger.error(f"Failed to configure roles for {self.instance_address}")
+            raise MySQLConfigureMySQLRolesError() from e
 
     def configure_mysql_system_users(self) -> None:
         """Configure the MySQL system users for the instance."""
