@@ -208,7 +208,7 @@ mysql \
 
 ## Integrate with modern charm
 
-Integrate your application and new MySQL database charm (using the `database` or `mysql` endpoint):
+Integrate your application and new MySQL database charm (using the `database` endpoint):
 
 ````{tab-set}
 ```{tab-item} VM
@@ -221,22 +221,6 @@ Integrate your application and new MySQL database charm (using the `database` or
 :sync: k8s
 
     juju integrate <your_application> mysql-k8s:database
-```
-````
-
-If the `mysql_client` interface is not yet supported, use the legacy mysql interface:
-
-````{tab-set}
-```{tab-item} VM
-:sync: vm
-
-    juju integrate <your_application> mysql:mysql
-```
-
-```{tab-item} K8s
-:sync: k8s
-
-    juju integrate <your_application> mysql-k8s:mysql
 ```
 ````
 

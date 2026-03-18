@@ -15,7 +15,7 @@ For developer information about how to integrate your own charmed application wi
 
 ## Integrate with a charmed application
 
-Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface, and the legacy `mysql` interface.
+Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface.
 
 ### Modern `mysql_client` interface
 

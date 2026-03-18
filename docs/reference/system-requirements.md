@@ -7,7 +7,7 @@ myst:
 (system-requirements)=
 # System requirements
 
-The following are the minimum software and hardware requirements to run Charmed MySQL.
+The following are the minimum software and hardware requirements to run Charmed MySQL 8.4.
 
 ## Software
 
