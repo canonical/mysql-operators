@@ -4,7 +4,6 @@
 """Library containing the implementation of the standard relation."""
 
 import logging
-import socket
 import typing
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseProvides, DatabaseRequestedEvent
@@ -23,7 +22,7 @@ from ops.model import ActiveStatus, BlockedStatus
 
 from constants import CONTAINER_NAME, CONTAINER_RESTARTS, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
 from k8s_helpers import KubernetesClientError
-from utils import dotappend, generate_random_password
+from utils import dotappend, generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +144,8 @@ class MySQLProvider(Object):
             # create k8s services for endpoints
             self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
 
-            primary_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-primary"))
-            replicas_endpoint = dotappend(socket.getfqdn(f"{self.charm.app.name}-replicas"))
+            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
+            replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
 
             # wait for endpoints to be ready
             self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
