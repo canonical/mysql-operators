@@ -1252,7 +1252,7 @@ class MySQLBase(ABC):
 
             logger.debug(f"Missing MySQL role {role}")
             configure_role_commands = ";".join([
-                f"CREATE ROLE {role}",
+                f"CREATE ROLE IF NOT EXISTS {role}",
                 f"GRANT CREATE ON *.* TO {role}",
                 f"GRANT CREATE USER ON *.* TO {role}",
                 # The granting of all privileges to the MySQL Router role

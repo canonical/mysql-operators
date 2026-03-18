@@ -152,7 +152,7 @@ class TestMySQLBase(unittest.TestCase):
             "WHERE user LIKE '{role}' AND authentication_string=''"
         )
         create_query = ";".join((
-            "CREATE ROLE {role}",
+            "CREATE ROLE IF NOT EXISTS {role}",
             "GRANT CREATE ON *.* TO {role}",
             "GRANT CREATE USER ON *.* TO {role}",
             "GRANT ALL ON *.* TO {role} WITH GRANT OPTION",
