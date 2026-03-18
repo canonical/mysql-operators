@@ -28,8 +28,8 @@ Using the VM charm as an example, a quorum loss will typically look like this in
 Model   Controller  Cloud/Region             Version  SLA          Timestamp
 mymodel localhost   default                  3.6.8    unsupported  17:52:19Z
 
-App    Version                  Status   Scale  Charm      Channel           Rev  Address        Exposed  Message
-mysql  8.4.7-0ubuntu0.24.04.2  waiting      3  mysql      8.4/edge               10.152.183.61  no       waiting for units to settle down
+App    Version  Status   Scale  Charm      Channel     Rev  Address        Exposed  Message
+mysql  8.4.7    waiting      3  mysql      8.4/edge         10.152.183.61  no       waiting for units to settle down
 
 Unit      Workload     Agent  Address     Ports  Message
 mysql/0*  maintenance  idle   10.1.2.48          offline

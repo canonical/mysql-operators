@@ -47,7 +47,7 @@ After a successful deployment, `juju status` will show an active application:
 
 ```shell
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  00:59:53+02:00
+mymodel  gce         google/us-east1  3.6.14     unsupported  00:59:53+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      3  mysql  8.4/edge         no       
@@ -93,7 +93,7 @@ The new MySQL Primary elected automatically:
 
 ```shell
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:03:13+02:00
+mymodel  gce         google/us-east1  3.6.14     unsupported  01:03:13+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active    2/3  mysql  8.4/edge         no       
@@ -121,7 +121,7 @@ The command `juju status` shows the machines in a healthy state, but MySQL HA re
 
 ```shell
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:04:42+02:00
+mymodel  gce         google/us-east1  3.6.14     unsupported  01:04:42+02:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7            active      2  mysql  8.4/edge         no       
@@ -145,7 +145,7 @@ Juju uses the right AZ where the node is missing. Run `juju status`:
 
 ```shell
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
-mymodel  gce         google/us-east1  3.6-rc1.1  unsupported  01:05:12+02:00
+mymodel  gce         google/us-east1  3.6.14     unsupported  01:05:12+02:00
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql           active    2/3  mysql  8.4/edge         no       

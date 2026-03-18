@@ -174,7 +174,7 @@ kubectl describe pod mysql-k8s-0 -n <juju_model_name>
 Containers:
   charm:
     ...
-    Image:          jujusolutions/charm-base:ubuntu-22.04
+    Image:          jujusolutions/charm-base:ubuntu-24.04
     State:          Running
     Ready:          True
     Restart Count:  0
@@ -318,7 +318,7 @@ To install additional software, use the standard approach:
 
     ubuntu@juju-6692b6-0:~$ sudo apt update && sudo apt install gdb
     ...
-    Setting up gdb (12.1-0ubuntu1~22.04) ...
+    Setting up gdb (12.1-0ubuntu1~24.04) ...
     ubuntu@juju-6692b6-0:~$
 ```
 
@@ -327,7 +327,7 @@ To install additional software, use the standard approach:
 
     root@mysql-k8s-0:/# apt update && apt install less
     ...
-    Setting up less (590-1ubuntu0.22.04.1) ...
+    Setting up less (590-1ubuntu0.24.04.1) ...
     root@mysql-k8s-0:/#
 ```
 ````

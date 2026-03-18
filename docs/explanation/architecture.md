@@ -16,7 +16,7 @@ Charmed MySQL is developed for deployment on machine clouds or Kubernetes. Altho
 (machine-charm)=
 ### Machine charm
 
-[Charmed MySQL VM](https://charmhub.io/mysql) leverages the [charmed-mysql snap](https://snapcraft.io/charmed-mysql) which is deployed by Juju on the specified VM/MAAS/bare-metal machine based on Ubuntu Jammy/22.04. snap allows to run MySQL service(s) in a secure and isolated environment ([strict confinement](https://snapcraft.io/blog/demystifying-snap-confinement)). 
+[Charmed MySQL VM](https://charmhub.io/mysql) leverages the [charmed-mysql snap](https://snapcraft.io/charmed-mysql) which is deployed by Juju on the specified VM/MAAS/bare-metal machine based on Ubuntu Noble/24.04. snap allows to run MySQL service(s) in a secure and isolated environment ([strict confinement](https://snapcraft.io/blog/demystifying-snap-confinement)). 
 
 The installed snap:
 
@@ -29,10 +29,10 @@ charmed-mysql  8.4.7          latest/stable  dataplatformbot  held
 
 The snap ships the following components:
 
-* MySQL Community Edition (based on Ubuntu APT package "[mysql-server-8.0](https://packages.ubuntu.com/jammy/mysql-server-8.0)") 
-* MySQL Router (based on Ubuntu APT package "[mysql-router](https://packages.ubuntu.com/jammy/mysql-router)")
-* MySQL Shell (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysql-shell))
-* Percona XtraBackup (based on Canonical  [backport](https://launchpad.net/~data-platform/+archive/ubuntu/xtrabackup))
+* MySQL Community Edition 
+* MySQL Router
+* MySQL Shell (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysql-shell-8.4))
+* Percona XtraBackup (based on Canonical  [backport](https://launchpad.net/~data-platform/+archive/ubuntu/percona-xtrabackup-8.4))
 * Prometheus MySQLd Exporter (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysqld-exporter))
 * Prometheus MySQL Router Exporter (based on Canonical [backport](https://launchpad.net/~data-platform/+archive/ubuntu/mysqlrouter-exporter))
 * Prometheus Grafana dashboards and Loki alert rules are part of the charm revision and missing in snap.
@@ -52,7 +52,7 @@ charmed-mysql.mysqlrouterd-exporter  disabled  inactive  -
 
 The `mysqld` snap service is a main MySQL instance which is normally up and running right after the charm deployment.
 
-The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=dpe/edge) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql) deployments.
+The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/edge) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql?channel=8.4/edge) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
@@ -214,27 +214,3 @@ For this charm, the following events are observed:
 <!--- 7. database_storage_detaching: TODO: ops? event?
 8. TODO: any other events?
 --->
-
-### Charm code overview
-
-The code for both VM and K8s charms is located in the same repository, [`mysql-operators`](https://github.com/canonical/mysql-operators/tree/8.4/edge) under the `machines` and `kubernetes` directories respectively.
-
-For each substrate, `src/charm.py` is the default entry point for a charm and has the `MySQLCharmBase` Python class which inherits from `CharmBase`.
-
-`CharmBase` is the base class from which all Charms are formed, defined by [Ops](https://ops.readthedocs.io/en/latest/) (Python framework for developing charms). See more information in the [Ops documentation for `CharmBase`](https://ops.readthedocs.io/en/latest/reference/ops.html#ops.CharmBase).
-
-The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
-
-<!--TODO: needs update 
-The VM and K8s charm flavors shares the codebase via charm libraries in [`lib/charms/mysql/v0/`](https://github.com/canonical/mysql-operator/blob/main/lib/charms/mysql/v0/):
-
-```
-charmcraft list-lib mysql
-Library name    API    Patch                                                                                                                                                                                                                          
-backups         0      7                                                                                                                                                                                                                              
-mysql           0      45                                                                                                                                                                                                                             
-s3_helpers      0      4                                                                                                                                                                                                                              
-tls             0      2                                     
-```
-
--->

@@ -126,8 +126,8 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     mysql/3*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
       grafana-agent/0*            active    idle            10.85.186.140
 
-    Machine  State    Address        Inst id        Series  AZ  Message
-    4        started  10.85.186.140  juju-fcde9e-4  jammy       Running
+    Machine  State    Address        Inst id        Series  AZ    Message
+    4        started  10.85.186.140  juju-fcde9e-4  ubuntu@24.04  Running
 ```
 ```{tab-item} K8s
 :sync: k8s

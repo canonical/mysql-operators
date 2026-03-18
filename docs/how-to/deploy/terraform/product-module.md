@@ -126,7 +126,7 @@ my-model  lxd-controller  localhost/localhost  3.6.14    unsupported  12:49:34Z
 
 App            Version  Status  Scale  Charm          Channel        Rev  Exposed  Message                                
 mysql          8.4.7    active      3  mysql          8.4/edge            no
-mysql-router            unknown     0  mysql-router   dpe/candidate  355  no
+mysql-router            unknown     0  mysql-router   8.4/candidate  355  no
 s3-integrator           active      1  s3-integrator  1/stable       241  no
 
 Unit              Workload  Agent  Machine  Public address  Ports           Message

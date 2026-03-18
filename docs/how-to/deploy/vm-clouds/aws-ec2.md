@@ -24,7 +24,7 @@ To check they are all correctly installed, you can run the commands demonstrated
 
 ```console
 ~$ juju version
-3.6.1-genericlinux-amd64
+3.6.14-genericlinux-amd64
 
 ~$ aws --version
 aws-cli/2.13.25 Python/3.11.5 Linux/6.2.0-33-generic exe/x86_64.ubuntu.23 prompt/off

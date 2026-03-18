@@ -36,9 +36,6 @@ You can also see all MySQL charm configuration options on Charmhub ([VM](https:/
 
 ## Change profile
 
-<!--TODO: check if this ticket is done.
-**Note**: Pre-deployed application profile change is [planned](https://warthogs.atlassian.net/browse/DPE-2404) but currently is NOT supported. -->
-
 To change the profile, use the [`juju config` command](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/config/). For example:
 
 ````{tab-set}

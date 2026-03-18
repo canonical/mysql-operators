@@ -143,7 +143,7 @@ After a successful deployment, `juju status` will show an active application:
 
 ```shell
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
-mymodel  gke         gke/us-east4  3.6.14    unsupported  22:02:32+02:00
+mymodel  gke         gke/us-east4  3.6.14   unsupported  22:02:32+02:00
 
 App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
 mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge         34.118.235.169  no       

@@ -21,14 +21,17 @@ This guide goes through the steps for setting up Sunbeam and deploying Charmed M
 ---
 
 ## Install and bootstrap Sunbeam
+
 Follow the official OpenStack guide: [Single-node deployment][Single-node guided]. 
 
 Pay attention to the `Caution` and `Note` sections - the `/etc/hosts` will require a [manual fqdn fix](https://github.com/canonical/multipass/issues/3277#issuecomment-2471434029).
 
 ## Enable OpenStack Images Auto-sync
-Follow the official [Images Sync] guide to enable auto-sync and wait for the image `22.04` to be downloaded.
+
+Follow the official [Images Sync] guide to enable auto-sync and wait for the image `24.04` to be downloaded.
 
 ## Set up Juju inside an OpenStack bastion
+
 Follow the MicroStack guide [Manage workloads with Juju] from the beginning, and stop after the section "Create a Juju controller". 
 
 To summarize, the relevant sections are:
@@ -37,7 +40,9 @@ To summarize, the relevant sections are:
 * Create a Juju controller 
 
 ## Deploy Charmed MySQL
+
 Add a model if you don't have one already, and deploy a MySQL cluster. Use the `-n` flag to specify number of units.
+
 ```shell
 juju add-model mysql
 juju deploy mysql --base ubuntu@24.04 -n 3
@@ -46,7 +51,7 @@ juju deploy mysql --base ubuntu@24.04 -n 3
 Sample output of `juju status --watch 1s`:
 ```shell
 Model  Controller     Cloud/Region       Version  SLA          Timestamp
-mysql  my-controller  sunbeam/RegionOne  3.6.14    unsupported  20:22:42Z
+mysql  my-controller  sunbeam/RegionOne  3.6.14   unsupported  20:22:42Z
 
 App    Version   Status  Scale  Charm  Channel     Rev  Exposed  Message
 mysql  8.4.7     active      3  mysql  8.4/edge         no       

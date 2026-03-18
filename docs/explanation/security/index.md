@@ -69,7 +69,7 @@ Charmed MySQL operator and Charmed MySQL Router operator install a pinned revisi
 
 New versions (revisions) of charmed operators can be released to upgrade workloads, the operator's code, or both. It is important to refresh the charm regularly to make sure the workload is as secure as possible.
 
-For more information on upgrading the charm, see {ref}`refresh` and [How to upgrade MySQL Router](https://charmhub.io/mysql-router/docs/h-upgrade?channel=dpe/edge), as well as the {ref}`release-notes`.
+For more information on upgrading the charm, see {ref}`refresh` and [How to upgrade MySQL Router](https://charmhub.io/mysql-router/docs/h-upgrade?channel=8.4/edge), as well as the {ref}`release-notes`.
 
 ### Encryption
 

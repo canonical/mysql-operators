@@ -133,7 +133,7 @@ juju deploy mysql-k8s --trust -n 3
 ```
 Sample output:
 ```shell
-Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.4/edge  on ubuntu@24.04/stable
+Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.4/edge on ubuntu@24.04/stable
 ```
 
 Check the status:
@@ -143,7 +143,7 @@ juju status --watch 1s
 Sample output:
 ```shell
 Model    Controller  Cloud/Region  Version  SLA          Timestamp
-welcome  aks         aks/eastus    3.6.14    unsupported  16:42:15+02:00
+welcome  aks         aks/eastus    3.6.14   unsupported  16:42:15+02:00
 
 App        Version  Status  Scale  Charm      Channel     Rev  Address       Exposed  Message
 mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge         10.0.238.103  no       

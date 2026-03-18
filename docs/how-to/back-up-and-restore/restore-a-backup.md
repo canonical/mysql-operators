@@ -15,13 +15,6 @@ To restore a backup that was made from the a *different* cluster, (i.e. cluster 
 
 - A MySQL deployment {ref}`scaled down <scale>` to one unit (scale it up after the backup is restored)
 - [A backup in your S3 storage](/how-to/back-up-and-restore/create-a-backup)
-- {ref}`point-in-time-recovery` recovery requires the following MySQL charm revisions:
-  * VM charm
-    * rev368+ for `amd64`
-    * rev369+ for `arm64`
-  * K8s charm
-    * rev249+ for `amd64`
-    * rev248+ for `arm64`
 
 ---
 
