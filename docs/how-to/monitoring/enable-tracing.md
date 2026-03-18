@@ -95,7 +95,7 @@ Wait until the model settles. The following is an example of the `juju status --
 :sync: vm
 
     Model     Controller  Cloud/Region         Version  SLA          Timestamp
-    mysql     lxd         localhost/localhost  3.6.14    unsupported  19:15:55Z
+    mysql     lxd         localhost/localhost  3.6.14   unsupported  19:15:55Z
 
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
@@ -123,7 +123,7 @@ Wait until the model settles. The following is an example of the `juju status --
 :sync: k8s
 
     Model     Controller  Cloud/Region        Version  SLA          Timestamp
-    mysql     k8s         microk8s/localhost  3.6.14    unsupported  16:33:26Z
+    mysql     k8s         microk8s/localhost  3.6.14   unsupported  16:33:26Z
 
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo

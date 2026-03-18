@@ -66,7 +66,7 @@ juju status --watch 1s
 Example output:
 ```shell
 Model   Controller  Cloud/Region  Version  SLA          Timestamp
-mysql   ck8s        ck8s          3.6-rc1  unsupported  18:32:38+01:00
+mysql   ck8s        ck8s          3.6.14   unsupported  18:32:38+01:00
 
 App         Version   Status  Scale  Charm           Channel     Rev  Address         Exposed  Message
 mysql-k8s   8.4.7     active      1  mysql-k8s       8.4/edge         10.152.183.146  no       

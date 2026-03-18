@@ -106,7 +106,7 @@ Check the status:
 ```shell
 > juju status --relations
 Model    Controller     Cloud/Region   Version  SLA          Timestamp
-welcome  aws-us-east-1  aws/us-east-1  3.6.14    unsupported  17:52:25+02:00
+welcome  aws-us-east-1  aws/us-east-1  3.6.14   unsupported  17:52:25+02:00
 
 App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
 data-integrator                   active      1  data-integrator  latest/stable   41  no       
