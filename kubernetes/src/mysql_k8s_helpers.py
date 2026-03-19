@@ -49,7 +49,6 @@ from constants import (
     MYSQLD_SOCK_FILE,
     MYSQLSH_LOCATION,
     PEER,
-    ROOT_SYSTEM_USER,
     XTRABACKUP_PLUGIN_DIR,
 )
 from k8s_helpers import KubernetesClientError, KubernetesHelpers
@@ -313,8 +312,8 @@ class MySQL(MySQLBase):
         self.write_content_to_file(
             LOG_ROTATE_CONFIG_FILE,
             rendered,
-            owner=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            owner=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def execute_backup_commands(
