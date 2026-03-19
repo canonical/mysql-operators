@@ -221,7 +221,7 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
             self.charm.recover_unit_after_restart()
 
-            logger.info("Ensuring predefined roles exist")
+            logger.info("Reconciling predefined roles exist")
             self.charm._mysql.configure_mysql_users_and_roles()
 
             if self.charm.config.plugin_audit_enabled:

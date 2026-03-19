@@ -232,7 +232,7 @@ class MySQLVMUpgrade(DataUpgrade):
         try:
             self.charm.recover_unit_after_restart()
 
-            logger.info("Ensuring predefined roles exist")
+            logger.info("Reconciling predefined roles exist")
             self.charm._mysql.configure_mysql_router_roles()
             self.charm._mysql.configure_mysql_system_roles()
 
