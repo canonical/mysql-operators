@@ -292,15 +292,15 @@ class TestMySQL(unittest.TestCase):
 
     @patch("ops.model.Container")
     @patch("mysql_k8s_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld(self, _wait_until_mysql_connection, _container):
-        """Test for reset_root_password_and_start_mysqld()."""
+    def test_set_operator_user_and_start_mysqld(self, _wait_until_mysql_connection, _container):
+        """Test for set_operator_user_and_start_mysqld()."""
         self.mysql.container = _container
-        self.mysql.reset_root_password_and_start_mysqld()
+        self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/alter-root-user.sql",
-                "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';\nFLUSH PRIVILEGES;",
+                "/create-operator-user.sql",
+                "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -308,7 +308,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /alter-root-user.sql",
+                "[mysqld]\ninit_file = /create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -318,16 +318,16 @@ class TestMySQL(unittest.TestCase):
         self.mysql.container.restart.assert_called_once_with("mysqld")
         _wait_until_mysql_connection.assert_called_once_with(check_port=False)
         self.mysql.container.remove_path.assert_has_calls([
-            call("/alter-root-user.sql"),
+            call("/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])
 
     @patch("ops.model.Container")
     @patch("mysql_k8s_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld_error(
+    def test_set_operator_user_and_start_mysqld_error(
         self, _wait_until_mysql_connection, _container
     ):
-        """Test exceptions in reset_root_password_and_start_mysqld()."""
+        """Test exceptions in set_operator_user_and_start_mysqld()."""
         self.mysql.container = _container
         _container.push.side_effect = [
             None,
@@ -335,19 +335,19 @@ class TestMySQL(unittest.TestCase):
         ]
 
         with self.assertRaises(PathError):
-            self.mysql.reset_root_password_and_start_mysqld()
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/alter-root-user.sql",
-                "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';\nFLUSH PRIVILEGES;",
+                "/create-operator-user.sql",
+                "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
                 group="mysql",
             ),
         ])
-        self.mysql.container.remove_path.assert_called_once_with("/alter-root-user.sql")
+        self.mysql.container.remove_path.assert_called_once_with("/create-operator-user.sql")
         _wait_until_mysql_connection.assert_not_called()
 
         _container.push.side_effect = [None, None]
@@ -359,12 +359,12 @@ class TestMySQL(unittest.TestCase):
         ]
 
         with self.assertRaises(MySQLServiceNotRunningError):
-            self.mysql.reset_root_password_and_start_mysqld()
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/alter-root-user.sql",
-                "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';\nFLUSH PRIVILEGES;",
+                "/create-operator-user.sql",
+                "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -372,7 +372,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /alter-root-user.sql",
+                "[mysqld]\ninit_file = /create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -381,6 +381,6 @@ class TestMySQL(unittest.TestCase):
         ])
         self.mysql.container.restart.assert_called_once_with("mysqld")
         self.mysql.container.remove_path.assert_has_calls([
-            call("/alter-root-user.sql"),
+            call("/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])

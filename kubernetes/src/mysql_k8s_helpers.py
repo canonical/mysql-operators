@@ -249,17 +249,19 @@ class MySQL(MySQLBase):
             self.reset_data_dir()
             raise MySQLInitialiseMySQLDError from None
 
-    def reset_root_password_and_start_mysqld(self) -> None:
-        """Reset the root user password and start mysqld."""
-        logger.debug("Resetting root user password and starting mysqld")
-        alter_user_queries = [
-            f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{self.root_password}';",
+    def set_operator_user_and_start_mysqld(self) -> None:
+        """Set the operator user and start mysqld."""
+        create_user_queries = [
+            f"CREATE USER '{self.server_config_user}'@'%' IDENTIFIED BY '{self.server_config_password}';",
+            f"GRANT ALL ON *.* TO '{self.server_config_user}'@'%' WITH GRANT OPTION;",
             "FLUSH PRIVILEGES;",
         ]
 
+        file_path = "/create-operator-user.sql"
+
         self.container.push(
-            "/alter-root-user.sql",
-            "\n".join(alter_user_queries),
+            file_path,
+            "\n".join(create_user_queries),
             encoding="utf-8",
             permissions=0o600,
             user=MYSQL_SYSTEM_USER,
@@ -269,14 +271,14 @@ class MySQL(MySQLBase):
         try:
             self.container.push(
                 MYSQLD_INIT_CONFIG_FILE,
-                "[mysqld]\ninit_file = /alter-root-user.sql",
+                f"[mysqld]\ninit_file = {file_path}",
                 encoding="utf-8",
                 permissions=0o600,
                 user=MYSQL_SYSTEM_USER,
                 group=MYSQL_SYSTEM_GROUP,
             )
         except PathError:
-            self.container.remove_path("/alter-root-user.sql")
+            self.container.remove_path(file_path)
 
             logger.exception("Failed to write the custom config file for init-file")
             raise
@@ -288,7 +290,7 @@ class MySQL(MySQLBase):
             logger.exception("Failed to run init-file and wait for connection")
             raise
         finally:
-            self.container.remove_path("/alter-root-user.sql")
+            self.container.remove_path(file_path)
             self.container.remove_path(MYSQLD_INIT_CONFIG_FILE)
 
     @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(2))
