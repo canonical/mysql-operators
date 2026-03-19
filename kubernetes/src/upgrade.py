@@ -222,8 +222,7 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm.recover_unit_after_restart()
 
             logger.info("Ensuring predefined roles exist")
-            self.charm._mysql.configure_mysql_router_roles()
-            self.charm._mysql.configure_mysql_system_roles()
+            self.charm._mysql.configure_mysql_users_and_roles()
 
             if self.charm.config.plugin_audit_enabled:
                 self.charm._mysql.install_plugins(["audit_log"])

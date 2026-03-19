@@ -718,9 +718,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
             logger.info("Configuring initialized mysqld")
             # Configure all base users and revoke privileges from the root users
-            self._mysql.configure_mysql_system_users()
-            self._mysql.configure_mysql_router_roles()
-            self._mysql.configure_mysql_system_roles()
+            self._mysql.configure_mysql_users_and_roles(first_run=True)
 
             if self.config.plugin_audit_enabled:
                 # Enable the audit plugin
