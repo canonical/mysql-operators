@@ -7,6 +7,7 @@ import subprocess
 import jubilant
 from jubilant import Juju
 
+from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     get_app_name,
@@ -15,7 +16,6 @@ from ...helpers_ha import (
     get_mysql_primary_unit,
     update_interval,
     wait_for_apps_status,
-    wait_for_unit_message,
     wait_for_unit_status,
 )
 
@@ -35,7 +35,9 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
+        trust=True,
     )
+    constraints = {"arch": architecture.architecture}
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
@@ -43,6 +45,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
+        constraints=constraints,
     )
 
     juju.integrate(
@@ -112,8 +115,8 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
         juju.wait(
             ready=lambda status: all((
                 wait_for_unit_status(app_name, unit_to_promote, "active")(status),
-                wait_for_unit_message(app_name, units_to_kill[0], "OFFLINE")(status),
-                wait_for_unit_message(app_name, units_to_kill[1], "OFFLINE")(status),
+                wait_for_unit_status(app_name, units_to_kill[0], "maintenance")(status),
+                wait_for_unit_status(app_name, units_to_kill[1], "maintenance")(status),
             )),
             timeout=15 * MINUTE_SECS,
             delay=15,

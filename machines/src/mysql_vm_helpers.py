@@ -803,8 +803,8 @@ class MySQL(MySQLBase):
         """
         return [host.names[1] for host in self.charm.hostname_resolution._get_host_details()]
 
-    @staticmethod
     def write_content_to_file(
+        self,
         path: str,
         content: str,
         owner: str = MYSQL_SYSTEM_USER,
@@ -825,6 +825,23 @@ class MySQL(MySQLBase):
 
         shutil.chown(path, owner, group)
         os.chmod(path, mode=permission)
+
+    def read_file_content(self, path: str) -> str | None:
+        """Read file content.
+
+        Args:
+            path: filesystem full path (with filename)
+
+        Returns:
+            file content
+        """
+        if not os.path.exists(path):
+            return None
+
+        with open(path, encoding="utf-8") as fd:
+            content = fd.read()
+
+        return content
 
     @staticmethod
     def fetch_error_log() -> str | None:
