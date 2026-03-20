@@ -221,7 +221,7 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
             self.charm.recover_unit_after_restart()
 
-            logger.info("Reconciling predefined roles exist")
+            logger.info("Reconciling predefined roles")
             self.charm._mysql.configure_mysql_router_roles()
             self.charm._mysql.configure_mysql_system_roles()
             self.charm._mysql.configure_mysql_system_users()
