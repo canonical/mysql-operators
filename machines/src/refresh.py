@@ -60,11 +60,6 @@ class MachinesMySQLRefresh(charm_refresh.CharmSpecificMachines):
         ))
 
     @property
-    def app_units(self) -> set:
-        """The peer-related units in the application."""
-        return {self._charm.unit, *self._charm.peers.units}
-
-    @property
     def highest_ordinal(self) -> int:
         """Return the max ordinal."""
         return self._charm.app.planned_units() - 1
@@ -100,7 +95,7 @@ class MachinesMySQLRefresh(charm_refresh.CharmSpecificMachines):
 
         try:
             # Set slow shutdown on all instances
-            for unit in self.app_units:
+            for unit in self._charm.app_units:
                 self._charm._mysql.set_dynamic_variable(
                     instance_address=self._charm.get_unit_address(unit, PEER),
                     variable="innodb_fast_shutdown",
