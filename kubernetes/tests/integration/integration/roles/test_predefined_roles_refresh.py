@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 # Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
-
 import logging
+from contextlib import suppress
 
 import jubilant_backports
-from jubilant_backports import Juju
+from jubilant_backports import Juju, TaskError
 
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
     execute_queries_on_unit,
     get_app_leader,
+    get_k8s_stateful_set_partitions,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
     get_unit_address,
+    get_unit_by_number,
     wait_for_apps_status,
+    wait_for_unit_message,
 )
 
 DATABASE_APP_NAME = "mysql-k8s"
@@ -37,7 +40,7 @@ def test_build_and_deploy(juju: Juju) -> None:
         channel="8.0/stable",
         revision=OLD_MYSQL_REVISION,
         config={"profile": "testing"},
-        num_units=1,
+        num_units=3,
         trust=True,
     )
     juju.wait(
@@ -85,6 +88,7 @@ def test_verify_no_predefined_roles_in_old_revision(juju: Juju):
 def test_verify_predefined_roles_present_after_refresh(juju: Juju, charm):
     """Verify that predefined roles are present after refresh."""
     mysql_leader = get_app_leader(juju, DATABASE_APP_NAME)
+    mysql_upgrade_unit = get_unit_by_number(juju, DATABASE_APP_NAME, 2)
 
     logging.info("Running pre-upgrade-check action")
     juju.run(unit=mysql_leader, action="pre-upgrade-check")
@@ -96,10 +100,25 @@ def test_verify_predefined_roles_present_after_refresh(juju: Juju, charm):
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
     )
 
-    logging.info("Wait for refresh to complete")
+    logging.info("Wait for upgrade to complete on first upgrading unit")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_unit_message(DATABASE_APP_NAME, mysql_upgrade_unit, "upgrade completed"),
         timeout=TIMEOUT,
+    )
+
+    logging.info("Resume upgrade")
+    while get_k8s_stateful_set_partitions(juju, DATABASE_APP_NAME) == 2:
+        # ignore action return error as it is expected when
+        # the leader unit is the next one to be upgraded
+        # due it being immediately rolled when the partition
+        # is patched in the stateful set
+        with suppress(TaskError):
+            juju.run(unit=mysql_leader, action="resume-upgrade")
+
+    logging.info("Wait for upgrade to recover")
+    juju.wait(
+        ready=lambda status: jubilant_backports.all_active(status, DATABASE_APP_NAME),
+        timeout=20 * MINUTE_SECS,
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)

@@ -1265,8 +1265,9 @@ class MySQLBase(ABC):
             ])
 
             try:
-                logger.debug(f"Configuring Router role for {self.instance_address}")
-                executor.execute_sql(configure_role_commands)
+                with self._read_only_disabled():  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                    logger.debug(f"Configuring Router role for {self.instance_address}")
+                    executor.execute_sql(configure_role_commands)
             except ExecutionError as e:
                 logger.error(f"Failed to configure Router role for {self.instance_address}")
                 raise MySQLConfigureMySQLRolesError() from e
@@ -1296,8 +1297,9 @@ class MySQLBase(ABC):
         executor = self._build_instance_sock_executor()
 
         try:
-            logger.debug(f"Configuring MySQL roles for {self.instance_address}")
-            executor.execute_sql(query)
+            with self._read_only_disabled():  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                logger.debug(f"Configuring MySQL roles for {self.instance_address}")
+                executor.execute_sql(query)
         except ExecutionError as e:
             logger.error(f"Failed to configure roles for {self.instance_address}")
             raise MySQLConfigureMySQLRolesError() from e
