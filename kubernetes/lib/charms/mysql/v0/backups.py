@@ -274,6 +274,11 @@ class MySQLBackups(Object):
             event.fail("Process mysqld not running")
             return False
 
+        if self.charm.refresh.in_progress:
+            logger.error("Backup failed: refresh in progress")
+            event.fail("Refresh in progress")
+            return False
+
         return True
 
     def _on_create_backup(self, event: ActionEvent) -> None:
@@ -547,6 +552,12 @@ class MySQLBackups(Object):
             event.fail(error_message)
             return False
 
+        if self.charm.refresh.in_progress:
+            error_message = "Refresh in progress"
+            logger.error(f"Restore failed: {error_message}")
+            event.fail(error_message)
+            return False
+
         return True
 
     def _on_restore(self, event: ActionEvent) -> None:  # noqa: C901
@@ -792,14 +803,15 @@ class MySQLBackups(Object):
             )
             return
 
-        if (
-            not self.charm._mysql.is_mysqld_running()
-            or not self.charm.unit_initialized
-            or not self.charm.upgrade.idle
-        ):
-            logger.debug(
-                "Deferring _on_s3_credentials_changed: mysql cluster is not started yet or upgrade is occurring"
-            )
+        if not self.charm._mysql.is_mysqld_running() or not self.charm.unit_initialized:
+            logger.debug("Deferring _on_s3_credentials_changed: mysql cluster is not started yet")
+            event.defer()
+            return
+
+        if self.charm.refresh is None:
+            logger.warning("Refresh could be in progress")
+        if self.charm.refresh and self.charm.refresh.in_progress:
+            logger.debug("Refresh in progress")
             event.defer()
             return
 

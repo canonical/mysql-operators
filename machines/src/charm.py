@@ -15,6 +15,7 @@ import random
 import socket
 from time import sleep
 
+import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
 from charms.data_platform_libs.v0.s3 import S3Requirer
@@ -51,6 +52,7 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops import (
+    ActiveStatus,
     BlockedStatus,
     EventBase,
     InstallEvent,
@@ -110,11 +112,13 @@ from mysql_vm_helpers import (
     snap,
     snap_service_operation,
 )
+from refresh import MachinesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
-from upgrade import MySQLVMUpgrade, get_mysql_dependencies_model
 from utils import compare_dictionaries, generate_random_password
 
 logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 class StorageUnavailableError(Exception):
@@ -137,6 +141,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def __init__(self, *args):
         super().__init__(*args)
+
+        # Show logger name (module name) in logs
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers:
+            if isinstance(handler, ops.log.JujuLogHandler):
+                handler.setFormatter(logging.Formatter("{name}:{message}", style="{"))
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.leader_elected, self._on_leader_elected)
@@ -175,12 +185,23 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)
         self.hostname_resolution = MySQLMachineHostnameResolution(self)
-        self.upgrade = MySQLVMUpgrade(
-            self,
-            dependency_model=get_mysql_dependencies_model(),
-            relation_name="upgrade",
-            substrate="vm",
-        )
+
+        try:
+            self._refresh = charm_refresh.Machines(
+                MachinesMySQLRefresh(
+                    workload_name="MySQL",
+                    charm_name="mysql",
+                    _charm=self,
+                )
+            )
+        except charm_refresh.PeerRelationNotReady:
+            self.unit.status = MaintenanceStatus("Waiting for peer relation")
+            self._refresh = None
+        except charm_refresh.UnitTearingDown:
+            self.unit.status = MaintenanceStatus("Tearing down")
+            self._refresh = None
+        else:
+            self._refresh.next_unit_allowed_to_refresh = True
 
         self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
 
@@ -197,7 +218,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def _on_install(self, _: InstallEvent) -> None:
         """Handle the install event."""
-        self.unit.status = MaintenanceStatus("Installing MySQL")
+        self.set_unit_status(MaintenanceStatus("Installing MySQL"))
 
         if not is_volume_mounted():
             # https://github.com/juju/juju/issues/21135
@@ -205,9 +226,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             raise StorageUnavailableError
 
         if self.install_workload():
-            self.unit.status = WaitingStatus("Waiting to start MySQL")
+            self.set_unit_status(WaitingStatus("Waiting to start MySQL"))
         else:
-            self.unit.status = BlockedStatus("Failed to install and configure MySQL")
+            self.set_unit_status(BlockedStatus("Failed to install and configure MySQL"))
 
     def _on_leader_elected(self, _) -> None:
         """Handle the leader elected event."""
@@ -246,9 +267,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # skip when not initialized
             return
 
-        if not self.upgrade.idle:
-            # skip when upgrade is in progress
-            # the upgrade already restart the daemon
+        if self._refresh is None:
+            logger.warning("Refresh could be in progress")
+        if self._refresh and self._refresh.in_progress:
+            logger.debug("Refresh in progress")
             return
 
         config_content = self._mysql.read_file_content(MYSQLD_CUSTOM_CONFIG_FILE)
@@ -287,24 +309,24 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not self._can_start(event):
             return
 
-        self.unit.status = MaintenanceStatus("Setting up cluster node")
+        self.set_unit_status(MaintenanceStatus("Setting up cluster node"))
 
         try:
             self.workload_initialise()
         except MySQLConfigureMySQLRolesError:
-            self.unit.status = BlockedStatus("Failed to initialize MySQL roles")
+            self.set_unit_status(BlockedStatus("Failed to initialize MySQL roles"))
             return
         except MySQLConfigureMySQLUsersError:
-            self.unit.status = BlockedStatus("Failed to initialize MySQL users")
+            self.set_unit_status(BlockedStatus("Failed to initialize MySQL users"))
             return
         except MySQLConfigureInstanceError:
-            self.unit.status = BlockedStatus("Failed to configure instance for InnoDB")
+            self.set_unit_status(BlockedStatus("Failed to configure instance for InnoDB"))
             return
         except MySQLCreateCustomMySQLDConfigError:
-            self.unit.status = BlockedStatus("Failed to create custom mysqld config")
+            self.set_unit_status(BlockedStatus("Failed to create custom mysqld config"))
             return
         except MySQLDNotRestartedError:
-            self.unit.status = BlockedStatus("Failed to restart mysqld after configuring instance")
+            self.set_unit_status(BlockedStatus("Failed to restart instance"))
             return
         except MySQLComponentInstallError:
             logger.warning("Failed to install MySQL components")
@@ -313,7 +335,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if not self.unit.is_leader():
             # Wait to be joined and set flags
-            self.unit.status = WaitingStatus("Waiting to join the cluster")
+            self.set_unit_status(WaitingStatus("Waiting to join the cluster"))
             self.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
             self.unit_peer_data["member-state"] = "waiting"
             return
@@ -425,8 +447,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 if loopback_entry_exists and not snap_service_operation(
                     CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
                 ):
-                    self.unit.status = BlockedStatus(
-                        "Unable to restart mysqld before rebooting from complete outage"
+                    self.set_unit_status(
+                        BlockedStatus("Unable to restart before rebooting from complete outage")
                     )
                     return False
 
@@ -441,7 +463,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     return True
                 except MySQLRebootFromCompleteOutageError:
                     logger.error("Failed to reboot cluster from complete outage.")
-                    self.unit.status = BlockedStatus("failed to recover cluster.")
+                    self.set_unit_status(BlockedStatus("failed to recover cluster."))
                     return False
 
             if self._mysql.is_cluster_auto_rejoin_ongoing():
@@ -457,10 +479,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 ):
                     # mysqld access not possible and daemon restart fails
                     # force reset necessary
-                    self.unit.status = BlockedStatus("Unable to recover from an unreachable state")
+                    self.set_unit_status(BlockedStatus("Unable to recover from unreachable state"))
                     return False
             except SnapServiceOperationError as e:
-                self.unit.status = BlockedStatus(e.message)
+                self.set_unit_status(BlockedStatus(e.message))
                 return False
 
         return True
@@ -544,9 +566,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("skip status update while initialising")
             return
 
-        if not self.upgrade.idle:
-            # avoid changing status while in upgrade
-            logger.debug("skip status update while upgrading")
+        if self._refresh is None:
+            logger.debug("Refresh could be in progress")
+            return
+        if self._refresh and self._refresh.in_progress:
+            logger.debug("Refresh in progress")
             return
 
         if not (self.replication_offer.idle and self.replication_consumer.idle):
@@ -572,7 +596,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role
         self.unit_peer_data["member-state"] = state
-        self.unit.status = self.build_unit_workload_status()
+        self.set_unit_status(self.build_unit_workload_status())
 
         if not self._handle_non_online_instance_status(state):
             return
@@ -623,6 +647,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.get_secret("app", BACKUPS_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             self,
         )
+
+    @property
+    def refresh(self) -> charm_refresh.Machines | None:
+        """Return the Machines refresh instance."""
+        return self._refresh
 
     @property
     def _has_blocked_status(self) -> bool:
@@ -715,8 +744,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """
 
         def set_retry_status(_):
-            self.unit.status = MaintenanceStatus(
-                "Failed to install and configure MySQL. Retrying..."
+            self.set_unit_status(
+                MaintenanceStatus("Failed to install and configure MySQL. Retrying...")
             )
 
         try:
@@ -772,10 +801,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     raise MySQLDNotRestartedError("mysqld not yet shutdown")
 
         self._mysql.wait_until_mysql_connection()
-
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
-        if workload_version := self._mysql.get_mysql_version():
-            self.unit.set_workload_version(workload_version)
 
     def get_unit_address(self, unit: Unit, relation_name: str) -> str:
         """Get the IP address of a specific unit."""
@@ -783,6 +809,21 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return str(self.peers.data[unit].get(f"{relation_name}-address", ""))
         except KeyError:
             return ""
+
+    def set_unit_status(self, status: ops.StatusBase):
+        """Set unit status without overriding higher priority refresh status."""
+        if self._refresh is None:
+            self.unit.status = status
+            return
+
+        if self._refresh.unit_status_higher_priority:
+            return
+
+        refresh_status = self._refresh.unit_status_lower_priority()
+        if refresh_status and isinstance(status, ActiveStatus):
+            status = refresh_status
+
+        self.unit.status = status
 
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
@@ -801,8 +842,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             event.defer()
             return False
 
-        # Safeguard against starting while upgrading
-        if not self.upgrade.idle:
+        # Safeguard against starting while refreshing
+        if self._refresh is None:
+            logger.warning("Refresh could be in progress")
+        if self._refresh and self._refresh.in_progress:
+            logger.debug("Refresh in progress")
             event.defer()
             return False
 
@@ -844,7 +888,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
             self.unit.set_ports(3306, 33060)
-            self.unit.status = self.build_unit_workload_status()
+            self.set_unit_status(self.build_unit_workload_status())
         except (
             MySQLCreateClusterError,
             MySQLCreateClusterSetError,
@@ -889,7 +933,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             try:
                 cluster_primary = self._get_primary_from_online_peer()
                 if not cluster_primary:
-                    self.unit.status = WaitingStatus("waiting to get cluster primary from peers")
+                    self.set_unit_status(WaitingStatus("waiting to get cluster primary from peer"))
                     logger.info("waiting: unable to retrieve the cluster primary from online peer")
                     return
 
@@ -897,12 +941,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 lock_instance = cluster_primary
 
                 if self._mysql.get_cluster_node_count(from_instance) == GR_MAX_MEMBERS:
-                    self.unit.status = WaitingStatus(
-                        f"Cluster reached max size of {GR_MAX_MEMBERS} units. Standby."
-                    )
-                    logger.warning(
-                        f"Cluster reached max size of {GR_MAX_MEMBERS} units. This unit will stay as standby."
-                    )
+                    message = f"Cluster reached max size of {GR_MAX_MEMBERS} units. Standby."
+                    self.set_unit_status(WaitingStatus(message))
+                    logger.warning(message)
                     return
 
                 # If instance is part of a replica cluster, locks are managed by
@@ -916,11 +957,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 sleep(random.uniform(0, 1.5))  # noqa: S311
 
                 if self._mysql.are_locks_acquired(lock_instance, UNIT_ADD_LOCKNAME):
-                    self.unit.status = WaitingStatus("waiting to join the cluster.")
+                    self.set_unit_status(WaitingStatus("waiting to join the cluster."))
                     logger.info("waiting: cluster lock is held")
                     return
 
-                self.unit.status = MaintenanceStatus("joining the cluster")
+                self.set_unit_status(MaintenanceStatus("joining the cluster"))
 
                 # Stop GR for cases where the instance was previously part of the cluster
                 # harmless otherwise
@@ -938,12 +979,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info(f"Unable to add instance {instance_address} to cluster.")
                 return
             except MySQLLockAcquisitionError:
-                self.unit.status = WaitingStatus("waiting to join the cluster")
+                self.set_unit_status(WaitingStatus("waiting to join the cluster"))
                 logger.info("Waiting to join the cluster, failed to acquire lock.")
                 return
 
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
-        self.unit.status = self.build_unit_workload_status()
+        self.set_unit_status(self.build_unit_workload_status())
         logger.info(f"Instance {instance_label} added to cluster")
 
     def recover_unit_after_restart(self) -> None:
@@ -984,9 +1025,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.warning("Changing primary failed")
 
         logger.debug("Restarting mysqld")
-        self.unit.status = MaintenanceStatus("restarting MySQL")
+        self.set_unit_status(MaintenanceStatus("restarting MySQL"))
         self._mysql.restart_mysqld()
-        self.unit.status = MaintenanceStatus("recovering unit after restart")
+        self.set_unit_status(MaintenanceStatus("recovering unit after restart"))
         sleep(10)
         self.recover_unit_after_restart()
 
