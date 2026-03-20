@@ -823,21 +823,6 @@ class MySQLCharmBase(CharmBase, ABC):
         return len(active_cos_relations) > 0
 
     @property
-    def active_status_message(self) -> str:
-        """Active status message."""
-        if self.unit_peer_data.get("member-role") != InstanceRole.PRIMARY:
-            return ""
-
-        if self._mysql.is_cluster_replica() is False:
-            return "Primary"
-
-        status = self._mysql.get_replica_cluster_status()
-        if status == ClusterGlobalStatus.OK:
-            return "Standby"
-        else:
-            return f"Standby ({status})"
-
-    @property
     def removing_unit(self) -> bool:
         """Check if the unit is being removed."""
         return self.unit_peer_data.get("unit-status") == "removing"
