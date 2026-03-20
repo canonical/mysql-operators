@@ -6,9 +6,9 @@ import logging
 import jubilant_backports
 from jubilant_backports import Juju
 
-from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    execute_queries_on_unit,
     get_app_leader,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
@@ -35,7 +35,7 @@ def test_build_and_deploy(juju: Juju) -> None:
         channel="8.0/stable",
         revision=OLD_MYSQL_REVISION,
         config={"profile": "testing"},
-        num_units=1,
+        num_units=3,
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
@@ -92,10 +92,16 @@ def test_verify_predefined_roles_present_after_refresh(juju: Juju, charm):
         path=charm,
     )
 
-    logging.info("Wait for refresh to complete")
+    logging.info("Wait for upgrade to start")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        timeout=TIMEOUT,
+        ready=lambda status: jubilant_backports.any_maintenance(status, DATABASE_APP_NAME),
+        timeout=10 * MINUTE_SECS,
+    )
+
+    logging.info("Wait for upgrade to complete")
+    juju.wait(
+        ready=lambda status: jubilant_backports.all_active(status, DATABASE_APP_NAME),
+        timeout=20 * MINUTE_SECS,
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)

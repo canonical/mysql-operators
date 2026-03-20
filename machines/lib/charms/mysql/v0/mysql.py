@@ -1040,6 +1040,8 @@ class MySQLBase(ABC):
             role_reader=ROLE_READ,
             role_writer=ROLE_DML,
         )
+        # TODO: Remove when mysql-shell-client supports idempotent queries
+        self._auth_query_builder.ROLE_CREATION_QUERY = "CREATE ROLE IF NOT EXISTS {rolename}"  # type: ignore
         self._lock_query_builder = CharmLockingQueryBuilder(
             table_schema="mysql",
             table_name="juju_units_operations",
@@ -1087,8 +1089,8 @@ class MySQLBase(ABC):
         """Build a socket executor for the instance operations."""
         return self.executor_class(
             conn_details=ConnectionDetails(
-                username=self.root_user,
-                password=self.root_password,
+                username=self.server_config_user,
+                password=self.server_config_password,
                 socket=self.socket_path,
             ),
             shell_path=self.mysqlsh_path,
@@ -1244,7 +1246,7 @@ class MySQLBase(ABC):
         except ExecutionError as e:
             raise MySQLConfigureMySQLRolesError() from e
 
-        executor = self._build_instance_tcp_executor(self.instance_address)
+        executor = self._build_instance_sock_executor()
 
         for role in (LEGACY_ROLE_ROUTER, MODERN_ROLE_ROUTER):
             if role in router_roles:
@@ -1263,8 +1265,11 @@ class MySQLBase(ABC):
             ])
 
             try:
-                logger.debug(f"Configuring Router role for {self.instance_address}")
-                executor.execute_sql(configure_role_commands)
+                with (
+                    self._read_only_disabled()
+                ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                    logger.debug(f"Configuring Router role for {self.instance_address}")
+                    executor.execute_sql(configure_role_commands)
             except ExecutionError as e:
                 logger.error(f"Failed to configure Router role for {self.instance_address}")
                 raise MySQLConfigureMySQLRolesError() from e
@@ -1291,11 +1296,14 @@ class MySQLBase(ABC):
 
         logger.debug("Missing MySQL roles")
         query = self._auth_query_builder.build_instance_auth_roles_query()
-        executor = self._build_instance_tcp_executor(self.instance_address)
+        executor = self._build_instance_sock_executor()
 
         try:
-            logger.debug(f"Configuring MySQL roles for {self.instance_address}")
-            executor.execute_sql(query)
+            with (
+                self._read_only_disabled()
+            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                logger.debug(f"Configuring MySQL roles for {self.instance_address}")
+                executor.execute_sql(query)
         except ExecutionError as e:
             logger.error(f"Failed to configure roles for {self.instance_address}")
             raise MySQLConfigureMySQLRolesError() from e
@@ -1305,15 +1313,13 @@ class MySQLBase(ABC):
         configure_users_commands = [
             f"UPDATE mysql.user SET authentication_string=null WHERE User='{self.root_user}' and Host='localhost'",  # noqa: S608
             f"ALTER USER '{self.root_user}'@'localhost' IDENTIFIED BY '{self.root_password}'",
-            f"CREATE USER '{self.server_config_user}'@'%' IDENTIFIED BY '{self.server_config_password}'",
-            f"CREATE USER '{self.monitoring_user}'@'%' IDENTIFIED BY '{self.monitoring_password}' WITH MAX_USER_CONNECTIONS 3",
-            f"CREATE USER '{self.backups_user}'@'%' IDENTIFIED BY '{self.backups_password}'",
+            f"CREATE USER IF NOT EXISTS '{self.monitoring_user}'@'%' IDENTIFIED BY '{self.monitoring_password}' WITH MAX_USER_CONNECTIONS 3",
+            f"CREATE USER IF NOT EXISTS '{self.backups_user}'@'%' IDENTIFIED BY '{self.backups_password}'",
         ]
 
         # SYSTEM_USER and SUPER privileges to revoke from the root users
         # Reference: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_super
         configure_privs_commands = [
-            f"GRANT ALL ON *.* TO '{self.server_config_user}'@'%' WITH GRANT OPTION",
             f"GRANT charmed_stats TO '{self.monitoring_user}'@'%'",
             f"GRANT charmed_backup TO '{self.backups_user}'@'%'",
             f"REVOKE BINLOG_ADMIN, CONNECTION_ADMIN, ENCRYPTION_KEY_ADMIN, GROUP_REPLICATION_ADMIN, REPLICATION_SLAVE_ADMIN, SET_USER_ID, SUPER, SYSTEM_USER, SYSTEM_VARIABLES_ADMIN, VERSION_TOKEN_ADMIN ON *.* FROM '{self.root_user}'@'localhost'",
@@ -1328,8 +1334,11 @@ class MySQLBase(ABC):
         executor = self._build_instance_sock_executor()
 
         try:
-            logger.debug(f"Configuring MySQL users for {self.instance_address}")
-            executor.execute_sql(configure_commands)
+            with (
+                self._read_only_disabled()
+            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                logger.debug(f"Configuring MySQL users for {self.instance_address}")
+                executor.execute_sql(configure_commands)
         except ExecutionError as e:
             logger.error(f"Failed to configure users for: {self.instance_address}")
             raise MySQLConfigureMySQLUsersError from e

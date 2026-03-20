@@ -235,6 +235,7 @@ class MySQLVMUpgrade(DataUpgrade):
             logger.info("Reconciling predefined roles exist")
             self.charm._mysql.configure_mysql_router_roles()
             self.charm._mysql.configure_mysql_system_roles()
+            self.charm._mysql.configure_mysql_system_users()
 
             logger.debug("Upgraded unit is healthy. Set upgrade state to `completed`")
             self.set_unit_completed()
