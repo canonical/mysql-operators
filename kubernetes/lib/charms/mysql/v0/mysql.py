@@ -1264,9 +1264,8 @@ class MySQLBase(ABC):
             ])
 
             try:
-                with (
-                    self._read_only_disabled()
-                ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                with self._read_only_disabled():
                     logger.debug(f"Configuring Router role for {self.instance_address}")
                     executor.execute_sql(configure_role_commands)
             except ExecutionError as e:
@@ -1298,9 +1297,8 @@ class MySQLBase(ABC):
         executor = self._build_instance_sock_executor()
 
         try:
-            with (
-                self._read_only_disabled()
-            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            with self._read_only_disabled():
                 logger.debug(f"Configuring MySQL roles for {self.instance_address}")
                 executor.execute_sql(query)
         except ExecutionError as e:
@@ -1333,9 +1331,8 @@ class MySQLBase(ABC):
         executor = self._build_instance_sock_executor()
 
         try:
-            with (
-                self._read_only_disabled()
-            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            with self._read_only_disabled():
                 logger.debug(f"Configuring MySQL users for {self.instance_address}")
                 executor.execute_sql(configure_commands)
         except ExecutionError as e:
