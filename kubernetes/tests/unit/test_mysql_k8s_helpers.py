@@ -207,7 +207,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 (
                     "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
                     "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
@@ -220,7 +220,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /create-operator-user.sql",
+                "[mysqld]\ninit_file = /home/mysql/create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -230,7 +230,7 @@ class TestMySQL(unittest.TestCase):
         self.mysql.container.restart.assert_called_once_with("mysqld")
         _wait_until_mysql_connection.assert_called_once_with(check_port=False)
         self.mysql.container.remove_path.assert_has_calls([
-            call("/create-operator-user.sql"),
+            call("/home/mysql/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])
 
@@ -251,7 +251,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 (
                     "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
                     "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
@@ -263,7 +263,9 @@ class TestMySQL(unittest.TestCase):
                 group="mysql",
             ),
         ])
-        self.mysql.container.remove_path.assert_called_once_with("/create-operator-user.sql")
+        self.mysql.container.remove_path.assert_called_once_with(
+            "/home/mysql/create-operator-user.sql"
+        )
         _wait_until_mysql_connection.assert_not_called()
 
         _container.push.side_effect = [None, None]
@@ -279,7 +281,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 (
                     "CREATE USER 'charmed-operator'@'%' IDENTIFIED BY 'charmed-operatorpassword';\n"
                     "GRANT ALL ON *.* TO 'charmed-operator'@'%' WITH GRANT OPTION;\n"
@@ -292,7 +294,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /create-operator-user.sql",
+                "[mysqld]\ninit_file = /home/mysql/create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -301,6 +303,6 @@ class TestMySQL(unittest.TestCase):
         ])
         self.mysql.container.restart.assert_called_once_with("mysqld")
         self.mysql.container.remove_path.assert_has_calls([
-            call("/create-operator-user.sql"),
+            call("/home/mysql/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])

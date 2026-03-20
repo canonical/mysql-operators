@@ -207,7 +207,7 @@ class MySQL(MySQLBase):
             "FLUSH PRIVILEGES;",
         ]
 
-        file_path = "/create-operator-user.sql"
+        file_path = f"/home/{MYSQL_SYSTEM_USER}/create-operator-user.sql"
 
         self.container.push(
             file_path,
