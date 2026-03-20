@@ -12,8 +12,18 @@ on:
       - '.github/workflows/*.yaml'
 
 jobs:
+  tag:
+    name: Create charm refresh tag
+    uses: canonical/data-platform-workflows/.github/workflows/tag_charm_edge.yaml@v42.0.1
+    with:
+      track: '8.4'
+    permissions:
+      contents: write  # Needed to create git tag
+
   build:
     name: Build charm | ${{ matrix.path }}
+    needs:
+      - tag
     strategy:
       fail-fast: false
       matrix:
@@ -60,6 +70,7 @@ jobs:
   release:
     name: Release charm | ${{ matrix.path }}
     needs:
+      - tag
       - build
       - integration-test
       # - release-test
@@ -71,7 +82,7 @@ jobs:
           - machines
     uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v42.0.1
     with:
-      track: '8.4'
+      track: ${{ needs.tag.outputs.track }}
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets:
