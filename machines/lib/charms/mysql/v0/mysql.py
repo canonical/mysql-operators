@@ -66,14 +66,13 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
     Literal,
-    Type,
     get_args,
 )
 
@@ -1005,7 +1004,7 @@ class MySQLBase(ABC):
         backups_user: str,
         backups_password: str,
         mysqlsh_path: str,
-        executor_class: Type[BaseExecutor],
+        executor_class: type[BaseExecutor],
     ):
         """Initialize the MySQL class."""
         self.instance_address = instance_address

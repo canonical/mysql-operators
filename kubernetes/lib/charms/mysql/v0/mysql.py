@@ -66,14 +66,13 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
     Literal,
-    Type,
     get_args,
 )
 
@@ -1005,7 +1004,7 @@ class MySQLBase(ABC):
         backups_user: str,
         backups_password: str,
         mysqlsh_path: str,
-        executor_class: Type[BaseExecutor],
+        executor_class: type[BaseExecutor],
     ):
         """Initialize the MySQL class."""
         self.instance_address = instance_address
@@ -1040,7 +1039,7 @@ class MySQLBase(ABC):
             role_reader=ROLE_READ,
             role_writer=ROLE_DML,
         )
-        # HACK: I will need idempotent queries
+        # TODO: Remove when mysql-shell-client supports idempotent queries
         self._auth_query_builder.ROLE_CREATION_QUERY = "CREATE ROLE IF NOT EXISTS {rolename}"  # type: ignore
         self._lock_query_builder = CharmLockingQueryBuilder(
             table_schema="mysql",
@@ -1265,7 +1264,9 @@ class MySQLBase(ABC):
             ])
 
             try:
-                with self._read_only_disabled():  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+                with (
+                    self._read_only_disabled()
+                ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
                     logger.debug(f"Configuring Router role for {self.instance_address}")
                     executor.execute_sql(configure_role_commands)
             except ExecutionError as e:
@@ -1293,11 +1294,13 @@ class MySQLBase(ABC):
             return
 
         logger.debug("Missing MySQL roles")
-        query = self._auth_query_builder.build_instance_auth_roles_query()  # HACK: See above
+        query = self._auth_query_builder.build_instance_auth_roles_query()
         executor = self._build_instance_sock_executor()
 
         try:
-            with self._read_only_disabled():  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            with (
+                self._read_only_disabled()
+            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
                 logger.debug(f"Configuring MySQL roles for {self.instance_address}")
                 executor.execute_sql(query)
         except ExecutionError as e:
@@ -1330,7 +1333,9 @@ class MySQLBase(ABC):
         executor = self._build_instance_sock_executor()
 
         try:
-            with self._read_only_disabled():  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
+            with (
+                self._read_only_disabled()
+            ):  # Non-primary cluster members will have SUPER_READ_ONLY mode enabled
                 logger.debug(f"Configuring MySQL users for {self.instance_address}")
                 executor.execute_sql(configure_commands)
         except ExecutionError as e:
