@@ -5,6 +5,7 @@ import logging
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
+import uuid
 
 import boto3
 import jubilant
@@ -31,7 +32,8 @@ from ..helpers_ha import (
 logger = logging.getLogger(__name__)
 
 S3_INTEGRATOR = "s3-integrator"
-S3_INTEGRATOR_CHANNEL = "1/stable"
+S3_INTEGRATOR_CHANNEL = "2/edge"
+S3_INTEGRATOR_BASE = "ubuntu@24.04"
 MYSQL_APPLICATION_NAME = "mysql-k8s"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
@@ -51,6 +53,14 @@ def local_tmp_folder(name: str = "tmp"):
     tmp_folder.mkdir()
     yield tmp_folder
     shutil.rmtree(tmp_folder)
+
+
+def prepare_s3_credentials_secret(juju: Juju, credentials: dict[str, str]) -> str:
+    """Prepare the s3 credentials secret and return the secret URI."""
+    secret_name = str(uuid.uuid4())[:8]
+    secret_uri = juju.add_secret(secret_name, content=credentials)
+    juju.grant_secret(secret_uri, S3_INTEGRATOR)
+    return secret_uri
 
 
 def clean_backups_from_buckets(cloud_configs, cloud_credentials) -> None:
@@ -82,7 +92,7 @@ def build_and_deploy_operations(
         S3_INTEGRATOR,
         S3_INTEGRATOR,
         channel=S3_INTEGRATOR_CHANNEL,
-        base="ubuntu@22.04",
+        base=S3_INTEGRATOR_BASE,
     )
 
     logger.info("Deploying mysql")
@@ -118,12 +128,8 @@ def build_and_deploy_operations(
         timeout=TIMEOUT,
     )
     juju.config(S3_INTEGRATOR, cloud_configs)
-    s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
-    juju.run(
-        unit=s3_unit_name,
-        action="sync-s3-credentials",
-        params=cloud_credentials,
-    )
+    secret_uri = prepare_s3_credentials_secret(juju, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
