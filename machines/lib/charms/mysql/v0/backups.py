@@ -51,11 +51,6 @@ import pathlib
 import re
 import typing
 
-from charms.data_platform_libs.v0.s3 import (
-    CredentialsChangedEvent,
-    CredentialsGoneEvent,
-    S3Requirer,
-)
 from charms.mysql.v0.mysql import (
     MySQLConfigureInstanceError,
     MySQLCreateClusterError,
@@ -94,6 +89,11 @@ from constants import (
 )
 from mysql_shell.models.cluster import ClusterStatus
 from mysql_shell.models.instance import InstanceRole, InstanceState
+from object_storage import (
+    S3Requirer,
+    StorageConnectionInfoChangedEvent,
+    StorageConnectionInfoGoneEvent,
+)
 from ops.charm import ActionEvent
 from ops.framework import Object
 from ops.jujuversion import JujuVersion
@@ -133,11 +133,11 @@ class MySQLBackups(Object):
         self.framework.observe(self.charm.on.list_backups_action, self._on_list_backups)
         self.framework.observe(self.charm.on.restore_action, self._on_restore)
         self.framework.observe(
-            self.s3_integrator.on.credentials_changed, self._on_s3_credentials_changed
+            self.s3_integrator.on.storage_connection_info_changed, self._on_s3_credentials_changed
         )
         self.framework.observe(self.charm.on.leader_elected, self._on_s3_credentials_changed)
         self.framework.observe(
-            self.s3_integrator.on.credentials_gone, self._on_s3_credentials_gone
+            self.s3_integrator.on.storage_connection_info_gone, self._on_s3_credentials_gone
         )
 
     # ------------------ Helpers ------------------
@@ -151,7 +151,7 @@ class MySQLBackups(Object):
 
         Returns: tuple of (s3_parameters, missing_required_parameters)
         """
-        s3_parameters = self.s3_integrator.get_s3_connection_info()
+        s3_parameters = self.s3_integrator.get_storage_connection_info()
 
         required_parameters = [
             "bucket",
@@ -780,7 +780,7 @@ class MySQLBackups(Object):
 
         return True, ""
 
-    def _on_s3_credentials_changed(self, event: CredentialsChangedEvent) -> None:
+    def _on_s3_credentials_changed(self, event: StorageConnectionInfoChangedEvent) -> None:
         if not self.charm.unit.is_leader():
             logger.debug("Early exit on _on_s3_credentials_changed: unit is not a leader")
             return
@@ -836,7 +836,7 @@ class MySQLBackups(Object):
         ):
             logger.error("Failed to restart binlogs collecting after S3 relation update")
 
-    def _on_s3_credentials_gone(self, event: CredentialsGoneEvent) -> None:
+    def _on_s3_credentials_gone(self, event: StorageConnectionInfoGoneEvent) -> None:
         if not self.charm.unit.is_leader():
             logger.debug("Early exit on _on_s3_credentials_gone: unit is not a leader")
             return

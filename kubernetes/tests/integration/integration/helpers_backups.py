@@ -3,9 +3,9 @@
 
 import logging
 import shutil
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
-import uuid
 
 import boto3
 import jubilant

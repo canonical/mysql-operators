@@ -4,8 +4,8 @@
 
 import logging
 import socket
-from pathlib import Path
 import uuid
+from pathlib import Path
 
 import boto3
 import jubilant

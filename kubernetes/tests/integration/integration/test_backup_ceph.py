@@ -11,9 +11,9 @@ import socket
 import subprocess
 import tempfile
 import time
+import uuid
 from collections.abc import Iterable
 from pathlib import Path
-import uuid
 
 import boto3
 import botocore.exceptions
