@@ -49,7 +49,6 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
     juju.wait(
         jubilant_backports.all_active,
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
 

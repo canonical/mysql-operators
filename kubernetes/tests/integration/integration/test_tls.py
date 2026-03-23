@@ -66,7 +66,6 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME),
         timeout=TIMEOUT,
-        delay=2,
     )
 
 
@@ -112,7 +111,6 @@ def test_enable_tls(juju: Juju) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, tls_app_name),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     # Relate with TLS charm

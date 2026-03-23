@@ -60,7 +60,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -92,7 +91,6 @@ async def test_graceful_full_cluster_crash(juju: Juju, continuous_writes) -> Non
                 wait_for_unit_status(MYSQL_APP_NAME, f"{MYSQL_APP_NAME}/2", "maintenance")(status),
             )),
             timeout=20 * MINUTE_SECS,
-            delay=2,
         )
         logging.info("Waiting units to be back online")
         juju.wait(
@@ -102,7 +100,6 @@ async def test_graceful_full_cluster_crash(juju: Juju, continuous_writes) -> Non
                 wait_for_unit_status(MYSQL_APP_NAME, f"{MYSQL_APP_NAME}/2", "active")(status),
             )),
             timeout=20 * MINUTE_SECS,
-            delay=2,
         )
 
     logging.info("Check that all units are online")

@@ -103,7 +103,6 @@ def deploy_stable(juju: Juju, revision: int) -> None:
         ),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
 
@@ -131,14 +130,12 @@ async def upgrade_from_stable(juju: Juju, charm: str) -> None:
     juju.wait(
         ready=lambda status: jubilant_backports.any_maintenance(status, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
         ready=lambda status: jubilant_backports.all_active(status, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
-        delay=2,
     )
 
     logging.info("Ensure continuous writes are incrementing")

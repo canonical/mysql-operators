@@ -44,5 +44,4 @@ def test_deploy_bundle_with_cos_integrations(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, "mysql-k8s"),
         timeout=TIMEOUT,
-        delay=2,
     )

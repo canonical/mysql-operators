@@ -267,8 +267,7 @@ class MySQLProvider(Object):
             # https://bugs.launchpad.net/juju/+bug/1979811
             return
 
-        if len(self.model.relations[DB_RELATION_NAME]) == 1:
-            # remove kubernetes service when last relation is removed
+        if len(self.model.relations[DB_RELATION_NAME]) == 0:
             self.charm.k8s_helpers.delete_endpoint_services(["primary", "replicas"])
 
         relation_id = event.relation.id

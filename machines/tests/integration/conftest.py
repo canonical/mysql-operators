@@ -13,6 +13,18 @@ from . import architecture
 logging.getLogger("jubilant.wait").setLevel(logging.WARNING)
 
 
+def pytest_configure(config):
+    """Configure pytest logging format with timestamps."""
+    config.option.log_cli_format = (
+        "%(asctime)s %(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s"
+    )
+    config.option.log_cli_date_format = "%b %d %H:%M:%S"
+    config.option.log_format = (
+        "%(asctime)s %(levelname)-8s %(name)s:%(filename)s:%(lineno)d %(message)s"
+    )
+    config.option.log_date_format = "%b %d %H:%M:%S"
+
+
 @pytest.fixture(scope="session")
 def charm():
     # Return str instead of pathlib.Path since python-libjuju's model.deploy(), juju deploy, and

@@ -99,7 +99,6 @@ def test_deploy_and_relate_osm_bundle(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME, "mongodb"),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     logger.info("Waiting for all apps to have units")
@@ -111,7 +110,6 @@ def test_deploy_and_relate_osm_bundle(juju: Juju, charm) -> None:
             and len(status.apps["mongodb"].units) >= 1
         ),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     logger.info("Relate kafka and zookeeper")
@@ -120,7 +118,6 @@ def test_deploy_and_relate_osm_bundle(juju: Juju, charm) -> None:
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, "zookeeper"),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     logger.info("Relate keystone and mysql")
@@ -131,7 +128,6 @@ def test_deploy_and_relate_osm_bundle(juju: Juju, charm) -> None:
         ready=wait_for_apps_status(jubilant_backports.all_active, APP_NAME, "osm-keystone"),
         error=wait_for_apps_status(jubilant_backports.any_error, APP_NAME, "osm-keystone"),
         timeout=TIMEOUT,
-        delay=2,
     )
 
     logger.info("Relate osm-pol and mongo")

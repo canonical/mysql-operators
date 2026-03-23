@@ -60,12 +60,10 @@ def test_relation_creation_eager(juju: Juju):
         ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=15 * MINUTE_SECS,
-        delay=2,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         error=jubilant_backports.any_blocked,
         timeout=15 * MINUTE_SECS,
-        delay=2,
     )

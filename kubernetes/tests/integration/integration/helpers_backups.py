@@ -91,7 +91,6 @@ def build_and_deploy_operations(
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APPLICATION_NAME),
         timeout=15 * MINUTE_SECS,
-        delay=2,
     )
 
     logger.info("Rotating mysql credentials")
@@ -109,7 +108,6 @@ def build_and_deploy_operations(
             ),
         )),
         timeout=TIMEOUT,
-        delay=2,
     )
     juju.config(S3_INTEGRATOR, cloud_configs)
     s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
@@ -123,7 +121,6 @@ def build_and_deploy_operations(
             jubilant_backports.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR
         ),
         timeout=TIMEOUT,
-        delay=2,
     )
     juju.integrate(MYSQL_APPLICATION_NAME, S3_INTEGRATOR)
     juju.wait(
@@ -131,7 +128,6 @@ def build_and_deploy_operations(
             jubilant_backports.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR
         ),
         timeout=TIMEOUT,
-        delay=2,
     )
 
 
@@ -227,7 +223,6 @@ def pitr_operations(
             jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
-        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_not_exist=[td1, td2]), (
         "test data should not exist"
@@ -244,7 +239,6 @@ def pitr_operations(
             jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
-        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"
@@ -261,7 +255,6 @@ def pitr_operations(
             jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
-        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1], should_not_exist=[td2]), (
         "only first test data should exist"
@@ -278,7 +271,6 @@ def pitr_operations(
             jubilant_backports.all_agents_idle(status, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         )),
         timeout=TIMEOUT,
-        delay=2,
     )
     assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
         "both test data should exist"
