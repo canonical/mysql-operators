@@ -268,11 +268,13 @@ def scale_app_units(juju: Juju, app_name: str, num_units: int) -> None:
         ready=lambda status: len(status.apps[app_name].units) == num_units,
         timeout=20 * MINUTE_SECS,
     )
-    juju.wait(
-        ready=wait_for_apps_status(jubilant.all_active, app_name),
-        error=jubilant.any_blocked,
-        timeout=20 * MINUTE_SECS,
-    )
+
+    if num_units > 0:
+        juju.wait(
+            ready=wait_for_apps_status(jubilant.all_active, app_name),
+            error=jubilant.any_blocked,
+            timeout=20 * MINUTE_SECS,
+        )
 
 
 def get_model_debug_logs(juju: Juju, log_level: str, log_lines: int = 100) -> str:

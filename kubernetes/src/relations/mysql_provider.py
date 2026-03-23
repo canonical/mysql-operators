@@ -137,7 +137,7 @@ class MySQLProvider(Object):
             MySQLGetMySQLVersionError,
         ) as e:
             logger.exception("Failed to set up database relation", exc_info=e)
-            self.charm.unit.status = BlockedStatus("Failed to create scoped user")
+            self.charm.set_unit_status(BlockedStatus("Failed to create scoped user"))
             return
 
         try:
@@ -154,8 +154,8 @@ class MySQLProvider(Object):
             raise
         except KubernetesClientError:
             logger.exception("Failed to create k8s services for endpoints")
-            self.charm.unit.status = BlockedStatus(
-                "Permission to create k8s services denied. `juju trust`"
+            self.charm.set_unit_status(
+                BlockedStatus("Permission to create k8s services denied. `juju trust`")
             )
             event.defer()
             return
@@ -168,7 +168,7 @@ class MySQLProvider(Object):
         self.database.set_database(relation_id, db_name)
 
         logger.info(f"Created user for app {app_name}")
-        self.charm.unit.status = ActiveStatus()
+        self.charm.set_unit_status(ActiveStatus())
 
     def _on_mysql_pebble_ready(self, _: PebbleReadyEvent) -> None:
         """Handle the mysql pebble ready event.
@@ -230,10 +230,11 @@ class MySQLProvider(Object):
         if self.charm._is_cluster_blocked():
             return
 
-        if self.charm.upgrade.state == "failed":
-            # skip updating endpoints if upgrade failed
-            # unit pod still will be labeled from another unit
-            logger.debug("Skip labelling pods on failed upgrade")
+        if self.charm.refresh is None:
+            logger.debug("Refresh could be in progress")
+            return
+        if self.charm.refresh and self.charm.refresh.in_progress:
+            logger.debug("Refresh in progress")
             return
 
         container = self.charm.unit.get_container(CONTAINER_NAME)

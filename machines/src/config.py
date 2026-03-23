@@ -60,6 +60,7 @@ class CharmConfig(BaseConfigModel):
     plugin_audit_strategy: str
     logs_audit_policy: str
     logs_retention_period: str
+    pause_after_unit_refresh: str
 
     @validator("profile")
     @classmethod
@@ -149,5 +150,15 @@ class CharmConfig(BaseConfigModel):
         """Check logs retention period."""
         if (value.isalpha() and value != "auto") or (value.isdigit() and int(value) < 3):
             raise ValueError("logs_retention_period must be >= 3 or `auto`")
+
+        return value
+
+    @validator("pause_after_unit_refresh")
+    @classmethod
+    def pause_after_unit_refresh_validator(cls, value: str) -> str | None:
+        """Check values for when to pause after unit refresh."""
+        valid_values = ["all", "first", "none"]
+        if value not in valid_values:
+            raise ValueError(f"pause_after_unit_refresh not one of {', '.join(valid_values)}")
 
         return value
