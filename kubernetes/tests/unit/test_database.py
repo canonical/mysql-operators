@@ -55,6 +55,7 @@ class TestDatabase(unittest.TestCase):
     def tearDown(self) -> None:
         self.patcher.stop()
 
+    @patch("charm.MySQLOperatorCharm._on_mysql_pebble_ready")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
     @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
@@ -81,6 +82,7 @@ class TestDatabase(unittest.TestCase):
         _,
         _cluster_metadata_exists,
         _get_unit_address,
+        _on_mysql_pebble_ready,
     ):
         mock_get_k8s_fqdn.side_effect = ["mysql-k8s-primary", "mysql-k8s-replicas"]
 
