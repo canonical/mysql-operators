@@ -54,6 +54,7 @@ The module also provides a set of custom exceptions, used to trigger specific
 error handling on the subclass and in the charm code.
 """
 
+import base64
 import configparser
 import hashlib
 import io
@@ -2467,6 +2468,30 @@ class MySQLBase(ABC):
         """Platform dependent method to get the available memory for mysql-server."""
         raise NotImplementedError
 
+    def create_sa_pem_file(
+        self,
+        ca_chain: list[str],
+        tmp_base_directory: str,
+        user: str | None = None,
+        group: str | None = None,
+    ) -> str:
+        """Create a CA PEM file from the given CA chain inside the workload and return the file location."""
+        make_ca_dir_command = f"mktemp --directory {tmp_base_directory}/s3_ca_XXXX".split()
+        tmp_dir_ca, _ = self._execute_commands(make_ca_dir_command, user=user, group=group)
+        ca_file_location = f"{tmp_dir_ca}/s3-ca.pem"
+        if ca_chain:
+            ca_file_content_b64 = base64.b64encode("\n".join(ca_chain).encode()).decode()
+            write_ca_file_content_command = (
+                f"echo {ca_file_content_b64} | base64 -d > {ca_file_location}".split()
+            )
+            _, _ = self._execute_commands(
+                write_ca_file_content_command,
+                bash=True,
+                user=user,
+                group=group,
+            )
+        return ca_file_location
+
     def execute_backup_commands(
         self,
         s3_path: str,
@@ -2483,10 +2508,17 @@ class MySQLBase(ABC):
         """Executes commands to create a backup with the given args."""
         nproc_command = ["nproc"]
         make_temp_dir_command = f"mktemp --directory {tmp_base_directory}/xtra_backup_XXXX".split()
-
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
-            tmp_dir, _ = self._execute_commands(make_temp_dir_command, user=user, group=group)
+            tmp_dir, _ = self._execute_commands(
+                make_temp_dir_command, user=user, group=group
+            )
+            if ca_chain:
+                ca_file_location = self.create_sa_pem_file(
+                    ca_chain, tmp_base_directory, user=user, group=group
+                )
         except MySQLExecError as e:
             logger.error("Failed to execute commands prior to running backup")
             raise MySQLExecuteBackupCommandsError from e
@@ -2523,9 +2555,9 @@ class MySQLBase(ABC):
             f"--s3-endpoint={s3_parameters['endpoint']}",
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
-            f"{s3_path}",
         ]
-
+        xtrabackup_commands.append(f"--cacert={ca_file_location}") if ca_chain and ca_file_location else None
+        xtrabackup_commands.append(f"{s3_path}")
         try:
             logger.debug(
                 f"Command to create backup: {' '.join(xtrabackup_commands).replace(self.backups_password, 'xxxxxxxxxxxx')}"
@@ -2593,19 +2625,22 @@ class MySQLBase(ABC):
         make_temp_dir_command = (
             f"mktemp --directory {temp_restore_directory}/#mysql_sst_XXXX".split()
         )
-
+        ca_chain = s3_parameters.get("tls-ca-chain")
+        ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
-
             tmp_dir, _ = self._execute_commands(
                 make_temp_dir_command,
                 user=user,
                 group=group,
             )
+            if ca_chain:
+                ca_file_location = self.create_sa_pem_file(
+                    ca_chain, temp_restore_directory, user=user, group=group
+                )
         except MySQLExecError as e:
             logger.error("Failed to execute commands prior to running xbcloud get")
             raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
-
         retrieve_backup_command = [
             f"{xbcloud_location} get",
             "--curl-retriable-errors=7",
@@ -2617,13 +2652,15 @@ class MySQLBase(ABC):
             f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"{s3_parameters['path']}/{backup_id}",
+        ]
+        retrieve_backup_command.append(f"--cacert={ca_file_location}") if ca_chain and ca_file_location else None
+        retrieve_backup_command += [
             f"| {xbstream_location}",
             "--decompress",
             "-x",
             f"-C {tmp_dir}",
             f"--parallel={nproc}",
         ]
-
         try:
             logger.debug(f"Command to retrieve backup: {' '.join(retrieve_backup_command)}")
 

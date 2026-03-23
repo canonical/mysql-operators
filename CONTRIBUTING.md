@@ -19,13 +19,13 @@ this operator.
   the `8.4/edge` branch. This also avoids merge commits and creates a linear Git commit history.
 
 ## Develop
-Install `yq`, `tox`, `poetry`, and `charmcraftcache`
+Install `yq`, `tox`, `poetry`, and `charmcraftlocal`
 
 ```shell
 pipx install yq
 pipx install tox
 pipx install poetry
-pipx install charmcraftcache
+pipx install charmcraftlocal
 ```
 
 You can create an environment for development:
@@ -54,8 +54,8 @@ You can create an environment for development:
 Build the charm in this git repository using:
 
 ```shell
-(cd kubernetes && charmcraftcache pack)
-(cd machines && charmcraftcache pack)
+(cd kubernetes && charmcraftlocal pack)
+(cd machines && charmcraftlocal pack)
 ```
 
 ### Deploy
