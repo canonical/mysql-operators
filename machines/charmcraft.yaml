@@ -19,8 +19,6 @@ parts:
   # https://github.com/canonical/craft-parts/pull/901
   poetry-deps:
     plugin: nil
-    build-packages:
-      - curl
     override-build: |
       python3 -m pip install --user --break-system-packages --upgrade pip==25.3  # renovate: charmcraft-pip-latest
       python3 -m pip install --user --break-system-packages poetry==2.3.2        # renovate: charmcraft-poetry-latest
@@ -48,6 +46,8 @@ parts:
     override-build: |
       apt-get install rustup -y
 
+      # rpds-py (Python package) >=0.19.0 requires rustc >=1.76, which is not available in the
+      # Ubuntu 24.04 archive. Install rustc and cargo using rustup instead of the Ubuntu archive
       rustup set profile minimal
       rustup default 1.94.0  # renovate: charmcraft-rust-latest
 
