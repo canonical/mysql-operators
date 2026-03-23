@@ -53,7 +53,7 @@ class TestMySQLBackups(unittest.TestCase):
             "bucket": "test_bucket",
             "access-key": "test-access-key",
             "secret-key": "test-secret-key",
-            "tls-ca-chain": ["Zm9vYmFy"],  # "foobar" in base64
+            "tls-ca-chain": ["foobar"],
         }
         _get_s3_connection_info.return_value = return_value
 
@@ -64,7 +64,6 @@ class TestMySQLBackups(unittest.TestCase):
                 "endpoint": "https://s3.amazonaws.com",
                 "region": None,
                 "path": "",
-                "tls-ca-chain": "foobar",
                 **return_value,
             },
         )
