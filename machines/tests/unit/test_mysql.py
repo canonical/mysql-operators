@@ -192,8 +192,6 @@ class TestMySQLBase(unittest.TestCase):
             role_reader=ROLE_READ,
             role_writer=ROLE_DML,
         )
-        # TODO: Remove when mysql-shell-client supports idempotent queries
-        builder.ROLE_CREATION_QUERY = "CREATE ROLE IF NOT EXISTS {rolename}"  # type: ignore
         create_query = builder.build_instance_auth_roles_query()
 
         self.mysql.configure_mysql_system_roles()

@@ -1039,8 +1039,6 @@ class MySQLBase(ABC):
             role_reader=ROLE_READ,
             role_writer=ROLE_DML,
         )
-        # TODO: Remove when mysql-shell-client supports idempotent queries
-        self._auth_query_builder.ROLE_CREATION_QUERY = "CREATE ROLE IF NOT EXISTS {rolename}"  # type: ignore
         self._lock_query_builder = CharmLockingQueryBuilder(
             table_schema="mysql",
             table_name="juju_units_operations",
