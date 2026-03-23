@@ -2,6 +2,9 @@
 # See LICENSE file for licensing details.
 
 import logging
+import shutil
+from contextlib import contextmanager
+from pathlib import Path
 
 import boto3
 import jubilant
@@ -38,6 +41,16 @@ TABLE_NAME = "backup-table"
 MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
     "Move restored cluster to another S3 repository"
 )
+
+
+@contextmanager
+def local_tmp_folder(name: str = "tmp"):
+    """Return a temporary folder path and clean it up after use."""
+    if (tmp_folder := Path.cwd() / name).exists():
+        shutil.rmtree(tmp_folder)
+    tmp_folder.mkdir()
+    yield tmp_folder
+    shutil.rmtree(tmp_folder)
 
 
 def clean_backups_from_buckets(cloud_configs, cloud_credentials) -> None:
