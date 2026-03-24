@@ -9,6 +9,7 @@ from time import sleep
 import jubilant_backports
 from jubilant_backports import Juju, TaskError
 
+from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -27,7 +28,11 @@ DATABASE_APP_NAME = "mysql-k8s"
 MYSQL_ROUTER_APP_NAME = "mysql-router-k8s"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
 
-OLD_MYSQL_REVISION = 255
+OLD_MYSQL_REVISIONS = {
+    "amd64": 255,
+    "arm64": 254,
+}
+OLD_MYSQL_REVISION = OLD_MYSQL_REVISIONS[architecture.architecture]
 
 TIMEOUT = 10 * MINUTE_SECS
 
