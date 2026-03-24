@@ -7,6 +7,7 @@ from time import sleep
 import jubilant_backports
 from jubilant_backports import Juju
 
+from ... import architecture
 from ...helpers_ha import (
     MINUTE_SECS,
     execute_queries_on_unit,
@@ -21,7 +22,11 @@ DATABASE_APP_NAME = "mysql"
 MYSQL_ROUTER_APP_NAME = "mysql-router"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
 
-OLD_MYSQL_REVISION = 366
+OLD_MYSQL_REVISIONS = {
+    "amd64": 366,
+    "arm64": 367,
+}
+OLD_MYSQL_REVISION = OLD_MYSQL_REVISIONS[architecture.architecture]
 
 TIMEOUT = 10 * MINUTE_SECS
 
