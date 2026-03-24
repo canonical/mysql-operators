@@ -12,7 +12,7 @@ import jubilant
 import pytest
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
+from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 
 from ..helpers import execute_queries_on_unit, generate_random_string
 from ..helpers_ha import (
@@ -43,9 +43,8 @@ S3_INTEGRATOR_CHANNEL = "2/edge"
 S3_INTEGRATOR_BASE = "ubuntu@24.04"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
-CLUSTER_ADMIN_PASSWORD = "clusteradminpasswordAA01"
-SERVER_CONFIG_PASSWORD = "serverconfigpasswordAA01"
-ROOT_PASSWORD = "rootpasswordAAAAAAAAAA01"
+REPLICATION_PASSWORD = "charmed-replicationpasswordAA01"
+OPERATOR_PASSWORD = "charmed-operatorpasswordAA01"
 TABLE_NAME = "backup-table"
 CLOUD = "gcp"
 ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE = "S3 repository claimed by another cluster"
@@ -108,12 +107,9 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
     logger.info("Rotating all mysql credentials")
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
-    )
-    rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     logger.info("Deploying s3-integrator")
 
@@ -351,12 +347,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     primary_unit_address = get_unit_address(juju, new_mysql_application_name, primary_unit_name)
 
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
-    )
-    rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     server_config_credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
@@ -374,8 +367,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
 
     logger.info("Waiting for blocked application status with another cluster S3 repository")
     juju.wait(  # Might take a few minutes to get past this
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
+        ),
         timeout=TIMEOUT,
     )
 
@@ -453,7 +448,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
 
     logger.info("Waiting for blocked application status after restore")
     juju.wait(
-        ready=lambda status: status.apps[new_mysql_application_name].app_status.message
-        == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR,
+        ready=lambda status: (
+            status.apps[new_mysql_application_name].app_status.message
+            == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
+        ),
         timeout=TIMEOUT,
     )

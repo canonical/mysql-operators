@@ -12,7 +12,7 @@ import jubilant
 import pytest
 from jubilant import Juju, TaskError
 
-from constants import SERVER_CONFIG_USERNAME
+from constants import OPERATOR_USERNAME
 
 from ..helpers import execute_queries_on_unit, generate_random_string
 from ..helpers_ha import (
@@ -37,7 +37,7 @@ S3_INTEGRATOR_BASE = "ubuntu@24.04"
 MYSQL_APPLICATION_NAME = "mysql-k8s"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
-SERVER_CONFIG_PASSWORD = "serverconfigpasswordAA01"
+OPERATOR_PASSWORD = "charmed-operatorpasswordAA01"
 DATABASE_NAME = "backup-database"
 TABLE_NAME = "backup-table"
 MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
@@ -113,9 +113,7 @@ def build_and_deploy_operations(
 
     logger.info("Rotating mysql credentials")
     primary_unit_name = get_mysql_primary_unit(juju, MYSQL_APPLICATION_NAME)
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
-    )
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     logger.info("Configuring s3 integrator and integrating it with mysql")
     juju.wait(
@@ -179,8 +177,8 @@ def pitr_operations(
 
     ts = execute_queries_on_unit(
         primary_ip,
-        SERVER_CONFIG_USERNAME,
-        SERVER_CONFIG_PASSWORD,
+        OPERATOR_USERNAME,
+        OPERATOR_PASSWORD,
         ["SELECT CURRENT_TIMESTAMP"],
         raw=True,
     )
@@ -206,8 +204,8 @@ def pitr_operations(
 
     execute_queries_on_unit(
         primary_ip,
-        SERVER_CONFIG_USERNAME,
-        SERVER_CONFIG_PASSWORD,
+        OPERATOR_USERNAME,
+        OPERATOR_PASSWORD,
         ["FLUSH BINARY LOGS"],
     )
 
@@ -299,8 +297,8 @@ def check_test_data_existence(
         should_not_exist = []
     res = execute_queries_on_unit(
         unit_address,
-        SERVER_CONFIG_USERNAME,
-        SERVER_CONFIG_PASSWORD,
+        OPERATOR_USERNAME,
+        OPERATOR_PASSWORD,
         [
             f"CREATE DATABASE IF NOT EXISTS `{DATABASE_NAME}`",
             f"CREATE TABLE IF NOT EXISTS `{DATABASE_NAME}`.`{TABLE_NAME}` (id varchar(255), primary key (id))",

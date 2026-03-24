@@ -3,11 +3,10 @@
 
 """File containing constants to be used in the charm."""
 
-ROOT_USERNAME = "root"
-CLUSTER_ADMIN_USERNAME = "clusteradmin"
-SERVER_CONFIG_USERNAME = "serverconfig"
-MONITORING_USERNAME = "monitoring"
-BACKUPS_USERNAME = "backups"
+REPLICATION_USERNAME = "charmed-replication"
+OPERATOR_USERNAME = "charmed-operator"
+MONITORING_USERNAME = "charmed-stats"
+BACKUPS_USERNAME = "charmed-backup"
 DEFAULT_PASSWORD_LENGTH = 24
 MAX_PASSWORD_LENGTH = 130
 PEER = "database-peers"
@@ -15,9 +14,8 @@ DB_RELATION_NAME = "database"
 
 
 # Labels are not confidential
-ROOT_PASSWORD_KEY = "root-password"  # noqa: S105
-SERVER_CONFIG_PASSWORD_KEY = "server-config-password"  # noqa: S105
-CLUSTER_ADMIN_PASSWORD_KEY = "cluster-admin-password"  # noqa: S105
+OPERATOR_PASSWORD_KEY = "operator-password"  # noqa: S105
+REPLICATION_PASSWORD_KEY = "replication-password"  # noqa: S105
 MONITORING_PASSWORD_KEY = "monitoring-password"  # noqa: S105
 BACKUPS_PASSWORD_KEY = "backups-password"  # noqa: S105
 
@@ -50,7 +48,6 @@ GR_MAX_MEMBERS = 9
 HOSTNAME_DETAILS = "hostname-details"
 COS_AGENT_RELATION_NAME = "cos-agent"
 SECRET_KEY_FALLBACKS = {
-    "root-password": "root_password",
     "server-config-password": "server_config_password",
     "cluster-admin-password": "cluster_admin_password",
     "monitoring-password": "monitoring_password",

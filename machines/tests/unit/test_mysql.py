@@ -128,14 +128,13 @@ class TestMySQLBase(unittest.TestCase):
             MYSQLD_SOCK_FILE,
             "test_cluster",
             "test_cluster_set",
-            "password",
-            "serverconfig",
-            "serverconfigpassword",
-            "clusteradmin",
-            "clusteradminpassword",
-            "monitoring",
+            "charmed-operator",
+            "charmed-operatorpassword",
+            "charmed-replication",
+            "charmed-replicationpassword",
+            "charmed-stats",
             "monitoringpassword",
-            "backups",
+            "charmed-backup",
             "backupspassword",
             CHARMED_MYSQLSH,
             self.mock_executor_cls,
@@ -208,15 +207,10 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_sql.return_value = []
 
         queries = ";".join([
-            "UPDATE mysql.user SET authentication_string=null WHERE User='root' and Host='localhost'",
-            "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password'",
-            "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword'",
-            "CREATE USER 'monitoring'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
-            "CREATE USER 'backups'@'%' IDENTIFIED BY 'backupspassword'",
-            "GRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION",
-            "GRANT charmed_stats TO 'monitoring'@'%'",
-            "GRANT charmed_backup TO 'backups'@'%'",
-            "REVOKE BINLOG_ADMIN, CONNECTION_ADMIN, ENCRYPTION_KEY_ADMIN, GROUP_REPLICATION_ADMIN, REPLICATION_SLAVE_ADMIN, SET_USER_ID, SUPER, SYSTEM_USER, SYSTEM_VARIABLES_ADMIN, VERSION_TOKEN_ADMIN ON *.* FROM 'root'@'localhost'",
+            "CREATE USER 'charmed-stats'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
+            "CREATE USER 'charmed-backup'@'%' IDENTIFIED BY 'backupspassword'",
+            "GRANT charmed_stats TO 'charmed-stats'@'%'",
+            "GRANT charmed_backup TO 'charmed-backup'@'%'",
             "FLUSH PRIVILEGES",
         ])
 
@@ -369,7 +363,7 @@ class TestMySQLBase(unittest.TestCase):
 
         # Test with create_cluster_admin=True
         commands = [
-            "dba.configure_instance(options={'restart': 'true', 'clusterAdmin': 'clusteradmin', 'clusterAdminPassword': 'clusteradminpassword'})",
+            "dba.configure_instance(options={'restart': 'true', 'clusterAdmin': 'charmed-replication', 'clusterAdminPassword': 'charmed-replicationpassword'})",
         ]
 
         self.mysql.configure_instance(create_cluster_admin=True)
@@ -1043,7 +1037,7 @@ class TestMySQLBase(unittest.TestCase):
             "--defaults-group=mysqld",
             "--no-version-check",
             "--parallel=16",
-            "--user=backups",
+            "--user=charmed-backup",
             "--password=backupspassword",
             "--socket=/mysqld/socket/file.sock",
             "--lock-ddl",
@@ -2027,9 +2021,9 @@ class TestMySQLBase(unittest.TestCase):
     stdout, _ = process.wait_output()
   File "/var/lib/juju/agents/unit-mysql-k8s-edge-0/charm/venv/lib/python3.10/site-packages/ops/pebble.py", line 1771, in wait_output
     raise ExecError[AnyStr](self._command, exit_code, out_value, err_value)
-ops.pebble.ExecError: non-zero exit code 1 executing ['/usr/bin/mysqlsh', '--passwords-from-stdin', '--uri=serverconfig@mysql-k8s-edge-0.mysql-k8s-edge-endpoints.stg-alutay-datasql-juju361.svc.cluster.local:33062', '--python', '--verbose=0', '-c', 'shell.options.set(\'useWizards\', False)\nprint(\'###\')\nsh$
+ops.pebble.ExecError: non-zero exit code 1 executing ['/usr/bin/mysqlsh', '--passwords-from-stdin', '--uri=charmed-operator@mysql-k8s-edge-0.mysql-k8s-edge-endpoints.stg-alutay-datasql-juju361.svc.cluster.local:33062', '--python', '--verbose=0', '-c', 'shell.options.set(\'useWizards\', False)\nprint(\'###\')\nsh$
 ll.connect_to_primary()\nsession.run_sql("CREATE DATABASE IF NOT EXISTS `continuous_writes`;")\nsession.run_sql("CREATE USER `relation-21_ff7306c7454f44`@`%` IDENTIFIED BY \'s1ffxPedAmX58aOdCRSzxEpm\' ATTRIBUTE \'{}\';")\nsession.run_sql("GRANT USAGE ON *.* TO `relation-21_ff7306c7454f44`@`%`;")\nses
-sion.run_sql("GRANT ALL PRIVILEGES ON `continuous_writes`.* TO `relation-21_ff7306c7454f44`@`%`;")'], stdout="\x1b[1mPlease provide the password for 'serverconfig@mysql-k8s-edge-0.mysql-k8s-edge-endpoints.stg-alutay-datasql-juju361.svc.cluster.local:33062': \x1b[0m###\n", stderr='Cannot set LC_ALL to
+sion.run_sql("GRANT ALL PRIVILEGES ON `continuous_writes`.* TO `relation-21_ff7306c7454f44`@`%`;")'], stdout="\x1b[1mPlease provide the password for 'charmed-operator@mysql-k8s-edge-0.mysql-k8s-edge-endpoints.stg-alutay-datasql-juju361.svc.cluster.local:33062': \x1b[0m###\n", stderr='Cannot set LC_ALL to
  locale en_US.UTF-8: No such file or directory\n\x1b[36mNOTE: \x1b[0mAlready connected to a PRIMARY.\nTraceback (most recent call last):\n  File "<string>", line 5, in <module>\nmysqlsh.DBError: MySQL Error (1396): ClassicSession.run_sql: Operation CREATE USER failed for \'relation-21_ff7306c7454f44\'@\'%\'\n
 """
         output = self.mysql.strip_off_passwords(_input)

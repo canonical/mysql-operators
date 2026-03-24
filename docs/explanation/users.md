@@ -17,11 +17,10 @@ There are two main types of users in MySQL:
 
 The operator uses the following internal database users:
 
-* `root` - the initial/default MySQL user. Used for very initial bootstrap and restricted to local access.
-* `clusteradmin` - the user to manage replication in the MySQL InnoDB ClusterSet.
-* `serverconfig` - the user that operates MySQL instances.
-* `monitoring` - the user for {ref}`COS integration <enable-monitoring>`.
-* `backups` - the user to for {ref}`backup operations <create-a-backup>`.
+* `charmed-replication` - the user to manage replication in the MySQL InnoDB ClusterSet.
+* `charmed-operator` - the user that operates MySQL instances.
+* `charmed-stats` - the user for [COS integration](/how-to/monitoring-cos/enable-monitoring).
+* `charmed-backup` - the user to [perform/list/restore backups](/how-to/back-up-and-restore/create-a-backup).
 * `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
 * `mysql_innodb_cs_#######` - the internal recovery user which enable connections between MySQl InnoDB Clusters in ClusterSet. One user is created for entire MySQL ClusterSet.
 
@@ -40,23 +39,35 @@ mysql> select Host,User,account_locked from mysql.user;
 +-----------+---------------------------------+----------------+
 | Host      | User                            | account_locked |
 +-----------+---------------------------------+----------------+
-| %         | backups                         | N              |
-| %         | clusteradmin                    | N              |
-| %         | monitoring                      | N              |
-| %         | mysql_innodb_cluster_2277159043 | N              |
-| %         | mysql_innodb_cluster_2277159122 | N              |
-| %         | mysql_innodb_cluster_2277159949 | N              |
-| %         | mysql_innodb_cs_f8ead780        | N              |
-| %         | serverconfig                    | N              |
+| %         | charmed-backup                  | N              |
+| %         | charmed-operator                | N              |
+| %         | charmed-replication             | N              |
+| %         | charmed-stats                   | N              |
+| %         | charmed_backup                  | Y              |
+| %         | charmed_dba                     | Y              |
+| %         | charmed_ddl                     | Y              |
+| %         | charmed_dml                     | Y              |
+| %         | charmed_read                    | Y              |
+| %         | charmed_router                  | Y              |
+| %         | charmed_stats                   | Y              |
+| %         | mysql_innodb_cluster_1533758336 | N              |
+| %         | mysql_innodb_cluster_1925735211 | N              |
+| %         | mysql_innodb_cluster_2639109780 | N              |
+| %         | mysql_innodb_cs_72c8632b        | N              |
+| localhost | charmed-operator                | N              |
 | localhost | mysql.infoschema                | Y              |
 | localhost | mysql.session                   | Y              |
 | localhost | mysql.sys                       | Y              |
-| localhost | root                            | N              |
 +-----------+---------------------------------+----------------+
-10 rows in set (0.00 sec)
+
+19 rows in set (0.00 sec)
 ```
 
 Passwords for *internal* users can be rotated using the action `set-password` on the juju leader unit.
+
+```{caution}
+The `root` user is removed on the Charmed MySQL operator.
+```
 
 ```{seealso}
 {ref}`manage-passwords`
@@ -113,6 +124,6 @@ To rotate passwords for relation users, remove the relation and re-relate:
 
 ### Admin port user access
 
-The charm mainly uses the `serverconfig` user for internal operations. For connections with this user, a special admin port is used (port `33062`), which enables the charm to operate MySQL even when users connections are saturated.
+The charm mainly uses the `charmed-operator` user for internal operations. For connections with this user, a special admin port is used (port `33062`), which enables the charm to operate MySQL even when users connections are saturated.
 
 For further information on the administrative connection, refer to [MySQL docs](https://dev.mysql.com/doc/refman/8.4/en/administrative-connection-interface.html) on the topic.

@@ -13,22 +13,19 @@ from ops.testing import Harness
 from charm import MySQLOperatorCharm
 from constants import (
     BACKUPS_PASSWORD_KEY,
-    CLUSTER_ADMIN_PASSWORD_KEY,
     DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
     MYSQLD_LOCATION,
-    ROOT_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
+    OPERATOR_PASSWORD_KEY,
+    REPLICATION_PASSWORD_KEY,
 )
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 
 APP_NAME = "mysql-k8s"
 REQUIRED_PASSWORD_KEYS = [
-    ROOT_PASSWORD_KEY,
     MONITORING_PASSWORD_KEY,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
+    REPLICATION_PASSWORD_KEY,
+    OPERATOR_PASSWORD_KEY,
     BACKUPS_PASSWORD_KEY,
 ]
 
@@ -94,7 +91,7 @@ class TestCharm(unittest.TestCase):
                     "user": "mysql",
                     "group": "mysql",
                     "environment": {
-                        "EXPORTER_USER": "monitoring",
+                        "EXPORTER_USER": "charmed-stats",
                         "EXPORTER_PASS": self.charm.get_secret("app", "monitoring-password"),
                     },
                 },
@@ -146,6 +143,7 @@ class TestCharm(unittest.TestCase):
                 and len(secret_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
+    @patch("mysql_k8s_helpers.MySQL.drop_root_user")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.install_components")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=False)
@@ -173,7 +171,7 @@ class TestCharm(unittest.TestCase):
     )
     @patch("mysql_k8s_helpers.MySQL.get_max_connections", return_value=120)
     @patch("mysql_k8s_helpers.MySQL.setup_logrotate_config")
-    @patch("mysql_k8s_helpers.MySQL.reset_root_password_and_start_mysqld")
+    @patch("mysql_k8s_helpers.MySQL.set_operator_user_and_start_mysqld")
     def test_mysql_pebble_ready(
         self,
         _,
@@ -201,6 +199,7 @@ class TestCharm(unittest.TestCase):
         _cluster_metadata_exists,
         _install_components,
         _get_unit_address,
+        _drop_root_user,
     ):
         _build_unit_workload_status.return_value = ActiveStatus()
 

@@ -61,10 +61,6 @@ if TYPE_CHECKING:
     from charm import MySQLOperatorCharm
 
 
-class MySQLResetRootPasswordAndStartMySQLDError(Error):
-    """Exception raised when there's an error resetting root password and starting mysqld."""
-
-
 class MySQLInitialiseMySQLDError(Error):
     """Exception raised when there is an issue initialising an instance."""
 
@@ -108,11 +104,10 @@ class MySQL(MySQLBase):
         instance_address: str,
         cluster_name: str,
         cluster_set_name: str,
-        root_password: str,
-        server_config_user: str,
-        server_config_password: str,
-        cluster_admin_user: str,
-        cluster_admin_password: str,
+        operator_user: str,
+        operator_password: str,
+        replication_user: str,
+        replication_password: str,
         monitoring_user: str,
         monitoring_password: str,
         backups_user: str,
@@ -127,11 +122,10 @@ class MySQL(MySQLBase):
             instance_address: address of the targeted instance
             cluster_name: cluster name
             cluster_set_name: cluster set name
-            root_password: password for the 'root' user
-            server_config_user: user name for the server config user
-            server_config_password: password for the server config user
-            cluster_admin_user: user name for the cluster admin user
-            cluster_admin_password: password for the cluster admin user
+            operator_user: user name for the server config user
+            operator_password: password for the server config user
+            replication_user: user name for the cluster admin user
+            replication_password: password for the cluster admin user
             monitoring_user: user name for the monitoring user
             monitoring_password: password for the monitoring user
             backups_user: user name for the backups user
@@ -149,11 +143,10 @@ class MySQL(MySQLBase):
             socket_path=MYSQLD_SOCK_FILE,
             cluster_name=cluster_name,
             cluster_set_name=cluster_set_name,
-            root_password=root_password,
-            server_config_user=server_config_user,
-            server_config_password=server_config_password,
-            cluster_admin_user=cluster_admin_user,
-            cluster_admin_password=cluster_admin_password,
+            operator_user=operator_user,
+            operator_password=operator_password,
+            replication_user=replication_user,
+            replication_password=replication_password,
             monitoring_user=monitoring_user,
             monitoring_password=monitoring_password,
             backups_user=backups_user,
@@ -221,6 +214,7 @@ class MySQL(MySQLBase):
         ]
 
         try:
+            self.reset_data_dir()
             process = self.container.exec(
                 command=bootstrap_command,
                 user=MYSQL_SYSTEM_USER,
@@ -229,20 +223,22 @@ class MySQL(MySQLBase):
             process.wait_output()
         except (ExecError, ChangeError, PathError, TimeoutError):
             logger.exception("Failed to initialise MySQL data directory")
-            self.reset_data_dir()
             raise MySQLInitialiseMySQLDError from None
 
-    def reset_root_password_and_start_mysqld(self) -> None:
-        """Reset the root user password and start mysqld."""
-        logger.debug("Resetting root user password and starting mysqld")
-        alter_user_queries = [
-            f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{self.root_password}';",
+    def set_operator_user_and_start_mysqld(self) -> None:
+        """Set the operator user and start mysqld."""
+        logger.debug("Set operator user and starting mysqld")
+        create_user_queries = [
+            f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}';",
+            f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION;",
             "FLUSH PRIVILEGES;",
         ]
 
+        file_path = "/create-operator-user.sql"
+
         self.container.push(
-            "/alter-root-user.sql",
-            "\n".join(alter_user_queries),
+            file_path,
+            "\n".join(create_user_queries),
             encoding="utf-8",
             permissions=0o600,
             user=MYSQL_SYSTEM_USER,
@@ -252,15 +248,14 @@ class MySQL(MySQLBase):
         try:
             self.container.push(
                 MYSQLD_INIT_CONFIG_FILE,
-                "[mysqld]\ninit_file = /alter-root-user.sql",
+                f"[mysqld]\ninit_file = {file_path}",
                 encoding="utf-8",
                 permissions=0o600,
                 user=MYSQL_SYSTEM_USER,
                 group=MYSQL_SYSTEM_GROUP,
             )
         except PathError:
-            self.container.remove_path("/alter-root-user.sql")
-
+            self.container.remove_path(file_path)
             logger.exception("Failed to write the custom config file for init-file")
             raise
 
@@ -271,7 +266,7 @@ class MySQL(MySQLBase):
             logger.exception("Failed to run init-file and wait for connection")
             raise
         finally:
-            self.container.remove_path("/alter-root-user.sql")
+            self.container.remove_path(file_path)
             self.container.remove_path(MYSQLD_INIT_CONFIG_FILE)
 
     @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(2))

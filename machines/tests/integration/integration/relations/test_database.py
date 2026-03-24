@@ -8,7 +8,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH, ROOT_USERNAME
+from constants import BACKUPS_USERNAME, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
 from utils import generate_random_password
 
 from ...helpers import execute_queries_on_unit
@@ -115,17 +115,17 @@ def test_password_rotation_silent(juju: Juju):
     assert len(output) > 0, "query with new password failed, no databases found"
 
 
-def test_password_rotation_root_user(juju: Juju):
-    """Rotate password for root user and confirm changes."""
+def test_password_rotation_backup_user(juju: Juju):
+    """Rotate password for backup user and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
     primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
     logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
 
-    old_credentials = get_mysql_server_credentials(juju, primary_unit, ROOT_USERNAME)
-    rotate_mysql_server_credentials(juju, primary_unit, ROOT_USERNAME)
+    old_credentials = get_mysql_server_credentials(juju, primary_unit, BACKUPS_USERNAME)
+    rotate_mysql_server_credentials(juju, primary_unit, BACKUPS_USERNAME)
 
-    updated_credentials = get_mysql_server_credentials(juju, primary_unit, ROOT_USERNAME)
+    updated_credentials = get_mysql_server_credentials(juju, primary_unit, BACKUPS_USERNAME)
     assert updated_credentials["password"] != old_credentials["password"]
 
 

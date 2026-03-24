@@ -6,7 +6,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import SERVER_CONFIG_USERNAME
+from constants import OPERATOR_USERNAME
 
 from ...helpers import generate_random_string
 from ...helpers_ha import (
@@ -133,7 +133,7 @@ def purge_mysql_binary_logs(juju: Juju, app_name: str, unit_name: str) -> None:
     credentials_task = juju.run(
         unit=unit_name,
         action="get-password",
-        params={"username": SERVER_CONFIG_USERNAME},
+        params={"username": OPERATOR_USERNAME},
     )
 
     execute_queries_on_unit(

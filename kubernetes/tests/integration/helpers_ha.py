@@ -27,7 +27,7 @@ from tenacity import (
 from constants import (
     CONTAINER_NAME,
     MYSQLD_SERVICE,
-    SERVER_CONFIG_USERNAME,
+    OPERATOR_USERNAME,
 )
 
 from .helpers import execute_queries_on_unit
@@ -420,7 +420,7 @@ def get_mysql_primary_unit(juju: Juju, app_name: str, unit_name: str | None = No
 
 
 def get_mysql_server_credentials(
-    juju: Juju, unit_name: str, username: str = SERVER_CONFIG_USERNAME
+    juju: Juju, unit_name: str, username: str = OPERATOR_USERNAME
 ) -> dict[str, str]:
     """Helper to run an action to retrieve server config credentials.
 
@@ -444,7 +444,7 @@ def get_mysql_server_credentials(
 def rotate_mysql_server_credentials(
     juju: Juju,
     unit_name: str,
-    username: str = SERVER_CONFIG_USERNAME,
+    username: str = OPERATOR_USERNAME,
     password: str | None = None,
 ) -> None:
     """Helper to run an action to rotate server config credentials.

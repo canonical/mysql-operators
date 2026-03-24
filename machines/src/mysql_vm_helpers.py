@@ -60,8 +60,8 @@ if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
 
 
-class MySQLResetRootPasswordAndStartMySQLDError(Error):
-    """Exception raised when there's an error resetting root password and starting mysqld."""
+class MySQLSetOperatorUserAndStartMySQLDError(Error):
+    """Exception raised when there's an error setting operator user and starting mysqld."""
 
 
 class MySQLCreateCustomMySQLDConfigError(Error):
@@ -101,11 +101,10 @@ class MySQL(MySQLBase):
         socket_path: str,
         cluster_name: str,
         cluster_set_name: str,
-        root_password: str,
-        server_config_user: str,
-        server_config_password: str,
-        cluster_admin_user: str,
-        cluster_admin_password: str,
+        operator_user: str,
+        operator_password: str,
+        replication_user: str,
+        replication_password: str,
         monitoring_user: str,
         monitoring_password: str,
         backups_user: str,
@@ -119,11 +118,10 @@ class MySQL(MySQLBase):
             socket_path: path to the MySQL socket
             cluster_name: cluster name
             cluster_set_name: cluster set domain name
-            root_password: password for the 'root' user
-            server_config_user: user name for the server config user
-            server_config_password: password for the server config user
-            cluster_admin_user: user name for the cluster admin user
-            cluster_admin_password: password for the cluster admin user
+            operator_user: user name for the server config user
+            operator_password: password for the server config user
+            replication_user: user name for the cluster admin user
+            replication_password: password for the cluster admin user
             monitoring_user: user name for the mysql exporter
             monitoring_password: password for the monitoring user
             backups_user: user name used to create backups
@@ -135,11 +133,10 @@ class MySQL(MySQLBase):
             socket_path=socket_path,
             cluster_name=cluster_name,
             cluster_set_name=cluster_set_name,
-            root_password=root_password,
-            server_config_user=server_config_user,
-            server_config_password=server_config_password,
-            cluster_admin_user=cluster_admin_user,
-            cluster_admin_password=cluster_admin_password,
+            operator_user=operator_user,
+            operator_password=operator_password,
+            replication_user=replication_user,
+            replication_password=replication_password,
             monitoring_user=monitoring_user,
             monitoring_password=monitoring_password,
             backups_user=backups_user,
@@ -323,9 +320,9 @@ class MySQL(MySQLBase):
         cron_content = f"* 1-23 * * * root {script_path}\n1-59 0 * * * root {script_path}\n"
         self.write_content_to_file(cron_path, cron_content, owner="root")
 
-    def reset_root_password_and_start_mysqld(self) -> None:
-        """Reset the root user password and start mysqld."""
-        logger.debug("Resetting root user password and starting mysqld")
+    def set_operator_user_and_start_mysqld(self) -> None:
+        """Set the operator user and start mysqld."""
+        logger.debug("Set operator user password and starting mysqld")
         with (
             tempfile.NamedTemporaryFile(
                 dir=MYSQLD_CONFIG_DIRECTORY,
@@ -336,7 +333,7 @@ class MySQL(MySQLBase):
             ) as _custom_config_file,
             tempfile.NamedTemporaryFile(
                 dir=CHARMED_MYSQL_COMMON_DIRECTORY,
-                prefix="alter-root-user.",
+                prefix="create-operator-user.",
                 suffix=".sql",
                 mode="w",
                 encoding="utf-8",
@@ -351,13 +348,14 @@ class MySQL(MySQLBase):
                     _sql_file.name,
                 ])
             except subprocess.CalledProcessError as e:
-                raise MySQLResetRootPasswordAndStartMySQLDError(
+                raise MySQLSetOperatorUserAndStartMySQLDError(
                     "Failed to change permissions for temp SQL file"
                 ) from e
 
             _sql_file.write(
-                f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{self.root_password}';\n"
-                "FLUSH PRIVILEGES;"
+                f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}';\n"
+                f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION;\n"
+                "FLUSH PRIVILEGES;",
             )
             _sql_file.flush()
 
@@ -373,22 +371,20 @@ class MySQL(MySQLBase):
                     _custom_config_file.name,
                 ])
             except subprocess.CalledProcessError as e:
-                raise MySQLResetRootPasswordAndStartMySQLDError(
+                raise MySQLSetOperatorUserAndStartMySQLDError(
                     "Failed to change permissions for custom mysql config"
                 ) from e
 
             try:
                 snap_service_operation(CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "start")
             except SnapServiceOperationError as e:
-                raise MySQLResetRootPasswordAndStartMySQLDError("Failed to restart mysqld") from e
+                raise MySQLSetOperatorUserAndStartMySQLDError("Failed to restart mysqld") from e
 
             try:
                 # Do not try to connect over port as we may not have configured user/passwords
                 self.wait_until_mysql_connection(check_port=False)
             except MySQLServiceNotRunningError as e:
-                raise MySQLResetRootPasswordAndStartMySQLDError(
-                    "mysqld service not running"
-                ) from e
+                raise MySQLSetOperatorUserAndStartMySQLDError("mysqld service not running") from e
 
     @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(5))
     def wait_until_mysql_connection(self, check_port: bool = True) -> None:

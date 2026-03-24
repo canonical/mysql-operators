@@ -6,7 +6,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME
+from constants import REPLICATION_USERNAME
 
 from ...helpers import (
     generate_random_string,
@@ -79,7 +79,7 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     credentials_task = juju.run(
         unit=mysql_primary_unit,
         action="get-password",
-        params={"username": CLUSTER_ADMIN_USERNAME},
+        params={"username": REPLICATION_USERNAME},
     )
 
     config = {

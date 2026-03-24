@@ -6,7 +6,7 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import SERVER_CONFIG_USERNAME
+from constants import OPERATOR_USERNAME
 
 from ...helpers import is_connection_possible
 from ...helpers_ha import (
@@ -72,7 +72,7 @@ def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     credentials_task = juju.run(
         unit=mysql_primary_unit,
         action="get-password",
-        params={"username": SERVER_CONFIG_USERNAME},
+        params={"username": OPERATOR_USERNAME},
     )
 
     config = {
