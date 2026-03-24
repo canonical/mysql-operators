@@ -44,6 +44,7 @@ from constants import (
     CHARMED_MYSQLD_SERVICE,
     CHARMED_MYSQLSH,
     MYSQL_DATA_DIR,
+    MYSQL_SYSTEM_GROUP,
     MYSQL_SYSTEM_USER,
     MYSQLD_CONFIG_DIRECTORY,
     MYSQLD_CUSTOM_CONFIG_FILE,
@@ -416,8 +417,8 @@ class MySQL(MySQLBase):
             MYSQLD_SOCK_FILE,
             CHARMED_MYSQL_COMMON_DIRECTORY,
             MYSQLD_DEFAULTS_CONFIG_FILE,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def delete_temp_backup_directory(  # type: ignore
@@ -426,8 +427,8 @@ class MySQL(MySQLBase):
         """Delete the temp backup directory."""
         super().delete_temp_backup_directory(
             from_directory,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def retrieve_backup_with_xbcloud(  # type: ignore
@@ -437,8 +438,8 @@ class MySQL(MySQLBase):
         temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
-        user=ROOT_SYSTEM_USER,
-        group=ROOT_SYSTEM_USER,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
     ) -> tuple[str, str, str]:
         """Retrieve the provided backup with xbcloud."""
         return super().retrieve_backup_with_xbcloud(
@@ -457,16 +458,16 @@ class MySQL(MySQLBase):
             backup_location,
             CHARMED_MYSQL_XTRABACKUP_LOCATION,
             XTRABACKUP_PLUGIN_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def empty_data_files(self) -> None:
         """Empty the mysql data directory in preparation of the restore."""
         super().empty_data_files(
             MYSQL_DATA_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def restore_backup(self, backup_location: str) -> tuple[str, str]:
@@ -477,16 +478,16 @@ class MySQL(MySQLBase):
             MYSQLD_DEFAULTS_CONFIG_FILE,
             MYSQL_DATA_DIR,
             XTRABACKUP_PLUGIN_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def delete_temp_restore_directory(self) -> None:
         """Delete the temp restore directory from the mysql data directory."""
         super().delete_temp_restore_directory(
             CHARMED_MYSQL_COMMON_DIRECTORY,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            user=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def _execute_commands(
