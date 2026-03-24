@@ -329,9 +329,14 @@ class MySQL(MySQLBase):
     def _set_root_ownership(self, directory):
         """Context manager to temporarily set root ownership for MySQL operations.
 
-        The snap's AppArmor profile blocks DAC_OVERRIDE capability, so root inside
-        the snap cannot override permissions. We temporarily set root:root ownership
-        with 750 permissions, then restore snap_daemon:root ownership on exit.
+        "The security sandbox generally limits file access to where the object id of the file
+        (ie, the owner) matches the uid of the running process. This is true even for root,
+        unless the process has CAP_DAC_OVERRIDE or CAP_DAC_READ_SEARCH defined,
+        which the security sandbox intentionally denies."
+        https://snapcraft.io/docs/explanation/snap-development/system-usernames/#ownership-discretionary-access-controls
+
+        This method temporarily set root:root ownership with 750 permissions,
+        then restore snap_daemon:root ownership on exit.
 
         Raises:
             MySQLInitialiseMySQLDError: if there is an issue setting permissions
