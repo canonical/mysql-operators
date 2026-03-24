@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 import logging
 from contextlib import suppress
+from time import sleep
 
 import jubilant_backports
 from jubilant_backports import Juju, TaskError
@@ -43,6 +45,10 @@ def test_build_and_deploy(juju: Juju) -> None:
         num_units=3,
         trust=True,
     )
+    # Allow some time between deploy and status call. Avoids:
+    # ERROR getting details for storage database/0: filesystem for storage instance "database/0" not found
+    sleep(30)
+
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         timeout=TIMEOUT,
