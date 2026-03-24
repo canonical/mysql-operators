@@ -88,6 +88,10 @@ class MySQLUninstallError(Error):
     """Exception raised when there's an error installing MySQL."""
 
 
+class MySQLInitialiseMySQLDError(Error):
+    """Exception raised when there is an issue initialising an instance."""
+
+
 class MySQL(MySQLBase):
     """Class to encapsulate all operations related to the MySQL instance and cluster.
 
@@ -335,6 +339,26 @@ class MySQL(MySQLBase):
 
         cron_content = f"* 1-23 * * * root {script_path}\n1-59 0 * * * root {script_path}\n"
         self.write_content_to_file(cron_path, cron_content, owner="root")
+
+    def initialise_mysqld(self) -> None:
+        """Execute instance first run.
+
+        Initialise mysql data directory.
+        Raises MySQLInitialiseMySQLDError if the instance bootstrap fails.
+        """
+        bootstrap_command = [
+            "/usr/bin/sudo",
+            "/snap/bin/charmed-mysql.mysqld-initialize",
+            "--datadir",
+            MYSQL_DATA_DIR,
+        ]
+
+        try:
+            self.reset_data_dir()
+            subprocess.run(bootstrap_command)  # noqa: S603
+        except subprocess.CalledProcessError:
+            logger.exception("Failed to initialise MySQL data directory")
+            raise MySQLInitialiseMySQLDError from None
 
     def set_operator_user_and_start_mysqld(self) -> None:
         """Reset the root user password and start mysqld."""
