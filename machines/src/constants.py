@@ -38,6 +38,7 @@ MYSQLD_CONFIG_DIRECTORY = f"{CHARMED_MYSQL_DATA_DIRECTORY}/etc/mysql/mysql.conf.
 MYSQLD_DEFAULTS_CONFIG_FILE = f"{CHARMED_MYSQL_DATA_DIRECTORY}/etc/mysql/mysql.cnf"
 MYSQLD_CUSTOM_CONFIG_FILE = f"{MYSQLD_CONFIG_DIRECTORY}/z-custom-mysqld.cnf"
 MYSQL_SYSTEM_USER = "snap_daemon"
+MYSQL_SYSTEM_GROUP = "snap_daemon"
 MYSQL_DATA_DIR = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql"
 CHARMED_MYSQL_XTRABACKUP_LOCATION = "/snap/bin/charmed-mysql.xtrabackup"
 CHARMED_MYSQL_XBCLOUD_LOCATION = "/snap/bin/charmed-mysql.xbcloud"
