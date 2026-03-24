@@ -16,15 +16,13 @@ from charms.mysql.v0.mysql import (
 from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
     PEER,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
 )
 from mysql_shell.models import (
     ClusterGlobalStatus,
@@ -786,21 +784,16 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
                 event.defer()
                 return
             sync_keys = {
-                SERVER_CONFIG_PASSWORD_KEY: SERVER_CONFIG_USERNAME,
-                CLUSTER_ADMIN_PASSWORD_KEY: CLUSTER_ADMIN_USERNAME,
+                OPERATOR_PASSWORD_KEY: OPERATOR_USERNAME,
+                REPLICATION_PASSWORD_KEY: REPLICATION_USERNAME,
                 MONITORING_PASSWORD_KEY: MONITORING_USERNAME,
                 BACKUPS_PASSWORD_KEY: BACKUPS_USERNAME,
-                ROOT_PASSWORD_KEY: ROOT_USERNAME,
             }
 
             for key, password in credentials.items():
                 # sync credentials only for necessary users
                 user = sync_keys[key]
-                if user == ROOT_USERNAME:
-                    # root user is only local
-                    self._charm._mysql.update_user_password(user, password, host="localhost")
-                else:
-                    self._charm._mysql.update_user_password(user, password)
+                self._charm._mysql.update_user_password(user, password)
                 self._charm.set_secret("app", key, password)
                 logger.debug(f"Synced {user=} password")
 

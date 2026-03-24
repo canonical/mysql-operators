@@ -8,7 +8,7 @@ from time import sleep
 import jubilant
 from jubilant import Juju
 
-from constants import CLUSTER_ADMIN_USERNAME, CONTAINER_NAME, TLS_SSL_CERT_FILE
+from constants import CONTAINER_NAME, REPLICATION_USERNAME, TLS_SSL_CERT_FILE
 
 from ..helpers import is_connection_possible
 from ..helpers_ha import (
@@ -61,11 +61,11 @@ def test_connection_before_tls(juju: Juju) -> None:
     """Ensure connections (with and without ssl) are possible before relating with TLS operator."""
     app_units = get_app_units(juju, APP_NAME)
 
-    password_result = get_mysql_server_credentials(juju, app_units[0], CLUSTER_ADMIN_USERNAME)
+    password_result = get_mysql_server_credentials(juju, app_units[0], REPLICATION_USERNAME)
     # set global config dict once
     global config
     config = {
-        "username": CLUSTER_ADMIN_USERNAME,
+        "username": REPLICATION_USERNAME,
         "password": password_result["password"],
     }
 

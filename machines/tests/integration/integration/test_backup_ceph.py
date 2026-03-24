@@ -21,7 +21,7 @@ import pytest
 from jubilant import Juju
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
+from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 
 from ..helpers import generate_random_string
 from ..helpers_ha import (
@@ -49,9 +49,8 @@ DATABASE_APP_NAME = "mysql"
 S3_INTEGRATOR = "s3-integrator"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
-CLUSTER_ADMIN_PASSWORD = "clusteradminpasswordAA01"
-SERVER_CONFIG_PASSWORD = "serverconfigpasswordAA01"
-ROOT_PASSWORD = "rootpasswordAAAAAAAAAA01"
+REPLICATION_PASSWORD = "charmed-replicationpasswordAA01"
+OPERATOR_PASSWORD = "charmed-operatorpasswordAA01"
 TABLE_NAME = "backup-table"
 ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE = "S3 repository claimed by another cluster"
 MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
@@ -283,12 +282,9 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
     logger.info("Rotating all mysql credentials")
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
-    )
-    rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     logger.info("Configuring s3 integrator and integrating it with mysql")
     juju.integrate(f"{DATABASE_APP_NAME}:s3-parameters", f"{S3_INTEGRATOR}:s3-credentials")
@@ -530,14 +526,11 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     primary_unit_address = get_unit_ip(juju, new_mysql_application_name, primary_unit_name)
 
     rotate_mysql_server_credentials(
-        juju, primary_unit_name, CLUSTER_ADMIN_USERNAME, CLUSTER_ADMIN_PASSWORD
+        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
     )
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, SERVER_CONFIG_USERNAME, SERVER_CONFIG_PASSWORD
-    )
-    rotate_mysql_server_credentials(juju, primary_unit_name, ROOT_USERNAME, ROOT_PASSWORD)
+    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
-    server_config_credentials = get_mysql_server_credentials(juju, primary_unit_name)
+    operator_credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
     # set the s3 config and credentials
     logger.info("Syncing credentials")
@@ -577,8 +570,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
 
     values = execute_queries_on_unit(
         primary_unit_address,
-        server_config_credentials["username"],
-        server_config_credentials["password"],
+        operator_credentials["username"],
+        operator_credentials["password"],
         select_values_sql,
     )
     assert values == [value_before_backup]
@@ -603,8 +596,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
 
     values = execute_queries_on_unit(
         primary_unit_address,
-        server_config_credentials["username"],
-        server_config_credentials["password"],
+        operator_credentials["username"],
+        operator_credentials["password"],
         select_values_sql,
     )
     assert value_before_backup

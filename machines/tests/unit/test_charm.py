@@ -18,7 +18,7 @@ from tenacity import Retrying, stop_after_attempt
 from charm import MySQLOperatorCharm
 from mysql_vm_helpers import (
     MySQLCreateCustomMySQLDConfigError,
-    MySQLResetRootPasswordAndStartMySQLDError,
+    MySQLSetOperatorUserAndStartMySQLDError,
 )
 
 
@@ -76,9 +76,8 @@ class TestCharm(unittest.TestCase):
             self.peer_relation_id, self.harness.charm.app
         )
         expected_peer_relation_databag_keys = [
-            "root-password",
-            "server-config-password",
-            "cluster-admin-password",
+            "operator-password",
+            "replication-password",
             "monitoring-password",
             "backups-password",
             "cluster-name",
@@ -99,9 +98,8 @@ class TestCharm(unittest.TestCase):
         self.harness.set_leader(True)
 
         expected_peer_relation_databag_keys = [
-            "root-password",
-            "server-config-password",
-            "cluster-admin-password",
+            "operator-password",
+            "replication-password",
             "monitoring-password",
             "backups-password",
         ]
@@ -214,8 +212,8 @@ class TestCharm(unittest.TestCase):
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
 
-        # test an exception with resetting the root password and starting mysqld
-        _create_cluster.side_effect = MySQLResetRootPasswordAndStartMySQLDError
+        # test an exception with set the operator user and starting mysqld
+        _create_cluster.side_effect = MySQLSetOperatorUserAndStartMySQLDError
 
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))

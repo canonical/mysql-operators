@@ -82,8 +82,6 @@ from constants import (
     BACKUPS_USERNAME,
     CHARMED_MYSQL_SNAP_NAME,
     CHARMED_MYSQLD_SERVICE,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
     COS_AGENT_RELATION_NAME,
     DB_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
@@ -93,10 +91,11 @@ from constants import (
     MYSQL_EXPORTER_PORT,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_SOCK_FILE,
+    OPERATOR_PASSWORD_KEY,
+    OPERATOR_USERNAME,
     PEER,
-    ROOT_PASSWORD_KEY,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
+    REPLICATION_PASSWORD_KEY,
+    REPLICATION_USERNAME,
     TRACING_PROTOCOL,
 )
 from flush_mysql_logs import FlushMySQLLogsCharmEvents, MySQLLogs
@@ -235,9 +234,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Handle the leader elected event."""
         # Set MySQL config values in the peer relation databag
         required_passwords = [
-            ROOT_PASSWORD_KEY,
-            SERVER_CONFIG_PASSWORD_KEY,
-            CLUSTER_ADMIN_PASSWORD_KEY,
+            OPERATOR_PASSWORD_KEY,
+            REPLICATION_PASSWORD_KEY,
             MONITORING_PASSWORD_KEY,
             BACKUPS_PASSWORD_KEY,
         ]
@@ -639,11 +637,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             MYSQLD_SOCK_FILE,
             self.app_peer_data["cluster-name"],
             self.app_peer_data["cluster-set-domain-name"],
-            self.get_secret("app", ROOT_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
-            SERVER_CONFIG_USERNAME,
-            self.get_secret("app", SERVER_CONFIG_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
-            CLUSTER_ADMIN_USERNAME,
-            self.get_secret("app", CLUSTER_ADMIN_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
+            OPERATOR_USERNAME,
+            self.get_secret("app", OPERATOR_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
+            REPLICATION_USERNAME,
+            self.get_secret("app", REPLICATION_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             MONITORING_USERNAME,
             self.get_secret("app", MONITORING_PASSWORD_KEY),  # pyright: ignore [reportArgumentType]
             BACKUPS_USERNAME,
@@ -775,10 +772,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()
-        self._mysql.reset_root_password_and_start_mysqld()
+        self._mysql.set_operator_user_and_start_mysqld()
         self._mysql.configure_mysql_router_roles()
         self._mysql.configure_mysql_system_roles()
         self._mysql.configure_mysql_system_users()
+        self._mysql.drop_root_user()
 
         default_components = ["binlog_utils_udf", "validate_password"]
         optional_components = []

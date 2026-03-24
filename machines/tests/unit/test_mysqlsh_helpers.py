@@ -26,8 +26,8 @@ from constants import (
 from mysql_vm_helpers import (
     MySQL,
     MySQLCreateCustomMySQLDConfigError,
-    MySQLResetRootPasswordAndStartMySQLDError,
     MySQLServiceNotRunningError,
+    MySQLSetOperatorUserAndStartMySQLDError,
     SnapServiceOperationError,
     snap_service_operation,
 )
@@ -56,12 +56,11 @@ class TestMySQL(unittest.TestCase):
             MYSQLD_SOCK_FILE,
             "test_cluster",
             "test_cluster_set",
-            "password",
-            "serverconfig",
-            "serverconfigpassword",
-            "clusteradmin",
-            "clusteradminpassword",
-            "monitoring",
+            "charmed-operator",
+            "charmed-operatorpassword",
+            "charmed-replication",
+            "charmed-replicationpassword",
+            "charmed-stats",
             "monitoringpassword",
             "backups",
             "backupspassword",
@@ -79,7 +78,7 @@ class TestMySQL(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("mysql_vm_helpers.snap_service_operation")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld(
+    def test_set_operator_user_and_start_mysqld(
         self,
         _wait_until_mysql_connection,
         _snap_service_operation,
@@ -87,7 +86,7 @@ class TestMySQL(unittest.TestCase):
         _named_temporary_file,
     ):
         """Test a successful execution of reset_root_password_and_start_mysqld."""
-        self.mysql.reset_root_password_and_start_mysqld()
+        self.mysql.set_operator_user_and_start_mysqld()
 
         self.assertEqual(2, _named_temporary_file.call_count)
         self.assertEqual(2, _check_output.call_count)
@@ -98,7 +97,7 @@ class TestMySQL(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("mysql_vm_helpers.snap_service_operation")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
-    def test_reset_root_password_and_start_mysqld_exception(
+    def test_set_user_operator_and_start_mysqld_exception(
         self,
         _wait_until_mysql_connection,
         _snap_service_operation,
@@ -108,8 +107,8 @@ class TestMySQL(unittest.TestCase):
         """Test a failed execution of reset_root_password_and_start_mysqld."""
         _check_output.side_effect = subprocess.CalledProcessError(cmd="", returncode=-1)
 
-        with self.assertRaises(MySQLResetRootPasswordAndStartMySQLDError):
-            self.mysql.reset_root_password_and_start_mysqld()
+        with self.assertRaises(MySQLSetOperatorUserAndStartMySQLDError):
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.assertEqual(2, _named_temporary_file.call_count)
         self.assertEqual(1, _check_output.call_count)
@@ -124,8 +123,8 @@ class TestMySQL(unittest.TestCase):
         _check_output.side_effect = None
         _snap_service_operation.side_effect = SnapServiceOperationError()
 
-        with self.assertRaises(MySQLResetRootPasswordAndStartMySQLDError):
-            self.mysql.reset_root_password_and_start_mysqld()
+        with self.assertRaises(MySQLSetOperatorUserAndStartMySQLDError):
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.assertEqual(2, _named_temporary_file.call_count)
         self.assertEqual(2, _check_output.call_count)
@@ -141,8 +140,8 @@ class TestMySQL(unittest.TestCase):
         _snap_service_operation.side_effect = None
         _wait_until_mysql_connection.side_effect = MySQLServiceNotRunningError()
 
-        with self.assertRaises(MySQLResetRootPasswordAndStartMySQLDError):
-            self.mysql.reset_root_password_and_start_mysqld()
+        with self.assertRaises(MySQLSetOperatorUserAndStartMySQLDError):
+            self.mysql.set_operator_user_and_start_mysqld()
 
         self.assertEqual(2, _named_temporary_file.call_count)
         self.assertEqual(2, _check_output.call_count)

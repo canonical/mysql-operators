@@ -79,12 +79,12 @@ def test_charmed_read_role(juju: Juju):
     mysql_units = get_app_units(juju, DATABASE_APP_NAME)
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME, mysql_units[0])
     primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
-    server_config_credentials = get_mysql_server_credentials(juju, mysql_units[0])
+    operator_credentials = get_mysql_server_credentials(juju, mysql_units[0])
 
     execute_queries_on_unit(
         primary_unit_address,
-        server_config_credentials["username"],
-        server_config_credentials["password"],
+        operator_credentials["username"],
+        operator_credentials["password"],
         [
             "CREATE TABLE charmed_read_db.test_table (`id` SERIAL PRIMARY KEY, `data` TEXT)",
             "INSERT INTO charmed_read_db.test_table (`data`) VALUES ('test_data_1'), ('test_data_2')",
