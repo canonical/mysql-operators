@@ -142,7 +142,8 @@ class TestMySQLBase(unittest.TestCase):
             self.mock_executor_cls,
         )  # pyright: ignore
 
-    def test_configure_mysql_router_roles(self):
+    @patch("charms.mysql.v0.mysql.MySQLBase._read_only_disabled")
+    def test_configure_mysql_router_roles(self, _read_only_disabled):
         """Test successful configuration of MySQL router role."""
         self.mock_executor.execute_sql.return_value = []
 
@@ -152,7 +153,7 @@ class TestMySQLBase(unittest.TestCase):
             "WHERE user LIKE '{role}' AND authentication_string=''"
         )
         create_query = ";".join((
-            "CREATE ROLE {role}",
+            "CREATE ROLE IF NOT EXISTS {role}",
             "GRANT CREATE ON *.* TO {role}",
             "GRANT CREATE USER ON *.* TO {role}",
             "GRANT ALL ON *.* TO {role} WITH GRANT OPTION",
@@ -172,7 +173,8 @@ class TestMySQLBase(unittest.TestCase):
         with self.assertRaises(MySQLConfigureMySQLRolesError):
             self.mysql.configure_mysql_router_roles()
 
-    def test_configure_mysql_system_roles(self):
+    @patch("charms.mysql.v0.mysql.MySQLBase._read_only_disabled")
+    def test_configure_mysql_system_roles(self, _read_only_disabled):
         """Test successful configuration of MySQL system roles."""
         self.mock_executor.execute_sql.return_value = []
 
@@ -205,17 +207,16 @@ class TestMySQLBase(unittest.TestCase):
         with self.assertRaises(MySQLConfigureMySQLRolesError):
             self.mysql.configure_mysql_system_roles()
 
-    def test_configure_mysql_system_users(self):
+    @patch("charms.mysql.v0.mysql.MySQLBase._read_only_disabled")
+    def test_configure_mysql_system_users(self, _read_only_disabled):
         """Test successful configuration of MySQL system users."""
         self.mock_executor.execute_sql.return_value = []
 
         queries = ";".join([
             "UPDATE mysql.user SET authentication_string=null WHERE User='root' and Host='localhost'",
             "ALTER USER 'root'@'localhost' IDENTIFIED BY 'password'",
-            "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword'",
-            "CREATE USER 'monitoring'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
-            "CREATE USER 'backups'@'%' IDENTIFIED BY 'backupspassword'",
-            "GRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION",
+            "CREATE USER IF NOT EXISTS 'monitoring'@'%' IDENTIFIED BY 'monitoringpassword' WITH MAX_USER_CONNECTIONS 3",
+            "CREATE USER IF NOT EXISTS 'backups'@'%' IDENTIFIED BY 'backupspassword'",
             "GRANT charmed_stats TO 'monitoring'@'%'",
             "GRANT charmed_backup TO 'backups'@'%'",
             "REVOKE BINLOG_ADMIN, CONNECTION_ADMIN, ENCRYPTION_KEY_ADMIN, GROUP_REPLICATION_ADMIN, REPLICATION_SLAVE_ADMIN, SET_USER_ID, SUPER, SYSTEM_USER, SYSTEM_VARIABLES_ADMIN, VERSION_TOKEN_ADMIN ON *.* FROM 'root'@'localhost'",
@@ -307,7 +308,7 @@ class TestMySQLBase(unittest.TestCase):
         granting_query = ";".join([
             "GRANT SELECT ON `test_database`.* TO `charmed_read`",
             "GRANT SELECT, INSERT, DELETE, UPDATE ON `test_database`.* TO `charmed_dml`",
-            "CREATE ROLE `test_database_00`",
+            "CREATE ROLE IF NOT EXISTS `test_database_00`",
             "GRANT SELECT, INSERT, DELETE, UPDATE, EXECUTE, ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE VIEW, DROP, INDEX, LOCK TABLES, REFERENCES, TRIGGER ON `test_database`.* TO `test_database_00`",
         ])
 

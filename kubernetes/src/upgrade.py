@@ -220,6 +220,12 @@ class MySQLK8sUpgrade(DataUpgrade):
             self.charm._reconcile_pebble_layer(container)
             self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
             self.charm.recover_unit_after_restart()
+
+            logger.info("Reconciling predefined roles")
+            self.charm._mysql.configure_mysql_router_roles()
+            self.charm._mysql.configure_mysql_system_roles()
+            self.charm._mysql.configure_mysql_system_users()
+
             if self.charm.config.plugin_audit_enabled:
                 self.charm._mysql.install_plugins(["audit_log"])
             self.charm._mysql.install_plugins(["binlog_utils_udf"])
