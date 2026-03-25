@@ -1,15 +1,15 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
 import logging
 import shutil
 import zipfile
-from contextlib import suppress
 from pathlib import Path
 
 import jubilant
-from jubilant import Juju, TaskError
+import tomli
+import tomli_w
+from jubilant import Juju
 
 from ... import architecture
 from ...helpers_ha import (
@@ -17,13 +17,9 @@ from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_leader,
     get_app_units,
-    get_k8s_stateful_set_partitions,
     get_mysql_primary_unit,
     get_mysql_variable_value,
-    get_relation_data,
-    get_unit_by_number,
     wait_for_apps_status,
-    wait_for_unit_message,
     wait_for_unit_status,
 )
 
@@ -69,13 +65,13 @@ def test_deploy_latest(juju: Juju) -> None:
     )
 
 
-def test_pre_upgrade_check(juju: Juju) -> None:
-    """Test that the pre-upgrade-check action runs successfully."""
+def test_pre_refresh_check(juju: Juju) -> None:
+    """Test that the pre-refresh-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=mysql_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=mysql_leader, action="pre-refresh-check")
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in mysql_units:
@@ -86,14 +82,15 @@ def test_pre_upgrade_check(juju: Juju) -> None:
     mysql_primary = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
     assert mysql_primary == f"{MYSQL_APP_NAME}/0", "Primary unit not set to unit 0"
 
-    logging.info("Assert partition is set to 2")
-    assert get_k8s_stateful_set_partitions(juju, MYSQL_APP_NAME) == 2, "Partition not set to 2"
 
-
-def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
-    """Update the second cluster."""
+def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
+    """Refresh using the locally built charm."""
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+
+    mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
+    mysql_units = get_app_units(juju, MYSQL_APP_NAME)
+    mysql_units.sort()
 
     logging.info("Refresh the charm")
     juju.refresh(
@@ -102,27 +99,41 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
     )
 
-    mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    mysql_upgrade_unit = get_unit_by_number(juju, MYSQL_APP_NAME, 2)
-
-    logging.info("Wait for upgrade to complete on first upgrading unit")
+    logging.info("Wait for refresh to start")
     juju.wait(
-        ready=wait_for_unit_message(MYSQL_APP_NAME, mysql_upgrade_unit, "upgrade completed"),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
-    logging.info("Resume upgrade")
-    while get_k8s_stateful_set_partitions(juju, MYSQL_APP_NAME) == 2:
-        # ignore action return error as it is expected when
-        # the leader unit is the next one to be upgraded
-        # due it being immediately rolled when the partition
-        # is patched in the stateful set
-        with suppress(TaskError):
-            juju.run(unit=mysql_app_leader, action="resume-upgrade")
+    mysql_status = juju.status().apps[MYSQL_APP_NAME]
+    upgrade_unit_status = mysql_status.units[mysql_units[-1]]
+    upgrade_unit_message = upgrade_unit_status.workload_status.message
 
-    logging.info("Wait for upgrade to complete")
+    if "Refresh incompatible" in upgrade_unit_message:
+        logging.info("Application refresh is blocked due to incompatibility")
+        juju.run(
+            unit=mysql_units[-1],
+            action="force-refresh-start",
+            params={"check-compatibility": False},
+            wait=5 * MINUTE_SECS,
+        )
+
+    logging.info("Wait for refresh to finish on first unit")
     juju.wait(
-        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
+        ready=jubilant.all_agents_idle,
+        timeout=5 * MINUTE_SECS,
+    )
+
+    logging.info("Resume refresh")
+    juju.run(
+        unit=mysql_leader,
+        action="resume-refresh",
+        wait=5 * MINUTE_SECS,
+    )
+
+    logging.info("Wait for refresh to complete")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 
@@ -131,13 +142,13 @@ def test_upgrade_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
 
 
 def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
-    """Test an upgrade failure and its rollback."""
-    mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    mysql_app_units = get_app_units(juju, MYSQL_APP_NAME)
-    mysql_upgrade_unit = get_unit_by_number(juju, MYSQL_APP_NAME, 2)
+    """Test a refresh failure and its rollback."""
+    mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
+    mysql_units = get_app_units(juju, MYSQL_APP_NAME)
+    mysql_units.sort()
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=mysql_app_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=mysql_leader, action="pre-refresh-check")
 
     tmp_folder = Path("tmp")
     tmp_folder.mkdir(exist_ok=True)
@@ -146,68 +157,63 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     shutil.copy(charm, tmp_folder_charm)
 
     logging.info("Inject dependency fault")
-    inject_dependency_fault(juju, MYSQL_APP_NAME, tmp_folder_charm)
+    inject_dependency_fault(tmp_folder_charm)
 
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=tmp_folder_charm)
 
     logging.info("Wait for upgrade to fail on first upgrading unit")
     juju.wait(
-        ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_upgrade_unit, "blocked"),
+        ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_units[-1], "blocked"),
         timeout=10 * MINUTE_SECS,
     )
 
     logging.info("Ensure continuous writes on remaining units")
-    mysql_remaining_units = [unit for unit in mysql_app_units if unit != mysql_upgrade_unit]
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_remaining_units)
-
-    logging.info("Re-run pre-upgrade-check action")
-    juju.run(unit=mysql_app_leader, action="pre-upgrade-check")
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_units[0:-1])
 
     logging.info("Re-refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=charm)
 
-    logging.info("Wait for upgrade to complete on first upgrading unit")
+    logging.info("Wait for refresh to start")
     juju.wait(
-        ready=wait_for_unit_message(MYSQL_APP_NAME, mysql_upgrade_unit, "upgrade completed"),
+        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
         timeout=10 * MINUTE_SECS,
     )
 
-    logging.info("Resume upgrade")
-    while get_k8s_stateful_set_partitions(juju, MYSQL_APP_NAME) == 2:
-        # ignore action return error as it is expected when
-        # the leader unit is the next one to be upgraded
-        # due it being immediately rolled when the partition
-        # is patched in the stateful set
-        with suppress(TaskError):
-            juju.run(unit=mysql_app_leader, action="resume-upgrade")
-
-    logging.info("Wait for upgrade to recover")
+    logging.info("Wait for refresh to finish on first unit")
     juju.wait(
-        ready=lambda status: jubilant.all_active(status, MYSQL_APP_NAME),
+        ready=jubilant.all_agents_idle,
+        timeout=5 * MINUTE_SECS,
+    )
+
+    logging.info("Resume refresh")
+    juju.run(
+        unit=mysql_leader,
+        action="resume-refresh",
+        wait=5 * MINUTE_SECS,
+    )
+
+    logging.info("Wait for refresh to complete")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
         timeout=20 * MINUTE_SECS,
     )
 
     logging.info("Ensure continuous writes after rollback procedure")
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_app_units)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, mysql_units)
 
     # Remove fault charm file
     tmp_folder_charm.unlink()
 
 
-def inject_dependency_fault(juju: Juju, app_name: str, charm_file: str | Path) -> None:
-    """Inject a dependency fault into the mysql charm."""
-    # Open dependency.json and load current charm version
-    with open("src/dependency.json") as dependency_file:
-        current_charm_version = json.load(dependency_file)["charm"]["version"]
+def inject_dependency_fault(charm_file: str | Path) -> None:
+    """Inject a dependency fault into the MySQL charm."""
+    with Path("refresh_versions.toml").open("rb") as file:
+        versions = tomli.load(file)
 
-    # Query running dependency to overwrite with incompatible version
-    relation_data = get_relation_data(juju, app_name, "upgrade")
+    versions["charm"] = "8.4/0.0.0"
+    versions["workload"] = "8.4"
 
-    loaded_dependency_dict = json.loads(relation_data[0]["application-data"]["dependencies"])
-    loaded_dependency_dict["charm"]["upgrade_supported"] = f">{current_charm_version}"
-    loaded_dependency_dict["charm"]["version"] = "999.999.999"
-
-    # Overwrite dependency.json with incompatible version
+    # Overwrite refresh_versions.toml with incompatible version.
     with zipfile.ZipFile(charm_file, mode="a") as charm_zip:
-        charm_zip.writestr("src/dependency.json", json.dumps(loaded_dependency_dict))
+        charm_zip.writestr("refresh_versions.toml", tomli_w.dumps(versions))

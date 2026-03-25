@@ -14,10 +14,11 @@ from utils import generate_random_password
 from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
-    get_relation_data,
+    get_unit_info,
     get_unit_ip,
     remove_leader_unit,
     rotate_mysql_server_credentials,
@@ -205,7 +206,7 @@ def check_read_only_endpoints(juju: Juju, app_name: str, relation_name: str) -> 
         app_name: The name of the application
         relation_name: The name of the relation
     """
-    relation_data = get_relation_data(juju=juju, app_name=app_name, rel_name=relation_name)
+    relation_data = get_relation_data(juju=juju, app_name=app_name, relation_name=relation_name)
     read_only_endpoint_ips = get_read_only_endpoint_ips(relation_data)
     # check that the number of read-only-endpoints is correct
     if len(get_app_units(juju, app_name)) - 1 != len(read_only_endpoint_ips):
@@ -263,3 +264,30 @@ def get_read_only_endpoint_ips(relation_data: list) -> list[str]:
             raise ValueError("Malformed endpoint")
 
     return read_only_endpoint_hostnames
+
+
+def get_relation_data(juju: Juju, app_name: str, relation_name: str) -> list[dict]:
+    """Returns a list that contains the relation-data.
+
+    Args:
+        juju: The juju instance to use.
+        app_name: The name of the application
+        relation_name: name of the relation to get connection data from
+
+    Returns:
+        A list that contains the relation-data
+    """
+    app_leader = get_app_leader(juju, app_name)
+    app_leader_info = get_unit_info(juju, app_leader)
+    if not app_leader_info:
+        raise ValueError(f"No unit info could be grabbed for unit {app_leader}")
+
+    relation_data = [
+        value
+        for value in app_leader_info[app_leader]["relation-info"]
+        if value["endpoint"] == relation_name
+    ]
+    if not relation_data:
+        raise ValueError(f"No relation data could be grabbed for relation {relation_name}")
+
+    return relation_data
