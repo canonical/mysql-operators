@@ -75,7 +75,7 @@ See [Juju logs documentation](https://juju.is/docs/juju/log) to learn more about
 
 ## Check snap services (VM only)
 
-Check the operator [architecture](/explanation/architecture) first to be familiar with the content of the snap, operator building blocks, and Juju units.
+Check the operator {ref}`architecture <architecture>` first to be familiar with the content of the snap, operator building blocks, and Juju units.
 
 To enter a unit, use:
 

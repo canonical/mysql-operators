@@ -23,7 +23,7 @@ The Charmed MySQL snap packages the MySQL workload along with the necessary depe
 ```{tab-item} K8s
 :sync: k8s
 
-Charmed MySQL K8s and Charmed MySQL Router K8s operators use a pinned version of the [Charmed MySQL rock](https://github.com/orgs/canonical/packages/container/package/charmed-mysql) to provide reproducible and secure environments.
+Charmed MySQL K8s and Charmed MySQL Router K8s operators use a pinned version of the [Charmed MySQL rock](https://github.com/canonical/charmed-mysql-rock/pkgs/container/charmed-mysql) to provide reproducible and secure environments.
 
 The rock is an OCI image derived from the respective snap. The Charmed MySQL K8s snap packages the MySQL workload along with the necessary dependencies and utilities required for the operators’ lifecycle. For more details, see the snap contents in the [snapcraft.yaml file](https://github.com/canonical/charmed-mysql-snap/blob/8.4/edge/snap/snapcraft.yaml).
 ```

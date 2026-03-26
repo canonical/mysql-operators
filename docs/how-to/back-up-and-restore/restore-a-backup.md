@@ -9,12 +9,12 @@ myst:
 
 This is a guide for performing a basic restore (restoring a locally made backup).
 
-To restore a backup that was made from the a *different* cluster, (i.e. cluster migration via restore), see [](/how-to/back-up-and-restore/migrate-a-cluster).
+To restore a backup that was made from the a *different* cluster, (i.e. cluster migration via restore), see {ref}`migrate-a-cluster`.
 
 ## Prerequisites
 
 - A MySQL deployment {ref}`scaled down <scale>` to one unit (scale it up after the backup is restored)
-- [A backup in your S3 storage](/how-to/back-up-and-restore/create-a-backup)
+- {ref}`A backup in your S3 storage <create-a-backup>`
 
 ---
 
