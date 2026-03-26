@@ -286,7 +286,7 @@ Target the leader unit:
 ```
 ````
 
-`resume-refresh` will rollout the refresh for the following unit, always from the highest ordinal number to the lowest. For each successful refreshed unit, the process will roll out the next automatically.
+`resume-refresh` will roll out the refresh for the following unit, always from the highest ordinal number to the lowest. For each successful refreshed unit, the process will roll out the next automatically.
 
 ## Step 7: Roll back
 

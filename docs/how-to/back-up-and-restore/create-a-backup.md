@@ -11,7 +11,7 @@ This guide contains recommended steps and useful commands for creating and manag
 
 ## Prerequisites
 
-* [Configured settings for S3 storage](/how-to/back-up-and-restore/configure-s3-aws)
+* {ref}`Configured settings for S3 storage <configure-s3-aws>`
 
 ---
 

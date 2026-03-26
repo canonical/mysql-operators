@@ -286,8 +286,7 @@ mydatabase/2   active    idle   10.80.1.6
 
 At this point we can relax and enjoy the protection from Cloud Availability zones!
 
-To survive a complete cloud outage, we recommend setting up [cluster-cluster asynchronous replication](/how-to/cluster-cluster-replication/deploy).
-
+To survive a complete cloud outage, we recommend setting up {ref}`cluster-cluster asynchronous replication <cluster-cluster-deploy>`.
 
 ## Remove GKE setup
 

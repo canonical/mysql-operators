@@ -19,8 +19,8 @@ The operator uses the following internal database users:
 
 * `charmed-replication` - the user to manage replication in the MySQL InnoDB ClusterSet.
 * `charmed-operator` - the user that operates MySQL instances.
-* `charmed-stats` - the user for [COS integration](/how-to/monitoring-cos/enable-monitoring).
-* `charmed-backup` - the user to [perform/list/restore backups](/how-to/back-up-and-restore/create-a-backup).
+* `charmed-stats` - the user for {ref}`COS integration <enable-monitoring>`.
+* `charmed-backup` - the user to {ref}`manage backups <create-a-backup>`.
 * `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
 * `mysql_innodb_cs_#######` - the internal recovery user which enable connections between MySQl InnoDB Clusters in ClusterSet. One user is created for entire MySQL ClusterSet.
 
