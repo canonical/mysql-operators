@@ -387,16 +387,12 @@ class MySQL(MySQLBase):
             "/snap/bin/charmed-mysql.mysqld-initialize",
             "--datadir",
             MYSQL_DATA_DIR,
-            # No --user parameter: snap runs as root, needs root-owned directory
         ]
 
         try:
-            # TODO: remove workaround for changing permissions and ownership of data
-            # files once initialise commands can be run with snap_daemon user
-            with self._set_root_ownership(MYSQL_DATA_DIR):
-                logger.info("Initializing MySQL data directory")
-                subprocess.check_call(bootstrap_command)  # noqa: S603
-        except (subprocess.CalledProcessError, MySQLInitialiseMySQLDError) as e:
+            logger.info("Initializing MySQL data directory")
+            subprocess.check_call(bootstrap_command)  # noqa: S603
+        except subprocess.CalledProcessError as e:
             logger.exception("Failed to initialise MySQL data directory")
             self.empty_data_files()
             raise MySQLInitialiseMySQLDError from e

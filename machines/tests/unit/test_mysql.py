@@ -2079,80 +2079,25 @@ class TestMySQL(unittest.TestCase):
 
     @patch("mysql_vm_helpers.MySQL.empty_data_files")
     @patch("subprocess.check_call")
-    @patch("pathlib.Path.exists")
-    def test_initialise_mysqld(self, _path_exists, _check_call, _empty_data_files):
+    def test_initialise_mysqld(self, _check_call, _empty_data_files):
         """Test successful execution of initialise_mysqld()."""
-        _path_exists.return_value = True
-
         self.mysql.initialise_mysqld()
 
-        # Should make 4 calls: chown root, chmod, initialize, chown snap_daemon
-        assert _check_call.call_count == 4
-        _check_call.assert_any_call([
-            "/usr/bin/sudo",
-            "chown",
-            "-R",
-            "root:root",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
-        _check_call.assert_any_call([
-            "/usr/bin/sudo",
-            "chmod",
-            "750",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
-        _check_call.assert_any_call([
+        # Should make 1 call to initialize mysqld
+        _check_call.assert_called_once_with([
             "/usr/bin/sudo",
             "/snap/bin/charmed-mysql.mysqld-initialize",
             "--datadir",
             "/var/snap/charmed-mysql/common/var/lib/mysql",
         ])
-        _check_call.assert_any_call([
-            "/usr/bin/sudo",
-            "chown",
-            "-R",
-            "snap_daemon:root",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
+        _empty_data_files.assert_not_called()
 
     @patch("mysql_vm_helpers.MySQL.empty_data_files")
     @patch("subprocess.check_call")
-    @patch("pathlib.Path.exists")
-    def test_initialise_mysqld_restores_ownership_on_failure(
-        self, _path_exists, _check_call, _empty_data_files
-    ):
-        """Test that ownership is restored even when initialization fails."""
-        _path_exists.return_value = True
-
-        # Make mysqld-initialize fail
-        def check_call_side_effect(cmd, *args, **kwargs):
-            if any("mysqld-initialize" in str(arg) for arg in cmd):
-                raise subprocess.CalledProcessError(1, cmd)
-            return None
-
-        _check_call.side_effect = check_call_side_effect
-        from mysql_vm_helpers import MySQLInitialiseMySQLDError
-
-        with self.assertRaises(MySQLInitialiseMySQLDError):
-            self.mysql.initialise_mysqld()
-
-        # Verify ownership was attempted to be restored (in finally block)
-        _check_call.assert_any_call([
-            "/usr/bin/sudo",
-            "chown",
-            "-R",
-            "snap_daemon:root",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
-
-    @patch("mysql_vm_helpers.MySQL.empty_data_files")
-    @patch("subprocess.check_call")
-    @patch("pathlib.Path.exists")
-    def test_initialise_mysqld_exception(self, _path_exists, _check_call, _empty_data_files):
+    def test_initialise_mysqld_exception(self, _check_call, _empty_data_files):
         """Test failing execution of initialise_mysqld()."""
         from mysql_vm_helpers import MySQLInitialiseMySQLDError
 
-        _path_exists.return_value = True
         _check_call.side_effect = subprocess.CalledProcessError(1, "mysqld")
 
         with self.assertRaises(MySQLInitialiseMySQLDError):
