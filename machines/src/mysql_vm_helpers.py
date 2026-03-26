@@ -336,9 +336,9 @@ class MySQL(MySQLBase):
         cron_content = f"* 1-23 * * * root {script_path}\n1-59 0 * * * root {script_path}\n"
         self.write_content_to_file(cron_path, cron_content, owner="root")
 
-    def reset_root_password_and_start_mysqld(self) -> None:
+    def set_operator_user_and_start_mysqld(self) -> None:
         """Reset the root user password and start mysqld."""
-        logger.debug("Resetting root user password and starting mysqld")
+        logger.info("Set operator user and restart mysqld")
         with (
             tempfile.NamedTemporaryFile(
                 dir=MYSQLD_CONFIG_DIRECTORY,
@@ -349,7 +349,7 @@ class MySQL(MySQLBase):
             ) as _custom_config_file,
             tempfile.NamedTemporaryFile(
                 dir=CHARMED_MYSQL_COMMON_DIRECTORY,
-                prefix="alter-root-user.",
+                prefix="create-operator-user.",
                 suffix=".sql",
                 mode="w",
                 encoding="utf-8",
@@ -369,7 +369,8 @@ class MySQL(MySQLBase):
                 ) from e
 
             _sql_file.write(
-                f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{self.root_password}';\n"
+                f"CREATE USER '{self.server_config_user}'@'%' IDENTIFIED BY '{self.server_config_password}';"
+                f"GRANT ALL ON *.* TO '{self.server_config_user}'@'%' WITH GRANT OPTION;"
                 "FLUSH PRIVILEGES;"
             )
             _sql_file.flush()

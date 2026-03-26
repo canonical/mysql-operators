@@ -182,7 +182,7 @@ class MySQLVMUpgrade(DataUpgrade):
                 return
 
             # override config, avoid restart
-            self.charm._on_config_changed(None)
+            self.charm._mysql.write_mysqld_config()
             self.charm.unit.status = MaintenanceStatus("starting services...")
             # stop cron daemon to be able to query `error.log`
             set_cron_daemon("stop")
@@ -231,6 +231,11 @@ class MySQLVMUpgrade(DataUpgrade):
 
         try:
             self.charm.recover_unit_after_restart()
+
+            logger.info("Reconciling predefined roles")
+            self.charm._mysql.configure_mysql_router_roles()
+            self.charm._mysql.configure_mysql_system_roles()
+            self.charm._mysql.configure_mysql_system_users()
 
             logger.debug("Upgraded unit is healthy. Set upgrade state to `completed`")
             self.set_unit_completed()

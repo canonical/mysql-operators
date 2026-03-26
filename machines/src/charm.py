@@ -780,7 +780,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()
-        self._mysql.reset_root_password_and_start_mysqld()
+        self._mysql.set_operator_user_and_start_mysqld()
         self._mysql.configure_mysql_router_roles()
         self._mysql.configure_mysql_system_roles()
         self._mysql.configure_mysql_system_users()

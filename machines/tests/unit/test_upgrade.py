@@ -154,10 +154,10 @@ class TestUpgrade(unittest.TestCase):
     @patch("mysql_vm_helpers.MySQL.stop_mysqld")
     @patch("mysql_vm_helpers.MySQL.start_mysqld")
     @patch("mysql_vm_helpers.MySQL.is_instance_in_cluster", return_value=True)
-    @patch("charm.MySQLOperatorCharm._on_config_changed")
+    @patch("mysql_vm_helpers.MySQL.write_mysqld_config")
     def test_upgrade_granted(
         self,
-        mock_config_change,
+        mock_write_mysqld_config,
         mock_is_instance_in_cluster,
         mock_start_mysqld,
         mock_stop_mysqld,
@@ -186,7 +186,7 @@ class TestUpgrade(unittest.TestCase):
         mock_stop_mysqld.assert_called_once()
         mock_install_workload.assert_called_once()
         mock_get_mysql_version.assert_called_once()
-        mock_config_change.assert_called()
+        mock_write_mysqld_config.assert_called()
 
         self.harness.update_relation_data(
             self.upgrade_relation_id, "mysql/0", {"state": "upgrading"}

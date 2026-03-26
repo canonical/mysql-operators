@@ -171,7 +171,7 @@ class TestCharm(unittest.TestCase):
     )
     @patch("mysql_k8s_helpers.MySQL.get_max_connections", return_value=120)
     @patch("mysql_k8s_helpers.MySQL.setup_logrotate_config")
-    @patch("mysql_k8s_helpers.MySQL.reset_root_password_and_start_mysqld")
+    @patch("mysql_k8s_helpers.MySQL.set_operator_user_and_start_mysqld")
     def test_mysql_pebble_ready(
         self,
         _,

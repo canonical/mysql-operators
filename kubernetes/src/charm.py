@@ -713,8 +713,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("Waiting for instance to be ready")
             self._mysql.wait_until_mysql_connection(check_port=False)
 
-            logger.info("Resetting root password and starting mysqld")
-            self._mysql.reset_root_password_and_start_mysqld()
+            logger.info("Set operator user and restart mysqld")
+            self._mysql.set_operator_user_and_start_mysqld()
 
             logger.info("Configuring initialized mysqld")
             # Configure all base users and revoke privileges from the root users
