@@ -101,11 +101,11 @@ The logs are stored in the `/var/snap/charmed-mysql/common/var/log/mysql` direct
 
 We recommend setting the retention period to a value greater than the default (three days):
 
-    juju config mysql logs_retention_period=14 # days
+    juju config mysql logs-retention-period=14 # days
 
 By default, the audit log records logins and logouts. To include the SQL queries executed by each user:
 
-    juju config mysql logs_audit_policy=all
+    juju config mysql logs-audit-policy=all
 ```
 
 ```{tab-item} K8s
@@ -115,11 +115,11 @@ The logs are stored in the `/var/log/mysql` directory of the mysql container, an
 
 We recommend setting the retention period to a value greater than the default (three days):
 
-    juju config mysql-k8s logs_retention_period=14 # days
+    juju config mysql-k8s logs-retention-period=14 # days
 
 By default, the audit log records logins and logouts. To include the SQL queries executed by each user:
 
-    juju config mysql-k8s logs_audit_policy=all
+    juju config mysql-k8s logs-audit-policy=all
 ```
 ````
 
