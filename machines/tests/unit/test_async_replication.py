@@ -508,3 +508,32 @@ class TestAsyncRelation(unittest.TestCase):
         )
 
         _mysql.rejoin_cluster.assert_called_once_with(self.charm.app_peer_data["cluster-name"])
+
+    @patch(
+        "charm.MySQLOperatorCharm._is_peer_data_set", new_callable=PropertyMock, return_value=False
+    )
+    @patch("ops.framework.EventBase.defer")
+    def test_consumer_relation_created_deferred_when_peer_data_not_set(
+        self, _, mock_defer, mock_peer_data
+    ):
+        """Test that consumer relation created event is deferred when peer data is not set."""
+        self.harness.set_leader(True)
+        relation_id = self.harness.add_relation("replication", "remote")
+        self.harness.add_relation_unit(relation_id, "remote/0")
+
+        mock_defer.assert_called()
+
+    @patch(
+        "charm.MySQLOperatorCharm._is_peer_data_set", new_callable=PropertyMock, return_value=False
+    )
+    @patch("ops.framework.EventBase.defer")
+    def test_consumer_relation_changed_deferred_when_peer_data_not_set(
+        self, _, mock_defer, mock_peer_data
+    ):
+        """Test that consumer relation changed event is deferred when peer data is not set."""
+        self.harness.set_leader(True)
+        relation_id = self.harness.add_relation("replication", "remote")
+        self.harness.add_relation_unit(relation_id, "remote/0")
+        self.harness.update_relation_data(relation_id, "remote/0", {"key": "value"})
+
+        mock_defer.assert_called()

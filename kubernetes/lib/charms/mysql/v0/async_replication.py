@@ -704,6 +704,10 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
         """Handle the async_replica relation being created on the leader unit."""
         if not self._charm.unit.is_leader():
             return
+        if not self._charm._is_peer_data_set:
+            logger.info("Peer data not set, deferring event")
+            event.defer()
+            return
         if not self._charm.unit_initialized() and not self.returning_cluster:
             # avoid running too early for non returning clusters
             self._charm.unit.status = BlockedStatus(
@@ -741,6 +745,10 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
     def _on_consumer_changed(self, event):  # noqa: C901
         """Handle the async_replica relation being changed."""
         if not self._charm.unit.is_leader():
+            return
+        if not self._charm._is_peer_data_set:
+            logger.info("Peer data not set, deferring event")
+            event.defer()
             return
         state = self.state
         logger.debug(f"Replica cluster {state.value=}")
