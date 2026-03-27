@@ -753,8 +753,8 @@ class MySQLBackups(Object):
             )
             logger.debug(f"Stdout of mysql-pitr-helper restore command: {stdout}")
             logger.debug(f"Stderr of mysql-pitr-helper restore command: {stderr}")
-        except MySQLRestorePitrError:
-            return False, f"Failed to restore point-in-time-recovery to the {restore_to_time}"
+        except MySQLRestorePitrError as e:
+            return False, f"Failed to restore point-in-time-recovery: {e}"
         return True, ""
 
     def _post_restore(self) -> tuple[bool, str]:
