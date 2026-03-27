@@ -126,6 +126,17 @@ jobs:
         with:
           pattern: ${{ inputs.artifact-prefix }}-*
           merge-multiple: true
+      - name: "HACK: Bootstrap Juju controller"
+        timeout-minutes: 10
+        run: |
+          sudo snap install yq
+          sudo snap install juju --channel 3.6/stable --revision 34273  # Version 3.6.19
+
+          # Read provider from concierge.yaml
+          provider=$(yq eval '.providers | keys | .[0]' ${{ inputs.path-to-charm-directory }}/concierge.yaml)
+          substrate=$([ "$provider" = "microk8s" ] && echo "microk8s" || echo "localhost")
+
+          sudo juju bootstrap $substrate concierge-$provider --agent-version 3.6.19 --model-default 'logging-config=<root>=INFO; unit=DEBUG'
       - name: Run spread job
         timeout-minutes: 180
         id: spread
