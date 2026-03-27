@@ -702,7 +702,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # bootstrap the data directory and users
         logger.info("Initializing mysqld")
         try:
-            self._mysql.fix_data_dir(container)
             self._mysql.initialise_mysqld()
 
             # Add the pebble layer
