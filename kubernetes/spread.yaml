@@ -125,7 +125,15 @@ prepare-each: |
   # Pin Juju version to 3.6.19
   CONTROLLER_NAME=$(juju controllers --format yaml | yq .current-controller)
   juju destroy-controller $CONTROLLER_NAME --destroy-storage --no-prompt --destroy-all-models
-  snap refresh juju --channel 3.6/stable --revision 34273  # FIXME: This revision is AMD64 only
+  ARCH=$(dpkg --print-architecture)
+  if [ "$ARCH" = "amd64" ]; then
+    snap refresh juju --channel 3.6/stable --revision 34273
+  elif [ "$ARCH" = "arm64" ]; then
+    snap refresh juju --channel 3.6/stable --revision 34274
+  else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+  fi
   juju bootstrap microk8s concierge-microk8s --agent-version 3.6.19 --model-default 'logging-config=<root>=INFO; unit=DEBUG'
   juju add-model -c concierge-microk8s testing
 
