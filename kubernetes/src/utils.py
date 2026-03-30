@@ -1,7 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""A collection of utility functions that are used in the charm."""
+"""A collection of utility functions that are used in the charm."""  # FIXME: Trigger CI
 
 import re
 import secrets
