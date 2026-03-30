@@ -35,7 +35,7 @@ juju destroy-model mysql --destroy-storage --yes
 
 ## Documentation
 
-See the [official documentation](https://canonical-charmed-mysql.readthedocs-hosted.com/) for more operational guidance, such as deployment on specific clouds, TLS, monitoring, backups, and troubleshooting.
+See the [official documentation](https://canonical-charmed-mysql.readthedocs-hosted.com/8.0) for more operational guidance, such as deployment on specific clouds, TLS, monitoring, backups, and troubleshooting.
 
 ## Relations
 
