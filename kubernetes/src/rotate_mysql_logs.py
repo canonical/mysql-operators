@@ -11,11 +11,7 @@ from mysql_shell import LogType
 from ops.charm import CharmEvents
 from ops.framework import EventBase, EventSource, Object
 
-from constants import (
-    LOG_ROTATE_CONFIG_FILE,
-    MYSQL_SYSTEM_GROUP,
-    MYSQL_SYSTEM_USER,
-)
+from constants import LOG_ROTATE_CONFIG_FILE
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -58,11 +54,7 @@ class RotateMySQLLogs(Object):
             return
 
         try:
-            self.charm._mysql._execute_commands(
-                ["logrotate", "-f", LOG_ROTATE_CONFIG_FILE],
-                user=MYSQL_SYSTEM_USER,
-                group=MYSQL_SYSTEM_GROUP,
-            )
+            self.charm._mysql._execute_commands(["logrotate", "-f", LOG_ROTATE_CONFIG_FILE])
         except MySQLExecError:
             logger.warning("Failed to rotate MySQL logs")
             return

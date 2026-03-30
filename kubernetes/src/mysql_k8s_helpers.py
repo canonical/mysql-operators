@@ -617,8 +617,8 @@ class MySQL(MySQLBase):
         self,
         commands: list[str],
         bash: bool = False,
-        user: str | None = None,
-        group: str | None = None,
+        user: str | None = MYSQL_SYSTEM_USER,
+        group: str | None = MYSQL_SYSTEM_GROUP,
         env_extra: dict | None = None,
         timeout: float | None = None,
         stream_output: str | None = None,
@@ -661,7 +661,7 @@ class MySQL(MySQLBase):
         path: str,
         content: str,
         owner: str = MYSQL_SYSTEM_USER,
-        group: str = MYSQL_SYSTEM_USER,
+        group: str = MYSQL_SYSTEM_GROUP,
         permission: int = 0o640,
     ) -> None:
         """Write content to file.
