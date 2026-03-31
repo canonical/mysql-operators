@@ -126,6 +126,7 @@ prepare: |
   concierge prepare --trace
 
   pipx install tox poetry
+  poetry env use python3.12
 prepare-each: |
   cd "$SPREAD_PATH"
   if [[ $SPREAD_VARIANT == *"juju29"* ]]
@@ -140,4 +141,7 @@ prepare-each: |
   # Unable to set constraint on all models because of Juju bug:
   # https://bugs.launchpad.net/juju/+bug/2065050
   juju set-model-constraints arch="$(dpkg --print-architecture)"
+
+  poetry env use python3.12
+
 # Only restore on lxd backend—no need to restore on CI
