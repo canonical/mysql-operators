@@ -17,4 +17,8 @@ resource "juju_application" "mysql_server" {
   config      = var.config
   constraints = var.constraints
   units       = var.units
+
+  expose {
+    endpoints = "database"
+  }
 }
