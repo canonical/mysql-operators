@@ -113,6 +113,7 @@ kill-timeout: 3h
 environment:
   PATH: $PATH:$(pipx environment --value PIPX_BIN_DIR)
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
+  pythonLocation: '$(HOST: echo $pythonLocation)'
 prepare: |
   snap refresh --hold
   chown -R root:root "$SPREAD_PATH"
@@ -123,7 +124,7 @@ prepare: |
   concierge prepare --trace
 
   pipx install tox poetry
-  poetry env use python3.12
+  poetry env use $pythonLocation/bin/python
 prepare-each: |
   cd "$SPREAD_PATH"
   concierge prepare --trace
@@ -132,4 +133,4 @@ prepare-each: |
   # https://bugs.launchpad.net/juju/+bug/2065050
   juju set-model-constraints arch="$(dpkg --print-architecture)"
 
-  poetry env use python3.12
+  poetry env use $pythonLocation/bin/python
