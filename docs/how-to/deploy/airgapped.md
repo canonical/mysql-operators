@@ -193,5 +193,5 @@ Use the official {ref}`release notes <release-notes>` as a reference.
 
 * [Enterprise Store documentation](https://documentation.ubuntu.com/enterprise-store/main/) (formerly Snap Store Proxy)
 * [Installing Charmed Kubernetes offline](https://ubuntu.com/kubernetes/docs/install-offline)
-* [Install Charmed Kubeflow in an airgapped environment](https://documentation.ubuntu.com/charmed-kubeflow/how-to/install/install-airgapped/)
+* [Install Charmed Kubeflow in an airgapped environment](https://documentation.ubuntu.com/charmed-kubeflow/latest/how-to/install/install-air-gapped/)
 * [Wikipedia | Air gap (networking)](https://en.wikipedia.org/wiki/Air_gap_(networking))

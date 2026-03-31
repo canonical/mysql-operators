@@ -5,11 +5,10 @@
 import logging
 import time
 from collections.abc import Generator
-from contextlib import suppress
 
 import jubilant
 import pytest
-from jubilant import Juju, TaskError
+from jubilant import Juju
 
 from ... import architecture
 from ...helpers_ha import (
@@ -17,13 +16,10 @@ from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_leader,
     get_app_units,
-    get_k8s_stateful_set_partitions,
     get_mysql_max_written_value,
     get_mysql_primary_unit,
     get_mysql_variable_value,
-    get_unit_by_number,
     wait_for_apps_status,
-    wait_for_unit_message,
 )
 
 MYSQL_APP_1 = "db1"
@@ -187,18 +183,18 @@ def test_create_replication(first_model: str, second_model: str) -> None:
     )
 
 
-def test_upgrade_from_edge(
+def test_refresh_from_edge(
     first_model: str, second_model: str, charm: str, continuous_writes
 ) -> None:
     """Upgrade the two MySQL clusters."""
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
 
-    run_pre_upgrade_checks(model_1, MYSQL_APP_1)
-    run_upgrade_from_edge(model_1, MYSQL_APP_1, charm)
+    run_pre_refresh_checks(model_1, MYSQL_APP_1)
+    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
 
-    run_pre_upgrade_checks(model_2, MYSQL_APP_2)
-    run_upgrade_from_edge(model_2, MYSQL_APP_2, charm)
+    run_pre_refresh_checks(model_2, MYSQL_APP_2)
+    run_refresh_from_edge(model_2, MYSQL_APP_2, charm)
 
 
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
@@ -239,13 +235,13 @@ def get_mysql_max_written_values(first_model: str, second_model: str) -> list[in
     return results
 
 
-def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
-    """Run the pre-upgrade-check actions."""
+def run_pre_refresh_checks(juju: Juju, app_name: str) -> None:
+    """Run the pre-refresh-check actions."""
     app_leader = get_app_leader(juju, app_name)
     app_units = get_app_units(juju, app_name)
 
-    logging.info("Run pre-upgrade-check action")
-    juju.run(unit=app_leader, action="pre-upgrade-check")
+    logging.info("Run pre-refresh-check action")
+    juju.run(unit=app_leader, action="pre-refresh-check")
 
     logging.info("Assert slow shutdown is enabled")
     for unit_name in app_units:
@@ -256,39 +252,58 @@ def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
     mysql_primary = get_mysql_primary_unit(juju, app_name)
     assert mysql_primary == f"{app_name}/0", "Primary unit not set to unit 0"
 
-    logging.info("Assert partition is set to 2")
-    assert get_k8s_stateful_set_partitions(juju, app_name) == 2, "Partition not set to 2"
 
-
-def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
-    """Update the second cluster."""
+def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
+    """Refresh the second cluster."""
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, app_name)
 
-    logging.info("Refresh the charm")
-    juju.refresh(app=app_name, path=charm)
-
     app_leader = get_app_leader(juju, app_name)
-    upgrade_unit = get_unit_by_number(juju, app_name, 2)
+    app_units = get_app_units(juju, app_name)
+    app_units.sort()
 
-    logging.info("Wait for upgrade to complete on first upgrading unit")
+    logging.info("Refresh the charm")
+    juju.refresh(
+        app=app_name,
+        path=charm,
+        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
+    )
+
+    logging.info("Wait for refresh to start")
     juju.wait(
-        ready=wait_for_unit_message(app_name, upgrade_unit, "upgrade completed"),
+        ready=wait_for_apps_status(jubilant.any_blocked, app_name),
         timeout=10 * MINUTE_SECS,
     )
 
-    logging.info("Resume upgrade")
-    while get_k8s_stateful_set_partitions(juju, app_name) == 2:
-        # ignore action return error as it is expected when
-        # the leader unit is the next one to be upgraded
-        # due it being immediately rolled when the partition
-        # is patched in the stateful set
-        with suppress(TaskError):
-            juju.run(unit=app_leader, action="resume-upgrade")
+    app_status = juju.status().apps[app_name]
+    upgrade_unit_status = app_status.units[app_units[-1]]
+    upgrade_unit_message = upgrade_unit_status.workload_status.message
 
-    logging.info("Wait for upgrade to complete")
+    if "Refresh incompatible" in upgrade_unit_message:
+        logging.info("Application refresh is blocked due to incompatibility")
+        juju.run(
+            unit=app_units[-1],
+            action="force-refresh-start",
+            params={"check-compatibility": False},
+            wait=5 * MINUTE_SECS,
+        )
+
+    logging.info("Wait for refresh to finish on first unit")
     juju.wait(
-        ready=lambda status: jubilant.all_active(status, app_name),
+        ready=jubilant.all_agents_idle,
+        timeout=5 * MINUTE_SECS,
+    )
+
+    logging.info("Resume refresh")
+    juju.run(
+        unit=app_leader,
+        action="resume-refresh",
+        wait=5 * MINUTE_SECS,
+    )
+
+    logging.info("Wait for refresh to complete")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, app_name),
         timeout=20 * MINUTE_SECS,
     )
 

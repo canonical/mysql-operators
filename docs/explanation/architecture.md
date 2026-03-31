@@ -69,7 +69,7 @@ The snap "charmed-mysql" also ships list of tools used by charm:
 * `charmed-mysql.xtrabackup` - a tool to backup/restore MySQL DB.
 
 The `mysql` and `mysqlsh` are well known and popular tools to manage MySQL.
-The `xtrabackup (xbcloud+xbstream)` used for [MySQL Backups](/how-to/back-up-and-restore/create-a-backup) only to store backups on S3 compatible storage.
+The `xtrabackup (xbcloud+xbstream)` used for {ref}`MySQL Backups <create-a-backup>` only to store backups on S3 compatible storage.
 
 ### Kubernetes charm
 
@@ -97,9 +97,9 @@ The Charmed MySQL K8s (`workload` container) based on the `mysql-image` resource
 
 [Charmcraft](https://juju.is/docs/sdk/install-charmcraft) uploads an image as a [charm resource](https://charmhub.io/mysql-k8s/resources/mysql-image) to [Charmhub](https://charmhub.io/mysql-k8s) during the [publishing](https://github.com/canonical/mysql-k8s-operator/blob/main/.github/workflows/release.yaml#L40-L53), as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
-The charm supports Juju deployment to all Kubernetes environments: [MicroK8s](https://microk8s.io/), [Charmed Kubernetes](https://ubuntu.com/kubernetes/charmed-k8s), [GKE](https://charmhub.io/mysql-k8s/docs/h-deploy-gke), [Amazon EKS](https://aws.amazon.com/eks/), ...
+The charm supports Juju deployment to all Kubernetes environments: {ref}`MicroK8s <microk8s>`, {ref}`Canonical Kubernetes <canonical-k8s>`, {ref}`Google Kubernetes Engine <gke>`, {ref}`Amazon EKS <eks>`, and {ref}`Azure Kubernetes Service <aks>`.
 
-The OCI/ROCK ships the following components based on the [`charmed-mysql` snap](https://canonical-charmed-mysql.readthedocs-hosted.com/explanation/architecture):
+The OCI/ROCK ships the following components based on the {ref}`charmed-mysql snap <architecture>`:
 
 * MySQL Community Edition
 * MySQL Router
