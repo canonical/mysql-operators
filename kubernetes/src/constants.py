@@ -54,7 +54,6 @@ GR_MAX_MEMBERS = 9
 COS_AGENT_RELATION_NAME = "metrics-endpoint"
 COS_LOGGING_RELATION_NAME = "logging"
 LOG_ROTATE_CONFIG_FILE = "/etc/logrotate.d/flush_mysql_logs"
-ROOT_SYSTEM_USER = "root"
 SECRET_KEY_FALLBACKS = {
     "root-password": "root_password",
     "server-config-password": "server_config_password",
