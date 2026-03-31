@@ -240,15 +240,35 @@ class TestMySQL(unittest.TestCase):
     def test_log_rotate_config(self, _container):
         """Test log_rotate_config."""
         rendered_logrotate_config = (
-            "# Use system user\nsu mysql mysql\n\n# Create dedicated subdirectory for rotated "
-            "files\ncreateolddir 770 mysql mysql\n\n# Frequency of logs rotation\nhourly\nmaxa"
-            "ge 1\nrotate 1440\n\n# Compression settings\n\nnocompress\n\n\n# Naming of rotate"
-            "d files should be in the format:\ndateext\ndateformat -%Y%m%d_%H%M\n\n# Settings "
-            "to prevent misconfigurations and unwanted behaviours\nifempty\nmissingok\nnomail\n"
-            "nosharedscripts\nnocopytruncate\n\n\n/var/log/mysql/error.log {\n    olddir archi"
-            "ve_error\n}\n\n/var/log/mysql/general.log {\n    olddir archive_general\n}\n\n/va"
-            "r/log/mysql/slowquery.log {\n    olddir archive_slowquery\n}\n\n/var/log/mysql/au"
-            "dit.log {\n    olddir archive_audit\n}\n\n"
+            "# Create dedicated subdirectory for rotated files\n"
+            "createolddir 770 mysql mysql\n\n"
+            "# Frequency of logs rotation\n"
+            "hourly\n"
+            "maxage 1\n"
+            "rotate 1440\n\n"
+            "# Compression settings\n\n"
+            "nocompress\n\n\n"
+            "# Naming of rotated files should be in the format:\n"
+            "dateext\n"
+            "dateformat -%Y%m%d_%H%M\n\n"
+            "# Settings to prevent misconfigurations and unwanted behaviours\n"
+            "ifempty\n"
+            "missingok\n"
+            "nomail\n"
+            "nosharedscripts\n"
+            "nocopytruncate\n\n\n"
+            "/var/log/mysql/error.log {\n"
+            "    olddir archive_error\n"
+            "}\n\n"
+            "/var/log/mysql/general.log {\n"
+            "    olddir archive_general\n"
+            "}\n\n"
+            "/var/log/mysql/slowquery.log {\n"
+            "    olddir archive_slowquery\n"
+            "}\n\n"
+            "/var/log/mysql/audit.log {\n"
+            "    olddir archive_audit\n"
+            "}\n"
         )
 
         self.mysql.container = _container
@@ -258,8 +278,8 @@ class TestMySQL(unittest.TestCase):
             "/etc/logrotate.d/flush_mysql_logs",
             rendered_logrotate_config,
             permissions=416,
-            user="root",
-            group="root",
+            user="mysql",
+            group="mysql",
         )
 
     def test_update_endpoints(self):
@@ -299,7 +319,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
@@ -308,7 +328,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /create-operator-user.sql",
+                "[mysqld]\ninit_file = /home/mysql/create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -318,7 +338,7 @@ class TestMySQL(unittest.TestCase):
         self.mysql.container.restart.assert_called_once_with("mysqld")
         _wait_until_mysql_connection.assert_called_once_with(check_port=False)
         self.mysql.container.remove_path.assert_has_calls([
-            call("/create-operator-user.sql"),
+            call("/home/mysql/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])
 
@@ -339,7 +359,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
@@ -347,7 +367,9 @@ class TestMySQL(unittest.TestCase):
                 group="mysql",
             ),
         ])
-        self.mysql.container.remove_path.assert_called_once_with("/create-operator-user.sql")
+        self.mysql.container.remove_path.assert_called_once_with(
+            "/home/mysql/create-operator-user.sql"
+        )
         _wait_until_mysql_connection.assert_not_called()
 
         _container.push.side_effect = [None, None]
@@ -363,7 +385,7 @@ class TestMySQL(unittest.TestCase):
 
         self.mysql.container.push.assert_has_calls([
             call(
-                "/create-operator-user.sql",
+                "/home/mysql/create-operator-user.sql",
                 "CREATE USER 'serverconfig'@'%' IDENTIFIED BY 'serverconfigpassword';\nGRANT ALL ON *.* TO 'serverconfig'@'%' WITH GRANT OPTION;\nFLUSH PRIVILEGES;",
                 encoding="utf-8",
                 permissions=384,
@@ -372,7 +394,7 @@ class TestMySQL(unittest.TestCase):
             ),
             call(
                 "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf",
-                "[mysqld]\ninit_file = /create-operator-user.sql",
+                "[mysqld]\ninit_file = /home/mysql/create-operator-user.sql",
                 encoding="utf-8",
                 permissions=384,
                 user="mysql",
@@ -381,6 +403,6 @@ class TestMySQL(unittest.TestCase):
         ])
         self.mysql.container.restart.assert_called_once_with("mysqld")
         self.mysql.container.remove_path.assert_has_calls([
-            call("/create-operator-user.sql"),
+            call("/home/mysql/create-operator-user.sql"),
             call("/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"),
         ])

@@ -49,7 +49,6 @@ from constants import (
     MYSQLD_SOCK_FILE,
     MYSQLSH_LOCATION,
     PEER,
-    ROOT_SYSTEM_USER,
     XTRABACKUP_PLUGIN_DIR,
 )
 from k8s_helpers import KubernetesClientError, KubernetesHelpers
@@ -231,7 +230,7 @@ class MySQL(MySQLBase):
             "FLUSH PRIVILEGES;",
         ]
 
-        file_path = "/create-operator-user.sql"
+        file_path = f"/home/{MYSQL_SYSTEM_USER}/create-operator-user.sql"
 
         self.container.push(
             file_path,
@@ -313,8 +312,8 @@ class MySQL(MySQLBase):
         self.write_content_to_file(
             LOG_ROTATE_CONFIG_FILE,
             rendered,
-            owner=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            owner=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def execute_backup_commands(
@@ -618,8 +617,8 @@ class MySQL(MySQLBase):
         self,
         commands: list[str],
         bash: bool = False,
-        user: str | None = None,
-        group: str | None = None,
+        user: str | None = MYSQL_SYSTEM_USER,
+        group: str | None = MYSQL_SYSTEM_GROUP,
         env_extra: dict | None = None,
         timeout: float | None = None,
         stream_output: str | None = None,
@@ -662,7 +661,7 @@ class MySQL(MySQLBase):
         path: str,
         content: str,
         owner: str = MYSQL_SYSTEM_USER,
-        group: str = MYSQL_SYSTEM_USER,
+        group: str = MYSQL_SYSTEM_GROUP,
         permission: int = 0o640,
     ) -> None:
         """Write content to file.
