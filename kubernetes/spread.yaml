@@ -119,7 +119,11 @@ prepare: |
   # Install charmcraft & pipx (on lxd-vm backend)
   concierge prepare --trace
 
+  add-apt-repository -y ppa:deadsnakes/ppa
+  apt-get install -y python3.12 python3.12-venv
+
   pipx install tox poetry
+  poetry env use python3.12
 prepare-each: |
   cd "$SPREAD_PATH"
   concierge prepare --trace
@@ -127,3 +131,5 @@ prepare-each: |
   # Unable to set constraint on all models because of Juju bug:
   # https://bugs.launchpad.net/juju/+bug/2065050
   juju set-model-constraints arch="$(dpkg --print-architecture)"
+
+  poetry env use python3.12
