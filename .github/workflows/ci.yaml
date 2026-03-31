@@ -116,25 +116,3 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-
-  release-test-branch:
-    name: Release charm to test branch | ${{ matrix.path }}
-    needs:
-      - lint
-      - unit-test
-      - build
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    uses: canonical/data-platform-workflows/.github/workflows/release_charm_pr.yaml@v42.0.1
-    with:
-      track: '8.4'
-      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-      path-to-charm-directory: ${{ matrix.path }}
-    secrets:
-      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
-    permissions:
-      contents: write  # Needed to create git tags

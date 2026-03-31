@@ -3,7 +3,6 @@
 
 import logging
 import shutil
-import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -18,6 +17,7 @@ from ..helpers import execute_queries_on_unit, generate_random_string
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
+    create_app_secret,
     get_app_units,
     get_mysql_primary_unit,
     get_unit_address,
@@ -53,14 +53,6 @@ def local_tmp_folder(name: str = "tmp"):
     tmp_folder.mkdir()
     yield tmp_folder
     shutil.rmtree(tmp_folder)
-
-
-def prepare_s3_credentials_secret(juju: Juju, credentials: dict[str, str]) -> str:
-    """Prepare the s3 credentials secret and return the secret URI."""
-    secret_name = str(uuid.uuid4())[:8]
-    secret_uri = juju.add_secret(secret_name, content=credentials)
-    juju.grant_secret(secret_uri, S3_INTEGRATOR)
-    return secret_uri
 
 
 def clean_backups_from_buckets(cloud_configs, cloud_credentials) -> None:
@@ -125,9 +117,8 @@ def build_and_deploy_operations(
         )),
         timeout=TIMEOUT,
     )
-    juju.config(S3_INTEGRATOR, cloud_configs)
-    secret_uri = prepare_s3_credentials_secret(juju, cloud_credentials)
-    juju.config(S3_INTEGRATOR, {"credentials": secret_uri})
+    secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
