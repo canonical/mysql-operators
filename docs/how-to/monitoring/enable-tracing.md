@@ -75,21 +75,51 @@ juju consume k8s:admin/cos.tempo
 
 ## Consume interfaces
 
-First, deploy [Grafana Agent](https://charmhub.io/grafana-agent) from the `1/stable` channel:
+First, deploy [grafana-agent](https://charmhub.io/grafana-agent) / [grafana-agent-k8s](https://charmhub.io/grafana-agent-k8s) from the `1/stable` channel:
 
-```shell
-juju deploy grafana-agent --channel 1/stable
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju deploy grafana-agent --channel 1/stable
 ```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju deploy grafana-agent-k8s --channel 1/stable --trust
+```
+````
 
 Then, integrate Grafana Agent with Charmed MySQL:
-```
-juju relate mysql:cos-agent grafana-agent:cos-agent
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju relate mysql:cos-agent grafana-agent:cos-agent
 ```
 
-Finally, integrate Grafana Agent with the consumed interface from the previous section:
-```shell
-juju relate grafana-agent:tracing tempo:tracing
+```{tab-item} K8s
+:sync: k8s
+
+    juju relate mysql-k8s:tracing grafana-agent-k8s:tracing-provider
 ```
+````
+
+Finally, integrate Grafana Agent with the consumed interface from the previous section:
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju relate grafana-agent:tracing tempo:tracing
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju relate grafana-agent-k8s:tracing tempo:tracing
+```
+````
 
 Wait until the model settles. The following is an example of the `juju status --relations` on the Charmed MySQL model:
 
@@ -164,4 +194,3 @@ The Tempo traces will be accessible from Grafana under the `Explore` section wit
 </details>
 
 Feel free to read through the [Tempo HA documentation](https://discourse.charmhub.io/t/charmed-tempo-ha/15531) at your leisure to explore its deployment and its integrations.
-
