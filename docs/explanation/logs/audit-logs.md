@@ -57,7 +57,7 @@ The audit plugin is enabled by default in the charm, but it's possible to disabl
 
 Valid values are `false` and `true` (default). By setting it to false, existing logs are still kept in the `archive_audit` directory.
 
-### `logs_audit_policy` 
+### `logs-audit-policy`
 
 Audit log policy:
 
@@ -65,13 +65,13 @@ Audit log policy:
 ```{tab-item} VM
 :sync: vm
 
-    juju config mysql logs_audit_policy=queries
+    juju config mysql logs-audit-policy=queries
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju config mysql-k8s logs_audit_policy=queries
+    juju config mysql-k8s logs-audit-policy=queries
 ```
 ````
 

@@ -147,10 +147,10 @@ Following the configuration options exposed by the charm:
 | Configuration option | Description | Default value |
 | --- | --- | --- |
 | `plugin-audit-enabled` | Enable or disable the audit log | `true` |
-| `logs_audit_policy` | The audit log policy ("all", "logins", "queries") | `logins` |
-| `logs_retention_period` | The number of days to keep the rotated logs | `auto` |
+| `logs-audit-policy` | The audit log policy ("all", "logins", "queries") | `logins` |
+| `logs-retention-period` | The number of days to keep the rotated logs | `auto` |
 
-The `logs_retention_period` option accepts an integer value of 3 or greater, or the special value
+The `logs-retention-period` option accepts an integer value of 3 or greater, or the special value
 `auto`. When set to "auto" (default), the retention period is 3 days, except when COS-related,
 where it is 1 day
 
