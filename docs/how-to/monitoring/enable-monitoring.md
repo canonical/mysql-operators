@@ -70,11 +70,21 @@ juju consume k8s:admin/cos.prometheus
 
 ## Deploy and integrate Grafana
 
-First, deploy the [grafana-agent](https://charmhub.io/grafana-agent) subordinate charm:
+First, deploy the [grafana-agent](https://charmhub.io/grafana-agent) / [grafana-agent-k8s](https://charmhub.io/grafana-agent-k8s) subordinate charm:
 
-```shell
-juju deploy grafana-agent
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju deploy grafana-agent
 ```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju deploy grafana-agent-k8s --trust
+```
+````
 
 Then, integrate (relate) it with Charmed MySQL
 
@@ -88,17 +98,31 @@ Then, integrate (relate) it with Charmed MySQL
 ```{tab-item} K8s
 :sync: k8s
 
-    juju relate grafana-agent mysql-k8s:cos-agent
+    juju relate grafana-agent-k8s mysql-k8s:grafana-dashboard
+    juju relate grafana-agent-k8s mysql-k8s:logging
+    juju relate grafana-agent-k8s mysql-k8s:metrics-endpoint
 ```
 ````
 
-Finally, integrate (relate) `grafana-agent` with consumed COS offers:
+Finally, integrate (relate) Grafana Agent with consumed COS offers:
 
-```shell
-juju relate grafana-agent grafana
-juju relate grafana-agent loki
-juju relate grafana-agent prometheus
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju relate grafana-agent grafana
+    juju relate grafana-agent loki
+    juju relate grafana-agent prometheus
 ```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju relate grafana-agent-k8s grafana
+    juju relate grafana-agent-k8s loki
+    juju relate grafana-agent-k8s prometheus
+```
+````
 
 After this is complete, Grafana will show the new dashboards: `MySQL Exporter` and allows access for Charmed MySQL logs on Loki.
 
@@ -198,4 +222,3 @@ See also: {ref}`breaking-changes-juju`
 ## Full example of COS integration (MySQL K8s)
 
 [![asciicast](https://asciinema.org/a/580608.svg)](https://asciinema.org/a/580608)
-
