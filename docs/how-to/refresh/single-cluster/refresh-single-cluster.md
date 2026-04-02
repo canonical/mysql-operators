@@ -85,13 +85,13 @@ It is recommended to use an odd number to prevent a [split-brain](https://en.wik
 
 ## Step 3: Pre-upgrade check
 
-Before refreshing, it is necessary to run the `pre-upgrade-check` action against the {ref}`leader unit <primary-vs-leader-unit>`:
+Before refreshing, it is necessary to run the `pre-refresh-check` action against the {ref}`leader unit <primary-vs-leader-unit>`:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju run mysql/leader pre-upgrade-check
+    juju run mysql/leader pre-refresh-check
 
 The output of the action should look like:
 
@@ -105,7 +105,7 @@ The output of the action should look like:
 ```{tab-item} K8s
 :sync: k8s
 
-    juju run mysql-k8s/leader pre-upgrade-check
+    juju run mysql-k8s/leader pre-refresh-check
 
 The output of the action should look like:
 
@@ -118,10 +118,45 @@ The output of the action should look like:
 ```
 ````
 
-
 The action will configure the charm to minimize the amount of primary switchover, among other preparations for a safe refresh process. After successful execution, the charm is ready to be refreshed.
 
-## Step 4: Refresh
+## Step 4: Configure `pause-after-unit-refresh`
+
+After each unit is refreshed, the charm will perform automatic health checks.
+We recommend supplementing the automatic checks with manual checks.
+
+Examples of manual checks:
+* Database clients are healthy and can connect to the refreshed units
+* Transactions per second and resource consumption (CPU, memory, disk) are similar on refreshed and non-refreshed units
+* Leaving the application in a partially-refreshed state (only some units refreshed) for several weeks and monitoring that the new version is stable in your environment
+
+To facilitate your manual checks, the application can be configured to pause the refresh and wait for your confirmation.
+
+Set the `pause-after-unit-refresh` config option to:
+* `all` to wait for your confirmation after each unit refreshes
+* `first` (default) to wait for your confirmation once, after the first unit refreshes
+* `none` to never wait for your confirmation
+
+For example:
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju config mysql pause-after-unit-refresh=all
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju config mysql-k8s pause-after-unit-refresh=all
+```
+````
+
+```{note}
+If the charm's automatic health checks fail, the refresh will be paused (until those health checks succeed) regardless of the value of the `pause-after-unit-refresh` config option.
+```
+
+## Step 5: Refresh
 
 If you are refreshing multiple clusters, make sure to refresh the standby clusters first. See {ref}`refresh-multi-cluster for more information.
 
@@ -183,10 +218,7 @@ Once the `refresh` command is executed, all units will receive new charm content
 ```{tab-item} VM
 :sync: vm
 
-After each unit completes the refresh, the message `refresh completed` is displayed, and the next unit follows.
-
 Example `juju status` during an refresh:
-
 
     Model    Controller  Cloud/Region         Version  SLA          Timestamp
     example  lxd         localhost/localhost  3.6.14   unsupported  18:11:21Z
@@ -195,9 +227,9 @@ Example `juju status` during an refresh:
     mysql  8.4.7    active      3  mysql                no       
 
     Unit       Workload     Agent      Machine  Public address  Ports               Message
-    mysql/9    maintenance  executing  13       10.169.158.70   3306/tcp,33060/tcp  upgrading snap...
+    mysql/9    maintenance  executing  13       10.169.158.70   3306/tcp,33060/tcp  other units upgrading first...
     mysql/10*  waiting      idle       11       10.169.158.14   3306/tcp,33060/tcp  other units upgrading first...
-    mysql/11   maintenance  idle       12       10.169.158.217  3306/tcp,33060/tcp  upgrade completed
+    mysql/11   maintenance  idle       12       10.169.158.217  3306/tcp,33060/tcp  upgrading unit
 
     Machine  State    Address         Inst id         Series  AZ  Message
     11       started  10.169.158.14   juju-b72e25-11  jammy       Running
@@ -208,13 +240,7 @@ Example `juju status` during an refresh:
 ```{tab-item} K8s
 :sync: k8s
 
-After the unit is upgraded, the charm will set the unit upgrade state as completed.
-
-If the unit is healthy within the cluster, the next step is to resume the upgrade process by running:
-
-    juju run mysql-k8s/leader resume-upgrade
-
-`resume-upgrade` will rollout the upgrade for the following unit, always from highest ordinal number to lowest, and for each successful upgraded unit, the process will rollout the next automatically.
+Example `juju status` during an refresh:
 
     Model      Controller  Cloud/Region        Version  SLA          Timestamp
     example    k8s         microk8s/localhost  3.6.14   unsupported  01:20:47Z
@@ -224,9 +250,9 @@ If the unit is healthy within the cluster, the next step is to resume the upgrad
 
     Unit          Workload     Agent      Address       Ports  Message
     mysql-k8s/0*  active       idle       10.1.148.184         other units upgrading first...
-    mysql-k8s/1   maintenance  executing  10.1.148.138         upgrading unit
-    mysql-k8s/2   active       idle       10.1.148.143         
-    mysql-k8s/3   active       idle       10.1.148.145 
+    mysql-k8s/1   maintenance  executing  10.1.148.138         other units upgrading first...
+    mysql-k8s/2   active       idle       10.1.148.143         other units upgrading first...
+    mysql-k8s/3   active       idle       10.1.148.145         upgrading unit
 ```
 ````
 
@@ -236,7 +262,33 @@ Each unit should recover shortly after the refresh, but time can vary depending 
 **Incompatible charm revisions or dependencies will halt the process.**
 After a `juju refresh`, if there are any version incompatibilities in charm revisions, its dependencies, or any other unexpected failure in the refresh process, the refresh will be halted and enter a failure state.
 
-## Step 5: Roll back
+## Step 6: Resume
+
+If the `pause-after-unit-refresh` config option is set to `all` or `first` (default), your confirmation will be needed during the refresh.
+
+After every unit, or just the first unit is refreshed, the charm will require to manually resume the process by running the `resume-refresh` action:
+
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+Target the next unit:
+
+    juju run mysql/X resume-refresh
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+Target the leader unit:
+
+    juju run mysql-k8s/leader resume-refresh
+```
+````
+
+`resume-refresh` will roll out the refresh for the following unit, always from the highest ordinal number to the lowest. For each successful refreshed unit, the process will roll out the next automatically.
+
+## Step 7: Roll back
 
 If there was an issue with the refresh, even if the underlying MySQL cluster continues to work, it’s important to roll back the charm to the previous revision. 
 
@@ -244,6 +296,6 @@ The update can be attempted again after a further inspection of the failure.
 
 See: {ref}`roll-back-single-cluster` 
 
-## Step 6: Check cluster health
+## Step 8: Check cluster health
 
 Use `juju status` to make sure the cluster {ref}`state <charm-statuses>` is OK.

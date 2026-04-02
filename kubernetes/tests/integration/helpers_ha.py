@@ -15,7 +15,6 @@ import yaml
 from jubilant import CLIError, Juju
 from jubilant.statustypes import Status
 from lightkube.core.client import Client
-from lightkube.resources.apps_v1 import StatefulSet
 from lightkube.resources.core_v1 import Endpoints, PersistentVolume, PersistentVolumeClaim, Pod
 from tenacity import (
     Retrying,
@@ -137,18 +136,6 @@ def exec_k8s_container_command(
 
     if response.returncode != 0:
         raise RuntimeError("Failed to execute command")
-
-
-def get_k8s_stateful_set_partitions(juju: Juju, app_name: str) -> int:
-    """Get the number of partitions in a Kubernetes stateful set."""
-    client = Client()
-    stateful_set = client.get(
-        res=StatefulSet,
-        name=app_name,
-        namespace=juju.model,
-    )
-
-    return stateful_set.spec.updateStrategy.rollingUpdate.partition
 
 
 def get_k8s_endpoint_addresses(juju: Juju, endpoint_name: str) -> list[str]:
@@ -305,17 +292,6 @@ def get_unit_address(juju: Juju, app_name: str, unit_name: str) -> str:
     for name, status in app_status.units.items():
         if name == unit_name:
             return status.address
-
-    raise Exception("No application unit found")
-
-
-def get_unit_by_number(juju: Juju, app_name: str, unit_number: int) -> str:
-    """Get unit by number."""
-    model_status = juju.status()
-    app_status = model_status.apps[app_name]
-    for name in app_status.units:
-        if name == f"{app_name}/{unit_number}":
-            return name
 
     raise Exception("No application unit found")
 

@@ -161,7 +161,6 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.configure_instance")
     @patch("mysql_k8s_helpers.MySQL.create_cluster")
     @patch("mysql_k8s_helpers.MySQL.initialise_mysqld")
-    @patch("mysql_k8s_helpers.MySQL.fix_data_dir")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster")
     @patch("mysql_k8s_helpers.MySQL.get_member_state", return_value="ONLINE")
     @patch("mysql_k8s_helpers.MySQL.get_member_role", return_value="PRIMARY")
@@ -182,7 +181,6 @@ class TestCharm(unittest.TestCase):
         _get_member_state,
         _is_instance_in_cluster,
         _initialise_mysqld,
-        _fix_data_dir,
         _create_cluster,
         _configure_instance,
         _configure_mysql_router_roles,

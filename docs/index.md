@@ -7,6 +7,12 @@ myst:
 
 # Charmed MySQL documentation
 
+```{caution}
+**Charmed MySQL 8.4 is currently under development**. Please wait for the upcoming stable release before deploying it in production, or use [Charmed MySQL 8.0](https://canonical-charmed-mysql.readthedocs-hosted.com/8.0/).
+
+Meanwhile, you're welcome to explore the `8.4/edge` track on [VM](https://charmhub.io/mysql?channel=8.4/edge) and [K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge) and share your feedback as we continue to improve.
+```
+
 Charmed MySQL is an open-source software operator that deploys and operates [MySQL Community Edition](https://www.mysql.com/products/community/) relational databases on machines or Kubernetes with [Juju](https://juju.is/). 
 
 This operator is built with the latest [Ops framework](https://documentation.ubuntu.com/ops/latest/) and replaces the legacy [MariaDB](https://charmhub.io/mariadb), [OSM MariaDB](https://charmhub.io/charmed-osm-mariadb-k8s), [Percona cluster](https://charmhub.io/percona-cluster) and [MySQL InnoDB cluster](https://charmhub.io/mysql-innodb-cluster) operators.

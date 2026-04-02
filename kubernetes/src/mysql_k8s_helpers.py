@@ -48,7 +48,6 @@ from constants import (
     MYSQLD_SOCK_FILE,
     MYSQLSH_LOCATION,
     PEER,
-    ROOT_SYSTEM_USER,
     XTRABACKUP_PLUGIN_DIR,
 )
 from k8s_helpers import KubernetesClientError, KubernetesHelpers
@@ -173,32 +172,6 @@ class MySQL(MySQLBase):
         executor.set_container(self.container)
         return executor
 
-    def fix_data_dir(self, container: Container) -> None:
-        """Ensure the data directory for mysql is writable for the "mysql" user.
-
-        Until the ability to set fsGroup and fsGroupChangePolicy via Pod securityContext
-        is available we fix permissions incorrectly with chown.
-        """
-        if not container.exists(MYSQL_DATA_DIR):
-            container.make_dir(MYSQL_DATA_DIR, user=MYSQL_SYSTEM_USER, group=MYSQL_SYSTEM_GROUP)
-            return
-
-        paths = container.list_files(MYSQL_DATA_DIR, itself=True)
-        logger.debug(f"Data directory ownership: {paths[0].user}:{paths[0].group}")
-        if paths[0].user != MYSQL_SYSTEM_USER or paths[0].group != MYSQL_SYSTEM_GROUP:
-            logger.debug(f"Changing ownership to {MYSQL_SYSTEM_USER}:{MYSQL_SYSTEM_GROUP}")
-            try:
-                process = container.exec([
-                    "chown",
-                    "-R",
-                    f"{MYSQL_SYSTEM_USER}:{MYSQL_SYSTEM_GROUP}",
-                    MYSQL_DATA_DIR,
-                ])
-                process.wait()
-            except ExecError as e:
-                logger.error(f"Exited with code {e.exit_code}. Stderr:\n{e.stderr}")
-                raise MySQLInitialiseMySQLDError(e.stderr or "") from None
-
     @retry(reraise=True, stop=stop_after_delay(30), wait=wait_fixed(5))
     def initialise_mysqld(self) -> None:
         """Execute instance first run.
@@ -234,7 +207,7 @@ class MySQL(MySQLBase):
             "FLUSH PRIVILEGES;",
         ]
 
-        file_path = "/create-operator-user.sql"
+        file_path = f"/home/{MYSQL_SYSTEM_USER}/create-operator-user.sql"
 
         self.container.push(
             file_path,
@@ -315,8 +288,8 @@ class MySQL(MySQLBase):
         self.write_content_to_file(
             LOG_ROTATE_CONFIG_FILE,
             rendered,
-            owner=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            owner=MYSQL_SYSTEM_USER,
+            group=MYSQL_SYSTEM_GROUP,
         )
 
     def execute_backup_commands(
@@ -492,8 +465,8 @@ class MySQL(MySQLBase):
         self,
         commands: list[str],
         bash: bool = False,
-        user: str | None = None,
-        group: str | None = None,
+        user: str | None = MYSQL_SYSTEM_USER,
+        group: str | None = MYSQL_SYSTEM_GROUP,
         env_extra: dict | None = None,
         timeout: float | None = None,
         stream_output: str | None = None,
@@ -532,7 +505,7 @@ class MySQL(MySQLBase):
         path: str,
         content: str,
         owner: str = MYSQL_SYSTEM_USER,
-        group: str = MYSQL_SYSTEM_USER,
+        group: str = MYSQL_SYSTEM_GROUP,
         permission: int = 0o640,
     ) -> None:
         """Write content to file.
