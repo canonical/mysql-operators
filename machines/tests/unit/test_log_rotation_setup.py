@@ -42,7 +42,7 @@ class TestLogRotationSetup(unittest.TestCase):
     def test_log_syncing(
         self, mock_setup, mock_exist, mock_is_peer_data_set, mock_charm_on_created
     ):
-        self.harness.update_config({"logs_retention_period": "auto"})
+        self.harness.update_config({"logs-retention-period": "auto"})
         self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
         positions = (
             "positions:\n  '/var/snap/charmed-mysql/common/var/log/mysql/error.log': '466'\n"
@@ -58,7 +58,7 @@ class TestLogRotationSetup(unittest.TestCase):
 
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
     def test_cos_relation_broken(self, mock_setup):
-        self.harness.update_config({"logs_retention_period": "auto"})
+        self.harness.update_config({"logs-retention-period": "auto"})
         event = MagicMock()
         self.charm.log_rotation_setup._cos_relation_broken(event)
         self.assertNotIn("logs_synced", self.harness.charm.unit_peer_data)
