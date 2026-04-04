@@ -166,7 +166,7 @@ class TestUpgrade(unittest.TestCase):
         mock_set_cluster_primary.assert_called_once_with(
             "mysql-k8s-0.mysql-k8s-endpoints.svc.cluster.local"
         )
-        mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints")
+        mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints", "mysql-k8s-0")
         mock_get_primary_label.assert_called_once()
         mock_set_rolling_update_partition.assert_called_once()
         assert mock_set_dynamic_variable.call_count == 2

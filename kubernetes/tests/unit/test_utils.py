@@ -5,6 +5,8 @@ import socket
 import unittest
 from unittest.mock import patch
 
+import tenacity
+
 from utils import any_memory_to_bytes, generate_random_password, get_k8s_fqdn, split_mem
 
 
@@ -25,7 +27,8 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(any_memory_to_bytes("1024"), 1024)
 
     @patch("utils.socket.getaddrinfo")
-    def test_get_k8s_fqdn(self, mock_getaddrinfo):
+    def test_get_k8s_fqdn_local_unit(self, mock_getaddrinfo):
+        """Test get_k8s_fqdn when name refers to the local unit."""
         mock_getaddrinfo.return_value = [
             (
                 None,
@@ -44,11 +47,36 @@ class TestUtils(unittest.TestCase):
         ]
 
         self.assertEqual(
-            get_k8s_fqdn("mysql-2.mysql-endpoints"),
+            get_k8s_fqdn("mysql-2.mysql-endpoints", "mysql-2"),
             "mysql-2.mysql-endpoints.default.svc.cluster.local.",
         )
         mock_getaddrinfo.assert_called_once_with(
-            "mysql-2.mysql-endpoints",
+            "mysql-2",
+            None,
+            family=socket.AF_UNSPEC,
+            flags=socket.AI_CANONNAME,
+            type=socket.SOCK_STREAM,
+        )
+
+    @patch("utils.socket.getaddrinfo")
+    def test_get_k8s_fqdn_other_unit(self, mock_getaddrinfo):
+        """Test get_k8s_fqdn when name refers to a different unit."""
+        mock_getaddrinfo.return_value = [
+            (
+                None,
+                None,
+                None,
+                "mysql-2.mysql-endpoints.default.svc.cluster.local",
+                None,
+            ),
+        ]
+
+        self.assertEqual(
+            get_k8s_fqdn("mysql-1.mysql-endpoints", "mysql-2"),
+            "mysql-1.mysql-endpoints.default.svc.cluster.local.",
+        )
+        mock_getaddrinfo.assert_called_once_with(
+            "mysql-2",
             None,
             family=socket.AF_UNSPEC,
             flags=socket.AI_CANONNAME,
@@ -57,13 +85,14 @@ class TestUtils(unittest.TestCase):
 
     @patch("utils.socket.getaddrinfo", side_effect=socket.gaierror)
     def test_get_k8s_fqdn_resolution_error(self, mock_getaddrinfo):
-        with self.assertRaisesRegex(
-            RuntimeError, "Failed to resolve canonical name for mysql-2.mysql-endpoints"
-        ):
-            get_k8s_fqdn("mysql-2.mysql-endpoints")
+        get_k8s_fqdn.retry.retry = tenacity.retry_if_not_result(
+            lambda x: True
+        )  # Disable retry for testing
+        with self.assertRaisesRegex(RuntimeError, "Failed to resolve canonical _name='mysql-2'"):
+            get_k8s_fqdn("mysql-2.mysql-endpoints", "mysql-2")
 
-        mock_getaddrinfo.assert_called_once_with(
-            "mysql-2.mysql-endpoints",
+        mock_getaddrinfo.assert_called_with(
+            "mysql-2",
             None,
             family=socket.AF_UNSPEC,
             flags=socket.AI_CANONNAME,
@@ -90,11 +119,11 @@ class TestUtils(unittest.TestCase):
         ]
 
         with self.assertRaisesRegex(
-            RuntimeError, "Could not determine canonical name for mysql-2.mysql-endpoints"
+            RuntimeError, "Could not determine canonical for name='mysql-2.mysql-endpoints'"
         ):
-            get_k8s_fqdn("mysql-2.mysql-endpoints")
+            get_k8s_fqdn("mysql-2.mysql-endpoints", "mysql-2")
 
-        mock_getaddrinfo.assert_called_once_with(
+        mock_getaddrinfo.assert_called_with(
             "mysql-2.mysql-endpoints",
             None,
             family=socket.AF_UNSPEC,
