@@ -163,7 +163,9 @@ class MySQLK8sUpgrade(DataUpgrade):
         """
         if self.charm._mysql.get_primary_label() != f"{self.charm.app.name}-0":
             # set the primary to the first unit for switchover mitigation
-            new_primary = get_k8s_fqdn(self.charm.get_unit_hostname(f"{self.charm.app.name}/0"))
+            new_primary = get_k8s_fqdn(
+                self.charm.get_unit_hostname(f"{self.charm.app.name}/0"), self.charm.unit_label
+            )
             self.charm._mysql.set_cluster_primary(new_primary)
 
         # set slow shutdown on all instances

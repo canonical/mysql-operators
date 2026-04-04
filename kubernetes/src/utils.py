@@ -8,6 +8,8 @@ import secrets
 import socket
 import string
 
+from tenacity import retry, stop_after_delay, wait_fixed
+
 
 def generate_random_password(length: int) -> str:
     """Randomly generate a string intended to be used as a password.
@@ -85,21 +87,39 @@ def dotappend(string: str) -> str:
     return string
 
 
-def get_k8s_fqdn(name: str) -> str:
-    """Resolve the canonical FQDN for a Kubernetes service or pod name."""
-    try:
-        info = socket.getaddrinfo(
-            name,
-            None,
-            family=socket.AF_UNSPEC,
-            flags=socket.AI_CANONNAME,
-            type=socket.SOCK_STREAM,
-        )
-    except socket.gaierror as e:
-        raise RuntimeError(f"Failed to resolve canonical name for {name}") from e
+@retry(reraise=True, stop=stop_after_delay(30), wait=wait_fixed(0.5))
+def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
+    """Resolve the canonical FQDN for a Kubernetes service or pod name.
+
+    Args:
+        name: The Kubernetes service or pod name to resolve.
+        local_unit_label: The label of the local unit (e.g., "mysql-k8s-1")
+    """
+
+    def _addrinfo(_name):
+        try:
+            info = socket.getaddrinfo(
+                _name,
+                None,
+                family=socket.AF_UNSPEC,
+                flags=socket.AI_CANONNAME,
+                type=socket.SOCK_STREAM,
+            )
+            return info
+        except socket.gaierror as e:
+            raise RuntimeError(f"Failed to resolve canonical {_name=}") from e
+
+    # fqdn resolve local in /etc/hosts
+    name_prefix = name.split(".")[0]
+    info = _addrinfo(local_unit_label)
 
     for entry in info:
         if canonname := entry[3]:
-            return canonname
+            if local_unit_label == name_prefix:
+                return canonname
+            else:
+                fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
+                # dotappend other units as local unit is mapped wihtout end dot in /etc/hosts
+                return dotappend(fqdn)
 
-    raise RuntimeError(f"Could not determine canonical name for {name}")
+    raise RuntimeError(f"Could not determine canonical for {name=}")

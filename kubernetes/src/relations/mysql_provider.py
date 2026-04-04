@@ -126,8 +126,12 @@ class MySQLProvider(Object):
             # create k8s services for endpoints
             self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
 
-            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
-            replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
+            primary_endpoint = get_k8s_fqdn(
+                f"{self.charm.app.name}-primary", self.charm.unit_label
+            )
+            replicas_endpoint = get_k8s_fqdn(
+                f"{self.charm.app.name}-replicas", self.charm.unit_label
+            )
 
             db_version = self.charm._mysql.get_mysql_version()
 
