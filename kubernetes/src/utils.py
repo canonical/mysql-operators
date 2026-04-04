@@ -119,7 +119,13 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
                 return canonname
             else:
                 fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
-                # dotappend other units as local unit is mapped wihtout end dot in /etc/hosts
+                # dotappend other units as local unit is mapped without end dot in /etc/hosts
                 return dotappend(fqdn)
+
+    # fallback to DNS
+    info = _addrinfo(name)
+    for entry in info:
+        if canonname := entry[3]:
+            return canonname
 
     raise RuntimeError(f"Could not determine canonical for {name=}")
