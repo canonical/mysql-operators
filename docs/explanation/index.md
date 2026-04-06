@@ -11,6 +11,8 @@ Additional context about key concepts behind the MySQL charm.
 
 ## Core concepts and design
 
+High-level architecture of Charmed MySQL 8.4:
+
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
@@ -19,7 +21,9 @@ Architecture <architecture>
 Interfaces and endpoints <interfaces-and-endpoints>
 ```
 
-## Operational concepts
+## Operation
+
+Clarification of standard MySQL operational concepts in the context of charms and Juju:
 
 ```{toctree}
 :titlesonly:
@@ -30,7 +34,9 @@ Roles <roles>
 Logs <logs/index>
 ```
 
-## Security and hardening
+## Security
+
+SEcurity features and hardening guidance:
 
 ```{toctree}
 :titlesonly:
@@ -41,7 +47,7 @@ Security <security/index>
 
 ## Development
 
-Mermaid diagrams of charm events and hooks.
+Mermaid diagrams of charm events and hooks:
 
 ```{toctree}
 :titlesonly:
