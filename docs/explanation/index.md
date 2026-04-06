@@ -11,6 +11,8 @@ Additional context about key concepts behind the MySQL charm.
 
 ## Core concepts and design
 
+Key concepts about the history and high-level design of Charmed MySQL, including information about the legacy InnoDB charm. 
+
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
@@ -21,7 +23,9 @@ Juju <juju>
 Legacy charm <legacy-charm>
 ```
 
-## Operational concepts
+## Operation
+
+Clarification of standard MySQL operational concepts in the context of charms and Juju:
 
 ```{toctree}
 :titlesonly:
@@ -32,7 +36,9 @@ Roles <roles>
 Logs <logs/index>
 ```
 
-## Security and hardening
+## Security
+
+Overview of security features in the charm and hardening guidance:
 
 ```{toctree}
 :titlesonly:

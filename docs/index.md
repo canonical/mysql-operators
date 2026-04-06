@@ -36,8 +36,10 @@ Advanced deployments and operations focused on production scenarios and high ava
 
 ### Charm developers
 
-* **Make your charm compatible with MySQL**: {ref}`Interfaces and endpoints <interfaces-and-endpoints>` • {ref}`How to integrate with your charm with MySQL <integrate-with-your-charm>`
-* **Learn more about the charm**: {ref}`Internal users <users>` • {ref}`Roles <roles>` • {ref}`architecture`
+Information for making your application compatible with MySQL.
+
+* **Charm integrations**: {ref}`Interfaces and endpoints <interfaces-and-endpoints>` • {ref}`How to integrate with your charm with MySQL <integrate-with-your-charm>`
+* **Learn more about the MySQL charm's design**: {ref}`Internal users <users>` • {ref}`Roles <roles>` • {ref}`architecture`
 
 ## How this documentation is organised
 
