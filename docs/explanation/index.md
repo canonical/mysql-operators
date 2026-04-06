@@ -36,7 +36,7 @@ Logs <logs/index>
 
 ## Security
 
-SEcurity features and hardening guidance:
+Security features and hardening guidance:
 
 ```{toctree}
 :titlesonly:
