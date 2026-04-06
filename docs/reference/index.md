@@ -15,7 +15,7 @@ Release information for all stable revisions of Charmed MySQL 8.0 for all substr
 
 ```{toctree}
 :titlesonly:
-:maxdepth: 3
+:maxdepth: 2
 
 Release notes <release-notes/index>
 ```
