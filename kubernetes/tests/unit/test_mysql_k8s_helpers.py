@@ -275,11 +275,7 @@ class TestMySQL(unittest.TestCase):
         self.mysql.setup_logrotate_config(1, ["error", "general", "slowquery", "audit"], False)
 
         self.mysql.container.push.assert_called_once_with(
-            "/etc/logrotate.d/flush_mysql_logs",
-            rendered_logrotate_config,
-            permissions=416,
-            user="mysql",
-            group="mysql",
+            "/etc/logrotate.d/flush_mysql_logs", rendered_logrotate_config, permissions=416
         )
 
     def test_update_endpoints(self):

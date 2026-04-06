@@ -309,12 +309,7 @@ class MySQL(MySQLBase):
         )
 
         logger.debug("Writing the logrotate config file to the workload container")
-        self.write_content_to_file(
-            LOG_ROTATE_CONFIG_FILE,
-            rendered,
-            owner=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
-        )
+        self.write_content_to_file(LOG_ROTATE_CONFIG_FILE, rendered)
 
     def execute_backup_commands(
         self,
@@ -660,8 +655,6 @@ class MySQL(MySQLBase):
         self,
         path: str,
         content: str,
-        owner: str = MYSQL_SYSTEM_USER,
-        group: str = MYSQL_SYSTEM_GROUP,
         permission: int = 0o640,
     ) -> None:
         """Write content to file.
@@ -673,7 +666,7 @@ class MySQL(MySQLBase):
             group: file group
             permission: file permission
         """
-        self.container.push(path, content, permissions=permission, user=owner, group=group)
+        self.container.push(path, content, permissions=permission)
 
     def read_file_content(self, path: str) -> str | None:
         """Read file content.
