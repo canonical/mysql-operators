@@ -774,12 +774,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # ensure hostname can be resolved
         self.hostname_resolution.update_etc_hosts(None)
 
-        # Check if data directory is already initialized
-        if not self._mysql.is_data_dir_initialised():
-            logger.info("Data directory not initialized, initializing now")
-            self._mysql.initialise_mysqld()
-        else:
-            logger.info("Data directory already initialized, skipping initialization")
+        logger.info("Initializing MySQL data directory")
+        self._mysql.initialise_mysqld()
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()

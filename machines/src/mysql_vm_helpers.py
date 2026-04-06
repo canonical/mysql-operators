@@ -327,6 +327,7 @@ class MySQL(MySQLBase):
     def initialise_mysqld(self) -> None:
         """Execute instance first run.
 
+        Initialise mysql data directory.
         Raises MySQLInitialiseMySQLDError if the instance bootstrap fails.
         """
         bootstrap_command = [
@@ -337,12 +338,11 @@ class MySQL(MySQLBase):
         ]
 
         try:
-            logger.info("Initializing MySQL data directory")
-            subprocess.check_call(bootstrap_command)  # noqa: S603
-        except subprocess.CalledProcessError as e:
+            self.reset_data_dir()
+            subprocess.run(bootstrap_command)  # noqa: S603
+        except subprocess.CalledProcessError:
             logger.exception("Failed to initialise MySQL data directory")
-            self.empty_data_files()
-            raise MySQLInitialiseMySQLDError from e
+            raise MySQLInitialiseMySQLDError from None
 
     def set_operator_user_and_start_mysqld(self) -> None:
         """Set the operator user and start mysqld."""

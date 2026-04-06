@@ -2077,31 +2077,29 @@ class TestMySQL(unittest.TestCase):
             self.mock_charm,
         )
 
-    @patch("mysql_vm_helpers.MySQL.empty_data_files")
-    @patch("subprocess.check_call")
-    def test_initialise_mysqld(self, _check_call, _empty_data_files):
+    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
+    @patch("subprocess.run")
+    def test_initialise_mysqld(self, _subprocess_run, _reset_data_dir):
         """Test successful execution of initialise_mysqld()."""
         self.mysql.initialise_mysqld()
 
-        # Should make 1 call to initialize mysqld
-        _check_call.assert_called_once_with([
+        _reset_data_dir.assert_called_once()
+        _subprocess_run.assert_called_once_with([
             "/usr/bin/sudo",
             "/snap/bin/charmed-mysql.mysqld-initialize",
             "--datadir",
             "/var/snap/charmed-mysql/common/var/lib/mysql",
         ])
-        _empty_data_files.assert_not_called()
 
-    @patch("mysql_vm_helpers.MySQL.empty_data_files")
-    @patch("subprocess.check_call")
-    def test_initialise_mysqld_exception(self, _check_call, _empty_data_files):
+    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
+    @patch("subprocess.run")
+    def test_initialise_mysqld_exception(self, _subprocess_run, _reset_data_dir):
         """Test failing execution of initialise_mysqld()."""
         from mysql_vm_helpers import MySQLInitialiseMySQLDError
 
-        _check_call.side_effect = subprocess.CalledProcessError(1, "mysqld")
+        _subprocess_run.side_effect = subprocess.CalledProcessError(1, "mysqld")
 
         with self.assertRaises(MySQLInitialiseMySQLDError):
             self.mysql.initialise_mysqld()
 
-        # Verify that empty_data_files was called on failure
-        _empty_data_files.assert_called_once()
+        _reset_data_dir.assert_called_once()
