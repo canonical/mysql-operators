@@ -52,11 +52,11 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.wait(
         ready=lambda status: all((
             *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")
+                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")(status)
                 for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
             ),
             *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}2", unit_name, "blocked")
+                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}2", unit_name, "blocked")(status)
                 for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}2")
             ),
         )),
