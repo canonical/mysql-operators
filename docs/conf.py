@@ -117,7 +117,7 @@ html_context = {
     "github_url": "https://github.com/canonical/mysql-operators",
     # Docs branch in the repo; used in links for viewing the source files
     #
-       # TODO: To customise the branch, uncomment and update as needed.
+    # TODO: To customise the branch, uncomment and update as needed.
     'repo_default_branch': '8.0/edge',
 
     # Docs location in the repo; used in links for viewing the source files
