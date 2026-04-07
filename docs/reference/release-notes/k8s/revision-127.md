@@ -40,7 +40,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 
 **Full Changelog**: https://github.com/canonical/mysql-k8s-operator/compare/rev113...rev127
 
-# What is inside the charms
+## What is inside the charms
 
 * Charmed MySQL K8s ships MySQL “`8.0.35-0ubuntu0.22.04.1`”
 * CLI mysql-shell updated to "`8.0.33-0ubuntu0.22.04.1~ppa1`"
