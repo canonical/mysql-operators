@@ -32,9 +32,12 @@ All revisions of MySQL described below are built for *Ubuntu 22.04 LTS (Jammy)*.
 
 \* The **TLS** column indicates support for **`v2` or higher** of the [`tls-certificates` interface](https://charmhub.io/tls-certificates-interface/libraries/tls_certificates). This means that you can integrate with [modern TLS charms](https://charmhub.io/topics/security-with-x-509-certificates).
 
+## Release notes
+
+All release notes for `8.0/stable` revisions of Charmed MySQL 8.0 for VM:
+
 ```{toctree}
 :titlesonly:
-:hidden:
 
 Revisions 442-444 <revisions-442-444>
 Revisions 366-367 <revisions-366-367>
