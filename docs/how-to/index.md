@@ -103,15 +103,15 @@ Walkthrough of a highly available cluster-cluster deployment and its primary ope
 Cluster-cluster replication <cluster-cluster-replication/index>
 ```
 
-## Charm development
+## Data migration
 
-Information about interfaces and data migration method for developers looking to support MySQL integrations with their application:
+For charm developers looking to migrate data to their MySQL charm.
 
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
 
-Charm development <charm-development/index>
+Data migration <data-migration/index>
 ```
 
 ```{toctree}
