@@ -105,39 +105,35 @@ To rotate the passwords of users created for related applications, the relation 
 
 The operator user is used internally by the Charmed MySQL application. The `set-password` action can be used to rotate its password.
 
-To set a specific password for the `operator` user, run
+To set a specific password for the `charmed-operator` user, run
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju run mysql/leader set-password password=<password>
+    juju run mysql/leader set-password username=charmed-operator password=<password>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju run mysql-k8s/leader set-password password=<password>
+    juju run mysql-k8s/leader set-password username=charmed-operator password=<password>
 ```
 ````
 
-To randomly generate a password for the `operator` user, run
-
-```shell
-juju run mysql/leader set-password
-```
+To randomly generate a password for the `charmed-operator` user, run
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju run mysql/leader set-password
+    juju run mysql/leader set-password username=charmed-operator
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju run mysql-k8s/leader set-password
+    juju run mysql-k8s/leader set-password username=charmed-operator
 ```
 ````
 

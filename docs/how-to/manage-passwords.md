@@ -15,23 +15,7 @@ Charmed MySQL user credentials are managed with Juju's `get-password` and `set-p
 
 ## Get password
 
-To retrieve user credentials for the `root` user, run the `get-password` action on the leader unit as follows:
-
-````{tab-set}
-```{tab-item} VM
-:sync: vm
-
-    juju run mysql/leader get-password
-```
-
-```{tab-item} K8s
-:sync: k8s
-
-    juju run mysql-k8s/leader get-password
-```
-````
-
-To retrieve credentials for a different user:
+To retrieve user credentials for a MySQL user, run the `get-password` action on the leader unit as follows:
 
 ````{tab-set}
 ```{tab-item} VM
@@ -49,39 +33,23 @@ To retrieve credentials for a different user:
 
 ## Set password
 
-To change the `root` user's password to a new, randomized password:
+To change a MySQL user's password to a new, randomized password:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju run mysql/leader set-password
+    juju run mysql/leader set-password username=<username>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju run mysql-k8s/leader set-password
+    juju run mysql-k8s/leader set-password username=<username>
 ```
 ````
 
-To set a manual password for the `root` user:
-
-````{tab-set}
-```{tab-item} VM
-:sync: vm
-
-    juju run mysql/leader set-password password=<password>
-```
-
-```{tab-item} K8s
-:sync: k8s
-
-    juju run mysql-k8s/leader set-password password=<password>
-```
-````
-
-To set a manual password for another user:
+To set a manual password for a MySQL user:
 
 ````{tab-set}
 ```{tab-item} VM
@@ -96,4 +64,3 @@ To set a manual password for another user:
     juju run mysql-k8s/leader set-password username=<username> password=<password>
 ```
 ````
-

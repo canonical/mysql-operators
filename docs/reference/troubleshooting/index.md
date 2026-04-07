@@ -238,19 +238,19 @@ The Pebble and its service `mysqld_safe` must always be enabled and currently ru
 
 ## Access MySQL
 
-To access MySQL, request `root` credentials to use `mysql`:
+To access MySQL, request `charmed-operator` credentials to use `mysql`:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    > juju run mysql/leader get-password username=root
+    > juju run mysql/leader get-password username=charmed-operator
     password: I6ToMBOJKEPKwQG5wwUpuCcg
-    username: root
+    username: charmed-operator
 
     > juju ssh mysql/0 bash
 
-    > > mysql -h 127.0.0.1 -u root -pI6ToMBOJKEPKwQG5wwUpuCcg mysql -e "show databases"
+    > > mysql -h 127.0.0.1 -u charmed-operator -pI6ToMBOJKEPKwQG5wwUpuCcg mysql -e "show databases"
     > +-------------------------------+
     > | Database                      |
     > +-------------------------------+
@@ -266,13 +266,13 @@ To access MySQL, request `root` credentials to use `mysql`:
 ```{tab-item} K8s
 :sync: k8s
 
-    > juju run mysql-k8s/leader get-password username=root
+    > juju run mysql-k8s/leader get-password username=charmed-operator
     password: xbodZvGTGXc6AdLbiEzAcyF9
-    username: root
+    username: charmed-operator
 
     > juju ssh --container mysql mysql-k8s/0 bash
     >
-    > > mysql -h 127.0.0.1 -u root -pxbodZvGTGXc6AdLbiEzAcyF9 mysql -e "show databases"
+    > > mysql -h 127.0.0.1 -u charmed-operator -pxbodZvGTGXc6AdLbiEzAcyF9 mysql -e "show databases"
     > +-------------------------------+
     > | Database                      |
     > +-------------------------------+
