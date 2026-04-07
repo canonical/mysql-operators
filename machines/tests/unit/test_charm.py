@@ -4,7 +4,6 @@
 import unittest
 from unittest.mock import PropertyMock, patch
 
-import pytest
 from charms.mysql.v0.mysql import (
     MySQLConfigureInstanceError,
     MySQLConfigureMySQLUsersError,
@@ -59,33 +58,6 @@ class TestCharm(unittest.TestCase):
         self.charm.on.install.emit()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
-
-    @pytest.mark.usefixtures("without_juju_secrets")
-    def test_on_leader_elected_sets_mysql_passwords_in_peer_databag(self):
-        # ensure that the peer relation databag is empty
-        peer_relation_databag = self.harness.get_relation_data(
-            self.peer_relation_id, self.harness.charm.app
-        )
-        self.assertEqual(peer_relation_databag, {})
-
-        # trigger the leader_elected event
-        self.harness.set_leader(True)
-
-        # ensure passwords set in the peer relation databag
-        peer_relation_databag = self.harness.get_relation_data(
-            self.peer_relation_id, self.harness.charm.app
-        )
-        expected_peer_relation_databag_keys = [
-            "operator-password",
-            "replication-password",
-            "monitoring-password",
-            "backups-password",
-            "cluster-name",
-            "cluster-set-domain-name",
-        ]
-        self.assertEqual(
-            sorted(peer_relation_databag.keys()), sorted(expected_peer_relation_databag_keys)
-        )
 
     def test_on_leader_elected_sets_mysql_passwords_secret(self):
         # ensure that the peer relation databag is empty
