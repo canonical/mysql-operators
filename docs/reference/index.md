@@ -9,17 +9,44 @@ myst:
 
 Information about releases, charm options, technical specifications, and other reference material for quick lookup. 
 
+## Releases
+
+Release information for all stable revisions of Charmed MySQL 8.4 for all substrates:
+
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
 
 Release notes <release-notes/index>
-System requirements <system-requirements>
-Profiles <profiles>
-Plugins/extensions <plugins-extensions>
-Alert rules <alert-rules>
-Charm statuses <charm-statuses>
-Charm testing <charm-testing>
-Troubleshooting <troubleshooting/index>
-Contacts <contacts>
 ```
+
+## Requirements and performance
+
+Software and hardware requirements, and information about performance and benchmarking:
+
+```{toctree}
+:titlesonly:
+:maxdepth: 2
+
+System requirements <system-requirements>
+Performance profiles <profiles>
+Charm testing <charm-testing>
+```
+
+Troubleshooting and monitoring information:
+
+```{toctree}
+:titlesonly:
+:maxdepth: 2
+
+Troubleshooting <troubleshooting/index>
+Charm statuses <charm-statuses>
+Alert rules <alert-rules>
+Plugins/extensions <plugins-extensions>
+```
+
+```{toctree}
+:hidden:
+
+Contacts <contacts>
+````

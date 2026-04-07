@@ -20,9 +20,9 @@ Available deployment methods, clouds, and specialised setups:
 Deploy MySQL <deploy/index>
 ```
 
-## Usage and maintenance
+## Operations and maintenance
 
-Most common operations when operating a MySQL cluster:
+Essential operations to configure and manage a MySQL cluster:
 
 ```{toctree}
 :titlesonly:
@@ -31,14 +31,37 @@ Most common operations when operating a MySQL cluster:
 Integrate with applications <integrate-with-applications>
 Scale your cluster <scale>
 Manage passwords <manage-passwords>
+```
+
+Networking and encryption:
+
+```{toctree}
+:titlesonly:
+:maxdepth: 2
+
 Enable TLS <enable-tls>
 External network access <external-network-access>
+```
+
+Disaster recovery:
+
+```{toctree}
+:titlesonly:
+:maxdepth: 2
+
 Primary switchover <primary-switchover>
+```
+
+```{seealso}
+For more on high availability and disaster recovery, refer to
+
+* {ref}`cluster-cluster-replication`
+* {ref}`troubleshooting`
 ```
 
 ## Back up and restore
 
-Configuration of storage providers and backup management:
+Configure storage providers and backup management for safety and data migration:
 
 ```{toctree}
 :titlesonly:
@@ -49,7 +72,7 @@ Back up and restore <back-up-and-restore/index>
 
 ## Monitoring (COS)
 
-Integrate with observability services like Grafana, Prometheus, and Tempo:
+Set up observability services like Grafana, Prometheus, Loki, and Tempo through the Canonical Observability Stack (COS):
 
 ```{toctree}
 :titlesonly:
@@ -60,7 +83,7 @@ Monitoring (COS) <monitoring/index>
 
 ## Refresh (upgrade)
 
-Instructions for upgrading a single or multiple clusters:
+Instructions for performing an in-place refresh for one or multiple clusters:
 
 ```{toctree}
 :titlesonly:
@@ -82,7 +105,7 @@ Cluster-cluster replication <cluster-cluster-replication/index>
 
 ## Charm development
 
-For charm developers looking to support MySQL integrations with their charm.
+Information about interfaces and data migration method for developers looking to support MySQL integrations with their application:
 
 ```{toctree}
 :titlesonly:
