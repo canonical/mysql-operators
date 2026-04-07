@@ -118,6 +118,12 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
             if local_unit_label == name_prefix:
                 return canonname
             else:
+                # for peer units, replace the local unit pod name in the fqdn (cannoname) with the
+                # peer unit pod name (name_prefix)
+                # e.g.:
+                # cannoname: mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local
+                # name_prefix: mysql-k8s-1
+                # fqdn = mysql-k8s-1.mysql-k8s-endpoints.default.svc.cluster.local
                 fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
                 # dotappend other units as local unit is mapped without end dot in /etc/hosts
                 return dotappend(fqdn)

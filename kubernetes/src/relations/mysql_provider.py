@@ -127,8 +127,9 @@ class MySQLProvider(Object):
             self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
 
             unit_endpoint = self.charm.get_unit_address(self.charm.unit)
+            unit_hostname = self.charm.get_unit_hostname(self.charm.unit.name)
             prefix = self.charm.app.name
-            suffix = unit_endpoint.removeprefix(self.charm.get_unit_hostname(self.charm.unit.name))
+            suffix = unit_endpoint.removeprefix(unit_hostname)
 
             primary_endpoint = dotappend(f"{prefix}-primary{suffix}")
             replicas_endpoint = dotappend(f"{prefix}-replicas{suffix}")
