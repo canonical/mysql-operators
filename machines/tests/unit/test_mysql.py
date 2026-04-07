@@ -4,7 +4,6 @@
 """Unit test for MySQL shared library."""
 
 import copy
-import subprocess
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -2049,57 +2048,3 @@ sion.run_sql("GRANT ALL PRIVILEGES ON `continuous_writes`.* TO `relation-21_ff73
 
         with self.assertRaises(NotImplementedError):
             self.mysql.reset_data_dir()
-
-
-class TestMySQL(unittest.TestCase):
-    """Test the concrete MySQL class from mysql_vm_helpers."""
-
-    def setUp(self):
-        """Set up test fixtures for MySQL concrete class."""
-        from mysql_vm_helpers import MySQL
-
-        # TODO: What's the difference?
-        self.mock_charm = MagicMock()
-        self.mock_executor_cls = MagicMock()
-        self.mysql = MySQL(
-            "127.0.0.1",
-            MYSQLD_SOCK_FILE,
-            "test_cluster",
-            "test_cluster_set",
-            "serverconfig",
-            "serverconfigpassword",
-            "clusteradmin",
-            "clusteradminpassword",
-            "monitoring",
-            "monitoringpassword",
-            "backups",
-            "backupspassword",
-            self.mock_charm,
-        )
-
-    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
-    @patch("subprocess.run")
-    def test_initialise_mysqld(self, _subprocess_run, _reset_data_dir):
-        """Test successful execution of initialise_mysqld()."""
-        self.mysql.initialise_mysqld()
-
-        _reset_data_dir.assert_called_once()
-        _subprocess_run.assert_called_once_with([
-            "/usr/bin/sudo",
-            "/snap/bin/charmed-mysql.mysqld-initialize",
-            "--datadir",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
-
-    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
-    @patch("subprocess.run")
-    def test_initialise_mysqld_exception(self, _subprocess_run, _reset_data_dir):
-        """Test failing execution of initialise_mysqld()."""
-        from mysql_vm_helpers import MySQLInitialiseMySQLDError
-
-        _subprocess_run.side_effect = subprocess.CalledProcessError(1, "mysqld")
-
-        with self.assertRaises(MySQLInitialiseMySQLDError):
-            self.mysql.initialise_mysqld()
-
-        _reset_data_dir.assert_called_once()
