@@ -11,7 +11,7 @@ Information about releases, charm options, technical specifications, and other r
 
 ## Releases
 
-Release information for all stable revisions of Charmed MySQL 8.0 for all substrates:
+Release information for all stable revisions of Charmed MySQL 8.4 for all substrates:
 
 ```{toctree}
 :titlesonly:
