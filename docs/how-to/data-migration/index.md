@@ -7,6 +7,16 @@ myst:
 (data-migration)=
 # Migrate data
 
+For guidance about moving data from a MySQL 8.0 charm to a MySQL 8.4 charm, start here:
+
+```{toctree}
+:titlesonly:
+:maxdepth: 2
+
+Migrate data from MySQL 8.0 to 8.4 <migrate-data-from-8.0-to-8.4>
+```
+
+More generic data migration guides:
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
