@@ -31,21 +31,19 @@ Set the password of your current cluster to the previous cluster’s password:
 ```{tab-item} VM
 :sync: vm
 
-    juju run mysql/leader set-password username=root password=<previous cluster password>
-    juju run mysql/leader set-password username=clusteradmin password=<previous cluster password>
-    juju run mysql/leader set-password username=serverconfig password=<previous cluster password>
-    juju run mysql/leader set-password username=backups password=<previous cluster password>
-    juju run mysql/leader set-password username=monitoring password=<previous cluster password>
+    juju run mysql/leader set-password username=charmed-replication password=<previous cluster password>
+    juju run mysql/leader set-password username=charmed-operator password=<previous cluster password>
+    juju run mysql/leader set-password username=charmed-backup password=<previous cluster password>
+    juju run mysql/leader set-password username=charmed-stats password=<previous cluster password>
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju run mysql-k8s/leader set-password username=root password=<previous cluster password>
-    juju run mysql-k8s/leader set-password username=clusteradmin password=<previous cluster password>
-    juju run mysql-k8s/leader set-password username=serverconfig password=<previous cluster password>
-    juju run mysql-k8s/leader set-password username=backups password=<previous cluster password>
-    juju run mysql-k8s/leader set-password username=monitoring password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=charmed-replication password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=charmed-operator password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=charmed-backup password=<previous cluster password>
+    juju run mysql-k8s/leader set-password username=charmed-stats password=<previous cluster password>
 ```
 ````
 
@@ -85,4 +83,3 @@ Run the `restore` command with your `backup-id`:
 ```
 ````
 Your restore will then be in progress, once it is complete your cluster will represent the state of the previous cluster.
-
