@@ -33,7 +33,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
   * {ref}`Requirements <system-requirements>`
   * {ref}`Users <users>`
   * {ref}`Statuses <charm-statuses>`
-  * {ref}`Development <charm-development>`
+  * {ref}`Data migration <data-migration>`
   * {ref}`Testing reference <charm-testing>`
   * {ref}`Legacy charm <legacy-charm>`
   * {ref}`Contacts <contacts>`

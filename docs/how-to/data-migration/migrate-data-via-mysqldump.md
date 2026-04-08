@@ -13,8 +13,6 @@ This guide describes how to copy data:
 
 Note that this guide describes how to migrate database **data** only.
 
-For information about integrating your charm with a MySQL database, see {ref}`integrate-with-your-charm`.
-
 ```{seealso}
 * {ref}`migrate-data-mydumper`
 * {ref}`migrate-data-backup-restore` (recommended for migrations between modern charms)
@@ -328,4 +326,3 @@ Test your application and if you are happy with a data migration, do not forget 
 ```shell
 juju remove-application --destroy-storage <legacy_charm>
 ```
-

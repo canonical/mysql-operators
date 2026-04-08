@@ -11,8 +11,6 @@ myst:
 
 This guide shows how to integrate Charmed MySQL with both charmed and non-charmed applications.
 
-For developer information about how to integrate your own charmed application with MySQL, see {ref}`integrate-with-your-charm`.
-
 ## Integrate with a charmed application
 
 Integrations with charmed applications are supported via the [`mysql_client`](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/mysql_client/v0/README.md) interface, and the legacy `mysql` interface.
@@ -154,7 +152,7 @@ To rotate the passwords of users created for related applications, the relation 
 
 The operator user is used internally by the Charmed MySQL application. The `set-password` action can be used to rotate its password.
 
-To set a specific password for the `operator` user, run
+To set a specific password for the `root` user, run
 
 ````{tab-set}
 ```{tab-item} VM
@@ -170,11 +168,7 @@ To set a specific password for the `operator` user, run
 ```
 ````
 
-To randomly generate a password for the `operator` user, run
-
-```shell
-juju run mysql/leader set-password
-```
+To randomly generate a password for the `root` user, run
 
 ````{tab-set}
 ```{tab-item} VM
