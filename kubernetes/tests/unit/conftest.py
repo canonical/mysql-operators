@@ -24,11 +24,6 @@ def mock_refresh():
         yield
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def with_juju_secrets(monkeypatch):
     monkeypatch.setattr("ops.JujuVersion.has_secrets", True)
-
-
-@pytest.fixture
-def without_juju_secrets(monkeypatch):
-    monkeypatch.setattr("ops.JujuVersion.has_secrets", False)

@@ -473,3 +473,30 @@ class TestMySQL(unittest.TestCase):
         _chown.assert_called_once()
         _makedirs.assert_called_once()
         _rmtree.assert_called_once()
+
+    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
+    @patch("subprocess.run")
+    def test_initialise_mysqld(self, _subprocess_run, _reset_data_dir):
+        """Test successful execution of initialise_mysqld()."""
+        self.mysql.initialise_mysqld()
+
+        _reset_data_dir.assert_called_once()
+        _subprocess_run.assert_called_once_with([
+            "/usr/bin/sudo",
+            "/snap/bin/charmed-mysql.mysqld-initialize",
+            "--datadir",
+            "/var/snap/charmed-mysql/common/var/lib/mysql",
+        ])
+
+    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
+    @patch("subprocess.run")
+    def test_initialise_mysqld_exception(self, _subprocess_run, _reset_data_dir):
+        """Test failing execution of initialise_mysqld()."""
+        from mysql_vm_helpers import MySQLInitialiseMySQLDError
+
+        _subprocess_run.side_effect = subprocess.CalledProcessError(1, "mysqld")
+
+        with self.assertRaises(MySQLInitialiseMySQLDError):
+            self.mysql.initialise_mysqld()
+
+        _reset_data_dir.assert_called_once()

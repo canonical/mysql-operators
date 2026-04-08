@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+from time import sleep
 
 import jubilant
 import pytest
@@ -138,6 +139,9 @@ def test_charmed_read_role(juju: Juju):
         ready=wait_for_apps_status(jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1"),
         timeout=TIMEOUT,
     )
+
+    # Wait for relation to be fully removed before adding it again in the following test
+    sleep(10)
 
 
 def test_charmed_dml_role(juju: Juju):
