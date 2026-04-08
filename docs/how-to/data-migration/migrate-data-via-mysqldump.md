@@ -1,60 +1,21 @@
 ---
 myst:
   html_meta:
-    description: "Migrate database data from legacy MySQL or MariaDB charms to modern Charmed MySQL using mysqldump, with environment preparation and migration checks."
+    description: "Migrate database data using mysqldump, with environment preparation and migration checks."
 ---
 
 (migrate-data-mysqldump)=
 # Migrate database data via `mysqldump`
 
-This guide describes how to copy data:
-* from a legacy MySQL charm to a modern MySQL charm
-* from a modern MySQL charm to a different installation of the same modern MySQL charm. 
+This guide describes how to copy data from a MySQL charm to another MySQL charm, regardless of their version (8.0 / 8.4 / ...).
 
 Note that this guide describes how to migrate database **data** only.
 
 ```{seealso}
 * {ref}`migrate-data-mydumper`
-* {ref}`migrate-data-backup-restore` (recommended for migrations between modern charms)
+* {ref}`migrate-data-mysqlsh`
+* {ref}`migrate-data-backup-restore`
 ```
-
-## Do you need to migrate?
-
-`````{tab-set}
-````{tab-item} VM
-:sync: vm
-
-Legacy MariaDB/MySQL charms for **machines**:
-
-* [MariaDB](https://charmhub.io/mariadb)
-* [Percona Cluster](https://charmhub.io/percona-cluster)
-* [MySQL InnoDB Cluster](https://charmhub.io/mysql-innodb-cluster)
-
-To check if a database migration is required, run the following commands, where `DB_CHARM` is the name of your legacy database application:
-
-```shell
-DB_CHARM= < mariadb | percona-cluster | mysql-innodb-cluster >
-juju show-application ${DB_CHARM} | yq '.[] | .charm'
-```
-````
-
-````{tab-item} K8s
-:sync: k8s
-
-Legacy MariaDB/MySQL charms for **Kubernetes**:
-
-* [OSM MariaDB K8s](https://charmhub.io/charmed-osm-mariadb-k8s)
-
-To check if a database migration is required, run the following commands, where `DB_CHARM` is the name of your legacy database application:
-
-```shell
-DB_CHARM= < mydb | charmed-osm-mariadb-k8s >
-juju show-application ${DB_CHARM} | yq '.[] | .charm'
-```
-````
-`````
-
-No migration is necessary if the output above is `mysql`.
 
 ## Prepare
 
@@ -67,108 +28,128 @@ Always perform the migration in a test environment before performing it in produ
 ## Prerequisites
 
 - Client machine with access to deployed legacy charm
-- Juju 3.6 or later
-  - See also: {ref}`upgrade-juju`
 - Enough storage in the cluster to support backup/restore of the databases
 - `mysql-client` on client machine (install by running `sudo apt install mysql-client`)
 
-```{caution}
-Most legacy database charms support old Ubuntu series only, while [Juju 3.x does NOT support Ubuntu Bionic](https://documentation.ubuntu.com/juju/3.6/releasenotes/unsupported/juju_3.x.x/#juju-3-0-0-22-oct-2022).
-
-It is recommended to use the latest stable revision of the charm on Ubuntu Jammy and Juju 3.x
-```
-
-(mysqldump-obtain-legacy-credentials)=
+(mysqldump-obtain-existing-credentials)=
 ## Obtain existing database credentials
 
-Set `DB_APP` to the name of the desired unit: 
+Get username, password and IP of the existing database:
 
 `````{tab-set}
 ````{tab-item} VM
 :sync: vm
 
-```shell
-DB_APP= < mariadb/0 | percona-cluster/leader | mysql-innodb-cluster/1 >
-```
-
+    When the existing database is a MySQL 8.0 charm:
+    ```shell
+    OLD_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
+    ```
+    
+    When the existing database is a MySQL 8.4 charm:
+    ```shell
+    OLD_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
+    ```
 ````
+
 ````{tab-item} K8s
 :sync: k8s
 
-```shell
-DB_APP= < mydb/0 | charmed-osm-mariadb-k8s/0 >
-```
+    When the existing database is a MySQL 8.0 charm:
+    ```shell
+    OLD_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
+    ```
+    
+    When the existing database is a MySQL 8.4 charm:
+    ```shell
+    OLD_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
+    ```
 ````
 `````
 
-Get username and password of the existing legacy database from the database relation. The username is usually `root`, and the password is specified in the `mysql` relation by `root_password`:
+### Deploy a new MySQL charm
 
-```shell
-OLD_DB_RELATION_ID=$(juju show-unit ${DB_APP} | yq '.[] | .relation-info | select(.[].endpoint == "mysql") | .[0] | .relation-id')
+This step can be skipped if the charm that the data migration will be targeting is already deployed.
 
-OLD_DB_USER=root
-
-OLD_DB_PASS=$(bash -c "juju run --unit ${DB_APP} 'relation-get -r ${OLD_DB_RELATION_ID} - ${DB_APP}' | grep root_password" | awk '{print $2}')
-
-OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[] | .address')
-```
-
-
-## Deploy new MySQL databases and obtain credentials
-
-Deploy new MySQL databases. In this example, 3 units are deployed:
+To deploy a new MySQL charm database:
 
 `````{tab-set}
 ````{tab-item} VM
 :sync: vm
 
-```shell
-juju deploy mysql --channel 8.4/edge -n 3
-```
-
-Obtain credentials for each new database by executing the following commands, once per database:
-
-```shell
-NEW_DB_USER=$(juju run mysql/leader get-password | yq '.username')
-NEW_DB_PASS=$(juju run mysql/leader get-password | yq '.password')
-NEW_DB_IP=$(juju show-unit mysql/0 | yq '.[] | .address')
-```
-
+    # Use any of the stable channels
+    # juju deploy mysql --channel 8.0/stable -n 3
+    # juju deploy mysql --channel 8.4/stable -n 3
 ````
+
 ````{tab-item} K8s
 :sync: k8s
 
-```shell
-juju deploy mysql-k8s --trust --channel 8.4/edge -n 3
-```
+    # Use any of the stable channels
+    # juju deploy mysql-k8s --channel 8.0/stable -n 3
+    # juju deploy mysql-k8s --channel 8.4/stable -n 3
+````
+`````
 
-Obtain credentials for each new database by executing the following commands, once per database:
+## Obtain new database credentials
 
-```shell
-NEW_DB_USER=$(juju run mysql-k8s/leader get-password | yq '.username')
-NEW_DB_PASS=$(juju run mysql-k8s/leader get-password | yq '.password')
-NEW_DB_IP=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
-```
+Get username, password and IP of the new database:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
+    When the new database is a MySQL 8.0 charm:
+    ```shell
+    NEW_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
+    ```
+
+    When the new database is a MySQL 8.4 charm:
+    ```shell
+    NEW_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
+    ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+    When the new database is a MySQL 8.0 charm:
+    ```shell
+    NEW_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
+    ```
+    
+    When the new database is a MySQL 8.4 charm:
+    ```shell
+    NEW_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
+    ```
 ````
 `````
 
 ## Migrate database
 
 The next step is to use the credentials and information obtained in previous steps to perform the database migration.
-
-First, ensure that there are no new connections are made and that database is not altered.
-
-Remove the relation between your charm and the legacy MySQL charm:
-
-```shell
-juju remove-relation <your_application> <legacy_charm>
-```
+Ensure that there are no new connections are made and that database is not altered.
 
 Connect to the legacy database to verify the connection:
 
 ```shell
 mysql \
-  --host=${OLD_DB_IP} \
+  --host=${OLD_DB_HOST} \
   --user=${OLD_DB_USER} \
   --password=${OLD_DB_PASS} \
   -e "show databases"
@@ -186,7 +167,7 @@ Create a backup of each database file using the `mysqldump` utility, username, p
 OLD_DB_DUMP="legacy-mysql-${DB_NAME}.sql"
 
 mysqldump \
-  --host=${OLD_DB_IP} \
+  --host=${OLD_DB_HOST} \
   --user=${OLD_DB_USER} \
   --password=${OLD_DB_PASS} \
   --column-statistics=0 \
@@ -198,7 +179,7 @@ Connect to the new database using username, password, and unit's IP address, and
 
 ```shell
 mysql \
-  --host=${NEW_DB_IP} \
+  --host=${NEW_DB_HOST} \
   --user=${NEW_DB_USER} \
   --password=${NEW_DB_PASS} \
   < "${OLD_DB_DUMP}"
@@ -229,7 +210,7 @@ Create a dump for the new MySQL database and compare it to the backup created ea
 ```shell
 NEW_DB_DUMP="new-mysql-${DB_NAME}.sql"
 mysqldump \
---host=${NEW_DB_IP} \
+--host=${NEW_DB_HOST} \
 --user=${NEW_DB_USER} \
 --password=${NEW_DB_PASS} \
 --column-statistics=0 \
@@ -237,10 +218,6 @@ mysqldump \
 
 > "${NEW_DB_DUMP}"
 diff "${OLD_DB_DUMP}" "${NEW_DB_DUMP}"
-```
-
-```{note}
-Some variables will vary between legacy and modern charms, namely: `${NEW_DB_PASS}` and `${NEW_DB_IP}`. These must be adjusted for the correct database, accordingly.
 ```
 
 The difference between two SQL backup files should be limited to server versions, IP addresses, timestamps and other non data related information. 
@@ -298,5 +275,5 @@ Output:
 Test your application and if you are happy with a data migration, do not forget to remove legacy charms to keep the house clean:
 
 ```shell
-juju remove-application --destroy-storage <legacy_charm>
+juju remove-application --destroy-storage <old_charm>
 ```
