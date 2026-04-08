@@ -18,6 +18,7 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 MYSQL_APP_NAME = "mysql-k8s"
@@ -142,7 +143,11 @@ def refresh_from_stable(juju: Juju, charm: str) -> None:
     logging.info("Wait for refresh to start")
     juju.wait(
         ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
-        timeout=10 * MINUTE_SECS,
+        timeout=5 * MINUTE_SECS,
+    )
+    juju.wait(
+        ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_units[-1], "blocked"),
+        timeout=5 * MINUTE_SECS,
     )
 
     mysql_status = juju.status().apps[MYSQL_APP_NAME]
