@@ -275,7 +275,7 @@ def get_mysql_server_credentials(
 
     Args:
         juju: The Juju model
-        unit_name: The juju unit on which to run the get-password action for operator credentials
+        unit_name: The juju unit on which to get the credentials
         username: The username to use
 
     Returns:
@@ -290,6 +290,36 @@ def get_mysql_server_credentials(
     return credentials_task.results
 
 
+def load_mysql_test_data(juju: Juju, app_name: str, file_path: str) -> None:
+    """Loads a .sql file into the target MySQL application primary unit.
+
+    Args:
+        juju: The Juju model
+        app_name: The application name
+        file_path: The path to the .sql file
+    """
+    mysql_leader = get_app_leader(juju, app_name)
+    mysql_primary = get_mysql_primary_unit(juju, app_name, mysql_leader)
+    mysql_primary_address = get_unit_ip(juju, app_name, mysql_primary)
+
+    credentials = get_mysql_server_credentials(juju, mysql_leader)
+
+    with open(file_path) as file:
+        subprocess.run(
+            [
+                "mysql",
+                f"--host={mysql_primary_address}",
+                f"--user={credentials['username']}",
+                f"--password={credentials['password']}",
+            ],
+            stdin=file,
+            cwd=Path(file_path).parent,
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+
+
 def rotate_mysql_server_credentials(
     juju: Juju,
     unit_name: str,
@@ -300,7 +330,7 @@ def rotate_mysql_server_credentials(
 
     Args:
         juju: The Juju model
-        unit_name: The juju unit on which to run the rotate-password action for operator credentials
+        unit_name: The juju unit on which to rotate the password
         username: The username to rotate the password for
         password: The new password to set
     """
