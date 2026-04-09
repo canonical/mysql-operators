@@ -105,6 +105,7 @@ from log_rotation_setup import LogRotationSetup
 from mysql_vm_helpers import (
     MySQL,
     MySQLCreateCustomMySQLDConfigError,
+    MySQLInitialiseMySQLDError,
     MySQLInstallError,
     SnapServiceOperationError,
     instance_hostname,
@@ -298,7 +299,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     config.removeprefix("loose-"), new_config_dict[config]
                 )
 
-    def _on_start(self, event: StartEvent) -> None:
+    def _on_start(self, event: StartEvent) -> None:  # noqa: C901
         """Handle the start event.
 
         Configure MySQL users and the instance for use in an InnoDB cluster.
@@ -310,6 +311,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         try:
             self.workload_initialise()
+        except MySQLInitialiseMySQLDError:
+            self.set_unit_status(BlockedStatus("Failed to initialize MySQL data directory"))
+            return
         except MySQLConfigureMySQLRolesError:
             self.unit.status = BlockedStatus("Failed to initialize MySQL roles")
             return
@@ -777,6 +781,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """
         # ensure hostname can be resolved
         self.hostname_resolution.update_etc_hosts(None)
+
+        logger.info("Initializing MySQL data directory")
+        self._mysql.initialise_mysqld()
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()
