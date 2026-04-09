@@ -154,18 +154,8 @@ def pitr_operations(
 
     logger.info("Creating test data 1")
     td1 = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        MYSQL_APPLICATION_NAME,
-        TABLE_NAME,
-        td1,
-    )
-    verify_mysql_test_data(
-        juju,
-        MYSQL_APPLICATION_NAME,
-        TABLE_NAME,
-        td1,
-    )
+    insert_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td1)
+    verify_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td1)
 
     ts = execute_queries_on_unit(
         primary_ip,
@@ -181,18 +171,8 @@ def pitr_operations(
 
     logger.info("Creating test data 2")
     td2 = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        MYSQL_APPLICATION_NAME,
-        TABLE_NAME,
-        td2,
-    )
-    verify_mysql_test_data(
-        juju,
-        MYSQL_APPLICATION_NAME,
-        TABLE_NAME,
-        td2,
-    )
+    insert_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td2)
+    verify_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td2)
 
     execute_queries_on_unit(
         primary_ip,
