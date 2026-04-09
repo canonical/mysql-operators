@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant
 from jubilant import Juju
@@ -12,6 +13,7 @@ from ...helpers_ha import (
     get_mysql_primary_unit,
     get_unit_process_id,
     insert_mysql_test_data,
+    load_mysql_test_data,
     remove_mysql_test_data,
     update_interval,
     verify_mysql_test_data,
@@ -55,6 +57,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_kill_db_process(juju: Juju, continuous_writes) -> None:
