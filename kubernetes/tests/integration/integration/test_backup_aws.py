@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 import socket
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from ..helpers_ha import (
     get_mysql_server_credentials,
     get_unit_address,
     insert_mysql_test_data,
+    load_mysql_test_data,
     rotate_mysql_server_credentials,
     scale_app_units,
     verify_mysql_test_data,
@@ -96,21 +98,17 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         timeout=15 * MINUTE_SECS,
     )
 
-    primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, DATABASE_APP_NAME, path)
 
     logger.info("Rotating all mysql credentials")
-    rotate_mysql_server_credentials(
-        juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
-    )
-    rotate_mysql_server_credentials(juju, primary_unit_name, OPERATOR_USERNAME, OPERATOR_PASSWORD)
+    primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
+    rotate_mysql_server_credentials(juju, primary_unit, REPLICATION_USERNAME, REPLICATION_PASSWORD)
+    rotate_mysql_server_credentials(juju, primary_unit, OPERATOR_USERNAME, OPERATOR_PASSWORD)
 
     logger.info("Deploying s3-integrator")
-
-    juju.deploy(
-        S3_INTEGRATOR,
-        channel=S3_INTEGRATOR_CHANNEL,
-        base=S3_INTEGRATOR_BASE,
-    )
+    juju.deploy(S3_INTEGRATOR, channel=S3_INTEGRATOR_CHANNEL, base=S3_INTEGRATOR_BASE)
     juju.integrate(f"{DATABASE_APP_NAME}:s3-parameters", f"{S3_INTEGRATOR}:s3-credentials")
 
     juju.wait(
@@ -139,20 +137,10 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster before backup
     logger.info("Inserting value before backup")
     value_before_backup = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_before_backup,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_before_backup,
-    )
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_before_backup)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_before_backup)
 
-    logger.info("Setting s3 config")
+    logger.info("Setting s3 config and credentials")
     secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
     juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
@@ -185,18 +173,8 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster after backup
     logger.info("Inserting value after backup")
     value_after_backup = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_backup,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_backup,
-    )
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
 
 
 def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
@@ -242,21 +220,10 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_restore,
-    )
-    verify_mysql_test_data(
-        juju,
-        DATABASE_APP_NAME,
-        TABLE_NAME,
-        value_after_restore,
-    )
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_restore)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_restore)
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
-
     values = execute_queries_on_unit(
         mysql_unit_address,
         credentials["username"],
@@ -381,21 +348,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     # insert data into cluster after restore
     logger.info("Inserting value after restore")
     value_after_restore = generate_random_string(255)
-    insert_mysql_test_data(
-        juju,
-        new_mysql_application_name,
-        TABLE_NAME,
-        value_after_restore,
-    )
-    verify_mysql_test_data(
-        juju,
-        new_mysql_application_name,
-        TABLE_NAME,
-        value_after_restore,
-    )
+    insert_mysql_test_data(juju, new_mysql_application_name, TABLE_NAME, value_after_restore)
+    verify_mysql_test_data(juju, new_mysql_application_name, TABLE_NAME, value_after_restore)
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
-
     values = execute_queries_on_unit(
         primary_unit_address,
         server_config_credentials["username"],
