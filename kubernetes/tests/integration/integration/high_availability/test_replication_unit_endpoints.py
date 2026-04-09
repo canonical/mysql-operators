@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant
 from jubilant import Juju
@@ -12,6 +13,7 @@ from ...helpers_ha import (
     get_app_units,
     get_k8s_endpoint_addresses,
     get_unit_address,
+    load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
 )
@@ -67,6 +69,10 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
             timeout=20 * MINUTE_SECS,
         )
 
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME_1, path)
+
 
 def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
@@ -105,6 +111,10 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
             error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME_2, path)
 
 
 def test_labeling_of_k8s_endpoints(juju: Juju) -> None:

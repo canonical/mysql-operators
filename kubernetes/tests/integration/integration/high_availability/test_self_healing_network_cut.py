@@ -19,6 +19,7 @@ from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_units,
     get_mysql_primary_unit,
+    load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
     wait_for_unit_status,
@@ -64,6 +65,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_network_cut_affecting_an_instance(juju: Juju, continuous_writes, chaos_mesh) -> None:

@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant
 from jubilant import Juju
@@ -12,6 +13,7 @@ from ...helpers_ha import (
     MINUTE_SECS,
     get_app_units,
     get_mysql_variable_value,
+    load_mysql_test_data,
     wait_for_apps_status,
 )
 
@@ -39,6 +41,10 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME),
         timeout=TIMEOUT,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, APP_NAME, path)
 
 
 def test_custom_variables(juju: Juju) -> None:
