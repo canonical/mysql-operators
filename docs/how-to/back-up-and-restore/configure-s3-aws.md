@@ -7,9 +7,9 @@ myst:
 (configure-s3-aws)=
 # Configure S3 for AWS
 
-Charmed MySQL backups can be stored on any S3 compatible storage. S3 access and configurations are managed with the [`s3-integrator` charm](https://charmhub.io/s3-integrator). 
+Charmed MySQL backups can be stored on any S3 compatible storage. S3 access and configurations are managed with the [S3-integrator charm](https://charmhub.io/s3-integrator?channel=2/edge). 
 
-This guide will teach you how to deploy and configure the s3-integrator charm for [AWS S3](https://aws.amazon.com/s3/), send the configuration to a Charmed MySQL application, and update it. 
+This guide will teach you how to deploy and configure the S3-integrator charm for [AWS S3](https://aws.amazon.com/s3/), send the configuration to a Charmed MySQL application, and update it. 
 
 ```{seealso}
 {ref}`configure-s3-radosgw`
@@ -20,9 +20,13 @@ This guide will teach you how to deploy and configure the s3-integrator charm fo
 Deploy and configure the `s3-integrator` charm for AWS S3:
 
 ```shell
-juju deploy s3-integrator
-juju run s3-integrator/leader sync-s3-credentials access-key=<access-key-here> secret-key=<secret-key-here>
+juju deploy s3-integrator --channel=2/edge
+
+juju add-secret s3-credentials access-key=<access-key-here> secret-key=<secret-key-here>
+juju grant-secret s3-credentials s3-integrator
+
 juju config s3-integrator \
+    credentials=<secret-uri-from-previous-step> \
     endpoint="https://s3.amazonaws.com" \
     bucket="mysql-test-bucket-1" \
     path="/mysql-test" \
@@ -36,7 +40,6 @@ See [this post](https://repost.aws/knowledge-center/s3-http-307-response) for mo
 ```
 
 To pass these configurations to Charmed MySQL, relate the two applications:
-
 
 ````{tab-set}
 ```{tab-item} VM
@@ -80,5 +83,4 @@ You can also update your S3 configuration options after relating:
 juju config s3-integrator <option>=<value>
 ```
 
-The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure) for your S3 storage.
-
+The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configurations?channel=2/edge) for your S3 storage.

@@ -7,9 +7,9 @@ myst:
 (configure-s3-radosgw)=
 # Configure S3 for RadosGW
 
-Charmed MySQL backups can be stored on any S3-compatible storage. S3 access and configurations are managed with the [s3-integrator charm](https://charmhub.io/s3-integrator).
+Charmed MySQL backups can be stored on any S3-compatible storage. S3 access and configurations are managed with the [S3-integrator charm](https://charmhub.io/s3-integrator?channel=2/edge).
 
-This guide will teach you how to deploy and configure the s3-integrator charm on Ceph via [RadosGW](https://docs.ceph.com/en/quincy/man/8/radosgw/), send the configuration to a Charmed MySQL application, and update it. 
+This guide will teach you how to deploy and configure the S3-integrator charm on Ceph via [RadosGW](https://docs.ceph.com/en/quincy/man/8/radosgw/), send the configuration to a Charmed MySQL application, and update it. 
 
 ```{seealso}
 {ref}`configure-s3-aws`
@@ -27,8 +27,9 @@ mc mb dest/backups-bucket
 Then, deploy and run the charm:
 
 ```shell
-juju deploy s3-integrator
-juju run s3-integrator/leader sync-s3-credentials access-key=<access-key> secret-key=<secret-key>
+juju deploy s3-integrator --channel=2/edge
+juju add-secret s3-credentials access-key=<access-key-here> secret-key=<secret-key-here>
+juju grant-secret s3-credentials s3-integrator
 ```
 
 Lastly, use `juju config` to add your configuration parameters. For example:
@@ -39,6 +40,7 @@ Lastly, use `juju config` to add your configuration parameters. For example:
 
 ```shell
 juju config s3-integrator \
+    credentials=<secret-uri-from-previous-step> \
     endpoint="https://radosgw.mycompany.fqdn" \
     bucket="backups-bucket" \
     path="/mysql" \
@@ -53,6 +55,7 @@ juju config s3-integrator \
 
 ```shell
 juju config s3-integrator \
+    credentials=<secret-uri-from-previous-step> \
     endpoint="https://radosgw.mycompany.fqdn" \
     bucket="backups-bucket" \
     path="/mysql-k8s" \
@@ -99,4 +102,4 @@ You can also update your S3 configuration options after relating:
 juju config s3-integrator <option>=<value>
 ```
 
-The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure) for your S3 storage.
+The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure?channel=2/edge) for your S3 storage.
