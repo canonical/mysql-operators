@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 import time
 from collections.abc import Generator
 
@@ -20,6 +21,7 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_cluster_status,
     get_mysql_max_written_value,
+    load_mysql_test_data,
     wait_for_apps_status,
 )
 from ...markers import juju3
@@ -109,6 +111,10 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
         timeout=10 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(model_1, MYSQL_APP_1, path)
 
 
 @juju3
