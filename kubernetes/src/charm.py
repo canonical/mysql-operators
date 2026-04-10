@@ -17,7 +17,6 @@ from time import sleep
 import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
-from charms.data_platform_libs.v0.s3 import S3Requirer
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.mysql.v0.async_replication import (
@@ -50,6 +49,7 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
+from object_storage import S3Requirer
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (

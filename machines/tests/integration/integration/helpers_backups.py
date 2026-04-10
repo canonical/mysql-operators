@@ -16,6 +16,7 @@ from constants import OPERATOR_USERNAME
 from ..helpers import execute_queries_on_unit, generate_random_string
 from ..helpers_ha import (
     MINUTE_SECS,
+    create_app_secret,
     get_app_units,
     get_mysql_primary_unit,
     get_unit_ip,
@@ -29,7 +30,8 @@ from ..helpers_ha import (
 logger = logging.getLogger(__name__)
 
 S3_INTEGRATOR = "s3-integrator"
-S3_INTEGRATOR_CHANNEL = "1/stable"
+S3_INTEGRATOR_CHANNEL = "2/edge"
+S3_INTEGRATOR_BASE = "ubuntu@24.04"
 MYSQL_APPLICATION_NAME = "mysql"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
@@ -89,7 +91,7 @@ def build_and_deploy_operations(
         S3_INTEGRATOR,
         S3_INTEGRATOR,
         channel=S3_INTEGRATOR_CHANNEL,
-        base="ubuntu@22.04",
+        base=S3_INTEGRATOR_BASE,
     )
 
     juju.wait(
@@ -114,13 +116,8 @@ def build_and_deploy_operations(
         )),
         timeout=TIMEOUT,
     )
-    juju.config(S3_INTEGRATOR, cloud_configs)
-    s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
-    juju.run(
-        unit=s3_unit_name,
-        action="sync-s3-credentials",
-        params=cloud_credentials,
-    )
+    secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, MYSQL_APPLICATION_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,

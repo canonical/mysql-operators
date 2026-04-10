@@ -15,6 +15,7 @@ from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 from ..helpers import generate_random_string
 from ..helpers_ha import (
     MINUTE_SECS,
+    create_app_secret,
     execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
@@ -35,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 DATABASE_APP_NAME = "mysql"
 S3_INTEGRATOR = "s3-integrator"
+S3_INTEGRATOR_CHANNEL = "2/edge"
+S3_INTEGRATOR_BASE = "ubuntu@24.04"
 TIMEOUT = 10 * MINUTE_SECS
 CLUSTER_NAME = "test_cluster"
 REPLICATION_PASSWORD = "charmed-replicationpasswordAA01"
@@ -81,8 +84,11 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         num_units=3,
     )
 
-    juju.deploy(S3_INTEGRATOR, channel="1/stable", base="ubuntu@22.04")
-
+    juju.deploy(
+        S3_INTEGRATOR,
+        channel=S3_INTEGRATOR_CHANNEL,
+        base=S3_INTEGRATOR_BASE,
+    )
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
         timeout=15 * MINUTE_SECS,
@@ -138,15 +144,8 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     )
 
     logger.info("Setting s3 config")
-    juju.config(S3_INTEGRATOR, cloud_configs)
-
-    s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
-    juju.run(
-        unit=s3_unit_name,
-        action="sync-s3-credentials",
-        params=cloud_credentials,
-    )
-
+    secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
@@ -201,17 +200,8 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     mysql_unit_name = get_app_units(juju, DATABASE_APP_NAME)[0]
     mysql_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, mysql_unit_name)
 
-    # set the s3 config and credentials
-    logger.info("Syncing credentials")
-
-    juju.config(S3_INTEGRATOR, cloud_configs)
-    s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
-    juju.run(
-        unit=s3_unit_name,
-        action="sync-s3-credentials",
-        params=cloud_credentials,
-    )
-
+    secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, S3_INTEGRATOR),
         timeout=TIMEOUT,
@@ -340,17 +330,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
 
     operator_credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
-    # set the s3 config and credentials
-    logger.info("Syncing credentials")
-
-    juju.config(S3_INTEGRATOR, cloud_configs)
-    s3_unit_name = get_app_units(juju, S3_INTEGRATOR)[0]
-    juju.run(
-        unit=s3_unit_name,
-        action="sync-s3-credentials",
-        params=cloud_credentials,
-    )
-
+    secret_uri = create_app_secret(juju, S3_INTEGRATOR, cloud_credentials)
+    juju.config(S3_INTEGRATOR, {"credentials": secret_uri, **cloud_configs})
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, new_mysql_application_name, S3_INTEGRATOR),
         timeout=TIMEOUT,

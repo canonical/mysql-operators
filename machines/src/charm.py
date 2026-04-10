@@ -18,7 +18,6 @@ from time import sleep
 import charm_refresh
 import ops
 from charms.data_platform_libs.v0.data_models import TypedCharmBase
-from charms.data_platform_libs.v0.s3 import S3Requirer
 from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
 from charms.mysql.v0.async_replication import (
     RELATION_CONSUMER,
@@ -51,6 +50,7 @@ from charms.mysql.v0.mysql import (
 )
 from charms.mysql.v0.tls import MySQLTLS
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
+from object_storage import S3Requirer
 from ops import (
     ActiveStatus,
     BlockedStatus,

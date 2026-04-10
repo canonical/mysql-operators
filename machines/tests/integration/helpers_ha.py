@@ -4,6 +4,7 @@
 
 import json
 import subprocess
+import uuid
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -554,3 +555,14 @@ def wait_for_unit_message(app_name: str, unit_name: str, unit_message: str) -> J
     return lambda status: (
         status.apps[app_name].units[unit_name].workload_status.message == unit_message
     )
+
+
+def create_app_secret(
+    juju: Juju, app_name: str, contents: dict[str, str], secret_name: str | None = None
+) -> str:
+    """Creates an application secret and return the secret URI."""
+    if secret_name is None:
+        secret_name = str(uuid.uuid4())[:8]
+    secret_uri = juju.add_secret(secret_name, content=contents)
+    juju.grant_secret(secret_uri, app_name)
+    return secret_uri

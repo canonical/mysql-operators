@@ -46,7 +46,7 @@ class TestMySQLBackups(unittest.TestCase):
         )
         self.mysql_backups = self.charm.backups
 
-    @patch("charms.data_platform_libs.v0.s3.S3Requirer.get_s3_connection_info")
+    @patch("object_storage.S3Requirer.get_storage_connection_info")
     def test_retrieve_s3_parameters(self, _get_s3_connection_info):
         """Test _retrieve_s3_parameters()."""
         return_value = {

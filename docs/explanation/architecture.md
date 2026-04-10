@@ -171,7 +171,7 @@ The [TLS Certificates](https://charmhub.io/tls-certificates-operator) charm is r
 
 ### S3 Integrator
 
-[S3 Integrator](https://charmhub.io/s3-integrator) is an integrator charm for providing S3 credentials to Charmed MySQL which seek to access shared S3 data. Store the credentials centrally in the integrator charm and relate consumer charms as needed.
+[S3 Integrator](https://charmhub.io/s3-integrator?channel=2/edge) is an integrator charm for providing S3 credentials to Charmed MySQL which seek to access shared S3 data. Store the credentials centrally in the integrator charm and relate consumer charms as needed.
 
 ### Data Integrator
 
