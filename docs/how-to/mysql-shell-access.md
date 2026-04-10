@@ -6,9 +6,10 @@ myst:
 
 
 (mysql-shell-access)=
-# MySQL shell access on units
+# Access MySQL shell on units
 
-Charmed MySQL uses mysql-shell as main contact point between the operator code and MySQL daemon.
+Charmed MySQL uses [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) as main contact
+point between the operator code and MySQL daemon.
 For some (rare) cases, is possible for the user to access the mysql-shell client running on the
 unit container/virtual-machine.
 
