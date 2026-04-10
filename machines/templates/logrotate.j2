@@ -26,11 +26,14 @@ ifempty
 missingok
 nomail
 nosharedscripts
-nocopytruncate
+# Needed because rotated logs might be in a different filesystem,
+# `nocopytruncate` fails with `failed to rename ...: Invalid cross-device link`
+copy
+copytruncate
 
 {% for log in enabled_log_files %}
 {{ log_dir }}/{{ log }}.log {
-    olddir archive_{{ log }}
+    olddir {{ archive_dir }}/archive_{{ log }}
     postrotate
         juju_command=/usr/bin/juju-run
         if command -v /usr/bin/juju-exec; then juju_command=/usr/bin/juju-exec; fi

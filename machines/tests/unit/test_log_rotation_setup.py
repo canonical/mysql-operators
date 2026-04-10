@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, PropertyMock, mock_open, patch
 from ops.testing import Harness
 
 from charm import MySQLOperatorCharm
-from constants import COS_AGENT_RELATION_NAME, PEER
+from constants import COS_AGENT_RELATION_NAME, MYSQL_LOGS_DIR, PEER
 
 
 class TestLogRotationSetup(unittest.TestCase):
@@ -44,9 +44,7 @@ class TestLogRotationSetup(unittest.TestCase):
     ):
         self.harness.update_config({"logs-retention-period": "auto"})
         self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
-        positions = (
-            "positions:\n  '/var/snap/charmed-mysql/common/var/log/mysql/error.log': '466'\n"
-        )
+        positions = f"positions:\n  '{MYSQL_LOGS_DIR}/error.log': '466'\n"
         event = MagicMock()
         mock_setup.assert_called_once()
         mock_setup.reset_mock()

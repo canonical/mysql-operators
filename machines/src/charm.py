@@ -155,9 +155,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.update_status, self._on_update_status)
-        self.framework.observe(
-            self.on.database_storage_detaching, self._on_database_storage_detaching
-        )
+
+        self.framework.observe(self.on.archive_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.data_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.logs_storage_detaching, self._on_storage_detaching)
+        self.framework.observe(self.on.temp_storage_detaching, self._on_storage_detaching)
 
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
         self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
@@ -367,7 +369,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer departed event")
 
-    def _on_database_storage_detaching(self, _) -> None:
+    def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
         # Only executes if the unit was initialised
         if not self.unit_initialized():
