@@ -8,8 +8,8 @@ myst:
 # Self Healing
 
 Charmed MySQL has builtin self-healing capabilities for the most common failure cases. Following 
-the automatic recovery cases - where the user can expect the charm to return to a functional state 
-\- and some cases where user intervention might be required.
+the automatic recovery cases, where the user can expect the charm to return to a functional state, 
+and some cases where user intervention might be required.
 
 ## Automatic self-healing cases
 
@@ -17,10 +17,10 @@ Cases where the charm can recover without any user input. User can expect the ch
 recover, as long there's no data corruption in the storage.
 
 ```{caution}
-The self-healing procedures rely on the scheduled `update-status` event. Make sure your juju model 
+The self-healing procedures rely on the scheduled `update-status` event. Make sure your Juju model 
 has this interval set to a reasonable value, otherwise self-healing may take too long or not even 
 trigger if the update status event is disabled.
-Check [juju 
+Check [Juju 
 documentation](https://documentation.ubuntu.com/juju/3.6/reference/hook/#update-status) for more 
 information.
 ```
@@ -34,9 +34,9 @@ primary, syncing remaining units to it's state.
  
 ### Offline units with active cluster
 
-If one or more units get offline, but the cluster primary still available,
- offline units will keep trying to rejoin the cluster indefinitely. If a unit fail to rejoin, this 
-may indicate other issues outside the charm control, e.g. persistent network failures.
+If one or more units get offline, but the cluster primary still available, offline units will keep 
+trying to rejoin the cluster indefinitely. If a unit fail to rejoin, this may indicate other issues 
+outside the charm control, e.g. persistent network failures.
  
 ### (Un)graceful unit(s) crash
 
@@ -50,10 +50,9 @@ the unit is back (host or pod restarts)
 
 ### Primary crashes before other units are joined
 
-On initial deployment, the juju leader is set as the cluster primary. If this unit crashes during 
-the setup and before joining other (secondary) units to the cluster, on unit (pod/host) recovery, 
-the charm will execute a complete outage recover for this unit.
- 
+On initial deployment, the Juju leader unit is set as the cluster primary. If this unit crashes 
+during the setup and before joining other (secondary) units to the cluster, on unit (pod/host) 
+recovery, the charm will execute a complete outage recover for this unit.
 
 ## User triggered healing cases
 
@@ -73,8 +72,3 @@ Split brain can happen on network partitions where the primary is isolated from 
 later rejoined. For example, in a high availability 3 unit deployment, when the primary is isolated 
 from the group, the remaining 2 units will elect a new primary. When the old primary rejoins the 
 group, still as a primary, the cluster will be in the split brain case.
-
-
-
-
-
