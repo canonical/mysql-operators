@@ -43,15 +43,15 @@ Get username, password and IP of the existing database:
 
 When the existing database is a MySQL 8.0 charm:
 
-    OLD_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
-    OLD_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
-    OLD_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
+    OLD_DB_USER=$(juju run mysql/leader get-password username=serverconfig | yq '.username')
+    OLD_DB_PASS=$(juju run mysql/leader get-password username=serverconfig | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
 
 When the existing database is a MySQL 8.4 charm:
 
-    OLD_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
-    OLD_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
-    OLD_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
+    OLD_DB_USER=$(juju run mysql/leader get-password username=charmed-operator | yq '.username')
+    OLD_DB_PASS=$(juju run mysql/leader get-password username=charmed-operator | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
 ```
 
 ```{tab-item} K8s
@@ -59,15 +59,15 @@ When the existing database is a MySQL 8.4 charm:
 
 When the existing database is a MySQL 8.0 charm:
 
-    OLD_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
-    OLD_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
-    OLD_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
+    OLD_DB_USER=$(juju run mysql-k8s/leader get-password username=serverconfig | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-k8s/leader get-password username=serverconfig | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
 
 When the existing database is a MySQL 8.4 charm:
 
-    OLD_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
-    OLD_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
-    OLD_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
+    OLD_DB_USER=$(juju run mysql-k8s/leader get-password username=charmed-operator | yq '.username')
+    OLD_DB_PASS=$(juju run mysql-k8s/leader get-password username=charmed-operator | yq '.password')
+    OLD_DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
 ```
 ````
 
@@ -101,15 +101,15 @@ Get username, password and IP of the new database:
 
 When the new database is a MySQL 8.0 charm:
 
-    NEW_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
-    NEW_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
-    NEW_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
+    NEW_DB_USER=$(juju run mysql/leader get-password username=serverconfig | yq '.username')
+    NEW_DB_PASS=$(juju run mysql/leader get-password username=serverconfig | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
 
 When the new database is a MySQL 8.4 charm:
 
-    NEW_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
-    NEW_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
-    NEW_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
+    NEW_DB_USER=$(juju run mysql/leader get-password username=charmed-operator | yq '.username')
+    NEW_DB_PASS=$(juju run mysql/leader get-password username=charmed-operator | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
 ```
 
 ```{tab-item} K8s
@@ -117,15 +117,15 @@ When the new database is a MySQL 8.4 charm:
 
 When the new database is a MySQL 8.0 charm:
 
-    NEW_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
-    NEW_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
-    NEW_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
+    NEW_DB_USER=$(juju run mysql-k8s/leader get-password username=serverconfig | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-k8s/leader get-password username=serverconfig | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
 
 When the new database is a MySQL 8.4 charm:
 
-    NEW_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
-    NEW_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
-    NEW_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
+    NEW_DB_USER=$(juju run mysql-k8s/leader get-password username=charmed-operator | yq '.username')
+    NEW_DB_PASS=$(juju run mysql-k8s/leader get-password username=charmed-operator | yq '.password')
+    NEW_DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
 ```
 ````
 
