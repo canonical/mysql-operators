@@ -32,6 +32,7 @@ Clarification of standard MySQL operational concepts in the context of charms an
 Users <users>
 Roles <roles>
 Logs <logs/index>
+Self-healing <self-healing>
 ```
 
 ## Security
