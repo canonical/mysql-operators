@@ -31,6 +31,7 @@ Essential operations to configure and manage a MySQL cluster:
 Integrate with applications <integrate-with-applications>
 Scale your cluster <scale>
 Manage passwords <manage-passwords>
+MySQL Shell access <mysql-shell-access>
 ```
 
 Networking and encryption:
