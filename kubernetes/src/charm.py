@@ -842,12 +842,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not self._mysql.is_mysqld_running():
             return True
 
-        only_single_uninitialized_node_across_cluster = (
-            self.only_one_cluster_node_thats_uninitialized
-        )
-
         if (
-            not self.cluster_initialized and not only_single_uninitialized_node_across_cluster
+            not self.cluster_initialized and not self.only_one_cluster_node_thats_uninitialized
         ) or not self.unit_peer_data.get("member-role"):
             return True
 
@@ -881,21 +877,25 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
             }
 
+            peers_waiting = all_states == {"waiting"}
             # Add state 'offline' for this unit (self.peers.unit does not include this unit)
-            if (all_states | {"offline"} == {"offline"} and self.unit.is_leader()) or (
-                only_single_uninitialized_node_across_cluster and all_states == {"waiting"}
-            ):
-                # All instance are off, reboot cluster from outage from the leader unit
+            all_offline = all_states | {"offline"} == {"offline"}
 
+            if (all_offline and self.unit.is_leader()) or (peers_waiting):
+                # All instance are off or this instance if offline, and others waiting
+                # reboot cluster from outage
                 logger.info("Attempting reboot from complete outage.")
                 try:
                     # Need condition to avoid rebooting on all units of application
-                    if self.unit.is_leader() or only_single_uninitialized_node_across_cluster:
+                    if self.unit.is_leader() or peers_waiting:
                         self._mysql.reboot_from_complete_outage()
                 except MySQLRebootFromCompleteOutageError:
                     logger.error("Failed to reboot cluster from complete outage.")
 
-                    if only_single_uninitialized_node_across_cluster and all_states == {"waiting"}:
+                    if peers_waiting:
+                        logger.info(
+                            "All units are in waiting state, likely due to crash during cluster creation. Recreating cluster."
+                        )
                         self._mysql.drop_group_replication_metadata_schema()
                         self.create_cluster()
                         self.unit.status = ActiveStatus(self.active_status_message)

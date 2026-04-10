@@ -449,8 +449,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             }
 
             all_states.add(InstanceState.OFFLINE.lower())
+            all_offline = all_states == {InstanceState.OFFLINE.lower()}
+            peers_waiting = all_states == {"waiting"}
 
-            if all_states == {InstanceState.OFFLINE.lower()} and self.unit.is_leader():
+            if (all_offline and self.unit.is_leader()) or peers_waiting:
                 loopback_entry_exists = self.hostname_resolution.update_etc_hosts(None)
                 if loopback_entry_exists and not snap_service_operation(
                     CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
@@ -463,6 +465,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self._mysql.wait_until_mysql_connection()
 
                 # All instance are off or its a single unit cluster
+                # or this instance is offline and others waiting to join
                 # reboot cluster from outage from the leader unit
                 logger.info("Attempting reboot from complete outage.")
                 try:
