@@ -52,3 +52,23 @@ With the password now it's possible to log-in with:
 ````
 
 Don't forget to replace the password on the `<password>` placeholder.
+
+## Switch between Python and SQL mode
+
+MySQL Shell provides both SQL and Python prompt, with differing set of features.
+To switch between those in a logged in prompt, do:
+
+From Python to SQL:
+```
+ MySQL  localhost:33060+ ssl  Py > \sql
+Switching to SQL mode... Commands end with ;
+Fetching global names for auto-completion... Press ^C to stop.
+ MySQL  localhost:33060+ ssl  SQL >
+```
+
+From SQL to Python:
+```
+  MySQL  localhost:33060+ ssl  SQL > \py
+Switching to Python mode...
+ MySQL  localhost:33060+ ssl  Py >
+```
