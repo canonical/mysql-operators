@@ -5,20 +5,21 @@ myst:
 ---
 
 
-(mysql-shell-access)=
-# Access MySQL shell on units
+(access-mysql-shell)=
+# Access MySQL Shell on a unit
 
 Charmed MySQL uses [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) as main contact
 point between the operator code and MySQL daemon.
+
 For some (rare) cases, is possible for the user to access the mysql-shell client running on the
 unit container/virtual-machine.
 
 ## Get operator password
 
-There are a couple of possible database users that might be used, depending on the privileges
-required. More information can be found at the {ref}`Users documentation <users>`.
+The different possible database users depend on the privileges
+required. More information can be found in {ref}`users`.
 
-For this how-to we will use the `serverconfig` user.
+In this guide, we will use the `serverconfig` user as an example.
 
 ````{tab-set}
 ```{tab-item} VM
@@ -36,7 +37,7 @@ For this how-to we will use the `serverconfig` user.
 
 ## Access the shell
 
-With the password now it's possible to log-in with:
+With the password now it is possible to log in with:
 
 ````{tab-set}
 ```{tab-item} VM
@@ -52,24 +53,10 @@ With the password now it's possible to log-in with:
 ```
 ````
 
-Don't forget to replace the password on the `<password>` placeholder.
+Don't forget to replace the `<password>` placeholder with your password.
 
 ## Switch between Python and SQL mode
 
 MySQL Shell provides both SQL and Python prompt, with differing set of features.
-To switch between those in a logged in prompt, do:
+To switch from Python to SQL in a logged-in prompt, use the `\sql` command:
 
-From Python to SQL:
-```
- MySQL  localhost:33060+ ssl  Py > \sql
-Switching to SQL mode... Commands end with ;
-Fetching global names for auto-completion... Press ^C to stop.
- MySQL  localhost:33060+ ssl  SQL >
-```
-
-From SQL to Python:
-```
-  MySQL  localhost:33060+ ssl  SQL > \py
-Switching to Python mode...
- MySQL  localhost:33060+ ssl  Py >
-```
