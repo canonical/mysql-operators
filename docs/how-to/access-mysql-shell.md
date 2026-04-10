@@ -5,7 +5,7 @@ myst:
 ---
 
 
-(mysql-shell-access)=
+(access-mysql-shell)=
 # Access MySQL shell on units
 
 Charmed MySQL uses [mysql-shell](https://dev.mysql.com/doc/mysql-shell/8.0/en/) as main contact
