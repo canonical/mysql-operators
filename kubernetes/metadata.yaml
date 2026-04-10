@@ -29,14 +29,11 @@ containers:
     mounts:
       - storage: data
         location: /var/lib/mysql/data
+      - storage: logs
+        # location: /var/log/mysql
+        location: /var/lib/mysql/logs
       - storage: temp
         location: /var/lib/mysql/temp
-      - storage: binlogs
-        location: /var/lib/mysql/binlogs
-      - storage: redologs
-        location: /var/lib/mysql/redologs
-      - storage: logs
-        location: /var/log/mysql
 
 resources:
   mysql-image:
@@ -95,15 +92,9 @@ storage:
   temp:
     type: filesystem
     description: Persistent storage for InnoDB temporary tablespaces
-  binlogs:
-    type: filesystem
-    description: Persistent storage for MySQL binary log files, used for replication and backups
-  redologs:
-    type: filesystem
-    description: Persistent storage for MySQL redo log and undo log files
   logs:
     type: filesystem
-    description: Persistent storage for MySQL error logs, general query logs, and slow query logs
+    description: Persistent storage for MySQL error logs, general query logs, slow query logs, binary logs, redo logs and undo logs
 
 assumes:
   - k8s-api

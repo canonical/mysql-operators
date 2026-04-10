@@ -16,7 +16,7 @@ from constants import (
     DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
     MYSQL_DATA_DIR,
-    MYSQL_LOG_DIR,
+    MYSQL_LOGS_DIR,
     MYSQLD_LOCATION,
     OPERATOR_PASSWORD_KEY,
     REPLICATION_PASSWORD_KEY,
@@ -60,7 +60,7 @@ class TestCharm(unittest.TestCase):
             "--basedir=/usr",
             f"--datadir={MYSQL_DATA_DIR}",
             "--plugin-dir=/usr/lib/mysql/plugin",
-            f"--log-error={MYSQL_LOG_DIR}/error.log",
+            f"--log-error={MYSQL_LOGS_DIR}/error.log",
             f"--pid-file={self.charm.unit_label}.pid",
         ]
         return {
@@ -82,7 +82,7 @@ class TestCharm(unittest.TestCase):
                 "mysql": {
                     "override": "replace",
                     "summary": "tail log",
-                    "command": "tail -F /var/log/mysql/error.log",
+                    "command": f"tail -F {MYSQL_LOGS_DIR}/error.log",
                     "startup": "enabled",
                 },
                 "mysqld_exporter": {

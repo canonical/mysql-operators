@@ -36,11 +36,9 @@ from constants import (
     CONTAINER_NAME,
     LOG_ROTATE_CONFIG_FILE,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
-    MYSQL_BINLOGS_DIR,
     MYSQL_DATA_DIR,
-    MYSQL_LOG_DIR,
     MYSQL_LOG_ERROR,
-    MYSQL_REDOLOGS_DIR,
+    MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_GROUP,
     MYSQL_SYSTEM_USER,
     MYSQL_TEMP_DIR,
@@ -280,7 +278,7 @@ class MySQL(MySQLBase):
         rendered = template.render(
             system_user=MYSQL_SYSTEM_USER,
             system_group=MYSQL_SYSTEM_GROUP,
-            log_dir=MYSQL_LOG_DIR,
+            log_dir=MYSQL_LOGS_DIR,
             logs_retention_period=logs_retention_period,
             logs_rotations=logs_rotations,
             logs_compression_enabled=logs_compression,
@@ -371,7 +369,7 @@ class MySQL(MySQLBase):
             MYSQL_DATA_DIR,
             user=MYSQL_SYSTEM_USER,
             group=MYSQL_SYSTEM_GROUP,
-            extra_dirs=[MYSQL_TEMP_DIR, MYSQL_BINLOGS_DIR, MYSQL_REDOLOGS_DIR],
+            extra_dirs=[MYSQL_TEMP_DIR, MYSQL_LOGS_DIR],  # TODO: Verify
         )
 
     def restore_backup(self, backup_location: str) -> tuple[str, str]:

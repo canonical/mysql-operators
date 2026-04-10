@@ -16,7 +16,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CONTAINER_NAME, MYSQL_LOG_DIR
+from constants import CONTAINER_NAME, MYSQL_LOGS_DIR
 
 from ... import architecture
 from ...helpers_ha import (
@@ -99,7 +99,7 @@ def test_log_rotation(juju: Juju) -> None:
             juju=juju,
             unit_name=mysql_app_leader,
             container=CONTAINER_NAME,
-            file_path=f"{MYSQL_LOG_DIR}/archive_{log_type}",
+            file_path=f"{MYSQL_LOGS_DIR}/archive_{log_type}",
         )
 
         logging.info("Writing some data to the text log files")
@@ -107,7 +107,7 @@ def test_log_rotation(juju: Juju) -> None:
             juju=juju,
             unit_name=mysql_app_leader,
             container=CONTAINER_NAME,
-            file_path=f"{MYSQL_LOG_DIR}/{log_type}.log",
+            file_path=f"{MYSQL_LOGS_DIR}/{log_type}.log",
             file_data=f"{log_type} content",
         )
 
@@ -120,11 +120,11 @@ def test_log_rotation(juju: Juju) -> None:
             juju=juju,
             unit_name=mysql_app_leader,
             container=CONTAINER_NAME,
-            file_path=f"{MYSQL_LOG_DIR}/{log_type}.log",
+            file_path=f"{MYSQL_LOGS_DIR}/{log_type}.log",
         )
         assert f"{log_type} content" not in active_log_file_data
 
-        archive_log_dir = f"{MYSQL_LOG_DIR}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_LOGS_DIR}/archive_{log_type}"
         archive_log_files_listed = list_unit_files(
             juju=juju,
             unit_name=mysql_app_leader,

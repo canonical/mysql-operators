@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import tenacity
 from ops.pebble import ExecError, PathError
 
-from constants import PEER
+from constants import MYSQL_LOGS_DIR, PEER
 from mysql_k8s_helpers import (
     MySQL,
     MySQLInitialiseMySQLDError,
@@ -127,7 +127,6 @@ class TestMySQL(unittest.TestCase):
     @patch("ops.model.Container")
     def test_log_rotate_config(self, _container):
         """Test log_rotate_config."""
-        # TODO: Parametrize with MYSQL_LOG_DIR?
         rendered_logrotate_config = (
             "# Create dedicated subdirectory for rotated files\n"
             "createolddir 770 mysql mysql\n\n"
@@ -146,16 +145,20 @@ class TestMySQL(unittest.TestCase):
             "nomail\n"
             "nosharedscripts\n"
             "nocopytruncate\n\n\n"
-            "/var/log/mysql/error.log {\n"
+            f"{MYSQL_LOGS_DIR}/error.log"
+            " {\n"
             "    olddir archive_error\n"
             "}\n\n"
-            "/var/log/mysql/general.log {\n"
+            f"{MYSQL_LOGS_DIR}/general.log"
+            " {\n"
             "    olddir archive_general\n"
             "}\n\n"
-            "/var/log/mysql/slowquery.log {\n"
+            f"{MYSQL_LOGS_DIR}/slowquery.log"
+            " {\n"
             "    olddir archive_slowquery\n"
             "}\n\n"
-            "/var/log/mysql/audit.log {\n"
+            f"{MYSQL_LOGS_DIR}/audit.log"
+            " {\n"
             "    olddir archive_audit\n"
             "}\n"
         )

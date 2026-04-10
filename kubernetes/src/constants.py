@@ -28,18 +28,17 @@ TLS_SSL_CERT_FILE = "custom-server-cert.pem"
 MYSQL_CLI_LOCATION = "/usr/bin/mysql"
 MYSQLSH_LOCATION = "/usr/bin/mysqlsh"
 MYSQL_DATA_DIR = "/var/lib/mysql/data"  # Corresponds to the data storage mount
+# MYSQL_LOGS_DIR = "/var/log/mysql"
+MYSQL_LOGS_DIR = "/var/lib/mysql/logs"  # Corresponds to the logs storage mount
 MYSQL_TEMP_DIR = "/var/lib/mysql/temp"  # Corresponds to the temp storage mount
-MYSQL_BINLOGS_DIR = "/var/lib/mysql/binlogs"  # Corresponds to the binlogs storage mount
-MYSQL_REDOLOGS_DIR = "/var/lib/mysql/redologs"  # Corresponds to the redologs storage mount
 MYSQLD_SOCK_FILE = "/var/run/mysqld/mysqld.sock"
 MYSQLD_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom.cnf"
 MYSQLD_INIT_CONFIG_FILE = "/etc/mysql/mysql.conf.d/z-custom-init-file.cnf"
-MYSQL_LOG_DIR = "/var/log/mysql"  # Corresponds to the logs storage mount
-MYSQL_LOG_ERROR = f"{MYSQL_LOG_DIR}/error.log"
+MYSQL_LOG_ERROR = f"{MYSQL_LOGS_DIR}/error.log"
 MYSQL_LOG_FILES = [
     MYSQL_LOG_ERROR,
-    f"{MYSQL_LOG_DIR}/audit.log",
-    f"{MYSQL_LOG_DIR}/general.log",
+    f"{MYSQL_LOGS_DIR}/audit.log",
+    f"{MYSQL_LOGS_DIR}/general.log",
 ]
 MYSQL_SYSTEM_USER = "mysql"
 MYSQL_SYSTEM_GROUP = "mysql"
