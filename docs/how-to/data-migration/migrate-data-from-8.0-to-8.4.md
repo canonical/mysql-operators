@@ -8,7 +8,7 @@ myst:
 # Migrate data from MySQL 8.0 to 8.4
 
 Charmed MySQL 8.4 introduces breaking changes regarding permissions, operator usernames, and refresh mechanisms.
-It is recommended to migrate the data on a manual manner from the 8.0 database to the 8.4 database.
+It is recommended to manually migrate the data from the 8.0 database to the 8.4 database.
 
 There are two possible ways to do so:
 

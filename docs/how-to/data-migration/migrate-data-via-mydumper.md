@@ -8,6 +8,7 @@ myst:
 # Migrate database data via `mydumper`
 
 This guide describes how to copy data from a MySQL charm to another MySQL charm, regardless of their version (8.0 / 8.4 / ...).
+It does not apply to data migrations from a non charm database, or any legacy type of charm (MariaDB / Percona-cluster / ...).
 
 ```{seealso}
 * {ref}`migrate-data-mysqldump`
@@ -32,49 +33,45 @@ Always perform the migration in a test environment before performing it in produ
 ```shell
 wget https://github.com/mydumper/mydumper/releases/download/v0.15.1-3/mydumper_0.15.1-3.jammy_amd64.deb && \
 sudo apt install ./mydumper_0.15.1-3.jammy_amd64.deb
- ```
+```
 
 ## Obtain existing database credentials
 
 Get username, password and IP of the existing database:
 
-`````{tab-set}
-````{tab-item} VM
+````{tab-set}
+```{tab-item} VM
 :sync: vm
 
-    When the existing database is a MySQL 8.0 charm:
-    ```shell
+When the existing database is a MySQL 8.0 charm:
+
     OLD_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
     OLD_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
     OLD_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
-    ```
-    
-    When the existing database is a MySQL 8.4 charm:
-    ```shell
+
+When the existing database is a MySQL 8.4 charm:
+
     OLD_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
     OLD_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
     OLD_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
-    ```
-````
+```
 
-````{tab-item} K8s
+```{tab-item} K8s
 :sync: k8s
 
-    When the existing database is a MySQL 8.0 charm:
-    ```shell
+When the existing database is a MySQL 8.0 charm:
+
     OLD_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
     OLD_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
     OLD_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
-    ```
-    
-    When the existing database is a MySQL 8.4 charm:
-    ```shell
+
+When the existing database is a MySQL 8.4 charm:
+
     OLD_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
     OLD_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
     OLD_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
-    ```
+```
 ````
-`````
 
 ### Deploy a new MySQL charm
 
@@ -82,65 +79,61 @@ This step can be skipped if the charm that the data migration will be targeting 
 
 To deploy a new MySQL charm database:
 
-`````{tab-set}
-````{tab-item} VM
+````{tab-set}
+```{tab-item} VM
 :sync: vm
 
     # Use any of the stable channels
     # juju deploy mysql --channel 8.0/stable -n 3
     # juju deploy mysql --channel 8.4/stable -n 3
-````
+```
 
-````{tab-item} K8s
+```{tab-item} K8s
 :sync: k8s
 
     # Use any of the stable channels
     # juju deploy mysql-k8s --channel 8.0/stable -n 3
     # juju deploy mysql-k8s --channel 8.4/stable -n 3
+```
 ````
-`````
 
 ## Obtain new database credentials
 
 Get username, password and IP of the new database:
 
-`````{tab-set}
-````{tab-item} VM
+````{tab-set}
+```{tab-item} VM
 :sync: vm
 
-    When the new database is a MySQL 8.0 charm:
-    ```shell
+When the new database is a MySQL 8.0 charm:
+
     NEW_DB_USER=$(juju run mysql-80/leader get-password username=serverconfig | yq '.username')
     NEW_DB_PASS=$(juju run mysql-80/leader get-password username=serverconfig | yq '.password')
     NEW_DB_HOST=$(juju show-unit mysql-80/0 | yq '.[] | .address')
-    ```
 
-    When the new database is a MySQL 8.4 charm:
-    ```shell
+When the new database is a MySQL 8.4 charm:
+
     NEW_DB_USER=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.username')
     NEW_DB_PASS=$(juju run mysql-84/leader get-password username=charmed-operator | yq '.password')
     NEW_DB_HOST=$(juju show-unit mysql-84/0 | yq '.[] | .address')
-    ```
-````
+```
 
-````{tab-item} K8s
+```{tab-item} K8s
 :sync: k8s
 
-    When the new database is a MySQL 8.0 charm:
-    ```shell
+When the new database is a MySQL 8.0 charm:
+
     NEW_DB_USER=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.username')
     NEW_DB_PASS=$(juju run mysql-k8s-80/leader get-password username=serverconfig | yq '.password')
     NEW_DB_HOST=$(juju show-unit mysql-k8s-80/0 | yq '.[] | .address')
-    ```
-    
-    When the new database is a MySQL 8.4 charm:
-    ```shell
+
+When the new database is a MySQL 8.4 charm:
+
     NEW_DB_USER=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.username')
     NEW_DB_PASS=$(juju run mysql-k8s-84/leader get-password username=charmed-operator | yq '.password')
     NEW_DB_HOST=$(juju show-unit mysql-k8s-84/0 | yq '.[] | .address')
-    ```
+```
 ````
-`````
 
 ## Migrate database
 
