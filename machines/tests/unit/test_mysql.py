@@ -68,7 +68,11 @@ from mysql_shell.models import (
     InstanceState,
 )
 
-from constants import CHARMED_MYSQLSH, MYSQLD_SOCK_FILE
+from constants import (
+    CHARMED_MYSQL_COMMON_DIRECTORY,
+    CHARMED_MYSQLSH,
+    MYSQLD_SOCK_FILE,
+)
 
 SHORT_CLUSTER_STATUS = {
     "defaultReplicaSet": {
@@ -1714,6 +1718,11 @@ class TestMySQLBase(unittest.TestCase):
         _get_available_memory.return_value = 32341442560
 
         expected_config = {
+            "datadir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/data",
+            "innodb_temp_tablespaces_dir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/temp",
+            "log_bin": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/binlog",
+            "innodb_log_group_home_dir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs",
+            "innodb_undo_directory": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs",
             "bind_address": "0.0.0.0",
             "mysqlx_bind_address": "0.0.0.0",
             "admin_address": "127.0.0.1",
@@ -1721,15 +1730,15 @@ class TestMySQLBase(unittest.TestCase):
             "max_connections": "724",
             "innodb_buffer_pool_size": "23219666944",
             "log_error_services": "log_filter_internal;log_sink_internal",
-            "log_error": "/var/log/mysql/error.log",
+            "log_error": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/error.log",
             "general_log": "OFF",
-            "general_log_file": "/var/log/mysql/general.log",
-            "slow_query_log_file": "/var/log/mysql/slow.log",
+            "general_log_file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/general.log",
+            "slow_query_log_file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/slow.log",
             "binlog_expire_logs_seconds": "604800",
             "loose-audit_log_filter.format": "JSON",
             "loose-audit_log_filter.policy": "LOGINS",
             "loose-audit_log_filter.strategy": "ASYNCHRONOUS",
-            "loose-audit_log_filter.file": "/var/log/mysql/audit.log",
+            "loose-audit_log_filter.file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/audit.log",
             "loose-group_replication_paxos_single_leader": "ON",
             "innodb_buffer_pool_chunk_size": "2902458368",
             "gtid_mode": "ON",

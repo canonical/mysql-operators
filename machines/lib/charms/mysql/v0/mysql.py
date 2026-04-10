@@ -87,6 +87,9 @@ from constants import (
     MAX_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
+    MYSQL_DATA_DIR,
+    MYSQL_LOGS_DIR,
+    MYSQL_TEMP_DIR,
     OPERATOR_PASSWORD_KEY,
     OPERATOR_USERNAME,
     PEER,
@@ -1105,7 +1108,6 @@ class MySQLBase(ABC):
         memory_limit: int | None = None,
         experimental_max_connections: int | None = None,
         binlog_retention_days: int,
-        snap_common: str = "",
     ) -> tuple[str, dict]:
         """Render mysqld ini configuration file."""
         max_connections = None
@@ -1154,13 +1156,17 @@ class MySQLBase(ABC):
                 # disable memory instruments if we have less than 2GiB of RAM
                 performance_schema_instrument = "'memory/%=OFF'"
 
-        logging_path = f"{snap_common}/var/log/mysql"
         binlog_retention_seconds = binlog_retention_days * 24 * 60 * 60
         config = configparser.ConfigParser(interpolation=None)
 
         # do not enable slow query logs, but specify a log file path in case
         # the admin enables them manually
-        config["mysqld"] = {
+        base_config = {
+            "datadir": MYSQL_DATA_DIR,
+            "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
+            "log_bin": f"{MYSQL_LOGS_DIR}/binlog",
+            "innodb_log_group_home_dir": MYSQL_LOGS_DIR,
+            "innodb_undo_directory": MYSQL_LOGS_DIR,
             # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104
@@ -1169,11 +1175,11 @@ class MySQLBase(ABC):
             "max_connections": max_connections,
             "innodb_buffer_pool_size": innodb_buffer_pool_size,
             "log_error_services": "log_filter_internal;log_sink_internal",
-            "log_error": f"{logging_path}/error.log",
+            "log_error": f"{MYSQL_LOGS_DIR}/error.log",
             "general_log": "OFF",
-            "general_log_file": f"{logging_path}/general.log",
+            "general_log_file": f"{MYSQL_LOGS_DIR}/general.log",
             "loose-group_replication_paxos_single_leader": "ON",
-            "slow_query_log_file": f"{logging_path}/slow.log",
+            "slow_query_log_file": f"{MYSQL_LOGS_DIR}/slow.log",
             "binlog_expire_logs_seconds": f"{binlog_retention_seconds}",
             "gtid_mode": "ON",
             "enforce_gtid_consistency": "ON",
@@ -1187,9 +1193,10 @@ class MySQLBase(ABC):
             "loose-validate_password.policy": "MEDIUM",
             "loose-validate_password.special_char_count": 0,
         }
+        config["mysqld"] = base_config  # ty:ignore[invalid-assignment]
 
         if audit_log_enabled:
-            config["mysqld"]["loose-audit_log_filter.file"] = f"{logging_path}/audit.log"
+            config["mysqld"]["loose-audit_log_filter.file"] = f"{MYSQL_LOGS_DIR}/audit.log"
             config["mysqld"]["loose-audit_log_filter.format"] = "JSON"
             config["mysqld"]["loose-audit_log_filter.policy"] = audit_log_policy.upper()
         if audit_log_strategy == "async":

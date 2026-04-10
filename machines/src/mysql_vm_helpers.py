@@ -45,6 +45,7 @@ from constants import (
     CHARMED_MYSQLD_SERVICE,
     CHARMED_MYSQLSH,
     MYSQL_DATA_DIR,
+    MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_USER,
     MYSQLD_CONFIG_DIRECTORY,
     MYSQLD_CUSTOM_CONFIG_FILE,
@@ -249,7 +250,6 @@ class MySQL(MySQLBase):
                 audit_log_enabled=self.charm.config.plugin_audit_enabled,
                 audit_log_strategy=self.charm.config.plugin_audit_strategy,
                 audit_log_policy=self.charm.config.logs_audit_policy,
-                snap_common=CHARMED_MYSQL_COMMON_DIRECTORY,
                 memory_limit=memory_limit,
                 binlog_retention_days=self.charm.config.binlog_retention_days,
                 experimental_max_connections=self.charm.config.experimental_max_connections,
@@ -285,7 +285,7 @@ class MySQL(MySQLBase):
         config_path = "/etc/logrotate.d/flush_mysql_logs"
         script_path = f"{self.charm.charm_dir}/logrotation.sh"
         cron_path = "/etc/cron.d/flush_mysql_logs"
-        logs_dir = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
+        logs_dir = f"{MYSQL_LOGS_DIR}"
 
         # days * minutes/day = amount of rotated files to keep
         logs_rotations = logs_retention_period * 1440
@@ -312,7 +312,7 @@ class MySQL(MySQLBase):
             template = jinja2.Template(file.read())
 
         logrotation_script_content = template.render(
-            log_path=f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql",
+            log_path=f"{MYSQL_LOGS_DIR}",
             enabled_log_files=enabled_log_files,
             logrotate_conf=config_path,
             owner=MYSQL_SYSTEM_USER,
@@ -872,9 +872,9 @@ class MySQL(MySQLBase):
     @staticmethod
     def fetch_error_log() -> str | None:
         """Fetch the mysqld error log."""
-        if os.path.exists(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log"):
+        if os.path.exists(f"{MYSQL_LOGS_DIR}/error.log"):
             # can be empty if just rotated
-            with open(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log") as fd:
+            with open(f"{MYSQL_LOGS_DIR}/error.log") as fd:
                 return fd.read()
 
     @staticmethod
