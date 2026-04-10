@@ -19,7 +19,7 @@ This guide will show how to set up [Pushover](https://pushover.net/) to receive 
 
 ```{seealso}
 * {ref}`alert-rules`
-* [Observability documentation > Add alert rules](https://documentation.ubuntu.com/observability/latest/how-to/adding-alert-rules/)
+* [Observability documentation > Add alert rules](https://documentation.ubuntu.com/observability/latest/how-to/integrate/adding-alert-rules/)
 ```
 
 ## Prerequisites
