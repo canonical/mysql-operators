@@ -11,6 +11,7 @@ from ...helpers_ha import (
     delete_k8s_pod,
     get_mysql_primary_unit,
     update_interval,
+    wait_for_app_status,
     wait_for_apps_status,
 )
 
@@ -48,7 +49,7 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
     logging.info("Scaling to 3 units")
     juju.add_unit(MYSQL_APP_NAME, num_units=2)
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_NAME),
+        ready=wait_for_app_status(MYSQL_APP_NAME, "maintenance"),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
