@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant
 from jubilant import Juju
@@ -14,6 +15,7 @@ from ...helpers_ha import (
     get_mysql_primary_unit,
     get_mysql_server_credentials,
     get_unit_address,
+    load_mysql_test_data,
     start_mysqld_service,
     stop_mysqld_service,
     wait_for_apps_status,
@@ -61,6 +63,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:

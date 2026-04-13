@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -19,6 +20,7 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_variable_value,
+    load_mysql_test_data,
     wait_for_apps_status,
     wait_for_unit_status,
 )
@@ -63,6 +65,10 @@ def test_deploy_latest(juju: Juju) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_pre_refresh_check(juju: Juju) -> None:

@@ -100,7 +100,7 @@ jobs:
     needs:
       - collect-integration-tests
     runs-on: ${{ matrix.job.runner }}
-    timeout-minutes: 226  # Sum of steps `timeout-minutes` + 5
+    timeout-minutes: 236  # Sum of steps `timeout-minutes` + 5
     steps:
       - name: Free up disk space
         timeout-minutes: 10
@@ -119,8 +119,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Set up environment
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
+          sudo apt update
+          sudo apt install mysql-client --yes
           sudo snap install charmcraft --classic
           sudo snap install go --classic
           go install github.com/canonical/spread/cmd/spread@latest
@@ -130,6 +132,11 @@ jobs:
         with:
           pattern: ${{ inputs.artifact-prefix }}-*
           merge-multiple: true
+      - name: Download test database
+        timeout-minutes: 5
+        run: |
+          curl -L https://github.com/datacharmer/test_db/releases/download/v1.0.7/test_db-1.0.7.tar.gz | tar zx
+          echo "DATA_SOURCE_PATH=$PWD/test_db/employees.sql" >> $GITHUB_ENV
       - name: Run spread job
         timeout-minutes: 180
         id: spread
@@ -140,6 +147,7 @@ jobs:
           AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
           GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
           GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+          DATA_SOURCE_PATH: ${{ env.DATA_SOURCE_PATH }}
           UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
           LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
           LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}

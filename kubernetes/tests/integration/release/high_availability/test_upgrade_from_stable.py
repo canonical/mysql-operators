@@ -17,6 +17,7 @@ from ...helpers_ha import (
     get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
+    load_mysql_test_data,
     wait_for_apps_status,
     wait_for_unit_status,
 )
@@ -110,6 +111,10 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def run_refresh_check(juju: Juju) -> None:

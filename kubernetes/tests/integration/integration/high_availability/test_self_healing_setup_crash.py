@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant
 from jubilant import Juju
@@ -10,6 +11,7 @@ from ...helpers_ha import (
     CHARM_METADATA,
     delete_k8s_pod,
     get_mysql_primary_unit,
+    load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
 )
@@ -36,6 +38,10 @@ def test_deploy_single_unit_cluster(juju: Juju, charm: str) -> None:
         error=jubilant.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
