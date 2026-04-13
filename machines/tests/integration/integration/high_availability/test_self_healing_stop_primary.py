@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 import random
 
 import jubilant_backports
@@ -20,6 +21,7 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     get_unit_ip,
+    load_mysql_test_data,
     remove_mysql_test_data,
     start_mysql_process_gracefully,
     stop_mysql_process_gracefully,
@@ -66,6 +68,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
