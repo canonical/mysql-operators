@@ -38,8 +38,7 @@ parts:
     source: .
     after:
       - poetry-deps
-    # TODO: remove '--without-hashes' before merge
-    poetry-export-extra-args: ['--only', 'main,charm-libs', '--without-hashes']
+    poetry-export-extra-args: ['--only', 'main,charm-libs']
     build-packages:
       - libffi-dev  # Needed to build Python dependencies with Rust from source
       - libssl-dev  # Needed to build Python dependencies with Rust from source
@@ -48,9 +47,6 @@ parts:
       # Workaround for https://github.com/canonical/charmcraft/issues/2068
       # rustup used to install rustc and cargo, which are needed to build Python dependencies with Rust from source
       snap install rustup --classic
-
-      # TODO: Remove before merge
-      apt install -y git
 
       # If Ubuntu version < 24.04, rustup was installed from snap instead of from the Ubuntu
       # archive—which means the rustup version could be updated at any time. Print rustup version
