@@ -476,12 +476,15 @@ class TestMySQL(unittest.TestCase):
         self.mysql.initialise_mysqld()
 
         _reset_data_dir.assert_called_once()
-        _subprocess_run.assert_called_once_with([
-            "/usr/bin/sudo",
-            "/snap/bin/charmed-mysql.mysqld-initialize",
-            "--datadir",
-            "/var/snap/charmed-mysql/common/var/lib/mysql",
-        ])
+        _subprocess_run.assert_called_once_with(
+            [
+                "/usr/bin/sudo",
+                "/snap/bin/charmed-mysql.mysqld-initialize",
+                "--datadir",
+                "/var/snap/charmed-mysql/common/var/lib/mysql",
+            ],
+            check=True,
+        )
 
     @patch("mysql_vm_helpers.MySQL.reset_data_dir")
     @patch("subprocess.run")

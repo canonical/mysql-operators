@@ -355,7 +355,7 @@ class MySQL(MySQLBase):
 
         try:
             self.reset_data_dir()
-            subprocess.run(bootstrap_command)  # noqa: S603
+            subprocess.run(bootstrap_command, check=True)  # noqa: S603
         except subprocess.CalledProcessError:
             logger.exception("Failed to initialise MySQL data directory")
             raise MySQLInitialiseMySQLDError from None
