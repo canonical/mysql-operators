@@ -136,24 +136,26 @@ def test_rollback(juju: Juju, continuous_writes) -> None:
 
     time.sleep(20)
 
-    logging.info("Refresh with previous charm")
-    # HACK: After refreshing to the local charm, `juju refresh --channel ... --revision ...` ends up with
-    # "ERROR refreshing a local charm requires either --path or --switch",
-    # but `--switch` cannot be used with `--revision`,
-    # so we do a `juju refresh --switch` followed by `juju refresh --channel ... --revision ...`
-    # and hope for the best
-    # NOTE: jubilant_backports.Juju.refresh does not support `--switch`
+    logging.info("Download baseline revision charm for rollback")
+    # Download the specific revision we want to rollback to
+    # This is necessary because after refreshing to a local charm,
+    # juju refresh requires --path or --switch, and --switch cannot be combined with --revision
     subprocess.run(
         [
             "juju",
-            "refresh",
+            "download",
             MYSQL_APP_NAME,
-            "--switch",
-            MYSQL_APP_NAME,
+            f"--revision={BASELINE_REVISIONS['amd64']}",
+            "--filepath=mysql_r196.charm",
         ],
         check=True,
     )
-    juju.refresh(MYSQL_APP_NAME, channel="8.0/stable", revision=BASELINE_REVISIONS["amd64"])
+
+    # Find the downloaded charm file
+    downloaded_charm = Path("./mysql_r196.charm")
+
+    logging.info(f"Refresh with previous charm: {downloaded_charm}")
+    juju.refresh(app=MYSQL_APP_NAME, path=str(downloaded_charm.absolute()))
 
     logging.info("Wait for upgrade to start")
     juju.wait(
