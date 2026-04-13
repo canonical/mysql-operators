@@ -1,5 +1,6 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
+import json
 import logging
 import shutil
 import subprocess
@@ -136,23 +137,32 @@ def test_rollback(juju: Juju, continuous_writes) -> None:
 
     time.sleep(20)
 
-    logging.info("Download baseline revision charm for rollback")
     # Download the specific revision we want to rollback to
     # This is necessary because after refreshing to a local charm,
     # juju refresh requires --path or --switch, and --switch cannot be combined with --revision
-    subprocess.run(
-        [
-            "juju",
-            "download",
-            MYSQL_APP_NAME,
-            f"--revision={BASELINE_REVISIONS['amd64']}",
-            "--filepath=mysql_r196.charm",
-        ],
-        check=True,
-    )
-
-    # Find the downloaded charm file
+    logging.info("Download baseline revision charm for rollback")
     downloaded_charm = Path("./mysql_r196.charm")
+    if not downloaded_charm.exists():
+        subprocess.run(
+            [
+                "juju",
+                "download",
+                MYSQL_APP_NAME,
+                f"--revision={BASELINE_REVISIONS['amd64']}",
+                "--filepath=mysql_r196.charm",
+            ],
+            check=True,
+        )
+
+    # HACK: Convert databag from new format to old format for rollback compatibility
+    # Revision 196 expects {"hostname", "fqdn", "ip"} but new code writes {"names": [...], "address"}
+    hack_relation_data(juju, app_name=MYSQL_APP_NAME)
+
+    # And yet, unit 1 fails with
+    # 2026-04-13T15:10:27.294512Z 1 [ERROR] [MY-013171] [InnoDB] Cannot boot server version 80034 on data directory built by version 80045. Downgrade is not supported
+    # mysqld: Can't open file: 'mysql.ibd' (errno: 0 - )
+    # 2026-04-13T15:10:27.641133Z 1 [ERROR] [MY-010334] [Server] Failed to initialize DD Storage Engine
+    # 2026-04-13T15:10:27.641412Z 0 [ERROR] [MY-010020] [Server] Data Dictionary initialization failed.
 
     logging.info(f"Refresh with previous charm: {downloaded_charm}")
     juju.refresh(app=MYSQL_APP_NAME, path=str(downloaded_charm.absolute()))
@@ -237,3 +247,42 @@ def get_locally_built_charm(charm: str) -> str:
             charm_zip.writestr(path, content)
 
     return f"{local_charm_path.resolve()}"
+
+
+def hack_relation_data(juju: Juju, app_name: str):
+    logging.info("Converting peer databags from new format to old format before rollback")
+    relation_data = get_relation_data(juju, app_name, "database-peers")
+    peer_relation_id = relation_data[0]["relation-id"]
+
+    for unit_name in [f"{app_name}/0", f"{app_name}/1", f"{app_name}/2"]:
+        # Read current databag from unit's own perspective
+        result = juju.exec(
+            f"relation-get -r {peer_relation_id} hostname-details {unit_name}", unit=unit_name
+        )
+        databag_content = result.stdout.strip()
+
+        if not databag_content:
+            logging.info(f"Skipping {unit_name} - no hostname-details found")
+            continue
+
+        current_data = json.loads(databag_content)
+
+        # Check if it's in new format and convert to old format
+        if "hostname" not in current_data:
+            logging.info(f"Writing {unit_name} databag in old format")
+            old_format = {
+                "hostname": current_data["names"][0],
+                "fqdn": current_data["names"][1],
+                "ip": current_data["address"],
+            }
+            # Write back in old format
+            juju.exec(
+                f"relation-set -r {peer_relation_id} hostname-details='{json.dumps(old_format)}'",
+                unit=unit_name,
+            )
+            logging.info(f"Converted {unit_name}: {old_format}")
+        else:
+            logging.info(f"Skipping {unit_name} - already in old format")
+
+    # Give time for relation data to propagate
+    time.sleep(5)
