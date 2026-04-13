@@ -1,8 +1,8 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
-
 import logging
 import shutil
+import subprocess
 import time
 import zipfile
 from ast import literal_eval
@@ -137,7 +137,23 @@ def test_rollback(juju: Juju, continuous_writes) -> None:
     time.sleep(20)
 
     logging.info("Refresh with previous charm")
-    juju.refresh(app=MYSQL_APP_NAME, channel="8.0/stable", revision=BASELINE_REVISIONS["amd64"])
+    # HACK: After refreshing to the local charm, `juju refresh --channel ... --revision ...` ends up with
+    # "ERROR refreshing a local charm requires either --path or --switch",
+    # but `--switch` cannot be used with `--revision`,
+    # so we do a `juju refresh --switch` followed by `juju refresh --channel ... --revision ...`
+    # and hope for the best
+    # NOTE: jubilant_backports.Juju.refresh does not support `--switch`
+    subprocess.run(
+        [
+            "juju",
+            "refresh",
+            MYSQL_APP_NAME,
+            "--switch",
+            MYSQL_APP_NAME,
+        ],
+        check=True,
+    )
+    juju.refresh(MYSQL_APP_NAME, channel="8.0/stable", revision=BASELINE_REVISIONS["amd64"])
 
     logging.info("Wait for upgrade to start")
     juju.wait(
