@@ -1,7 +1,6 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
 import logging
 import shutil
 import time
@@ -28,34 +27,25 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 
 MINUTE_SECS = 60
 
+# TODO: support arm64 & s390x
+BASELINE_REVISIONS = {
+    "amd64": 196,
+}
+
 
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-def test_build_and_deploy(juju: Juju, charm: str) -> None:
+def test_build_and_deploy(juju: Juju) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
-    snap_revisions = Path("snap_revisions.json")
-    with snap_revisions.open("r") as file:
-        old_revisions = json.load(file)
-
-    # TODO: support arm64 & s390x
-    new_revisions = old_revisions.copy()
-    new_revisions["x86_64"] = "69"
-
-    with snap_revisions.open("w") as file:
-        json.dump(new_revisions, file)
-
-    local_charm = get_locally_built_charm(charm)
-
-    with snap_revisions.open("w") as file:
-        json.dump(old_revisions, file)
-
     juju.deploy(
-        charm=local_charm,
+        charm=MYSQL_APP_NAME,
         app=MYSQL_APP_NAME,
         base="ubuntu@22.04",
-        config={"profile": "testing", "plugin-audit-enabled": False},
+        config={"profile": "testing"},
         num_units=3,
+        channel="8.0/stable",
+        revision=BASELINE_REVISIONS["amd64"],
     )
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
@@ -131,25 +121,13 @@ def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
+def test_rollback(juju: Juju, continuous_writes) -> None:
     """Test upgrade rollback to a healthy revision."""
     relation_data = get_relation_data(juju, MYSQL_APP_NAME, "upgrade")
     upgrade_stack = relation_data[0]["application-data"]["upgrade-stack"]
     upgrade_unit = get_unit_by_number(juju, MYSQL_APP_NAME, literal_eval(upgrade_stack)[-1])
 
-    snap_revisions = Path("snap_revisions.json")
-    with snap_revisions.open("r") as file:
-        old_revisions = json.load(file)
-
-    # TODO: support arm64 & s390x
-    new_revisions = old_revisions.copy()
-    new_revisions["x86_64"] = "69"
-
-    with snap_revisions.open("w") as file:
-        json.dump(new_revisions, file)
-
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    local_charm = get_locally_built_charm(charm)
 
     time.sleep(10)
 
@@ -159,7 +137,7 @@ def test_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     time.sleep(20)
 
     logging.info("Refresh with previous charm")
-    juju.refresh(app=MYSQL_APP_NAME, path=local_charm)
+    juju.refresh(app=MYSQL_APP_NAME, channel="8.0/stable", revision=BASELINE_REVISIONS["amd64"])
 
     logging.info("Wait for upgrade to start")
     juju.wait(
