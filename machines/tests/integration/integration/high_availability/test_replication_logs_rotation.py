@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 import tempfile
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from constants import CHARMED_MYSQL_COMMON_DIRECTORY
 from ...helpers_ha import (
     get_app_leader,
     get_unit_process_id,
+    load_mysql_test_data,
     wait_for_apps_status,
 )
 
@@ -59,6 +61,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_log_rotation(juju: Juju) -> None:

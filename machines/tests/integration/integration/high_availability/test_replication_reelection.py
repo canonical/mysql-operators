@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import os
 
 import jubilant_backports
 from jubilant_backports import Juju
@@ -12,6 +13,7 @@ from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_mysql_primary_unit,
     insert_mysql_test_data,
+    load_mysql_test_data,
     remove_mysql_test_data,
     scale_app_units,
     wait_for_apps_status,
@@ -55,6 +57,10 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_kill_primary_check_reelection(juju: Juju) -> None:
