@@ -336,6 +336,12 @@ class MySQL(MySQLBase):
             "/snap/bin/charmed-mysql.mysqld-initialize",
             "--datadir",
             MYSQL_DATA_DIR,
+            "--innodb-log-group-home-dir",
+            MYSQL_LOGS_DIR,
+            "--innodb-undo-directory",
+            MYSQL_LOGS_DIR,
+            "--innodb-temp-tablespaces-dir",
+            MYSQL_TEMP_DIR,
         ]
 
         try:

@@ -1721,6 +1721,7 @@ class TestMySQLBase(unittest.TestCase):
             "datadir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/data",
             "innodb_temp_tablespaces_dir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/temp",
             "log_bin": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/binlog",
+            "log_bin_index": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/binlog.index",
             "innodb_log_group_home_dir": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs",
             "innodb_undo_directory": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs",
             "bind_address": "0.0.0.0",

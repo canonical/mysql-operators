@@ -232,6 +232,7 @@ class TestMySQL(unittest.TestCase):
             "datadir = /var/snap/charmed-mysql/common/var/lib/mysql/data",
             "innodb_temp_tablespaces_dir = /var/snap/charmed-mysql/common/var/lib/mysql/temp",
             "log_bin = /var/snap/charmed-mysql/common/var/lib/mysql/logs/binlog",
+            "log_bin_index = /var/snap/charmed-mysql/common/var/lib/mysql/logs/binlog.index",
             "innodb_log_group_home_dir = /var/snap/charmed-mysql/common/var/lib/mysql/logs",
             "innodb_undo_directory = /var/snap/charmed-mysql/common/var/lib/mysql/logs",
             "bind_address = 0.0.0.0",
@@ -470,14 +471,12 @@ class TestMySQL(unittest.TestCase):
         ):
             self.mysql.get_available_memory()
 
-    @patch("shutil.rmtree")
-    @patch("os.makedirs")
     @patch("shutil.chown")
-    def test_reset_data_dir(self, _chown, _makedirs, _rmtree):
+    @patch("pathlib.Path.walk", return_value=iter([]))
+    def test_reset_data_dir(self, _walk, _chown):
         self.mysql.reset_data_dir()
+        _walk.assert_called_once()
         _chown.assert_called_once()
-        _makedirs.assert_called_once()
-        _rmtree.assert_called_once()
 
     @patch("mysql_vm_helpers.MySQL.reset_data_dir")
     @patch("subprocess.run")
@@ -492,6 +491,12 @@ class TestMySQL(unittest.TestCase):
                 "/snap/bin/charmed-mysql.mysqld-initialize",
                 "--datadir",
                 "/var/snap/charmed-mysql/common/var/lib/mysql/data",
+                "--innodb-log-group-home-dir",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/logs",
+                "--innodb-undo-directory",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/logs",
+                "--innodb-temp-tablespaces-dir",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/temp",
             ],
             check=True,
         )
