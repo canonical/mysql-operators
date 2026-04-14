@@ -47,6 +47,7 @@ from constants import (
     MYSQL_DATA_DIR,
     MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_USER,
+    MYSQL_TEMP_DIR,
     MYSQLD_CONFIG_DIRECTORY,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_DEFAULTS_CONFIG_FILE,
@@ -879,20 +880,29 @@ class MySQL(MySQLBase):
 
     @staticmethod
     def reset_data_dir() -> None:
-        """Reset the data directory."""
+        """Remove all files from the data directory."""
         logger.warning(f"Resetting data directory: {MYSQL_DATA_DIR}")
 
-        # Remove the data directory
-        shutil.rmtree(MYSQL_DATA_DIR, ignore_errors=False)
-
-        # Recreate the data directory
-        os.makedirs(MYSQL_DATA_DIR)
+        # Remove the contents of the data directory
+        for root, dirs, files in pathlib.Path(MYSQL_DATA_DIR).walk(top_down=False):
+            for name in files:
+                (root / name).unlink()
+            for name in dirs:
+                (root / name).rmdir()
 
         # Change ownership of the data directory
         shutil.chown(MYSQL_DATA_DIR, user=MYSQL_SYSTEM_USER, group="root")
 
 
 def is_volume_mounted() -> bool:
+    """Returns if data directory is attached."""
+    return all(
+        _is_volume_mounted(directory)
+        for directory in (MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR)
+    )
+
+
+def _is_volume_mounted(path: str) -> bool:
     """Returns if data directory is attached."""
     try:
         for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(12)):
@@ -901,7 +911,7 @@ def is_volume_mounted() -> bool:
                 subprocess.check_call([  # noqa: S603
                     "/usr/bin/mountpoint",
                     "-q",
-                    CHARMED_MYSQL_COMMON_DIRECTORY,
+                    path,
                 ])
     except RetryError:
         return False
