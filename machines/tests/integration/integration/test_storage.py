@@ -67,8 +67,8 @@ def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -
         "sys",
     }
     excluded_content = {
-        "'#innodb_temp'",
-        "'#innodb_redo'",
+        "#innodb_temp",
+        "#innodb_redo",
         "undo_001",
         "undo_002",
     }
@@ -94,7 +94,7 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
         "audit.log",
         "error.log",
         "binlog.index",
-        "'#innodb_redo'",
+        "#innodb_redo",
     }
 
     actual_content = set(list_vm_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_LOGS_DIR))
@@ -108,21 +108,20 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
         for fname in remaining_content
     )
 
-    redolog_pattern = re.compile(r"^\'\#ib_redo\d+")
-    result = juju.ssh(
-        f"{DATABASE_APP_NAME}/0",
-        "ls",
-        f"{MYSQL_LOGS_DIR}/#innodb_redo",
+    redolog_pattern = re.compile(r"^#ib_redo\d+")
+    actual_content = set(
+        list_vm_files(juju, f"{DATABASE_APP_NAME}/0", f"{MYSQL_LOGS_DIR}/#innodb_redo")
     )
-    actual_content = set(result.strip().split())
 
     assert all(redolog_pattern.match(fname) for fname in actual_content)
 
 
 def list_vm_files(
-    juju,
+    juju: jubilant.Juju,
     unit_name: str,
     path: str,
 ) -> list[str]:
-    result = juju.ssh(unit_name, "ls", path)
-    return result.strip().split()
+    task = juju.exec("ls", path, unit=unit_name)
+    task.raise_on_failure()
+
+    return task.stdout.split()
