@@ -25,6 +25,17 @@ def pytest_configure(config):
     config.option.log_date_format = "%b %d %H:%M:%S"
 
 
+def pytest_addoption(parser):
+    """Adds command line parameter ``--model`` (see help for details)."""
+    parser.addoption(
+        "--model",
+        action="store",
+        default="testing",
+        help="model name or ':auto:' for temporary model, default to 'testing'",
+        required=False,
+    )
+
+
 @pytest.fixture(scope="session")
 def charm():
     # Return str instead of pathlib.Path since python-libjuju's model.deploy(), juju deploy, and
@@ -64,5 +75,12 @@ def cloud_configs_gcp() -> tuple[dict[str, str], dict[str, str]]:
 
 
 @pytest.fixture(scope="module")
-def juju() -> jubilant_backports.Juju:
-    return jubilant_backports.Juju(model="testing")
+def juju(request: pytest.FixtureRequest):
+    """Pytest fixture that yields a new :meth:`jubilant.Juju` object."""
+    model = request.config.getoption("--model")
+
+    if model == ":auto:":
+        with jubilant_backports.temp_model() as juju:
+            yield juju
+    else:
+        yield jubilant_backports.Juju(model=model)
