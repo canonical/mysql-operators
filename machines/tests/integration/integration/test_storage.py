@@ -89,8 +89,6 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
     juju: Juju,
 ) -> None:
     expected_content = {
-        "archive_audit",
-        "archive_error",
         "audit.log",
         "error.log",
         "binlog.index",
