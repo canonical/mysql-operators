@@ -70,8 +70,8 @@ def test_data_directory_has_expected_contents_after_initialization(juju: Juju) -
         "sys",
     }
     excluded_content = {
-        "'#innodb_temp'",
-        "'#innodb_redo'",
+        "#innodb_temp",
+        "#innodb_redo",
         "undo_001",
         "undo_002",
     }
@@ -92,12 +92,10 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
     juju: Juju,
 ) -> None:
     expected_content = {
-        "archive_audit",
-        "archive_error",
         "audit.log",
         "error.log",
         "binlog.index",
-        "'#innodb_redo'",
+        "#innodb_redo",
     }
 
     actual_content = set(list_container_files(juju, f"{DATABASE_APP_NAME}/0", MYSQL_LOGS_DIR))
