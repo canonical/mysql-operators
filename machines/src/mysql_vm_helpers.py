@@ -32,7 +32,15 @@ from charms.mysql.v0.mysql import (
 from charms.operator_libs_linux.v2 import snap
 from mysql_shell.executors import LocalExecutor
 from mysql_shell.executors.errors import ExecutionError
-from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from constants import (
     CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE,
@@ -937,25 +945,25 @@ class MySQL(MySQLBase):
 
 def is_volume_mounted() -> bool:
     """Returns if data directory is attached."""
-    return all(
-        _is_volume_mounted(directory)
-        for directory in (MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR)
-    )
-
-
-def _is_volume_mounted(path: str) -> bool:
-    """Returns if data directory is attached."""
-    try:
-        for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(12)):
-            with attempt:
-                # Parameters are hardcoded by the charm
-                subprocess.check_call([  # noqa: S603
-                    "/usr/bin/mountpoint",
-                    "-q",
-                    path,
-                ])
-    except RetryError:
-        return False
+    for directory in (MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR):
+        try:
+            for attempt in Retrying(
+                stop=stop_after_attempt(10),
+                wait=wait_fixed(12),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
+            ):
+                with attempt:
+                    # Parameters are hardcoded by the charm
+                    subprocess.run(  # noqa: S603
+                        [
+                            "/usr/bin/mountpoint",
+                            "-q",
+                            directory,
+                        ],
+                        check=True,
+                    )
+        except RetryError:
+            return False
     return True
 
 

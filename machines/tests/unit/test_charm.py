@@ -33,7 +33,7 @@ class TestCharm(unittest.TestCase):
 
     @patch("socket.getfqdn", return_value="test-hostname")
     @patch("socket.gethostbyname", return_value="")
-    @patch("subprocess.check_call")
+    @patch("subprocess.run")
     @patch("mysql_vm_helpers.is_volume_mounted", return_value=True)
     @patch("mysql_vm_helpers.MySQL.install_and_configure_mysql_dependencies")
     def test_on_install(self, _install_and_configure_mysql_dependencies, ___, __, _, _____):
@@ -43,7 +43,7 @@ class TestCharm(unittest.TestCase):
         self.assertTrue(isinstance(self.harness.model.unit.status, WaitingStatus))
 
     @patch("charm.Retrying", return_value=Retrying(stop=stop_after_attempt(1)))
-    @patch("subprocess.check_call")
+    @patch("subprocess.run")
     @patch("mysql_vm_helpers.is_volume_mounted", return_value=True)
     @patch(
         "mysql_vm_helpers.MySQL.install_and_configure_mysql_dependencies", side_effect=Exception()
