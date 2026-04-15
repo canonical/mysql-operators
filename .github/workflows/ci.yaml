@@ -14,6 +14,27 @@ on:
       - '.github/renovate.json5'
 
 jobs:
+
+  promote:
+    name: Promote charm | ${{ matrix.path }}
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - kubernetes
+          - machines
+    uses: canonical/data-platform-workflows/.github/workflows/_promote_charm_legacy.yaml@sinclert/promote-legacy-charm
+    with:
+      track: '8.0'
+      from-risk: edge
+      to-risk: beta
+      path-to-charm-directory: ${{ matrix.path }}
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      actions: read
+      contents: write  # Needed to edit GitHub releases
+
   lint:
     name: Lint | ${{ matrix.path }}
     runs-on: ubuntu-latest
