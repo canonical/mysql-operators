@@ -27,6 +27,7 @@ TLS_SSL_KEY_FILE = "custom-server-key.pem"
 TLS_SSL_CERT_FILE = "custom-server-cert.pem"
 MYSQL_CLI_LOCATION = "/usr/bin/mysql"
 MYSQLSH_LOCATION = "/usr/bin/mysqlsh"
+MYSQL_ARCHIVE_DIR = "/var/lib/mysql/archive"  # Corresponds to the archive storage mount
 MYSQL_DATA_DIR = "/var/lib/mysql/data"  # Corresponds to the data storage mount
 # MYSQL_LOGS_DIR = "/var/log/mysql"
 MYSQL_LOGS_DIR = "/var/lib/mysql/logs"  # Corresponds to the logs storage mount

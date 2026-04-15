@@ -16,7 +16,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CONTAINER_NAME, MYSQL_LOGS_DIR
+from constants import CONTAINER_NAME, MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
 
 from ... import architecture
 from ...helpers_ha import (
@@ -76,7 +76,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 def test_log_rotation(juju: Juju) -> None:
     """Test the log rotation of text files."""
-    log_types = ["error", "audit"]
+    log_types = ["audit", "error"]
 
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
     mysql_app_leader_label = get_mysql_instance_label(mysql_app_leader)
@@ -94,12 +94,14 @@ def test_log_rotation(juju: Juju) -> None:
     stop_log_rotate_dispatcher(juju, mysql_app_leader)
 
     for log_type in log_types:
+        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
+
         logging.info("Removing existing archive directories")
         delete_unit_file(
             juju=juju,
             unit_name=mysql_app_leader,
             container=CONTAINER_NAME,
-            file_path=f"{MYSQL_LOGS_DIR}/archive_{log_type}",
+            file_path=archive_log_dir,
         )
 
         logging.info("Writing some data to the text log files")
@@ -124,7 +126,7 @@ def test_log_rotation(juju: Juju) -> None:
         )
         assert f"{log_type} content" not in active_log_file_data
 
-        archive_log_dir = f"{MYSQL_LOGS_DIR}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
         archive_log_files_listed = list_unit_files(
             juju=juju,
             unit_name=mysql_app_leader,
