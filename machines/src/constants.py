@@ -43,7 +43,6 @@ MYSQL_ARCHIVE_DIR = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/archive"  #
 MYSQL_DATA_DIR = (
     f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/data"  # Corresponds to the data storage mount
 )
-# MYSQL_LOGS_DIR = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
 MYSQL_LOGS_DIR = (
     f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs"  # Corresponds to the logs storage mount
 )
