@@ -828,9 +828,9 @@ Wait until `self-signed-certificates` is up and active, using `juju status --wat
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.13   unsupported  23:04:02+01:00
 
-App                       Version  Status  Scale  Charm                      Channel     Rev  Exposed  Message
-mysql                     8.4.7    active      2  mysql                      8.4/edge         no
-self-signed-certificates           active      1  self-signed-certificates   1/stable    77   no
+App                       Version  Status  Scale  Charm                      Channel   Rev  Exposed  Message
+mysql                     8.4.7    active      2  mysql                      8.4/edge       no
+self-signed-certificates           active      1  self-signed-certificates   1/stable  588  no
 
 Unit                         Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*                     active    idle   0        10.234.188.135         Primary
@@ -853,7 +853,7 @@ tutorial  overlord    microk8s/localhost  3.6.13   unsupported  23:04:02+01:00
 
 App                       Version  Status  Scale  Charm                      Channel   Rev  Address         Exposed  Message
 mysql-k8s                 8.4.7    active      2  mysql-k8s                  8.4/edge       10.152.183.234  no       
-self-signed-certificates           active      1  self-signed-certificates   1/stable  72   10.152.183.76   no       
+self-signed-certificates           active      1  self-signed-certificates   1/stable  588  10.152.183.76   no       
 
 Unit                         Workload  Agent  Address      Ports  Message
 mysql-k8s/0*                 active    idle   10.1.84.74
@@ -873,7 +873,7 @@ To enable TLS on Charmed MySQL, integrate the two applications:
 :user: ubuntu
 :host: my-vm
 
-juju integrate mysql self-signed-certificates
+juju integrate mysql:client-certificates self-signed-certificates
 ```
 ````
 
@@ -884,7 +884,7 @@ juju integrate mysql self-signed-certificates
 :user: ubuntu
 :host: my-vm
 
-juju integrate mysql-k8s self-signed-certificates
+juju integrate mysql-k8s:client-certificates self-signed-certificates
 ```
 ````
 `````
@@ -933,7 +933,7 @@ To remove the external TLS and return to the locally generate one, remove the in
 :user: ubuntu
 :host: my-vm
 
-juju remove-relation mysql self-signed-certificates
+juju remove-relation mysql:client-certificates self-signed-certificates
 ```
 ````
 
@@ -944,7 +944,7 @@ juju remove-relation mysql self-signed-certificates
 :user: ubuntu
 :host: my-vm
 
-juju remove-relation mysql-k8s self-signed-certificates
+juju remove-relation mysql-k8s:client-certificates self-signed-certificates
 ```
 ````
 `````
