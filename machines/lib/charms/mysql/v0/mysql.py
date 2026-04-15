@@ -2724,6 +2724,7 @@ class MySQLBase(ABC):
         mysql_data_directory: str,
         user: str | None = None,
         group: str | None = None,
+        extra_dirs: list[str] | None = None,
     ) -> None:
         """Empty the mysql data directory in preparation of backup restore."""
         empty_data_files_command = [
@@ -2745,6 +2746,21 @@ class MySQLBase(ABC):
                 user=user,
                 group=group,
             )
+
+            for extra_dir in extra_dirs or []:
+                logger.debug(f"Emptying extra directory {extra_dir}")
+                self._execute_commands(
+                    [
+                        "find",
+                        extra_dir,
+                        "-not",
+                        "-path",
+                        extra_dir,
+                        "-delete",
+                    ],
+                    user=user,
+                    group=group,
+                )
         except MySQLExecError as e:
             logger.error("Failed to empty data directory in prep for backup restore")
             raise MySQLEmptyDataDirectoryError(e.message) from e
