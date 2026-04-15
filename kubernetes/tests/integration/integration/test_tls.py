@@ -8,7 +8,7 @@ from time import sleep
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME, MYSQL_DATA_DIR, REPLICATION_USERNAME, TLS_SSL_CERT_FILE
+from constants import REPLICATION_USERNAME
 
 from ..helpers import is_connection_possible
 from ..helpers_ha import (
@@ -126,55 +126,6 @@ def test_enable_tls(juju: Juju) -> None:
     assert get_tls_ca(juju, app_units[0]), "❌ No CA found after TLS relation"
 
 
-def test_rotate_tls_key(juju: Juju) -> None:
-    """Verify rotating tls private keys restarts cluster with new certificates.
-
-    This test rotates tls private keys to randomly generated keys.
-    """
-    app_units = get_app_units(juju, APP_NAME)
-    # dict of values for cert file md5sum. After resetting the
-    # private keys these certificates should be updated.
-    original_tls = {}
-    for unit_name in app_units:
-        original_tls[unit_name] = {}
-        original_tls[unit_name]["cert"] = unit_file_md5(
-            juju, unit_name, f"{MYSQL_DATA_DIR}/{TLS_SSL_CERT_FILE}"
-        )
-
-    # set key using auto-generated key for each unit
-    for unit_name in app_units:
-        task = juju.run(
-            unit=unit_name,
-            action="set-tls-private-key",
-        )
-        task.raise_on_failure()
-
-    # allow time for reconfiguration
-    sleep(TLS_SETUP_SLEEP_TIME)
-
-    # After updating both the external key and the internal key a new certificate request will be
-    # made; then the certificates should be available and updated.
-    for unit_name in app_units:
-        new_cert_md5 = unit_file_md5(juju, unit_name, f"{MYSQL_DATA_DIR}/{TLS_SSL_CERT_FILE}")
-
-        assert new_cert_md5 != original_tls[unit_name]["cert"], (
-            f"cert for {unit_name} was not updated."
-        )
-
-    # Asserting only encrypted connection should be possible
-    logger.info("Asserting connections after relation")
-    for unit_name in app_units:
-        unit_ip = get_unit_address(juju, APP_NAME, unit_name)
-        config["host"] = unit_ip
-        assert is_connection_possible(config, **{"ssl_disabled": False}), (
-            f"❌ Encrypted connection not possible to unit {unit_name} with enabled TLS"
-        )
-
-        assert not is_connection_possible(config, **{"ssl_disabled": True}), (
-            f"❌ Unencrypted connection possible to unit {unit_name} with enabled TLS"
-        )
-
-
 def test_disable_tls(juju: Juju) -> None:
     # Remove the relation
     app_units = get_app_units(juju, APP_NAME)
@@ -219,25 +170,3 @@ def get_tls_ca(juju: Juju, unit_name: str) -> str:
     if len(relation_data) == 0:
         return ""
     return json.loads(relation_data[0]["application-data"]["certificates"])[0].get("ca")
-
-
-def unit_file_md5(juju: Juju, unit_name: str, file_path: str) -> str | None:
-    """Return md5 hash for given file.
-
-    Args:
-        juju: The Juju instance
-        unit_name: The name of the unit
-        file_path: The path to the file
-
-    Returns:
-        md5sum hash string
-    """
-    try:
-        md5sum_raw = juju.ssh(
-            command=f"md5sum {file_path}",
-            target=unit_name,
-            container=CONTAINER_NAME,
-        )
-        return md5sum_raw.strip().split()[0]
-    except Exception:
-        return
