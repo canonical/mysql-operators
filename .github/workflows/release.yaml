@@ -18,6 +18,7 @@ jobs:
     with:
       track: '8.4'
     permissions:
+      actions: read
       contents: write  # Needed to create git tag
 
   build:
@@ -33,6 +34,9 @@ jobs:
     uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v48.1.1
     with:
       path-to-charm-directory: ${{ matrix.path }}
+    permissions:
+      actions: read
+      contents: read
 
   integration-test:
     name: Integration tests
@@ -49,6 +53,8 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
+    permissions:
+      actions: read
 
 # TODO: Uncomment when MySQL 8.4/stable channel has releases
 #  release-test:
