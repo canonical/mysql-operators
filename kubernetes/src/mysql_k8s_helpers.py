@@ -379,7 +379,7 @@ class MySQL(MySQLBase):
             MYSQL_DATA_DIR,
             user=MYSQL_SYSTEM_USER,
             group=MYSQL_SYSTEM_GROUP,
-            extra_dirs=[MYSQL_TEMP_DIR, MYSQL_LOGS_DIR],  # TODO: Verify
+            extra_dirs=[MYSQL_TEMP_DIR, MYSQL_LOGS_DIR],
         )
 
     def restore_backup(self, backup_location: str) -> tuple[str, str]:
