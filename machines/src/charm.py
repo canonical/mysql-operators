@@ -48,7 +48,6 @@ from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLUnableToGetMemberStateError,
 )
-from charms.mysql.v0.tls import MySQLTLS
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from object_storage import S3Requirer
 from ops import (
@@ -115,6 +114,7 @@ from mysql_vm_helpers import (
 )
 from refresh import MachinesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
+from relations.tls import TLS
 from utils import compare_dictionaries, generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.mysql_config = MySQLConfig()
         self.database_relation = MySQLProvider(self)
-        self.tls = MySQLTLS(self)
+        self.tls = TLS(self)
         self._grafana_agent = COSAgentProvider(
             self,
             metrics_endpoints=[
@@ -814,6 +814,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def get_unit_address(self, unit: Unit, relation_name: str) -> str:
         """Get the IP address of a specific unit."""
+        if not self.peers:
+            return ""
+
         try:
             return str(self.peers.data[unit].get(f"{relation_name}-address", ""))
         except KeyError:
