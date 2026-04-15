@@ -132,7 +132,7 @@ def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
-def test_rollback(juju: Juju, continuous_writes) -> None:
+def test_rollback(juju: Juju, charm, continuous_writes) -> None:
     """Test upgrade rollback to a healthy revision."""
     relation_data = get_relation_data(juju, MYSQL_APP_NAME, "upgrade")
     upgrade_stack = relation_data[0]["application-data"]["upgrade-stack"]
@@ -148,7 +148,7 @@ def test_rollback(juju: Juju, continuous_writes) -> None:
     time.sleep(20)
 
     # Use current charm with old snap to ensure treatment works in it
-    local_charm = get_locally_built_charm("current")
+    local_charm = get_locally_built_charm(charm)
     local_charm_path = Path(local_charm)
     change_snap_revision_in_charm_zip(local_charm_path, BASELINE_SNAP_REVISIONS["amd64"], "amd64")
 
