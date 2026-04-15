@@ -1165,6 +1165,7 @@ class MySQLBase(ABC):
             "datadir": MYSQL_DATA_DIR,
             "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
             "log_bin": f"{MYSQL_LOGS_DIR}/binlog",
+            "log_bin_index": f"{MYSQL_LOGS_DIR}/binlog.index",
             "innodb_log_group_home_dir": MYSQL_LOGS_DIR,
             "innodb_undo_directory": MYSQL_LOGS_DIR,
             # All interfaces bind expected

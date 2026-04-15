@@ -68,7 +68,20 @@ class TestMySQL(unittest.TestCase):
         self.mysql.initialise_mysqld()
 
         _container.exec.assert_called_once_with(
-            command=["/usr/sbin/mysqld", "--initialize", "-u", "mysql"],
+            command=[
+                "/usr/sbin/mysqld",
+                "--initialize",
+                "-u",
+                "mysql",
+                "--datadir",
+                "/var/lib/mysql/data",
+                "--innodb-log-group-home-dir",
+                "/var/lib/mysql/logs",
+                "--innodb-undo-directory",
+                "/var/lib/mysql/logs",
+                "--innodb-temp-tablespaces-dir",
+                "/var/lib/mysql/temp",
+            ],
             user="mysql",
             group="mysql",
         )

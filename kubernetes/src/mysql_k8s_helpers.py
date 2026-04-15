@@ -185,6 +185,14 @@ class MySQL(MySQLBase):
             "--initialize",
             "-u",
             MYSQL_SYSTEM_USER,
+            "--datadir",
+            MYSQL_DATA_DIR,
+            "--innodb-log-group-home-dir",
+            MYSQL_LOGS_DIR,
+            "--innodb-undo-directory",
+            MYSQL_LOGS_DIR,
+            "--innodb-temp-tablespaces-dir",
+            MYSQL_TEMP_DIR,
         ]
 
         try:
