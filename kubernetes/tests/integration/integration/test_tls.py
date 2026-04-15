@@ -103,7 +103,7 @@ def test_enable_tls(juju: Juju) -> None:
 
     # Relate with TLS charm
     logger.info("Relate to TLS operator")
-    juju.integrate(APP_NAME, TLS_APP_NAME)
+    juju.integrate(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
 
     # allow time for TLS enablement
     sleep(TLS_SETUP_SLEEP_TIME)
@@ -180,7 +180,7 @@ def test_disable_tls(juju: Juju) -> None:
     app_units = get_app_units(juju, APP_NAME)
 
     logger.info("Removing relation")
-    juju.remove_relation(f"{APP_NAME}:certificates", f"{TLS_APP_NAME}:certificates")
+    juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
 
     # Allow time for reconfigure
     sleep(TLS_SETUP_SLEEP_TIME)
@@ -214,7 +214,7 @@ def get_tls_ca(juju: Juju, unit_name: str) -> str:
 
     # Filter the data based on the relation name.
     relation_data = [
-        v for v in unit_info[unit_name]["relation-info"] if v["endpoint"] == "certificates"
+        v for v in unit_info[unit_name]["relation-info"] if v["endpoint"] == "client-certificates"
     ]
     if len(relation_data) == 0:
         return ""
