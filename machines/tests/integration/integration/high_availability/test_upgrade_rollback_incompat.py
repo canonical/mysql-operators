@@ -147,14 +147,13 @@ def test_rollback(juju: Juju, continuous_writes) -> None:
 
     time.sleep(20)
 
-    # Download the specific revision we want to rollback to
-    # This is necessary because after refreshing to a local charm,
-    # juju refresh requires --path or --switch, and --switch cannot be combined with --revision
-    logging.info("Download baseline revision charm for rollback")
-    downloaded_charm = download_charm_revision(BASELINE_CHARM_REVISIONS["amd64"], MYSQL_APP_NAME)
+    # Use current charm with old snap to ensure treatment works in it
+    local_charm = get_locally_built_charm("current")
+    local_charm_path = Path(local_charm)
+    change_snap_revision_in_charm_zip(local_charm_path, BASELINE_SNAP_REVISIONS["amd64"], "amd64")
 
-    logging.info(f"Refresh with previous charm: {downloaded_charm}")
-    juju.refresh(app=MYSQL_APP_NAME, path=str(downloaded_charm.absolute()))
+    logging.info("Refresh with current charm with old snap")
+    juju.refresh(app=MYSQL_APP_NAME, path=local_charm)
 
     logging.info("Wait for upgrade to start")
     juju.wait(
