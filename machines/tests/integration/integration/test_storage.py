@@ -22,7 +22,6 @@ from ..helpers_ha import (
 logger = logging.getLogger(__name__)
 
 DATABASE_APP_NAME = "mysql"
-CLUSTER_NAME = "test_cluster"
 TIMEOUT = 15 * MINUTE_SECS
 
 
@@ -32,7 +31,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         charm,
         DATABASE_APP_NAME,
         base="ubuntu@24.04",
-        config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
+        config={"profile": "testing"},
         num_units=1,
         trust=True,
     )
