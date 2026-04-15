@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import subprocess
 import uuid
 from collections.abc import Callable, Generator
@@ -15,6 +16,7 @@ from jubilant import Juju
 from jubilant.statustypes import Status
 from tenacity import (
     Retrying,
+    before_sleep_log,
     retry,
     stop_after_attempt,
     stop_after_delay,
@@ -32,6 +34,8 @@ TEST_DATABASE_NAME = "testing"
 
 JujuModelStatusFn = Callable[[Status], bool]
 JujuAppsStatusFn = Callable[[Status, str], bool]
+
+logger = logging.getLogger(__name__)
 
 
 def check_mysql_instances_online(
@@ -443,7 +447,11 @@ def stop_mysql_process_gracefully(juju: Juju, unit_name: str) -> None:
     )
 
     # Hold execution until process is stopped
-    for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(5)):
+    for attempt in Retrying(
+        stop=stop_after_attempt(10),
+        wait=wait_fixed(5),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    ):
         with attempt:
             if get_unit_process_id(juju, unit_name, "mysqld") is not None:
                 raise Exception("Failed to stop the mysqld process")
