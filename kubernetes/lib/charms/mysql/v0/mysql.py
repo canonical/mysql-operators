@@ -2743,22 +2743,20 @@ class MySQLBase(ABC):
                 group=group,
             )
 
-            if extra_dirs:
-                for extra_dir in extra_dirs:
-                    logger.debug(f"Emptying extra directory {extra_dir}")
-                    self._execute_commands(
-                        [
-                            "find",
-                            extra_dir,
-                            "-not",
-                            "-path",
-                            extra_dir,
-                            "-delete",
-                        ],
-                        user=user,
-                        group=group,
-                    )
-
+            for extra_dir in (extra_dirs or []):
+                logger.debug(f"Emptying extra directory {extra_dir}")
+                self._execute_commands(
+                    [
+                        "find",
+                        extra_dir,
+                        "-not",
+                        "-path",
+                        extra_dir,
+                        "-delete",
+                    ],
+                    user=user,
+                    group=group,
+                )
         except MySQLExecError as e:
             logger.error("Failed to empty data directories in prep for backup restore")
             raise MySQLEmptyDataDirectoryError(e.message) from e
