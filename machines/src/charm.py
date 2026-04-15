@@ -156,6 +156,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.update_status, self._on_update_status)
 
+        self.framework.observe(self.on.archive_storage_detaching, self._on_storage_detaching)
         self.framework.observe(self.on.data_storage_detaching, self._on_storage_detaching)
         self.framework.observe(self.on.logs_storage_detaching, self._on_storage_detaching)
         self.framework.observe(self.on.temp_storage_detaching, self._on_storage_detaching)

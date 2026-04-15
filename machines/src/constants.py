@@ -39,6 +39,7 @@ MYSQLD_DEFAULTS_CONFIG_FILE = f"{CHARMED_MYSQL_DATA_DIRECTORY}/etc/mysql/mysql.c
 MYSQLD_CUSTOM_CONFIG_FILE = f"{MYSQLD_CONFIG_DIRECTORY}/z-custom-mysqld.cnf"
 MYSQL_SYSTEM_USER = "snap_daemon"
 
+MYSQL_ARCHIVE_DIR = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/archive"  # Corresponds to the archive storage mount
 MYSQL_DATA_DIR = (
     f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/data"  # Corresponds to the data storage mount
 )

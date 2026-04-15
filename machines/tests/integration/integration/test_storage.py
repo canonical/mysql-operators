@@ -44,7 +44,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 
 
 def test_charm_lists_expected_storage(juju: Juju) -> None:
-    expected_storages = ["data", "temp", "logs"]
+    expected_storages = {"archive", "data", "temp", "logs"}
 
     assert len(juju.status().storage.storage) == len(expected_storages)
 

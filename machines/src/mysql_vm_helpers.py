@@ -44,6 +44,7 @@ from constants import (
     CHARMED_MYSQLD_EXPORTER_SERVICE,
     CHARMED_MYSQLD_SERVICE,
     CHARMED_MYSQLSH,
+    MYSQL_ARCHIVE_DIR,
     MYSQL_DATA_DIR,
     MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_USER,
@@ -286,7 +287,6 @@ class MySQL(MySQLBase):
         config_path = "/etc/logrotate.d/flush_mysql_logs"
         script_path = f"{self.charm.charm_dir}/logrotation.sh"
         cron_path = "/etc/cron.d/flush_mysql_logs"
-        logs_dir = f"{MYSQL_LOGS_DIR}"
 
         # days * minutes/day = amount of rotated files to keep
         logs_rotations = logs_retention_period * 1440
@@ -296,7 +296,8 @@ class MySQL(MySQLBase):
 
         logrotate_conf_content = template.render(
             system_user=MYSQL_SYSTEM_USER,
-            log_dir=logs_dir,
+            log_dir=MYSQL_LOGS_DIR,
+            archive_dir=MYSQL_ARCHIVE_DIR,
             charm_directory=self.charm.charm_dir,
             unit_name=self.charm.unit.name,
             enabled_log_files=enabled_log_files,
@@ -313,7 +314,7 @@ class MySQL(MySQLBase):
             template = jinja2.Template(file.read())
 
         logrotation_script_content = template.render(
-            log_path=f"{MYSQL_LOGS_DIR}",
+            log_path=MYSQL_LOGS_DIR,
             enabled_log_files=enabled_log_files,
             logrotate_conf=config_path,
             owner=MYSQL_SYSTEM_USER,

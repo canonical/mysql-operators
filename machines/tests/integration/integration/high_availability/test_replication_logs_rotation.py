@@ -14,7 +14,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CHARMED_MYSQL_COMMON_DIRECTORY
+from constants import MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
 
 from ...helpers_ha import (
     get_app_leader,
@@ -70,7 +70,6 @@ def test_log_rotation(juju: Juju) -> None:
     log_types = ["audit", "error"]
 
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    mysql_logs_path = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
 
     logging.info("Removing the cron file")
     delete_unit_file(juju, mysql_app_leader, "/etc/cron.d/flush_mysql_logs")
@@ -79,7 +78,7 @@ def test_log_rotation(juju: Juju) -> None:
     stop_unit_flush_logs_job(juju, mysql_app_leader)
 
     for log_type in log_types:
-        archive_log_dir = f"{mysql_logs_path}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
 
         logging.info("Removing existing archive directories")
         delete_unit_file(juju, mysql_app_leader, archive_log_dir)
@@ -88,7 +87,7 @@ def test_log_rotation(juju: Juju) -> None:
         write_unit_file(
             juju=juju,
             unit_name=mysql_app_leader,
-            file_path=f"{mysql_logs_path}/{log_type}.log",
+            file_path=f"{MYSQL_LOGS_DIR}/{log_type}.log",
             file_data=f"{log_type} content",
         )
 
@@ -100,11 +99,11 @@ def test_log_rotation(juju: Juju) -> None:
         active_log_file_data = read_unit_file(
             juju=juju,
             unit_name=mysql_app_leader,
-            file_path=f"{mysql_logs_path}/{log_type}.log",
+            file_path=f"{MYSQL_LOGS_DIR}/{log_type}.log",
         )
         assert f"{log_type} content" not in active_log_file_data
 
-        archive_log_dir = f"{mysql_logs_path}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
         archive_log_files_listed = list_unit_files(juju, mysql_app_leader, archive_log_dir)
 
         assert len(archive_log_files_listed) == 1
