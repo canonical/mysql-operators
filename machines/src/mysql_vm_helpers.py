@@ -875,14 +875,6 @@ class MySQL(MySQLBase):
         os.chmod(path, mode=permission)
 
     @staticmethod
-    def fetch_error_log() -> str | None:
-        """Fetch the mysqld error log."""
-        if os.path.exists(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log"):
-            # can be empty if just rotated
-            with open(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log") as fd:
-                return fd.read()
-
-    @staticmethod
     def reset_data_dir() -> None:
         """Reset the data directory."""
         logger.warning(f"Resetting data directory: {MYSQL_DATA_DIR}")

@@ -8,7 +8,6 @@ from charms.data_platform_libs.v0.upgrade import ClusterNotReadyError
 from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
-    MySQLStartMySQLDError,
     MySQLStopMySQLDError,
 )
 from ops.testing import Harness
@@ -144,8 +143,6 @@ class TestUpgrade(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm.recover_unit_after_restart")
     @patch("mysql_vm_helpers.MySQL.install_plugins")
     @patch("upgrade.set_cron_daemon")
-    @patch("upgrade.MySQLVMUpgrade._check_server_unsupported_downgrade")
-    @patch("upgrade.MySQLVMUpgrade._reset_on_unsupported_downgrade")
     @patch("mysql_vm_helpers.MySQL.hold_if_recovering")
     @patch("pathlib.Path.exists", return_value=True)
     @patch("mysql_vm_helpers.MySQL.get_mysql_version", return_value="8.0.33")
@@ -166,8 +163,6 @@ class TestUpgrade(unittest.TestCase):
         mock_get_mysql_version,
         mock_path_exists,
         mock_hold_if_recovering,
-        mock_reset_on_unsupported_downgrade,
-        mock_check_server_unsupported_downgrade,
         mock_set_cron_daemon,
         mock_install_plugins,
         mock_recover_unit_after_restart,
@@ -214,38 +209,6 @@ class TestUpgrade(unittest.TestCase):
         self.harness.update_relation_data(
             self.upgrade_relation_id, "mysql/0", {"state": "upgrading"}
         )
-        mock_check_server_unsupported_downgrade.return_value = True
-        mock_start_mysqld.side_effect = MySQLStartMySQLDError
-        self.charm.upgrade._on_upgrade_granted(None)
-        mock_reset_on_unsupported_downgrade.assert_called_once()
-
-    @patch("mysql_vm_helpers.MySQL.fetch_error_log")
-    def test_check_server_unsupported_downgrade(self, mock_fetch_error_log):
-        mock_fetch_error_log.return_value = "MY-013171"
-        self.assertTrue(self.charm.upgrade._check_server_unsupported_downgrade())
-        mock_fetch_error_log.return_value = "MY-013sdasa"
-        self.assertTrue(not self.charm.upgrade._check_server_unsupported_downgrade())
-
-    @patch("charm.MySQLOperatorCharm.join_unit_to_cluster")
-    @patch("mysql_vm_helpers.MySQL.rescan_cluster")
-    @patch("charm.MySQLOperatorCharm._get_primary_from_online_peer")
-    @patch("charm.MySQLOperatorCharm.workload_initialise")
-    @patch("mysql_vm_helpers.MySQL.install_and_configure_mysql_dependencies")
-    @patch("subprocess.check_call")
-    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
-    def test_reset_on_unsupported_downgrade(
-        self,
-        mock_reset_data_dir,
-        mock_check_call,
-        mock_install_workload,
-        mock_init_workload,
-        mock_get_primary,
-        mock_rescan_cluster,
-        mock_join_unit,
-    ):
-        self.charm.upgrade._reset_on_unsupported_downgrade()
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
-        self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
     @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
     @patch("upgrade.MySQLVMUpgrade._prepare_upgrade_from_legacy")
