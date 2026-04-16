@@ -89,6 +89,7 @@ from constants import (
     MONITORING_USERNAME,
     MYSQL_DATA_DIR,
     MYSQL_LOGS_DIR,
+    MYSQL_SYSTEM_USER,  # HACK: See below
     MYSQL_TEMP_DIR,
     OPERATOR_PASSWORD_KEY,
     OPERATOR_USERNAME,
@@ -2617,9 +2618,14 @@ class MySQLBase(ABC):
         ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
+            # HACK: We need to create the temp directory owned by snap_daemon,
+            # whereas the wrapper script always needs to run as root
+            # so that the setpriv hack works.
+            # We're hardcoding the user here until we decide what to do
+            # with the user and group parameters
             tmp_dir, _ = self._execute_commands(
                 make_temp_dir_command,
-                user=user,
+                user=MYSQL_SYSTEM_USER,
                 group=group,
             )
             if ca_chain:

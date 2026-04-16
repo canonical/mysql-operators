@@ -1252,7 +1252,8 @@ class TestMySQLBase(unittest.TestCase):
             sorted(_execute_commands.mock_calls),
             sorted([
                 call(_expected_nproc_commands),
-                call(_expected_temp_dir_commands, user="test-user", group="test-group"),
+                # HACK: See source
+                call(_expected_temp_dir_commands, user="snap_daemon", group="test-group"),
                 call(_expected_ca_dir_commands, user="test-user", group="test-group"),
                 call(
                     _exepected_ca_content_commands, bash=True, user="test-user", group="test-group"
