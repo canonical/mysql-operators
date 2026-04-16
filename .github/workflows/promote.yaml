@@ -5,6 +5,13 @@ name: Promote charm
 on:
   workflow_dispatch:
     inputs:
+      path-to-charm:
+        description: Promote charm in this path
+        required: true
+        type: choice
+        options:
+          - kubernetes
+          - machines
       from-risk:
         description: Promote from this Charmhub risk
         required: true
@@ -25,12 +32,14 @@ on:
 jobs:
   promote:
     name: Promote charm
-    uses: canonical/data-platform-workflows/.github/workflows/_promote_charms.yaml@v48.1.2
+    uses: canonical/data-platform-workflows/.github/workflows/_promote_charm_legacy.yaml@v48.1.2
     with:
       track: '8.0'
       from-risk: ${{ inputs.from-risk }}
       to-risk: ${{ inputs.to-risk }}
+      path-to-charm-directory: ${{ inputs.path-to-charm }}
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
+      actions: read
       contents: write  # Needed to edit GitHub releases
