@@ -1,0 +1,17 @@
+Apr 16 01:57:29 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Apr 16 01:57:30 [32mINFO    [0m root:test_replication_logs_rotation.py:84 Overwriting the log rotate dispatcher script
+Apr 16 01:57:30 [32mINFO    [0m root:test_replication_logs_rotation.py:93 Stopping the log rotate dispatcher
+Apr 16 01:57:30 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql-k8s/2 -- 'pkill -f log_rotate_dispatcher.py --signal SIGKILL'
+Apr 16 01:57:30 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/2 'pgrep -x /usr/bin/python3 scripts/log_rotate_dispatcher.py'
+Apr 16 01:57:31 [32mINFO    [0m root:test_replication_logs_rotation.py:97 Removing existing archive directories
+Apr 16 01:57:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/2 'find /var/log/mysql/archive_error -maxdepth 1 -delete'
+Apr 16 01:57:31 [32mINFO    [0m root:test_replication_logs_rotation.py:105 Writing some data to the text log files
+Apr 16 01:57:31 [32mINFO    [0m root:test_replication_logs_rotation.py:97 Removing existing archive directories
+Apr 16 01:57:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/2 'find /var/log/mysql/archive_audit -maxdepth 1 -delete'
+Apr 16 01:57:31 [32mINFO    [0m root:test_replication_logs_rotation.py:105 Writing some data to the text log files
+Apr 16 01:57:31 [32mINFO    [0m root:test_replication_logs_rotation.py:114 Dispatching custom event to rotate logs
+Apr 16 01:57:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing mysql-k8s/2 'which juju-exec'
+Apr 16 01:57:32 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing mysql-k8s/2 '/usr/bin/juju-exec JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs /var/lib/juju/agents/unit-mysql-k8s-2/charm/dispatch'
+Apr 16 01:57:34 [32mINFO    [0m root:test_replication_logs_rotation.py:117 Ensuring log files were rotated
+Apr 16 01:57:35 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/2 'ls -la /var/log/mysql/archive_error'
+Apr 16 01:57:35 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/2 'ls -la /var/log/mysql/archive_audit'
