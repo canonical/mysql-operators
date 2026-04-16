@@ -474,7 +474,7 @@ class MySQL(MySQLBase):
         self,
         backup_id: str,
         s3_parameters: dict[str, str],
-        temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
         user=ROOT_SYSTEM_USER,
