@@ -87,9 +87,7 @@ def test_temp_directory_has_only_expected_file_extensions_after_initialization(j
     assert all(fname.endswith(".ibt") for fname in actual_content)
 
 
-def test_logs_directory_has_only_expected_contents_after_initialization(
-    juju: Juju,
-) -> None:
+def test_logs_directory_has_only_expected_contents_after_initialization(juju: Juju) -> None:
     expected_content = {
         "audit.log",
         "error.log",
