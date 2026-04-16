@@ -108,7 +108,7 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
         for fname in remaining_content
     )
 
-    redolog_pattern = re.compile(r"^\'\#ib_redo\d+")
+    redolog_pattern = re.compile(r"^\#ib_redo\d+")
     actual_content = set(
         list_container_files(juju, f"{DATABASE_APP_NAME}/0", f"{MYSQL_LOGS_DIR}/#innodb_redo")
     )
@@ -119,5 +119,5 @@ def test_logs_directory_has_only_expected_contents_after_initialization(
 def list_container_files(
     juju, unit_name: str, path: str, container: str = CONTAINER_NAME
 ) -> list[str]:
-    result = juju.ssh(unit_name, "ls", path, container=container)
+    result = juju.ssh(unit_name, "ls", "--literal", path, container=container)
     return result.strip().split()
