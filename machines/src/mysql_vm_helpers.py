@@ -620,19 +620,23 @@ class MySQL(MySQLBase):
                 stdout += line
 
         return_code = process.wait()
-        if return_code != 0:
-            message = (
-                "Failed command: "
-                f"{self.strip_off_passwords(' '.join(commands))};"
-                f" {user=}; {group=}"
-            )
-            logger.error(message)
-            raise MySQLExecError from None
 
+        # Read stdout and stderr before checking return code
         if not stdout and process.stdout:
             stdout = process.stdout.read()
         if not stderr and process.stderr:
             stderr = process.stderr.read()
+
+        if return_code != 0:
+            message = (
+                "Failed command: "
+                f"{self.strip_off_passwords(' '.join(commands))};"
+                f" {user=}; {group=}; "
+                f"stdout: {stdout.strip()}; "
+                f"stderr: {stderr.strip()}"
+            )
+            logger.error(message)
+            raise MySQLExecError(message) from None
 
         return (stdout.strip(), stderr.strip())
 
