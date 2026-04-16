@@ -21,7 +21,7 @@ from ...helpers_ha import (
     wait_for_apps_status,
     wait_for_unit_status,
 )
-from ...markers import amd64_only
+from ...markers import amd64_only, juju3
 
 MYSQL_APP_NAME = "mysql"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
@@ -29,6 +29,8 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 # TODO: support arm64 & s390x
+# Test only on juju3, as juju 2.9.x cli does no
+# support download specific revision
 BASELINE_CHARM_REVISIONS = {
     "amd64": 444,
 }
@@ -40,6 +42,7 @@ BASELINE_SNAP_REVISIONS = {
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
+@juju3
 def test_build_and_deploy(juju: Juju) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Download baseline revision charm for rollback")
@@ -85,6 +88,7 @@ def test_build_and_deploy(juju: Juju) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
+@juju3
 def test_pre_upgrade_check(juju: Juju) -> None:
     """Test that the pre-upgrade-check action runs successfully."""
     mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
@@ -96,6 +100,7 @@ def test_pre_upgrade_check(juju: Juju) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
+@juju3
 def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
     logging.info("Ensure continuous_writes")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
@@ -132,6 +137,7 @@ def test_upgrade_to_failing(juju: Juju, charm: str, continuous_writes) -> None:
 # TODO: remove AMD64 marker after next incompatible MySQL server version is released in our snap
 # (details: https://github.com/canonical/mysql-operator/pull/472#discussion_r1659300069)
 @amd64_only
+@juju3
 def test_rollback(juju: Juju, charm, continuous_writes) -> None:
     """Test upgrade rollback to a healthy revision."""
     relation_data = get_relation_data(juju, MYSQL_APP_NAME, "upgrade")

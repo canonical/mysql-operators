@@ -7,6 +7,7 @@ import bisect
 import json
 import logging
 import pathlib
+import platform
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -298,19 +299,34 @@ class MySQLVMUpgrade(DataUpgrade):
 
     def _reset_on_unsupported_downgrade(self) -> None:
         """Reset the server if unsupported downgrade is detected."""
+        _last_self_initialised_revision = {
+            "x86_64": 207,
+            "aarch64": 205,
+            "s390x": 206,
+        }
+        with pathlib.Path("snap_revisions.json").open("r") as file:
+            revision = json.load(file)[platform.machine()]
+
         self.charm._mysql.reset_data_dir()
-        logger.debug("Initialize datadir after resetting it")
-        subprocess.check_call(  # noqa: S603
-            [
-                "/usr/bin/snap",
-                "run",
-                "charmed-mysql.mysqld",
-                "--initialize",
-                f"--datadir={MYSQL_DATA_DIR}",
-                f"--user={MYSQL_SYSTEM_USER}",
-            ],
-        )
-        self.charm.workload_initialise()
+        logger.debug("Initialise datadir after resetting it")
+        non_initialised_snap = int(revision) > _last_self_initialised_revision[platform.machine()]
+        if non_initialised_snap:
+            subprocess.check_call(  # noqa: S603
+                [
+                    "/usr/bin/snap",
+                    "run",
+                    "charmed-mysql.mysqld",
+                    "--initialize",
+                    f"--datadir={MYSQL_DATA_DIR}",
+                    f"--user={MYSQL_SYSTEM_USER}",
+                ],
+            )
+        else:
+            # For older revisions, the snap itself is responsible
+            # for initialising the datadir on install,
+            self.charm._mysql.reinstall_mysql()
+
+        self.charm.workload_initialise(do_mysqld_init=non_initialised_snap)
         # reset flags
         self.charm.unit_peer_data["member-role"] = "secondary"
         self.charm.unit_peer_data["member-state"] = "waiting"

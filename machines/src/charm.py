@@ -773,7 +773,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return False
         return True
 
-    def workload_initialise(self) -> None:
+    def workload_initialise(self, do_mysqld_init: bool = True) -> None:
         """Workload initialisation commands.
 
         Create users and configuration to setup instance as an Group Replication node.
@@ -782,8 +782,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # ensure hostname can be resolved
         self.hostname_resolution.update_etc_hosts(None)
 
-        logger.info("Initializing MySQL data directory")
-        self._mysql.initialise_mysqld()
+        if do_mysqld_init:
+            logger.info("Initializing MySQL data directory")
+            self._mysql.initialise_mysqld()
 
         self._mysql.write_mysqld_config()
         self.log_rotation_setup.setup()
