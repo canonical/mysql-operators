@@ -1163,11 +1163,6 @@ class MySQLBase(ABC):
         # the admin enables them manually
         base_config = {
             "datadir": MYSQL_DATA_DIR,
-            "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
-            "log_bin": f"{MYSQL_LOGS_DIR}/binlog",
-            "log_bin_index": f"{MYSQL_LOGS_DIR}/binlog.index",
-            "innodb_log_group_home_dir": MYSQL_LOGS_DIR,
-            "innodb_undo_directory": MYSQL_LOGS_DIR,
             # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104
@@ -1175,6 +1170,11 @@ class MySQLBase(ABC):
             "report_host": self.instance_address,
             "max_connections": max_connections,
             "innodb_buffer_pool_size": innodb_buffer_pool_size,
+            "innodb_log_group_home_dir": MYSQL_LOGS_DIR,
+            "innodb_temp_tablespaces_dir": MYSQL_TEMP_DIR,
+            "innodb_undo_directory": MYSQL_LOGS_DIR,
+            "log_bin": f"{MYSQL_LOGS_DIR}/binlog",
+            "log_bin_index": f"{MYSQL_LOGS_DIR}/binlog.index",
             "log_error_services": "log_filter_internal;log_sink_internal",
             "log_error": f"{MYSQL_LOGS_DIR}/error.log",
             "general_log": "OFF",
