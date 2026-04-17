@@ -83,8 +83,8 @@ class MicrocephConnectionInformation:
     access_key_id: str
     secret_access_key: str
     bucket: str
-    ca_cert_base64: str
-    region: str
+    ca_cert_base64: str | None = None
+    region: str = "default"
 
 
 @pytest.fixture(scope="session")
@@ -111,6 +111,8 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
             os.environ["CEPH_ACCESS_KEY"],
             os.environ["CEPH_SECRET_KEY"],
             MICROCEPH_BUCKET,
+            os.environ.get("CEPH_CA_CERT"),  # Optional for HTTP-only local dev
+            os.environ.get("CEPH_REGION", "default"),
         )
     logger.info("Setting up TLS certificates")
     subprocess.run(f"openssl genrsa -out {certs_path}/ca.key 2048".split(), check=True)
@@ -217,29 +219,30 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
 
 
 @pytest.fixture(scope="session")
-def cloud_credentials(microceph) -> dict[str, str]:
-    """Read cloud credentials."""
-    return {
+def cloud_configs_ceph(microceph) -> tuple[dict[str, str], dict[str, str]]:
+    configs = {
+        "endpoint": microceph.endpoint_url,
+        "bucket": microceph.bucket,
+        "path": "mysql",
+        "region": microceph.region,
+    }
+    # Only add TLS CA chain if provided (for HTTPS endpoints)
+    if microceph.ca_cert_base64:
+        configs["tls-ca-chain"] = microceph.ca_cert_base64
+
+    credentials = {
         "access-key": microceph.access_key_id,
         "secret-key": microceph.secret_access_key,
     }
-
-
-@pytest.fixture(scope="session")
-def cloud_configs(microceph) -> dict[str, str]:
-    return {
-        "endpoint": microceph.endpoint_url,
-        "bucket": microceph.bucket,
-        "path": "mysql-k8s",
-        "region": "default",
-        "tls-ca-chain": microceph.ca_cert_base64,
-    }
+    return configs, credentials
 
 
 @pytest.fixture(scope="session", autouse=True)
-def clean_backups_from_buckets(cloud_credentials, cloud_configs):
+def clean_backups_from_buckets(cloud_configs_ceph):
     """Teardown to clean up created backups from clouds."""
     yield
+
+    cloud_configs, cloud_credentials = cloud_configs_ceph
 
     logger.info("Cleaning backups from buckets")
     session = boto3.session.Session(  # pyright: ignore
@@ -247,17 +250,18 @@ def clean_backups_from_buckets(cloud_credentials, cloud_configs):
         aws_secret_access_key=cloud_credentials["secret-key"],
         region_name=cloud_configs["region"],
     )
-    with tempfile.NamedTemporaryFile() as ca_file:
-        ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
-        ca_file.write(ca_chain)
-        ca_file.flush()
 
-        s3 = session.resource(
-            "s3",
-            endpoint_url=cloud_configs["endpoint"],
-            verify=ca_file.name,
-        )
-        bucket = s3.Bucket(cloud_configs["bucket"])
+    with tempfile.TemporaryDirectory() as tmpdir:
+        s3_extra_kwargs = {}
+        if "tls-ca-chain" in cloud_configs:
+            ca_path = Path(tmpdir) / "ca.crt"
+            ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
+            ca_path.write_bytes(ca_chain)
+            s3_extra_kwargs["verify"] = str(ca_path)
+
+        bucket = session.resource(
+            "s3", endpoint_url=cloud_configs["endpoint"], **s3_extra_kwargs
+        ).Bucket(cloud_configs["bucket"])
 
         # GCS doesn't support batch delete operation, so delete the objects one by one
         backup_path = str(Path(cloud_configs["path"]) / CLOUD)
@@ -307,9 +311,11 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     )
 
 
-def test_backup(juju: Juju, cloud_credentials, cloud_configs) -> None:
+def test_backup(juju: Juju, cloud_configs_ceph) -> None:
     """Test to create a backup and list backups."""
     global backup_id, value_before_backup, value_after_backup
+
+    cloud_configs, cloud_credentials = cloud_configs_ceph
 
     app_units = get_app_units(juju, DATABASE_APP_NAME)
     zeroth_unit_name = app_units[0]
@@ -360,8 +366,10 @@ def test_backup(juju: Juju, cloud_credentials, cloud_configs) -> None:
     verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
 
 
-def test_restore_on_same_cluster(juju: Juju, cloud_credentials, cloud_configs) -> None:
+def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     """Test to restore a backup to the same mysql cluster."""
+    cloud_configs, cloud_credentials = cloud_configs_ceph
+
     logger.info("Scaling mysql application to 1 unit")
     scale_app_units(juju, DATABASE_APP_NAME, 1)
 
@@ -449,8 +457,10 @@ def test_restore_on_same_cluster(juju: Juju, cloud_credentials, cloud_configs) -
     ), "cluster should migrate to blocked status after restore"
 
 
-def test_restore_on_new_cluster(juju: Juju, charm, cloud_credentials, cloud_configs) -> None:
+def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     """Test to restore a backup on a new mysql cluster."""
+    cloud_configs, cloud_credentials = cloud_configs_ceph
+
     logger.info("Deploying a new mysql cluster")
 
     new_mysql_application_name = "another-mysql-k8s"
