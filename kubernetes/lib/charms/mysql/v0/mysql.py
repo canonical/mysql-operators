@@ -2161,7 +2161,7 @@ class MySQLBase(ABC):
         else:
             return True
 
-    def release_all_locks(self, executor: BaseExecutor):
+    def _release_all_locks(self, executor: BaseExecutor):
         """Release all locks in the mysql.juju_units_operations table."""
         query = self._lock_query_builder.build_release_all_query()
 
@@ -2382,10 +2382,10 @@ class MySQLBase(ABC):
 
     def reboot_from_complete_outage(self) -> None:
         """Wrapper for reboot_cluster_from_complete_outage command."""
+        executor = self._build_cluster_tcp_executor(self.instance_address)
         try:
             self._cluster_client_tcp.reboot_cluster(self.cluster_name)
-            executor = self._build_cluster_tcp_executor(self.instance_address)
-            self.release_all_locks(executor)
+            self._release_all_locks(executor)
         except ExecutionError as e:
             raise MySQLRebootFromCompleteOutageError() from e
 
