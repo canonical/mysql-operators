@@ -292,7 +292,7 @@ To retrieve the host’s IP address, run `juju show-unit`, and send the output t
 :user: ubuntu
 :host: my-vm
 
-DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
+DB_HOST=$(juju show-unit mysql/0 | yq '.[].["public-address"]')
 ```
 ````
 
@@ -303,7 +303,7 @@ DB_HOST=$(juju show-unit mysql/0 | yq '.[] | .address')
 :user: ubuntu
 :host: my-vm
 
-DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
+DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[].["address"]')
 ```
 ````
 `````

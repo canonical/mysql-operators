@@ -106,15 +106,27 @@ DB_APP= < mydb/0 | charmed-osm-mariadb-k8s/0 >
 
 Get username and password of the existing legacy database from the database relation. The username is usually `root`, and the password is specified in the `mysql` relation by `root_password`:
 
-```shell
-OLD_DB_RELATION_ID=$(juju show-unit ${DB_APP} | yq '.[] | .relation-info | select(.[].endpoint == "mysql") | .[0] | .relation-id')
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
+OLD_DB_RELATION_ID=$(juju show-unit ${DB_APP} | yq '.[].["relation-info"] | select(.[].endpoint == "mysql") | .[0].["relation-id"]')
 
 OLD_DB_USER=root
-
 OLD_DB_PASS=$(bash -c "juju run --unit ${DB_APP} 'relation-get -r ${OLD_DB_RELATION_ID} - ${DB_APP}' | grep root_password" | awk '{print $2}')
+OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[].["public-address"]')
+````
 
-OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[] | .address')
-```
+````{tab-item} K8s
+:sync: k8s
+
+OLD_DB_RELATION_ID=$(juju show-unit ${DB_APP} | yq '.[].["relation-info"] | select(.[].endpoint == "mysql") | .[0].["relation-id"]')
+
+OLD_DB_USER=root
+OLD_DB_PASS=$(bash -c "juju run --unit ${DB_APP} 'relation-get -r ${OLD_DB_RELATION_ID} - ${DB_APP}' | grep root_password" | awk '{print $2}')
+OLD_DB_IP=$(juju show-unit ${DB_APP} | yq '.[].["address"]')
+````
+`````
 
 ```{admonition} Juju 2.9 users
 :class: tip
@@ -141,7 +153,7 @@ Obtain credentials for each new database by executing the following commands, on
 ```shell
 NEW_DB_USER=$(juju run mysql/leader get-password | yq '.username')
 NEW_DB_PASS=$(juju run mysql/leader get-password | yq '.password')
-NEW_DB_IP=$(juju show-unit mysql/0 | yq '.[] | .address')
+NEW_DB_IP=$(juju show-unit mysql/0 | yq '.[].["public-address"]')
 ```
 
 ````
@@ -157,7 +169,7 @@ Obtain credentials for each new database by executing the following commands, on
 ```shell
 NEW_DB_USER=$(juju run mysql-k8s/leader get-password | yq '.username')
 NEW_DB_PASS=$(juju run mysql-k8s/leader get-password | yq '.password')
-NEW_DB_IP=$(juju show-unit mysql-k8s/0 | yq '.[] | .address')
+NEW_DB_IP=$(juju show-unit mysql-k8s/0 | yq '.[].["address"]')
 ```
 ````
 `````
