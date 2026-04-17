@@ -1070,9 +1070,12 @@ class TestMySQLBase(unittest.TestCase):
             sorted([
                 call(_expected_nproc_commands),
                 call(_expected_tmp_dir_commands, user="test_user", group="test_group"),
-                call(_expected_ca_dir_commands, user="test_user", group="test_group"),
+                call(_expected_ca_dir_commands, user="snap_daemon", group="test_group"),
                 call(
-                    _exepected_ca_content_commands, bash=True, user="test_user", group="test_group"
+                    _exepected_ca_content_commands,
+                    bash=True,
+                    user="snap_daemon",
+                    group="test_group",
                 ),
                 call(
                     _expected_xtrabackup_commands,
@@ -1254,9 +1257,12 @@ class TestMySQLBase(unittest.TestCase):
                 call(_expected_nproc_commands),
                 # HACK: See source
                 call(_expected_temp_dir_commands, user="snap_daemon", group="test-group"),
-                call(_expected_ca_dir_commands, user="test-user", group="test-group"),
+                call(_expected_ca_dir_commands, user="snap_daemon", group="test-group"),
                 call(
-                    _exepected_ca_content_commands, bash=True, user="test-user", group="test-group"
+                    _exepected_ca_content_commands,
+                    bash=True,
+                    user="snap_daemon",
+                    group="test-group",
                 ),
                 call(
                     _expected_retrieve_backup_commands,

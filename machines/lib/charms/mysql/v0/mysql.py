@@ -2504,7 +2504,7 @@ class MySQLBase(ABC):
             tmp_dir, _ = self._execute_commands(make_temp_dir_command, user=user, group=group)
             if ca_chain:
                 ca_file_location = self.create_ca_pem_file(
-                    ca_chain, tmp_base_directory, user=user, group=group
+                    ca_chain, tmp_base_directory, user=MYSQL_SYSTEM_USER, group=group
                 )
         except MySQLExecError as e:
             logger.error(f"Failed to execute commands prior to running backup, reason: {e}")
@@ -2630,7 +2630,7 @@ class MySQLBase(ABC):
             )
             if ca_chain:
                 ca_file_location = self.create_ca_pem_file(
-                    ca_chain, temp_restore_directory, user=user, group=group
+                    ca_chain, temp_restore_directory, user=MYSQL_SYSTEM_USER, group=group
                 )
         except MySQLExecError as e:
             logger.error("Failed to execute commands prior to running xbcloud get")
