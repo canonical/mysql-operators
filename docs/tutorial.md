@@ -282,7 +282,15 @@ username: serverconfig
 ````
 `````
 
-To retrieve the host’s IP address, run `juju show-unit`, and send the output to the `yq` CLI utility.
+### Interact with MySQL
+
+To access the unit hosting Charmed MySQL in production, one would normally use the following command:
+
+```shell
+mysql -h <ip_address> -u<username> -p<password>
+```
+
+The way to access MySQL Server is to first SSH into the primary Juju unit:
 
 `````{tab-set}
 ````{tab-item} VM
@@ -292,7 +300,7 @@ To retrieve the host’s IP address, run `juju show-unit`, and send the output t
 :user: ubuntu
 :host: my-vm
 
-DB_HOST=$(juju show-unit mysql/0 | yq '.[].["public-address"]')
+juju ssh mysql/leader
 ```
 ````
 
@@ -303,17 +311,23 @@ DB_HOST=$(juju show-unit mysql/0 | yq '.[].["public-address"]')
 :user: ubuntu
 :host: my-vm
 
-DB_HOST=$(juju show-unit mysql-k8s/0 | yq '.[].["address"]')
+juju ssh mysql-k8s/leader
 ```
 ````
 `````
 
-### Interact with MySQL
+```{note}
+In this case, we know the MySQL primary unit is also the [Juju leader unit](https://juju.is/docs/juju/leader), since it is the only existing unit. In a cluster with more units, **the primary is not necessarily equivalent to the leader**.
 
-To access the unit hosting Charmed MySQL in production, one would normally use the following command:
+To identify the primary unit in a cluster, run:
+ - Localhost: `juju run mysql/<unit> get-cluster-status`.
+ - MicroK8s: `juju run mysql-k8s/<unit> get-cluster-status`. 
+```
+
+Once inside the Juju unit, the `serverconfig` user can access MySQL with the following command:
 
 ```shell
-mysql -h <ip_address> -u<username> -p<password>
+mysql -h 127.0.0.1 -userverconfig -p<password>
 ```
 
 As an example, using the password we obtained earlier:
@@ -322,7 +336,7 @@ As an example, using the password we obtained earlier:
 :user: ubuntu
 :host: juju-ff9064-0
 
-mysql -h ${DB_HOST} -uroot -pyWJjs2HccOmqFMshyRcwWnjF
+mysql -h 127.0.0.1 -userverconfig -pyWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
