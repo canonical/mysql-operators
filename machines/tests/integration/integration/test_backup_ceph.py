@@ -82,8 +82,8 @@ class MicrocephConnectionInformation:
     access_key_id: str
     secret_access_key: str
     bucket: str
-    ca_cert_base64: str
-    region: str
+    ca_cert_base64: str | None = None
+    region: str = "default"
 
 
 @pytest.fixture(scope="session")
@@ -110,6 +110,8 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
             os.environ["CEPH_ACCESS_KEY"],
             os.environ["CEPH_SECRET_KEY"],
             MICROCEPH_BUCKET,
+            os.environ.get("CEPH_CA_CERT"),  # Optional for HTTP-only local dev
+            os.environ.get("CEPH_REGION", "default"),
         )
     logger.info("Setting up TLS certificates")
     subprocess.run(f"openssl genrsa -out {certs_path}/ca.key 2048".split(), check=True)
@@ -221,9 +223,12 @@ def cloud_configs_ceph(microceph) -> tuple[dict[str, str], dict[str, str]]:
         "endpoint": microceph.endpoint_url,
         "bucket": microceph.bucket,
         "path": "mysql",
-        "region": "default",
-        "tls-ca-chain": microceph.ca_cert_base64,
+        "region": microceph.region,
     }
+    # Only add TLS CA chain if provided (for HTTPS endpoints)
+    if microceph.ca_cert_base64:
+        configs["tls-ca-chain"] = microceph.ca_cert_base64
+
     credentials = {
         "access-key": microceph.access_key_id,
         "secret-key": microceph.secret_access_key,
@@ -245,13 +250,17 @@ def clean_backups_from_buckets(cloud_configs_ceph):
         region_name=cloud_configs["region"],
     )
 
-    with tempfile.NamedTemporaryFile() as ca_file:
-        ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
-        ca_file.write(ca_chain)
-        ca_file.flush()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        s3_extra_kwargs = {}
+        if "tls-ca-chain" in cloud_configs:
+            ca_path = Path(tmpdir) / "ca.crt"
+            ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
+            ca_path.write_bytes(ca_chain)
+            s3_extra_kwargs["verify"] = str(ca_path)
 
-        s3 = session.resource("s3", endpoint_url=cloud_configs["endpoint"], verify=ca_file.name)
-        bucket = s3.Bucket(cloud_configs["bucket"])
+        bucket = session.resource(
+            "s3", endpoint_url=cloud_configs["endpoint"], **s3_extra_kwargs
+        ).Bucket(cloud_configs["bucket"])
 
         # GCS doesn't support batch delete operation, so delete the objects one by one
         backup_path = str(Path(cloud_configs["path"]) / backup_id)
