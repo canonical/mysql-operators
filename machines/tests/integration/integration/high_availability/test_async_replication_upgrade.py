@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 
 import jubilant_backports
 import pytest
@@ -95,14 +96,23 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     )
 
     logging.info("Waiting for the applications to settle")
-    model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
-        timeout=10 * MINUTE_SECS,
-    )
-    model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
-        timeout=10 * MINUTE_SECS,
-    )
+
+    def wait_model_1():
+        model_1.wait(
+            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    def wait_model_2():
+        model_2.wait(
+            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(wait_model_1), executor.submit(wait_model_2)]
+        for future in futures:
+            future.result()
 
     if path := os.getenv("DATA_SOURCE_PATH"):
         logging.info("Loading test database")
@@ -259,7 +269,7 @@ def run_pre_upgrade_checks(juju: Juju, app_name: str) -> None:
 
 
 def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
-    """Update the second cluster."""
+    """Upgrade a cluster and wait for completion."""
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, app_name)
 
@@ -274,7 +284,7 @@ def run_upgrade_from_edge(juju: Juju, app_name: str, charm: str) -> None:
 
     logging.info("Wait for upgrade to complete")
     juju.wait(
-        ready=lambda status: jubilant_backports.all_active(status, app_name),
+        ready=wait_for_apps_status(jubilant_backports.all_active, app_name),
         timeout=20 * MINUTE_SECS,
     )
 

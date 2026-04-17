@@ -78,7 +78,7 @@ def check_mysql_units_writes_increment(
     for unit_name in app_units:
         for attempt in Retrying(
             reraise=True,
-            stop=stop_after_delay(5 * MINUTE_SECS),
+            stop=stop_after_delay(2 * MINUTE_SECS),
             wait=wait_fixed(10),
         ):
             with attempt:
@@ -587,7 +587,7 @@ def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
     for unit_name in mysql_app_units:
         for attempt in Retrying(
             reraise=True,
-            stop=stop_after_delay(5 * MINUTE_SECS),
+            stop=stop_after_delay(2 * MINUTE_SECS),
             wait=wait_fixed(10),
         ):
             with attempt:
