@@ -3,6 +3,7 @@
 
 import json
 import logging
+import os
 import shutil
 import zipfile
 from contextlib import suppress
@@ -22,6 +23,7 @@ from ...helpers_ha import (
     get_mysql_variable_value,
     get_relation_data,
     get_unit_by_number,
+    load_mysql_test_data,
     wait_for_apps_status,
     wait_for_unit_message,
     wait_for_unit_status,
@@ -69,6 +71,10 @@ def test_deploy_latest(juju: Juju) -> None:
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 def test_pre_upgrade_check(juju: Juju) -> None:

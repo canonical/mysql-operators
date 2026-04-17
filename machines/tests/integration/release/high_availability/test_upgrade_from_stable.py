@@ -15,6 +15,7 @@ from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_leader,
     get_mysql_primary_unit,
+    load_mysql_test_data,
     wait_for_apps_status,
 )
 
@@ -104,6 +105,10 @@ def deploy_stable(juju: Juju, revision: int) -> None:
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
+
+    if path := os.getenv("DATA_SOURCE_PATH"):
+        logging.info("Loading test database")
+        load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
 async def run_upgrade_check(juju: Juju) -> None:

@@ -21,6 +21,14 @@ To upgrade Juju, see {ref}`upgrade-juju`
 
 **It is recommended to integrate your application with [Charmed MySQL Router](https://charmhub.io/mysql-router).** This will ensure minimal service disruption, if any.
 
+**Rollback when refreshing from revisions with MySQL < 8.0.35 is incompatible**
+
+The MySQL minor version bump from
+[8.0.35](https://dev.mysql.com/doc/relnotes/mysql/8.0/en/news-8-0-35.html) introduced incompatible
+changes to the data directory. The refresh from a version minor than 8.0.35 to a newer one usually
+goes without problems. But in case it don't, the rollback will not work. Make sure to backup your
+cluster when doing such refresh.
+
 ## Step 1: Record revision information
 
 ```{note}

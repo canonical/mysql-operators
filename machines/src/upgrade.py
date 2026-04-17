@@ -31,7 +31,7 @@ from ops.model import BlockedStatus, MaintenanceStatus, Unit
 from pydantic import BaseModel
 from typing_extensions import override
 
-from constants import CHARMED_MYSQL_COMMON_DIRECTORY, MYSQL_DATA_DIR, MYSQL_SYSTEM_USER, PEER
+from constants import CHARMED_MYSQL_COMMON_DIRECTORY, PEER
 
 if TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -168,7 +168,7 @@ class MySQLVMUpgrade(DataUpgrade):
             event.defer()
 
     @override
-    def _on_upgrade_granted(self, event: UpgradeGrantedEvent) -> None:  # noqa: C901
+    def _on_upgrade_granted(self, event: UpgradeGrantedEvent) -> None:
         """Handle the upgrade granted event."""
         try:
             self.charm.unit.status = MaintenanceStatus("stopping services..")
@@ -196,20 +196,10 @@ class MySQLVMUpgrade(DataUpgrade):
             return
         except MySQLStartMySQLDError:
             # failed to start - check for a unsupported downgrade
-            if not self._check_server_unsupported_downgrade():
-                logger.error("Failed to start MySQL server after snap refresh")
-                self.set_unit_failed()
-                return
+            logger.error("Failed to start MySQL server after snap refresh")
+            self.set_unit_failed()
+            return
 
-            # on incompatible downgrade, a workload reset is required,
-            # but only if there's more then one unit, so SST can take place
-            if self.charm.app.planned_units() == 1:
-                logger.error("Downgrade is incompatible. Restore from backup is required.")
-                self.set_unit_failed()
-                return
-
-            logger.warning("Downgrade is incompatible. Resetting workload")
-            self._reset_on_unsupported_downgrade()
         except MySQLStopMySQLDError:
             logger.exception("Failed to stop MySQL server")
             self.set_unit_failed()
@@ -285,41 +275,6 @@ class MySQLVMUpgrade(DataUpgrade):
             self.charm._mysql.set_dynamic_variable(
                 variable="innodb_fast_shutdown", value=0, instance_address=unit_address
             )
-
-    def _check_server_unsupported_downgrade(self) -> bool:
-        """Check error log for unsupported downgrade.
-
-        https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
-        """
-        if log_content := self.charm._mysql.fetch_error_log():
-            return "MY-013171" in log_content
-
-        return False
-
-    def _reset_on_unsupported_downgrade(self) -> None:
-        """Reset the server if unsupported downgrade is detected."""
-        self.charm._mysql.reset_data_dir()
-        logger.debug("Initialize datadir after resetting it")
-        subprocess.check_call(  # noqa: S603
-            [
-                "/usr/bin/snap",
-                "run",
-                "charmed-mysql.mysqld",
-                "--initialize",
-                f"--datadir={MYSQL_DATA_DIR}",
-                f"--user={MYSQL_SYSTEM_USER}",
-            ],
-        )
-        self.charm.workload_initialise()
-        # reset flags
-        self.charm.unit_peer_data["member-role"] = "secondary"
-        self.charm.unit_peer_data["member-state"] = "waiting"
-
-        # rescan is needed to remove the instance old incarnation from the cluster
-        leader = self.charm._get_primary_from_online_peer()
-        self.charm._mysql.rescan_cluster(from_instance=leader, remove_instances=True)
-        # rejoin after
-        self.charm.join_unit_to_cluster()
 
     def _prepare_upgrade_from_legacy(self) -> None:
         """Prepare upgrade from legacy charm without upgrade support.

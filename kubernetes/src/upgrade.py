@@ -23,7 +23,7 @@ from charms.mysql.v0.mysql import (
     MySQLSetVariableError,
 )
 from mysql_shell import InstanceState
-from ops import Container, JujuVersion
+from ops import JujuVersion
 from ops.model import BlockedStatus, MaintenanceStatus, RelationDataContent
 from ops.pebble import ChangeError
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ from tenacity import RetryError
 from typing_extensions import override
 
 import k8s_helpers
-from constants import CONTAINER_NAME, MYSQLD_SERVICE
+from constants import CONTAINER_NAME
 from utils import get_k8s_fqdn
 
 if TYPE_CHECKING:
@@ -246,17 +246,8 @@ class MySQLK8sUpgrade(DataUpgrade):
             )
         except (RetryError, MySQLServiceNotRunningError, ChangeError):
             # Failed to recover unit
-            if (
-                not self._check_server_unsupported_downgrade()
-                or self.charm.app.planned_units() == 1
-            ):
-                # don't try to recover single unit cluster or errors other then downgrade
-                logger.error("Unit failed to rejoin the cluster after upgrade")
-                self.set_unit_failed()
-                return
-            logger.warning("Downgrade is incompatible. Resetting workload")
-            self._reset_on_unsupported_downgrade(container)
-            self._complete_upgrade()
+            logger.error("Unit failed to rejoin the cluster after upgrade")
+            self.set_unit_failed()
 
     def _complete_upgrade(self):
         # complete upgrade for the unit
@@ -285,27 +276,3 @@ class MySQLK8sUpgrade(DataUpgrade):
                 cause="Error setting rolling update partition",
                 resolution="Check kubernetes access policy",
             ) from None
-
-    def _check_server_unsupported_downgrade(self) -> bool:
-        """Check error log for unsupported downgrade.
-
-        https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
-        """
-        if log_content := self.charm._mysql.fetch_error_log():
-            return "MY-013171" in log_content
-
-        return False
-
-    def _reset_on_unsupported_downgrade(self, container: Container) -> None:
-        """Reset the cluster on unsupported downgrade."""
-        container.stop(MYSQLD_SERVICE)
-        self.charm._mysql.reset_data_dir()
-        self.charm._write_mysqld_configuration()
-        self.charm._configure_instance(container)
-        # reset flags
-        self.charm.unit_peer_data.update({"member-role": "secondary", "member-state": "waiting"})
-        # rescan is needed to remove the instance old incarnation from the cluster
-        leader = self.charm._get_primary_from_online_peer()
-        self.charm._mysql.rescan_cluster(from_instance=leader, remove_instances=True)
-        # rejoin after
-        self.charm.join_unit_to_cluster()
