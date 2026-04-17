@@ -87,7 +87,6 @@ def check_mysql_units_writes_increment(
                     assert unit_max_value > app_max_value, "Writes not incrementing"
                     app_max_value = unit_max_value
 
-
 def get_app_leader(juju: Juju, app_name: str) -> str:
     """Get the leader unit for the given application."""
     model_status = juju.status()
