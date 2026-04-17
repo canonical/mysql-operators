@@ -881,7 +881,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # Add state 'offline' for this unit (self.peers.unit does not include this unit)
             all_offline = all_states | {"offline"} == {"offline"}
 
-            if (all_offline and self.unit.is_leader()) or (peers_waiting):
+            if (all_offline and self.unit.is_leader()) or peers_waiting:
                 # All instance are off or this instance if offline, and others waiting
                 # reboot cluster from outage
                 logger.info("Attempting reboot from complete outage.")
