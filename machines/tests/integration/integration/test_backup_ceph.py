@@ -237,10 +237,18 @@ def cloud_configs_ceph(microceph) -> tuple[dict[str, str], dict[str, str]]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def clean_backups_from_buckets(cloud_configs_ceph):
+def clean_backups_from_buckets(cloud_configs_ceph, request):
     """Teardown to clean up created backups from clouds."""
     yield
 
+    # Skip cleanup if any tests failed
+    if request.session.testsfailed > 0:
+        logger.warning(
+            f"Keeping backups for debugging ({request.session.testsfailed} test(s) failed)"
+        )
+        return
+
+    # All tests passed and completed - proceed with cleanup
     cloud_configs, cloud_credentials = cloud_configs_ceph
 
     logger.info("Cleaning backups from cloud buckets")
