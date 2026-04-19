@@ -153,7 +153,6 @@ def test_deploy_router_and_app(first_model: str) -> None:
         base="ubuntu@22.04",
         channel="dpe/edge",
         num_units=1,
-        trust=True,
     )
     model_1.deploy(
         charm=MYSQL_TEST_APP_NAME,
@@ -161,7 +160,6 @@ def test_deploy_router_and_app(first_model: str) -> None:
         base="ubuntu@22.04",
         channel="latest/edge",
         num_units=1,
-        trust=False,
     )
 
     logging.info("Relating the router and test application")
