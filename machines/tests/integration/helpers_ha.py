@@ -75,6 +75,8 @@ def check_mysql_units_writes_increment(
     app_primary = get_mysql_primary_unit(juju, app_name, app_units[0])
     app_max_value = get_mysql_max_written_value(juju, app_name, app_primary)
 
+    juju.model_config({"update-status-hook-interval": "10s"})
+
     for unit_name in app_units:
         for attempt in Retrying(
             reraise=True,
@@ -85,6 +87,7 @@ def check_mysql_units_writes_increment(
                 unit_max_value = get_mysql_max_written_value(juju, app_name, unit_name)
                 assert unit_max_value > app_max_value, "Writes not incrementing"
                 app_max_value = unit_max_value
+    juju.model_config(reset="update-status-hook-interval")
 
 
 def get_app_leader(juju: Juju, app_name: str) -> str:
@@ -618,7 +621,7 @@ def wait_for_apps_status(jubilant_status_func: JujuAppsStatusFn, *apps: str) -> 
 
 def wait_for_app_status(app_name: str, app_status: str) -> JujuModelStatusFn:
     """Returns whether a Juju app has a specific status."""
-    return lambda status: (status.apps[app_name].app_status.current == app_status)
+    return lambda status: status.apps[app_name].app_status.current == app_status
 
 
 def wait_for_unit_status(app_name: str, unit_name: str, unit_status: str) -> JujuModelStatusFn:

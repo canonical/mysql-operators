@@ -28,6 +28,7 @@ from ...markers import juju3
 MYSQL_APP_1 = "db1"
 MYSQL_APP_2 = "db2"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
+MYSQL_ROUTER = "mysql-router"
 
 MINUTE_SECS = 60
 
@@ -159,11 +160,21 @@ def test_deploy_test_app(first_model: str) -> None:
         channel="latest/edge",
         num_units=1,
     )
+    model_1.deploy(
+        charm=MYSQL_ROUTER,
+        app=MYSQL_ROUTER,
+        base="ubuntu@22.04",
+        channel="dpe/edge",
+    )
 
     logging.info("Relating the test application")
     model_1.integrate(
-        f"{MYSQL_APP_1}:database",
+        f"{MYSQL_ROUTER}:database",
         f"{MYSQL_TEST_APP_NAME}:database",
+    )
+    model_1.integrate(
+        f"{MYSQL_ROUTER}:backend-database",
+        f"{MYSQL_APP_1}:database",
     )
 
     model_1.wait(
