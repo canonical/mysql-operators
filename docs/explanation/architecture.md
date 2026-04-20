@@ -197,6 +197,92 @@ Prometheus is an open-source systems monitoring and alerting toolkit with a dime
 
 See the charm state machines displayed in {ref}`flowcharts`. The low-level logic is mostly common for both VM and K8s charms.
 
+### Code architecture
+
+The charm codebase follows a layered architecture pattern that separates concerns
+between Juju charm orchestration and MySQL workload operations.
+This pattern is shared between both VM and K8s implementations:
+
+```{mermaid}
+classDiagram
+    direction TB
+
+    %% External framework
+    class ABC {
+        📄 abc.py (Python stdlib)
+    }
+
+    class CharmBase {
+        📄 ops/charm.py
+        +on: CharmEvents
+        +app: Application
+        +unit: Unit
+        +meta: CharmMeta
+        +config: ConfigData
+    }
+
+    namespace CharmLayer {
+        class MySQLCharmBase {
+            📄 lib/charms/mysql/v0/mysql.py
+            +peer_relation_app: DataPeerData
+            +peer_relation_unit: DataPeerUnitData
+            +_mysql*: MySQLBase
+            +refresh*: Common
+        }
+
+        class MySQLOperatorCharm {
+            📄 machines/src/charm.py
+            📄 kubernetes/src/charm.py
+            +config_type: CharmConfig
+            +database_relation: MySQLProvider
+            +tls: MySQLTLS
+            +backups: MySQLBackups
+            +_mysql: MySQL
+        }
+    }
+
+    namespace WorkloadLayer {
+        class MySQLBase {
+            📄 lib/charms/mysql/v0/mysql.py
+            +instance_address: str
+            +cluster_name: str
+            +operator_user: str
+        }
+
+        class MySQL {
+            📄 machines/src/mysql_vm_helpers.py
+            📄 kubernetes/src/mysql_k8s_helpers.py
+            +charm: MySQLOperatorCharm
+        }
+    }
+
+    %% Inheritance relationships
+    CharmBase --|> ABC
+    MySQLCharmBase --|> CharmBase
+    MySQLCharmBase --|> ABC
+    MySQLOperatorCharm --|> MySQLCharmBase
+    MySQLBase --|> ABC
+    MySQL --|> MySQLBase
+
+    %% Cross-layer relationships
+    MySQLOperatorCharm ..> MySQL : _mysql property<br/>returns instance
+    MySQL --> MySQLOperatorCharm : charm reference<br/>(circular)
+
+    %% Layer annotations
+    note for MySQLCharmBase "CHARM LAYER<br/>Handles Juju lifecycle,<br/>events, and relations"
+    note for MySQLBase "WORKLOAD LAYER<br/>Handles MySQL-specific<br/>operations and cluster management"
+```
+
+**Charm Layer** - Handles Juju lifecycle events, relations, and orchestration:
+- **Shared**: `MySQLCharmBase` (in `lib/charms/mysql/v0/mysql.py`) - Abstract base class containing common charm logic for both VM and K8s
+- **VM**: `MySQLOperatorCharm` (in `machines/src/charm.py`) - Concrete implementation for VM deployments
+- **K8s**: `MySQLK8sCharm` (in `kubernetes/src/charm.py`) - Concrete implementation for K8s deployments
+
+**Workload Layer** - Handles MySQL-specific operations and cluster management:
+- **Shared**: `MySQLBase` (in `lib/charms/mysql/v0/mysql.py`) - Abstract base class with platform-agnostic MySQL operations
+- **VM**: `MySQL` (in `machines/src/mysql_vm_helpers.py`) - Concrete implementation for VM workload (snap-based)
+- **K8s**: `MySQLK8s` (in `kubernetes/src/mysql_k8s_helpers.py`) - Concrete implementation for K8s workload (container-based)
+
 <!--- TODO: Describe all possible installations? Cross-model/controller? --->
 
 ### Juju events
