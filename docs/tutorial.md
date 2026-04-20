@@ -7,7 +7,7 @@ myst:
 (tutorial)=
 # Tutorial
 
-This hands-on tutorial aims to help you learn how to deploy Charmed MySQL on LXD / Kubernetes and become familiar with its available operations.
+This hands-on tutorial aims to help you learn how to deploy Charmed MySQL on LXD or Kubernetes and become familiar with its available operations. If you are not sure which path to take, we recommend following this tutorial on LXD by following the "VM" tabs.
 
 This hands-on tutorial will familiarize you with Charmed MySQL by going through a real deployment of a MySQL cluster. You will learn the basics of deploying, scaling, managing credentials, accessing a database, and other essential operations that will prepare you for more advanced deployments.
 
