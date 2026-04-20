@@ -33,7 +33,7 @@ from ...markers import juju3
 MYSQL_APP_1 = "db1"
 MYSQL_APP_2 = "db2"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
-MYSQL_ROUTER = "mysql-router"
+MYSQL_ROUTER = "mysql-router-k8s"
 
 MINUTE_SECS = 60
 
