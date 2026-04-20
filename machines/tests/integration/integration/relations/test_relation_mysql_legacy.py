@@ -46,7 +46,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=1,
-        channel="latest/edge",
+        channel="latest/edge/racing",
         base="ubuntu@22.04",
     )
 

@@ -40,7 +40,7 @@ def test_build_and_deploy(juju: Juju, charm):
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=2,
-        channel="latest/edge",
+        channel="latest/edge/racing",
         base="ubuntu@22.04",
         constraints=constraints,
     )
@@ -127,7 +127,7 @@ def test_relation_broken_connectivity(juju: Juju):
         APPLICATION_APP_NAME,
         test_app_1,
         num_units=1,
-        channel="latest/edge",
+        channel="latest/edge/racing",
         config={"database_name": "test_database_1"},
         base="ubuntu@22.04",
     )
@@ -136,7 +136,7 @@ def test_relation_broken_connectivity(juju: Juju):
         APPLICATION_APP_NAME,
         test_app_2,
         num_units=1,
-        channel="latest/edge",
+        channel="latest/edge/racing",
         config={"database_name": "test_database_2"},
         base="ubuntu@22.04",
     )
