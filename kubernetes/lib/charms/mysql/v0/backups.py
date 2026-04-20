@@ -118,7 +118,7 @@ MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
 )
 
 if typing.TYPE_CHECKING:
-    from mysql import MySQLCharmBase
+    from .mysql import MySQLCharmBase
 
 
 class MySQLBackups(Object):

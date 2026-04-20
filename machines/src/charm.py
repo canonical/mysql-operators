@@ -634,7 +634,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     # =======================
 
     @property
-    def _mysql(self):
+    def _mysql(self) -> MySQL:
         """Returns an instance of the MySQL object."""
         return MySQL(
             self.unit_fqdn,
