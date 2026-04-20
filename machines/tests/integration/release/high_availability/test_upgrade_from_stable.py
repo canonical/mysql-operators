@@ -88,7 +88,7 @@ def deploy_stable(juju: Juju, revision: int) -> None:
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
         base="ubuntu@22.04",
-        channel="latest/edge",
+        channel="latest/edge/racing",
         num_units=1,
     )
 
