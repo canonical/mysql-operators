@@ -264,7 +264,10 @@ class MySQLBackups(Object):
             return False
 
         if "s3-block-message" in self.charm.app_peer_data:
-            logger.error("Backup failed: S3 relation is blocked for write")
+            logger.error(
+                "Backup failed: S3 relation is blocked for write: %s",
+                self.charm.app_peer_data["s3-block-message"],
+            )
             event.fail("S3 relation is blocked for write")
             return False
 
