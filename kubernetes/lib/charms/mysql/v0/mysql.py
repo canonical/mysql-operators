@@ -2448,7 +2448,7 @@ class MySQLBase(ABC):
         """Platform dependent method to get the available memory for mysql-server."""
         raise NotImplementedError
 
-    def create_sa_pem_file(
+    def create_ca_pem_file(
         self,
         ca_chain: list[str],
         tmp_base_directory: str,
@@ -2496,7 +2496,7 @@ class MySQLBase(ABC):
                 make_temp_dir_command, user=user, group=group
             )
             if ca_chain:
-                ca_file_location = self.create_sa_pem_file(
+                ca_file_location = self.create_ca_pem_file(
                     ca_chain, tmp_base_directory, user=user, group=group
                 )
         except MySQLExecError as e:
@@ -2615,7 +2615,7 @@ class MySQLBase(ABC):
                 group=group,
             )
             if ca_chain:
-                ca_file_location = self.create_sa_pem_file(
+                ca_file_location = self.create_ca_pem_file(
                     ca_chain, temp_restore_directory, user=user, group=group
                 )
         except MySQLExecError as e:
