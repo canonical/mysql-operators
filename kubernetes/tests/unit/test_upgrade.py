@@ -62,7 +62,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertEqual(1, self.charm.upgrade.highest_ordinal)
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks")
     @patch("mysql_k8s_helpers.MySQL.rescan_cluster")
     @patch("upgrade.MySQLK8sUpgrade._pre_upgrade_prepare")
     @patch("mysql_k8s_helpers.MySQL.get_cluster_status")
@@ -140,7 +140,7 @@ class TestUpgrade(unittest.TestCase):
         mock_logging.assert_has_calls(calls)
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks")
     @patch("mysql_k8s_helpers.MySQL.set_dynamic_variable")
     @patch("mysql_k8s_helpers.MySQL.get_primary_label", return_value="mysql-k8s-1")
     @patch("mysql_k8s_helpers.MySQL.set_cluster_primary")

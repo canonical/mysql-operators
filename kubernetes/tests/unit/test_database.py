@@ -60,7 +60,7 @@ class TestDatabase(unittest.TestCase):
         return_value="mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
     )
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks")
     @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
     @patch("mysql_k8s_helpers.MySQL.update_endpoints")
     @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")

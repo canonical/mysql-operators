@@ -49,7 +49,7 @@ from charms.mysql.v0.mysql import (
 )
 from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
-from charms.rolling_ops.v0.rollingops import RollingOpsManager
+from charms.rolling_ops.v1.rollingops import RollingOpsManagerV1
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
@@ -164,7 +164,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             relation_name="logging",
             container_name="mysql",
         )
-        self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
+
+        self.restart = RollingOpsManagerV1(
+            charm=self,
+            relation_name="restart",
+            callback_targets={"restart": self._restart},
+        )
 
         self.log_rotate_manager = LogRotateManager(self)
         self.log_rotate_manager.start_log_rotate_manager()
@@ -261,11 +266,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             },
         }
         return Layer(layer)  # pyright: ignore [reportArgumentType]
-
-    @property
-    def restart_peers(self) -> ops.model.Relation | None:
-        """Retrieve the peer relation."""
-        return self.model.get_relation("restart")
 
     @property
     def unit_address(self) -> str:
@@ -512,7 +512,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self, _: EventBase) -> None:
+    def _restart(self) -> None:
         """Restart the service."""
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
@@ -621,8 +621,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     self._mysql.install_plugins(["audit_log"])
                 else:
                     self._mysql.uninstall_plugins(["audit_log"])
+
             # restart the service
-            self.on[f"{self.restart.name}"].acquire_lock.emit()
+            self.restart.request_async_lock(callback_id="restart")
             return
 
         if dynamic_config := self.mysql_config.filter_static_keys(changed_config):
@@ -984,7 +985,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._is_cluster_blocked():
             logger.info("Cluster is blocked. Skipping.")
             return
-        del self.restart_peers.data[self.unit]["state"]
 
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
