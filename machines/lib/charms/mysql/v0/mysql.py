@@ -2488,15 +2488,9 @@ class MySQLBase(ABC):
         """Executes commands to create a backup with the given args."""
         nproc_command = ["nproc"]
         make_temp_dir_command = f"mktemp --directory {tmp_base_directory}/xtra_backup_XXXX".split()
-        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
-        ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
             tmp_dir, _ = self._execute_commands(make_temp_dir_command, user=user, group=group)
-            if ca_chain:
-                ca_file_location = self.create_ca_pem_file(
-                    ca_chain, tmp_base_directory, user=user, group=group
-                )
         except MySQLExecError as e:
             logger.error(f"Failed to execute commands prior to running backup, reason: {e}")
             raise MySQLExecuteBackupCommandsError from e
@@ -2505,6 +2499,22 @@ class MySQLBase(ABC):
             # a bad state due to pre-backup operations
             logger.error("Failed unexpectedly to execute commands prior to running backup")
             raise MySQLExecuteBackupCommandsError from e
+
+        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
+        ca_file_location = None
+        if ca_chain:
+            try:
+                ca_file_location = self.create_ca_pem_file(
+                    ca_chain, tmp_base_directory, user=user, group=group
+                )
+            except MySQLExecError as e:
+                logger.error(f"Failed to execute commands prior to running backup, reason: {e}")
+                raise MySQLExecuteBackupCommandsError from e
+            except Exception as e:
+                # Catch all other exceptions to prevent the database being stuck in
+                # a bad state due to pre-backup operations
+                logger.error("Failed unexpectedly to execute commands prior to running backup")
+                raise MySQLExecuteBackupCommandsError from e
 
         # TODO: remove flags --no-server-version-check
         # when MySQL and XtraBackup versions are in sync
@@ -2605,8 +2615,6 @@ class MySQLBase(ABC):
         make_temp_dir_command = (
             f"mktemp --directory {temp_restore_directory}/#mysql_sst_XXXX".split()
         )
-        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
-        ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
             tmp_dir, _ = self._execute_commands(
@@ -2614,13 +2622,20 @@ class MySQLBase(ABC):
                 user=user,
                 group=group,
             )
-            if ca_chain:
-                ca_file_location = self.create_ca_pem_file(
-                    ca_chain, temp_restore_directory, user=user, group=group
-                )
         except MySQLExecError as e:
             logger.error("Failed to execute commands prior to running xbcloud get")
             raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
+
+        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
+        ca_file_location = None
+        if ca_chain:
+            try:
+                ca_file_location = self.create_ca_pem_file(
+                    ca_chain, temp_restore_directory, user=user, group=group
+                )
+            except MySQLExecError as e:
+                logger.error("Failed to execute commands prior to running xbcloud get")
+                raise MySQLRetrieveBackupWithXBCloudError(e.message) from e
 
         retrieve_backup_command = [
             f"{xbcloud_location} get",
