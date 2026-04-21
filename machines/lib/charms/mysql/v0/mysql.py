@@ -2475,7 +2475,7 @@ class MySQLBase(ABC):
     def execute_backup_commands(
         self,
         s3_path: str,
-        s3_parameters: dict[str, str],
+        s3_parameters: dict,
         xtrabackup_location: str,
         xbcloud_location: str,
         xtrabackup_plugin_dir: str,
@@ -2488,7 +2488,7 @@ class MySQLBase(ABC):
         """Executes commands to create a backup with the given args."""
         nproc_command = ["nproc"]
         make_temp_dir_command = f"mktemp --directory {tmp_base_directory}/xtra_backup_XXXX".split()
-        ca_chain = s3_parameters.get("tls-ca-chain")
+        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
         ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
@@ -2593,7 +2593,7 @@ class MySQLBase(ABC):
     def retrieve_backup_with_xbcloud(
         self,
         backup_id: str,
-        s3_parameters: dict[str, str],
+        s3_parameters: dict,
         temp_restore_directory: str,
         xbcloud_location: str,
         xbstream_location: str,
@@ -2605,7 +2605,7 @@ class MySQLBase(ABC):
         make_temp_dir_command = (
             f"mktemp --directory {temp_restore_directory}/#mysql_sst_XXXX".split()
         )
-        ca_chain = s3_parameters.get("tls-ca-chain")
+        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
         ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
