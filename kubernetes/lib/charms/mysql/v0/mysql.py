@@ -2868,6 +2868,7 @@ class MySQLBase(ABC):
         user: str | None = None,
         group: str | None = None,
         env_extra: dict | None = None,
+        timeout: float | None = None,
         stream_output: str | None = None,
     ) -> tuple[str, str]:
         """Execute commands on the server where MySQL is running."""
