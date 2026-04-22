@@ -311,7 +311,7 @@ class MySQL(MySQLBase):
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
         mysqld_socket_file: str = MYSQLD_SOCK_FILE,
-        tmp_base_directory: str = MYSQL_DATA_DIR,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
         defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
         user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = MYSQL_SYSTEM_GROUP,
@@ -332,7 +332,7 @@ class MySQL(MySQLBase):
 
     def delete_temp_backup_directory(
         self,
-        tmp_base_directory: str = MYSQL_DATA_DIR,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
     ) -> None:
@@ -347,7 +347,7 @@ class MySQL(MySQLBase):
         self,
         backup_id: str,
         s3_parameters: dict[str, str],
-        temp_restore_directory: str = MYSQL_DATA_DIR,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
         user: str | None = MYSQL_SYSTEM_USER,
@@ -426,7 +426,7 @@ class MySQL(MySQLBase):
 
     def delete_temp_restore_directory(
         self,
-        temp_restore_directory: str = MYSQL_DATA_DIR,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
     ) -> None:
