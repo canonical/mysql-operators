@@ -89,6 +89,10 @@ jobs:
         with:
           ref: gh-pages-beta
           path: repo/
+      - name: Resolve report directory from branch name
+        # ALLURE_REPORT_DIR will be 8_4_edge for 8.4/edge, 8_0_edge for 8.0/edge and so forth
+        run: |
+          echo "ALLURE_REPORT_DIR=$(echo \"${GITHUB_REF_NAME}\" | tr '[:punct:]' '_')" >> "${GITHUB_ENV}"
       - name: Download default test results
         # Default test results in case the integration tests time out or runner set up fails
         # (So that Allure report will show "unknown"/"failed" test result, instead of omitting the test)
@@ -146,10 +150,10 @@ jobs:
               default_result.path.rename(actual_results / default_result.path.name)
       - name: Load test report history
         run: |
-          if [[ -d repo/_latest/history/ ]]
+          if [[ -d repo/${ALLURE_REPORT_DIR}/_latest/history/ ]]
           then
             echo 'Loading history'
-            cp -r repo/_latest/history/ allure-results/
+            cp -r repo/${ALLURE_REPORT_DIR}/_latest/history/ allure-results/
           fi
       - name: Create executor.json
         shell: python
@@ -172,22 +176,25 @@ jobs:
       - name: Create index.html
         shell: python
         run: |
+          import os
+
           DATA = f"""<!DOCTYPE html>
           <meta charset="utf-8">
           <meta http-equiv="cache-control" content="no-cache">
           <meta http-equiv="refresh" content="0; url=${{ github.run_number }}">
           """
-          with open("repo/index.html", "w") as file:
+          report_dir = os.environ["ALLURE_REPORT_DIR"]
+          with open(f"repo/{report_dir}/index.html", "w") as file:
               file.write(DATA)
       - name: Update GitHub pages branch
         working-directory: repo/
         # TODO future improvement: commit message
         run: |
-          mkdir '${{ github.run_number }}'
-          rm -f _latest
-          ln -s '${{ github.run_number }}' _latest
-          cp -r ../allure-report/. _latest/
-          git add .
+          mkdir "${ALLURE_REPORT_DIR}/${{ github.run_number }}"
+          rm -f "${ALLURE_REPORT_DIR}/_latest"
+          ln -s "${ALLURE_REPORT_DIR}/${{ github.run_number }}" "${ALLURE_REPORT_DIR}/_latest"
+          cp -r ../allure-report/. "${ALLURE_REPORT_DIR}/_latest/"
+          git add "./${ALLURE_REPORT_DIR}/"
           git config user.name "GitHub Actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Allure report ${{ github.run_number }}"
