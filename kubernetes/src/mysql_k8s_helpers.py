@@ -624,8 +624,6 @@ class MySQL(MySQLBase):
 
             # minimal expected content for an integral mysqld data-dir
             expected_content = {
-                # "#innodb_redo",  # stored separately
-                # "#innodb_temp",  # stored separately
                 "auto.cnf",
                 "ca-key.pem",
                 "ca.pem",
@@ -640,8 +638,6 @@ class MySQL(MySQLBase):
                 "server-cert.pem",
                 "server-key.pem",
                 "sys",
-                # "undo_001",  # stored separately
-                # "undo_002",  # stored separately
             }
             logger.debug("mysql data dir contents: %s", content_set)
 
