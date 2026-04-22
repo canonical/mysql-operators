@@ -312,7 +312,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         try:
             self.workload_initialise()
         except MySQLInitialiseMySQLDError:
-            self.set_unit_status(BlockedStatus("Failed to initialize MySQL data directory"))
+            self.unit.status = BlockedStatus("Failed to initialize MySQL data directory")
             return
         except MySQLConfigureMySQLRolesError:
             self.unit.status = BlockedStatus("Failed to initialize MySQL roles")
