@@ -152,13 +152,13 @@ def freeze_mysql(juju: Juju, unit_names: list[str]) -> None:
     """Freeze mysqld in the mysql container via SIGSTOP to simulate unreachable members."""
     for unit in unit_names:
         pod = get_mysql_instance_label(unit)
-        subprocess.run(
+        subprocess.check_call(
             [
                 "kubectl",
                 "exec",
                 pod,
                 "-n",
-                juju.model,
+                juju.model or "testing",
                 "-c",
                 "mysql",
                 "--",
@@ -166,7 +166,6 @@ def freeze_mysql(juju: Juju, unit_names: list[str]) -> None:
                 "-c",
                 "kill -STOP $(pgrep -x mysqld)",
             ],
-            check=True,
         )
 
 
@@ -174,13 +173,13 @@ def unfreeze_mysql(juju: Juju, unit_names: list[str]) -> None:
     """Resume frozen mysqld in the mysql container via SIGCONT."""
     for unit in unit_names:
         pod = get_mysql_instance_label(unit)
-        subprocess.run(
+        subprocess.check_call(
             [
                 "kubectl",
                 "exec",
                 pod,
                 "-n",
-                juju.model,
+                juju.model or "testing",
                 "-c",
                 "mysql",
                 "--",
@@ -188,5 +187,4 @@ def unfreeze_mysql(juju: Juju, unit_names: list[str]) -> None:
                 "-c",
                 "kill -CONT $(pgrep -x mysqld)",
             ],
-            check=True,
         )
