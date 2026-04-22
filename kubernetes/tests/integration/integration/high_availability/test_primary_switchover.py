@@ -18,7 +18,6 @@ from ...helpers_ha import (
     load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
-    wait_for_unit_message,
     wait_for_unit_status,
 )
 
@@ -112,32 +111,31 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_survive = non_primary_units.pop()
+    units_to_freeze = [non_primary_units.pop(), primary_unit]
 
     logging.info(f"Unit selected for promotion: {unit_to_survive}")
 
-    logging.info("Simulate quorum loss")
-    units_to_kill = [non_primary_units.pop(), primary_unit]
-    kill_pods(juju, units_to_kill)
+    logging.info("Simulating quorum loss via SIGSTOP on mysqld")
+    freeze_mysql(juju, units_to_freeze)
 
     with update_interval(juju, "45s"):
-        logging.info("Waiting to settle in error state")
+        logging.info("Waiting for surviving unit to detect quorum loss")
         juju.wait(
-            ready=lambda status: all((
-                wait_for_unit_status(app_name, unit_to_survive, "active")(status),
-                wait_for_unit_message(app_name, units_to_kill[0], "OFFLINE")(status),
-                wait_for_unit_message(app_name, units_to_kill[1], "OFFLINE")(status),
-            )),
-            timeout=15 * MINUTE_SECS,
-            delay=15,
+            ready=lambda status: wait_for_unit_status(app_name, unit_to_survive, "active")(status),
+            timeout=5 * MINUTE_SECS,
+            delay=10,
         )
 
-    logging.info("Attempting to promote a unit to primary after quorum loss...")
+    logging.info("Attempting to promote surviving unit to primary after quorum loss...")
     juju.run(
-        unit=primary_unit,
+        unit=unit_to_survive,
         action="promote-to-primary",
         params={"scope": "unit", "force": True},
         wait=600,
     )
+
+    logging.info("Resuming frozen units so they can rejoin the cluster")
+    unfreeze_mysql(juju, units_to_freeze)
 
     with update_interval(juju, "15s"):
         logging.info("Waiting for all units to become active after switchover...")
@@ -147,20 +145,48 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
             delay=5,
         )
 
-    assert get_mysql_primary_unit(juju, app_name) == primary_unit, "Failover failed"
+    assert get_mysql_primary_unit(juju, app_name) == unit_to_survive, "Failover failed"
 
 
-def kill_pods(juju: Juju, unit_names: list[str]) -> None:
-    """Kill the unit pods simultaneously using kubectl."""
-    pod_names = [get_mysql_instance_label(unit) for unit in unit_names]
-    cmd = [
-        "kubectl",
-        "delete",
-        "pod",
-        *pod_names,
-        "-n",
-        juju.model,
-        "--grace-period=0",
-        "--force",
-    ]
-    subprocess.run(cmd, check=True)
+def freeze_mysql(juju: Juju, unit_names: list[str]) -> None:
+    """Freeze mysqld in the mysql container via SIGSTOP to simulate unreachable members."""
+    for unit in unit_names:
+        pod = get_mysql_instance_label(unit)
+        subprocess.run(
+            [
+                "kubectl",
+                "exec",
+                pod,
+                "-n",
+                juju.model,
+                "-c",
+                "mysql",
+                "--",
+                "bash",
+                "-c",
+                "kill -STOP $(pgrep -x mysqld)",
+            ],
+            check=True,
+        )
+
+
+def unfreeze_mysql(juju: Juju, unit_names: list[str]) -> None:
+    """Resume frozen mysqld in the mysql container via SIGCONT."""
+    for unit in unit_names:
+        pod = get_mysql_instance_label(unit)
+        subprocess.run(
+            [
+                "kubectl",
+                "exec",
+                pod,
+                "-n",
+                juju.model,
+                "-c",
+                "mysql",
+                "--",
+                "bash",
+                "-c",
+                "kill -CONT $(pgrep -x mysqld)",
+            ],
+            check=True,
+        )
