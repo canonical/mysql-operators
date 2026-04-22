@@ -4,7 +4,7 @@
 import unittest
 from unittest.mock import call, patch
 
-from charms.data_platform_libs.v0.upgrade import ClusterNotReadyError
+from charms.data_platform_libs.v1.upgrade import ClusterNotReadyError
 from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
