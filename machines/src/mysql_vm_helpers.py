@@ -426,36 +426,47 @@ class MySQL(MySQLBase):
 
         logger.debug("MySQL connection possible")
 
-    def execute_backup_commands(  # type: ignore
+    def execute_backup_commands(
         self,
-        s3_directory: str,
+        s3_path: str,
         s3_parameters: dict[str, str],
+        xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
+        xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
+        xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
+        mysqld_socket_file: str = MYSQLD_SOCK_FILE,
+        tmp_base_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
+        user: str | None = ROOT_SYSTEM_USER,
+        group: str | None = ROOT_SYSTEM_USER,
     ) -> tuple[str, str]:
         """Executes commands to create a backup."""
         return super().execute_backup_commands(
-            s3_directory,
+            s3_path,
             s3_parameters,
-            CHARMED_MYSQL_XTRABACKUP_LOCATION,
-            CHARMED_MYSQL_XBCLOUD_LOCATION,
-            XTRABACKUP_PLUGIN_DIR,
-            MYSQLD_SOCK_FILE,
-            CHARMED_MYSQL_COMMON_DIRECTORY,
-            MYSQLD_DEFAULTS_CONFIG_FILE,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            xtrabackup_location,
+            xbcloud_location,
+            xtrabackup_plugin_dir,
+            mysqld_socket_file,
+            tmp_base_directory,
+            defaults_config_file,
+            user,
+            group,
         )
 
-    def delete_temp_backup_directory(  # type: ignore
-        self, from_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY
+    def delete_temp_backup_directory(
+        self,
+        tmp_base_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        user: str | None = ROOT_SYSTEM_USER,
+        group: str | None = ROOT_SYSTEM_USER,
     ) -> None:
         """Delete the temp backup directory."""
         super().delete_temp_backup_directory(
-            from_directory,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            tmp_base_directory,
+            user=user,
+            group=group,
         )
 
-    def retrieve_backup_with_xbcloud(  # type: ignore
+    def retrieve_backup_with_xbcloud(
         self,
         backup_id: str,
         s3_parameters: dict[str, str],
@@ -476,27 +487,45 @@ class MySQL(MySQLBase):
             group,
         )
 
-    def prepare_backup_for_restore(self, backup_location: str) -> tuple[str, str]:
+    def prepare_backup_for_restore(
+        self,
+        backup_location: str,
+        xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
+        xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
+        user=ROOT_SYSTEM_USER,
+        group=ROOT_SYSTEM_USER,
+    ) -> tuple[str, str]:
         """Prepare the download backup for restore with xtrabackup --prepare."""
         return super().prepare_backup_for_restore(
             backup_location,
-            CHARMED_MYSQL_XTRABACKUP_LOCATION,
-            XTRABACKUP_PLUGIN_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            xtrabackup_location,
+            xtrabackup_plugin_dir,
+            user=user,
+            group=group,
         )
 
-    def empty_data_files(self) -> None:
+    def empty_data_files(
+        self,
+        mysql_data_directory: str = MYSQL_DATA_DIR,
+        user: str | None = ROOT_SYSTEM_USER,
+        group: str | None = ROOT_SYSTEM_USER,
+    ) -> None:
         """Empty the mysql data directory in preparation of the restore."""
         super().empty_data_files(
-            MYSQL_DATA_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            mysql_data_directory,
+            user,
+            group,
         )
 
     def restore_backup(
         self,
         backup_location: str,
+        xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
+        defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
+        mysql_data_directory: str = MYSQL_DATA_DIR,
+        xtrabackup_plugin_directory: str = XTRABACKUP_PLUGIN_DIR,
+        user: str | None = ROOT_SYSTEM_USER,
+        group: str | None = ROOT_SYSTEM_USER,
     ) -> tuple[str, str]:
         """Restore the provided prepared backup."""
         # TODO: remove workaround for changing permissions and ownership of data
@@ -518,12 +547,12 @@ class MySQL(MySQLBase):
 
         stdout, stderr = super().restore_backup(
             backup_location,
-            CHARMED_MYSQL_XTRABACKUP_LOCATION,
-            MYSQLD_DEFAULTS_CONFIG_FILE,
-            MYSQL_DATA_DIR,
-            XTRABACKUP_PLUGIN_DIR,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            xtrabackup_location,
+            defaults_config_file,
+            mysql_data_directory,
+            xtrabackup_plugin_directory,
+            user,
+            group,
         )
 
         try:
@@ -560,12 +589,17 @@ class MySQL(MySQLBase):
 
         return (stdout, stderr)
 
-    def delete_temp_restore_directory(self) -> None:
+    def delete_temp_restore_directory(
+        self,
+        temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        user: str | None = ROOT_SYSTEM_USER,
+        group: str | None = ROOT_SYSTEM_USER,
+    ) -> None:
         """Delete the temp restore directory from the mysql data directory."""
         super().delete_temp_restore_directory(
-            CHARMED_MYSQL_COMMON_DIRECTORY,
-            user=ROOT_SYSTEM_USER,
-            group=ROOT_SYSTEM_USER,
+            temp_restore_directory,
+            user,
+            group,
         )
 
     def _execute_commands(
@@ -575,6 +609,7 @@ class MySQL(MySQLBase):
         user: str | None = None,
         group: str | None = None,
         env_extra: dict | None = None,
+        timeout: float | None = None,
         stream_output: str | None = None,
     ) -> tuple[str, str]:
         """Execute commands on the server where mysql is running.
@@ -585,6 +620,7 @@ class MySQL(MySQLBase):
             user: the user with which to execute the commands
             group: the group with which to execute the commands
             env_extra: the environment variables to add to the current process' environment
+            timeout: command timeout (unused)
             stream_output: whether to stream the output to stdout, stderr or None
 
         Returns: tuple of (stdout, stderr)
@@ -620,21 +656,25 @@ class MySQL(MySQLBase):
                 stdout += line
 
         return_code = process.wait()
-        if return_code != 0:
-            message = (
-                "Failed command: "
-                f"{self.strip_off_passwords(' '.join(commands))};"
-                f" {user=}; {group=}"
-            )
-            logger.error(message)
-            raise MySQLExecError from None
 
+        # Read stdout and stderr before checking return code
         if not stdout and process.stdout:
             stdout = process.stdout.read()
         if not stderr and process.stderr:
             stderr = process.stderr.read()
 
-        return (stdout.strip(), stderr.strip())
+        if return_code != 0:
+            message = (
+                "Failed command: "
+                f"{self.strip_off_passwords(' '.join(commands))};"
+                f" {user=}; {group=}; "
+                f"stdout: {stdout.strip()}; "
+                f"stderr: {stderr.strip()}"
+            )
+            logger.error(message)
+            raise MySQLExecError(message) from None
+
+        return stdout.strip(), stderr.strip()
 
     def is_mysqld_running(self) -> bool:
         """Returns whether mysqld is running."""

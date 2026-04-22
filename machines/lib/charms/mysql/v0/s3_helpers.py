@@ -275,7 +275,7 @@ def list_backups_in_s3_path(s3_parameters: dict) -> list[tuple[str, str]]:
         logger.info(
             f"Listing subdirectories from S3 bucket={s3_parameters['bucket']}, path={s3_parameters['path']}"
         )
-        ca_chain = s3_parameters.get("tls-ca-chain")
+        ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
         with _temporary_ca_file(ca_chain) as ca_file_name:
             s3_client = boto3.client(
                 "s3",
@@ -304,7 +304,7 @@ def list_backups_in_s3_path(s3_parameters: dict) -> list[tuple[str, str]]:
         raise
 
 
-def fetch_and_check_existence_of_s3_path(path: str, s3_parameters: dict[str, str]) -> bool:
+def fetch_and_check_existence_of_s3_path(path: str, s3_parameters: dict) -> bool:
     """Checks the existence of a provided S3 path by fetching the object.
 
     Args:
@@ -317,7 +317,7 @@ def fetch_and_check_existence_of_s3_path(path: str, s3_parameters: dict[str, str
 
     Raises: any exceptions raised by boto3
     """
-    ca_chain = s3_parameters.get("tls-ca-chain")
+    ca_chain: list[str] | None = s3_parameters.get("tls-ca-chain")
     with _temporary_ca_file(ca_chain) as ca_file_name:
         s3_client = boto3.client(
             "s3",

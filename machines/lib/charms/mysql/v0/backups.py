@@ -117,7 +117,7 @@ MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
 )
 
 if typing.TYPE_CHECKING:
-    from mysql import MySQLCharmBase
+    from .mysql import MySQLCharmBase
 
 
 class MySQLBackups(Object):
@@ -264,7 +264,10 @@ class MySQLBackups(Object):
             return False
 
         if "s3-block-message" in self.charm.app_peer_data:
-            logger.error("Backup failed: S3 relation is blocked for write")
+            logger.error(
+                "Backup failed: S3 relation is blocked for write: %s",
+                self.charm.app_peer_data["s3-block-message"],
+            )
             event.fail("S3 relation is blocked for write")
             return False
 
@@ -726,7 +729,7 @@ class MySQLBackups(Object):
             self.charm._mysql.delete_temp_backup_directory()
             # Old backups may contain the temp backup directory (as previously, the temp
             # backup directory was created in the mysql data directory to reduce IOPS latency)
-            self.charm._mysql.delete_temp_backup_directory(from_directory=MYSQL_DATA_DIR)
+            self.charm._mysql.delete_temp_backup_directory(tmp_base_directory=MYSQL_DATA_DIR)
         except MySQLDeleteTempRestoreDirectoryError:
             return False, "Failed to delete the temp restore directory"
         except MySQLDeleteTempBackupDirectoryError:

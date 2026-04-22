@@ -319,12 +319,17 @@ class MySQL(MySQLBase):
             group,
         )
 
-    def delete_temp_backup_directory(self, from_directory: str = MYSQL_DATA_DIR) -> None:
+    def delete_temp_backup_directory(
+        self,
+        tmp_base_directory: str = MYSQL_DATA_DIR,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
+    ) -> None:
         """Delete the temp backup directory in the data directory."""
         super().delete_temp_backup_directory(
-            from_directory,
-            user=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
+            tmp_base_directory,
+            user,
+            group,
         )
 
     def retrieve_backup_with_xbcloud(
@@ -334,8 +339,8 @@ class MySQL(MySQLBase):
         temp_restore_directory: str = MYSQL_DATA_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
-        user: str = MYSQL_SYSTEM_USER,
-        group: str = MYSQL_SYSTEM_GROUP,
+        user: str | None = MYSQL_SYSTEM_USER,
+        group: str | None = MYSQL_SYSTEM_GROUP,
     ) -> tuple[str, str, str]:
         """Retrieve the specified backup from S3.
 
@@ -352,42 +357,68 @@ class MySQL(MySQLBase):
             group,
         )
 
-    def prepare_backup_for_restore(self, backup_location: str) -> tuple[str, str]:
+    def prepare_backup_for_restore(
+        self,
+        backup_location: str,
+        xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
+        xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
+    ) -> tuple[str, str]:
         """Prepare the backup in the provided dir for restore."""
         return super().prepare_backup_for_restore(
             backup_location,
-            CHARMED_MYSQL_XTRABACKUP_LOCATION,
-            XTRABACKUP_PLUGIN_DIR,
-            user=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
+            xtrabackup_location,
+            xtrabackup_plugin_dir,
+            user,
+            group,
         )
 
-    def empty_data_files(self) -> None:
+    def empty_data_files(
+        self,
+        mysql_data_directory=MYSQL_DATA_DIR,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
+    ) -> None:
         """Empty the mysql data directory in preparation of backup restore."""
         super().empty_data_files(
-            MYSQL_DATA_DIR,
-            user=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
+            mysql_data_directory,
+            user,
+            group,
         )
 
-    def restore_backup(self, backup_location: str) -> tuple[str, str]:
+    def restore_backup(
+        self,
+        backup_location: str,
+        xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
+        defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
+        mysql_data_directory: str = MYSQL_DATA_DIR,
+        xtrabackup_plugin_directory: str = XTRABACKUP_PLUGIN_DIR,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
+    ) -> tuple[str, str]:
         """Restore the provided prepared backup."""
         return super().restore_backup(
             backup_location,
-            CHARMED_MYSQL_XTRABACKUP_LOCATION,
-            MYSQLD_DEFAULTS_CONFIG_FILE,
-            MYSQL_DATA_DIR,
-            XTRABACKUP_PLUGIN_DIR,
-            user=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
+            xtrabackup_location,
+            defaults_config_file,
+            mysql_data_directory,
+            xtrabackup_plugin_directory,
+            user,
+            group,
         )
 
-    def delete_temp_restore_directory(self) -> None:
+    def delete_temp_restore_directory(
+        self,
+        temp_restore_directory: str = MYSQL_DATA_DIR,
+        user=MYSQL_SYSTEM_USER,
+        group=MYSQL_SYSTEM_GROUP,
+    ) -> None:
         """Delete the temp restore directory from the mysql data directory."""
         super().delete_temp_restore_directory(
-            MYSQL_DATA_DIR,
-            user=MYSQL_SYSTEM_USER,
-            group=MYSQL_SYSTEM_GROUP,
+            temp_restore_directory,
+            user,
+            group,
         )
 
     @retry(
