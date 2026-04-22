@@ -318,9 +318,9 @@ class TestCharm(unittest.TestCase):
     def test_get_unit_address(self, mock_get_k8s_fqdn):
         self.assertEqual(
             self.charm.get_unit_address(self.charm.unit),
-            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local.",
+            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
         )
-        mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints")
+        mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints", "mysql-k8s-0")
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)

@@ -55,7 +55,10 @@ class TestDatabase(unittest.TestCase):
     def tearDown(self) -> None:
         self.patcher.stop()
 
-    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
+    @patch(
+        "charm.MySQLOperatorCharm.get_unit_address",
+        return_value="mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
+    )
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
     @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
     @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
@@ -67,10 +70,8 @@ class TestDatabase(unittest.TestCase):
     @patch(
         "relations.mysql_provider.generate_random_password", return_value="super_secure_password"
     )
-    @patch("relations.mysql_provider.get_k8s_fqdn")
     def test_database_requested(
         self,
-        mock_get_k8s_fqdn,
         _generate_random_password,
         _create_scoped_user,
         _create_database,
@@ -82,8 +83,6 @@ class TestDatabase(unittest.TestCase):
         _cluster_metadata_exists,
         _get_unit_address,
     ):
-        mock_get_k8s_fqdn.side_effect = ["mysql-k8s-primary", "mysql-k8s-replicas"]
-
         # run start-up events to enable usage of the helper class
         self.harness.set_leader(True)
         self.harness.container_pebble_ready("mysql")
@@ -114,9 +113,9 @@ class TestDatabase(unittest.TestCase):
                 "data": '{"database": "test_db"}',
                 "password": "super_secure_password",
                 "username": username,
-                "endpoints": "mysql-k8s-primary.:3306",
+                "endpoints": "mysql-k8s-primary.default.svc.cluster.local.:3306",
                 "version": "8.0.29-0ubuntu0.20.04.3",
-                "read-only-endpoints": "mysql-k8s-replicas.:3306",
+                "read-only-endpoints": "mysql-k8s-replicas.default.svc.cluster.local.:3306",
                 "database": "test_db",
             },
         )
@@ -128,4 +127,3 @@ class TestDatabase(unittest.TestCase):
         _create_endpoint_services.assert_called_once()
         _update_endpoints.assert_called()
         _wait_service_ready.assert_called_once()
-        self.assertEqual(mock_get_k8s_fqdn.call_count, 2)

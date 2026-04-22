@@ -44,8 +44,8 @@ Dump database using Charmed MySQL operator user `serverconfig`:
 
     # Collect credentials
     DB_NAME=<your_db_name>
-    OLD_DB_IP=$(juju show-unit mysql/0 | yq '.[] | .public-address')
-    OLD_DB_USER=serverconfig
+    OLD_DB_IP=$(juju show-unit mysql/0 | yq '.[].["public-address"]')
+    OLD_DB_PASS=$(juju run mysql/leader get-password username=${OLD_DB_USER}| yq '.username')
     OLD_DB_PASS=$(juju run mysql/leader get-password username=${OLD_DB_USER}| yq '.password')
 
     # Test connection
@@ -60,8 +60,8 @@ Dump database using Charmed MySQL operator user `serverconfig`:
 
     # Collect credentials
     DB_NAME=<your_db_name>
-    OLD_DB_IP=$(juju show-unit mysql-k8s/0 | yq '.[] | .public-address')
-    OLD_DB_USER=serverconfig
+    OLD_DB_IP=$(juju show-unit mysql-k8s/0 | yq '.[].["address"]')
+    OLD_DB_PASS=$(juju run mysql-k8s/leader get-password username=${OLD_DB_USER}| yq '.username')
     OLD_DB_PASS=$(juju run mysql-k8s/leader get-password username=${OLD_DB_USER}| yq '.password')
 
     # Test connection
@@ -104,4 +104,3 @@ NEW_DB_PASS=...
 
 myloader -h ${NEW_DB_IP} -u ${NEW_DB_USER} -p ${NEW_DB_PASS} --directory=export-20230927-123337 --overwrite-tables
 ```
-

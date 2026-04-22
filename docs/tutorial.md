@@ -1,15 +1,15 @@
 ---
 myst:
   html_meta:
-    description: "Follow this hands-on tutorial to deploy, scale, and manage Charmed MySQL on virtual machines using Juju from setup to clean up."
+    description: "Follow this hands-on tutorial to deploy, scale, and manage Charmed MySQL using Juju from setup to clean up."
 ---
 
 (tutorial)=
 # Tutorial
 
-This hands-on tutorial aims to help you learn how to deploy Charmed MySQL on machines and become familiar with its available operations.
+This hands-on tutorial aims to help you learn how to deploy Charmed MySQL on LXD or Kubernetes and become familiar with its available operations. If you are not sure which path to take, we recommend following this tutorial on LXD by following the "VM" tabs.
 
-This hands-on tutorial will familiarize you with Charmed MySQL by going through a real deployment of a MySQL cluster on virtual machines. You will learn the basics of deploying, scaling, managing credentials, accessing a database, and other essential operations that will prepare you for more advanced deployments.
+This hands-on tutorial will familiarize you with Charmed MySQL by going through a real deployment of a MySQL cluster. You will learn the basics of deploying, scaling, managing credentials, accessing a database, and other essential operations that will prepare you for more advanced deployments.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ While this tutorial intends to guide you as you deploy Charmed MySQL for the fir
 
 ## Set up the environment
 
-First, we will set up a cloud environment using [Multipass](https://multipass.run/) with [LXD](https://documentation.ubuntu.com/lxd/latest/) and [Juju](https://documentation.ubuntu.com/juju/3.6/). This is the quickest and easiest way to get your machine ready for using Charmed MySQL. 
+First, we will set up a cloud environment using [Multipass](https://multipass.run/) with [LXD](https://documentation.ubuntu.com/lxd/latest/), [MicroK8s](https://microk8s.io/docs) and [Juju](https://documentation.ubuntu.com/juju/3.6/). This is the quickest and easiest way to get your machine ready for using Charmed MySQL. 
 
 To learn about other types of deployment environments and methods (e.g. bootstrapping other clouds, using Terraform), see {ref}`deploy`
 
@@ -46,7 +46,7 @@ Spin up a new VM using [`multipass launch`](https://multipass.run/docs/launch-co
 :user: user
 :host: my-pc
 
-multipass launch --cpus 4 --memory 8G --disk 30G --name my-vm charm-dev
+multipass launch --cpus 4 --memory 8G --disk 50G --name my-vm charm-dev
 ```
 
 This may take several minutes if it's the first time you launch this VM.
@@ -68,21 +68,38 @@ Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-63-generic x86_64)
 ```
 
 ```{tip}
-All necessary components have been pre-installed inside VM already, like LXD and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details. 
+All necessary components have been pre-installed inside VM already, like LXD, MicroK8s and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details. 
 ```
 
 ### Set up Juju
 
-Since `my-vm` already has Juju and LXD installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/). 
+Since `my-vm` already has Juju, LXD and MicroK8s installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/). 
 
 We will call our new controller “overlord”, but you can give it any name you’d like:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
 juju bootstrap localhost overlord
-``` 
+```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju bootstrap microk8s overlord
+```
+````
+`````
 
 The controller can work with different [Juju models](https://juju.is/docs/juju/model). Set up a specific model for Charmed MySQL named `tutorial`:
 
@@ -95,30 +112,69 @@ juju add-model tutorial
 
 You can now view the model you created by running the command [`juju status`](https://juju.is/docs/juju/juju-status). 
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
 juju status
 
-Model     Controller  Cloud/Region         Version   SLA          Timestamp
-tutorial  overlord    localhost/localhost   3.6.8    unsupported  15:31:14+02:00
+Model     Controller  Cloud/Region         Version  SLA          Timestamp
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  15:31:14+02:00
 
 Model "admin/tutorial" is empty.
 ```
+````
 
-## Deploy Charmed MySQL
-
-To deploy Charmed MySQL, run the following command:
+````{tab-item} K8s
+:sync: k8s
 
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
-juju deploy mysql
-```
+juju status
 
-Juju will now fetch Charmed MySQL from [Charmhub](https://charmhub.io/mysql) and deploy it to the LXD cloud. This process can take several minutes depending on how provisioned (RAM, CPU, etc) your machine is. 
+Model     Controller  Cloud/Region         Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost   3.5.2    unsupported  15:31:14+02:00
+
+Model "admin/tutorial" is empty.
+```
+````
+`````
+
+## Deploy Charmed MySQL
+
+To deploy Charmed MySQL, run the following command:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju deploy mysql --channel 8.0/stable
+```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju deploy mysql-k8s --channel 8.0/stable --trust
+```
+````
+`````
+
+Juju will now fetch Charmed MySQL from [Charmhub](https://charmhub.io/mysql) and deploy it to the LXD / MicroK8s cloud. This process can take several minutes depending on how provisioned (RAM, CPU, etc) your machine is. 
 
 You can track the progress by running:
 
@@ -135,12 +191,16 @@ You can open a separate terminal window, enter the same Multipass VM, and keep `
 
 When the application is ready, `juju status` will show something similar to the sample output below:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```text
-Model      Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial   overlord    localhost/localhost  3.5.2    unsupported  00:52:59+02:00
+Model     Controller  Cloud/Region         Version  SLA          Timestamp
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  22:33:45+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      1  mysql  8.0/stable  151  no       Primary
+mysql  8.0.32-0ubun...  active      1  mysql  8.0/stable       no       Primary
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
@@ -148,6 +208,23 @@ mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
 Machine  State    Address         Inst id        Base          AZ  Message
 1        started  10.234.188.135  juju-ff9064-0  ubuntu@22.04      Running
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  22:33:45+01:00
+
+App        Version          Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.0.32-0ubun...   active     1  mysql-k8s  8.0/stable       10.152.183.234  no
+
+Unit          Workload  Agent  Address     Ports  Message
+mysql-k8s/0*  active    idle   10.1.84.74
+```
+````
+`````
 
 You can also watch juju logs with the [`juju debug-log`](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/debug-log/) command.
 
@@ -158,9 +235,9 @@ In this section, you will learn how to get the credentials of your deployment, c
 This is where we are introduced to internal database {ref}`users`.
 
 ```{caution}
-This part of the tutorial accesses MySQL through the charm's `root` user. 
+This part of the tutorial accesses MySQL through the `serverconfig` user. 
 
-**Do not directly interface with the `root` user in a production environment.**
+**Do not directly interface with the `serverconfig` user in a production environment.**
 
 In a later section, we will cover how to safely access MySQL more safely.
 ```
@@ -169,34 +246,41 @@ The easiest way to access MySQL is through the [MySQL Command-Line Client](https
 
 ### Retrieve credentials
 
-Connecting to the database requires that you know the values for `host` (IP address), `username` and `password`. 
+Connecting to the database requires that you know the values for `host`, `username` and `password`. 
 
-To retrieve `username` and `password`, run the [Juju action](https://juju.is/docs/juju/action) `get-password` on the leader unit as follows:
+To retrieve `username` and `password`, run the [Juju action](https://juju.is/docs/juju/action) `get-password` on the leader unit:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
-juju run mysql/leader get-password
+juju run mysql/leader get-password username=serverconfig
 
 ...
 password: yWJjs2HccOmqFMshyRcwWnjF
-username: root
+username: serverconfig
 ```
+````
 
-To retrieve the host’s IP address, run `juju status`. This should be listed under the "Public address" of the unit hosting the MySQL application:
+````{tab-item} K8s
+:sync: k8s
 
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
-juju status
+juju run mysql-k8s/leader get-password username=serverconfig
 
 ...
-Unit      Workload  Agent  Machine  Public address  Ports           Message
-mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
-...
+password: yWJjs2HccOmqFMshyRcwWnjF
+username: serverconfig
 ```
+````
+`````
 
 ### Interact with MySQL
 
@@ -206,9 +290,11 @@ To access the unit hosting Charmed MySQL in production, one would normally use t
 mysql -h <ip_address> -u<username> -p<password>
 ```
 
-However, this is not possible with the `root` user. For security reasons, the `root` user is restricted to only allow connections from `localhost`. 
+The way to access MySQL Server is to first SSH into the primary Juju unit:
 
-The way to access MySQL server with the `root` user is to first ssh into the primary Juju unit:
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
@@ -216,17 +302,32 @@ The way to access MySQL server with the `root` user is to first ssh into the pri
 
 juju ssh mysql/leader
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju ssh mysql-k8s/leader
+```
+````
+`````
 
 ```{note}
-In this case, we know the MySQL primary unit is also the [Juju leader unit](https://juju.is/docs/juju/leader), since it is the only existing unit. 
+In this case, we know the MySQL primary unit is also the [Juju leader unit](https://juju.is/docs/juju/leader), since it is the only existing unit. In a cluster with more units, **the primary is not necessarily equivalent to the leader**.
 
-In a cluster with more units, **the primary is not necessarily equivalent to the leader**. To identify the primary unit in a cluster, run `juju run mysql/<any_unit> get-cluster-status`. 
+To identify the primary unit in a cluster, run:
+ - Localhost: `juju run mysql/<unit> get-cluster-status`.
+ - MicroK8s: `juju run mysql-k8s/<unit> get-cluster-status`. 
 ```
 
-Once inside the Juju virtual machine, the `root` user can access MySQL with the following command:
+Once inside the Juju unit, the `serverconfig` user can access MySQL with the following command:
 
 ```shell
-mysql -h 127.0.0.1 -uroot -p<password>
+mysql -h 127.0.0.1 -userverconfig -p<password>
 ```
 
 As an example, using the password we obtained earlier:
@@ -235,7 +336,7 @@ As an example, using the password we obtained earlier:
 :user: ubuntu
 :host: juju-ff9064-0
 
-mysql -h 127.0.0.1 -uroot -pyWJjs2HccOmqFMshyRcwWnjF
+mysql -h 127.0.0.1 -userverconfig -pyWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
@@ -271,30 +372,32 @@ SELECT VERSION(), CURRENT_DATE;
 
 Feel free to test out any other MySQL queries. 
 
-When you’re ready to leave the mysql shell you can just type `exit`. Once you've typed `exit` you will be back in the host of Charmed MySQL (`mysql/0`). 
+When you’re ready to leave the mysql shell you can just type `exit`. Once you've typed `exit` you will be back in the host of Charmed MySQL (`mysql/0` or `mysql-k8s/0`). 
 
-Exit this host by once again typing `exit`. Now you will be in your original shell where you first started the tutorial; here you can interact with Juju and LXD.
+Exit this host by once again typing `exit`. Now you will be in your original shell where you first started the tutorial; here you can interact with Juju and LXD / MicroK8s.
 
 (scale-replicas)=
 ## Scale your replicas
 
 The Charmed MySQL operator uses [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/mysql-innodb-cluster-introduction.html) for scaling. It is built on MySQL [group replication](https://dev.mysql.com/doc/refman/8.0/en/group-replication.html), providing features such as automatic membership management, fault tolerance, and automatic failover. 
 
-An InnoDB Cluster usually runs in a single-primary mode, with one primary instance (read-write) and multiple secondary instances (read-only). 
-
-<!-- TODO: clarify "future" Future versions on Charmed MySQL will take advantage of a multi-primary mode, where multiple instances are primaries. Users can even change the topology of the cluster while InnoDB Cluster is online, to ensure the highest possible availability. -->
+An InnoDB Cluster usually runs in a single-primary mode, with one primary instance (read-write) and multiple secondary instances (read-only).
 
 ```{caution}
 This tutorial hosts replicas all on the same machine. **This should not be done in a production environment.** 
 
-To enable high availability in a production environment, replicas should be hosted on different servers to [maintain isolation](https://canonical.com/blog/database-high-availability).
+To enable high availability in a production environment, replicas should be hosted on different servers to maintain isolation.
 ```
 
 ### Add units
 
-Currently, your deployment has only one [juju unit](https://juju.is/docs/juju/unit), known as the leader unit.  For each MySQL replica, a new juju unit (non-leader) is created. All units are members of the same database cluster.
+Currently, your deployment has only one [juju unit](https://juju.is/docs/juju/unit), known as the leader unit. For each MySQL replica, a new juju unit (non-leader) is created. All units are members of the same database cluster.
 
 To add two replicas to your deployed MySQL application, run:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
@@ -302,17 +405,34 @@ To add two replicas to your deployed MySQL application, run:
 
 juju add-unit mysql -n 2
 ```
+````
 
-You can now watch the scaling process in live using: `juju status --watch 1s`. It usually takes several minutes for new cluster members to be added. 
+````{tab-item} K8s
+:sync: k8s
 
-You’ll know that all three nodes are in sync when `juju status` reports `Workload=active` and `Agent=idle`:
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju scale-application mysql-k8s 3
+```
+````
+`````
+
+You can now watch the scaling process in live using: `juju status --watch 1s`. It usually takes several minutes for new cluster members to be added. You’ll know that all three nodes are in sync when `juju status` reports:
+- Workload is `active`.
+- Agent is `idle`.
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:33:55+01:00
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  22:48:57+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      3  mysql  8.0/stable  147  no
+mysql  8.0.32-0ubun...  active      3  mysql  8.0/stable       no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -324,9 +444,28 @@ Machine  State    Address         Inst id        Series  AZ  Message
 1        started  10.234.188.214  juju-ff9064-1  jammy       Running
 2        started  10.234.188.6    juju-ff9064-2  jammy       Running
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  22:48:57+01:00
+
+App        Version          Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.0.32-0ubun...  active      3  mysql-k8s  8.0/stable       10.152.183.234  no       
+
+Unit          Workload  Agent  Address      Ports  Message
+mysql-k8s/0*  active    idle   10.1.84.74
+mysql-k8s/1   active    idle   10.1.84.127
+mysql-k8s/2   active    idle   10.1.84.73
+```
+````
+`````
 
 ```{note}
-The maximum possible number of Charmed MySQL units in a single Juju application is 9. This is a limitation of MySQL group replication. 
+The maximum number of Charmed MySQL units in a single Juju application is 9. This is a limitation of MySQL replication. 
 
 Read more about all limitations in the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.0/en/group-replication-limitations.html).
 ```
@@ -335,9 +474,15 @@ Read more about all limitations in the [official MySQL documentation](https://de
 
 Removing a unit from the application scales down the replicas. 
 
-Before we scale down, list all the units with `juju status`. You will see three units: `mysql/0`, `mysql/1`, and `mysql/2`. Each of these units hosts a MySQL replica. 
+Before we scale down, list all the units with `juju status`. You will see three LXD or MicroK8s units. Each of these units hosts a MySQL replica. 
 
-To remove the replica hosted on the unit `mysql/2` enter:
+Different controllers have different ways of scaling down. In the case of LXD, users must state the name of the unit being removed, while on Kubernetes it is unnecessary, as all units are treated equally.
+
+To remove the one replica, enter:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
@@ -345,15 +490,32 @@ To remove the replica hosted on the unit `mysql/2` enter:
 
 juju remove-unit mysql/2
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju scale-application mysql-k8s 2
+```
+````
+`````
 
 You’ll know that the replica was successfully removed when you no longer see them in the `juju status` output:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:46:43+01:00
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  22:48:57+01:00
 
 App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.0.32-0ubun...  active      2  mysql  8.0/stable  147  no
+mysql  8.0.32-0ubun...  active      2  mysql  8.0/stable       no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -363,12 +525,30 @@ Machine  State    Address         Inst id        Series  AZ  Message
 0        started  10.234.188.135  juju-ff9064-0  jammy       Running
 1        started  10.234.188.214  juju-ff9064-1  jammy       Running
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  22:48:57+01:00
+
+App        Version          Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.0.32-0ubun...  active      2  mysql-k8s  8.0/stable       10.152.183.234  no       
+
+Unit          Workload  Agent  Address      Ports  Message
+mysql-k8s/0*  active    idle   10.1.84.74
+mysql-k8s/1   active    idle   10.1.84.127
+```
+````
+`````
 
 ## Integrate with other applications
 
 [Integrations](https://documentation.ubuntu.com/juju/3.6/reference/relation/), also known as "relations", are the easiest way to create a user for MySQL. 
 
-Integrations automatically create a username, password, and database for the desired user/application. The best practice is to connect to MySQL through a specific user rather than the admin user, like we did earlier with the `root` user.
+Integrations automatically create a username, password, and database for the desired user/application. The best practice is to connect to MySQL through a specific user rather than the admin user, like we did earlier with the `serverconfig` user.
 
 In this tutorial, we will relate to the [data integrator charm](https://charmhub.io/data-integrator). This is a bare-bones charm that allows for central management of database users. It automatically provides credentials and endpoints that are needed to connect with a charmed database application.
 
@@ -380,48 +560,94 @@ To deploy `data-integrator` and associate it to a new database called `test-data
 
 juju deploy data-integrator --config database-name=test-database
 
-Located charm "data-integrator" in charm-hub, revision 13
-Deploying "data-integrator" from charm-hub charm "data-integrator", revision 3 in channel edge on jammy
+Located charm "data-integrator" in charm-hub, revision 363
+Deploying "data-integrator" from charm-hub charm "data-integrator", revision 363 in channel stable on noble
 ```
 
 Running `juju status` will show you `data-integrator` in a `blocked` state. This state is expected due to not-yet established relation (integration) between applications:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```text
-...
+Model     Controller  Cloud/Region         Version  SLA          Timestamp
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  22:54:31+01:00
+
 App              Version          Status   Scale  Charm            Channel     Rev  Exposed  Message
-data-integrator                   blocked      1  data-integrator  stable     13    no       Please relate the data-integrator with the desired product
-mysql            8.0.32-0ubun...  active       2  mysql            8.0/stable  147  no
+data-integrator                   blocked      1  data-integrator  stable      363  no       Please relate the data-integrator with the desired product
+mysql            8.0.32-0ubun...  active       2  mysql            8.0/stable       no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
-data-integrator/1*  blocked   idle   4        10.234.188.85          Please relate the data-integrator with the desired product
+data-integrator/0*  blocked   idle   4        10.234.188.85          Please relate the data-integrator with the desired product
 mysql/0*            active    idle   0        10.234.188.135         Primary
 mysql/1             active    idle   1        10.234.188.214
-...
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  22:54:31+01:00
+
+App              Version          Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
+data-integrator                   waiting      1  data-integrator  stable      363  10.152.183.180  no       installing agent
+mysql-k8s        8.0.32-0ubun...  active       2  mysql-k8s        8.0/stable       10.152.183.234  no       
+
+Unit                Workload  Agent  Address      Ports  Message
+data-integrator/0*  blocked   idle   10.1.84.66          Please relate the data-integrator with the desired product
+mysql-k8s/0*        active    idle   10.1.84.74
+mysql-k8s/1         active    idle   10.1.84.127
+```
+````
+`````
 
 Now that the `data-integrator` charm has been set up, we can relate it to MySQL. This will automatically create a username, password, and database for `data-integrator`:
 
 Relate the two applications with:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
-juju integrate data-integrator mysql
+juju relate data-integrator mysql
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju relate data-integrator mysql-k8s
+```
+````
+`````
 
 Wait for `juju status` to show all applications/units as `active`:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:10:27+01:00
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  22:55:44+01:00
 
 App              Version          Status  Scale  Charm            Channel     Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  edge       13    no
-mysql            8.0.32-0ubun...  active      2  mysql            8.0/stable  147  no
+data-integrator                   active      1  data-integrator  stable      363  no
+mysql            8.0.32-0ubun...  active      2  mysql            8.0/stable       no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
-data-integrator/1*  active    idle   4        10.234.188.85
+data-integrator/0*  active    idle   4        10.234.188.85
 mysql/0*            active    idle   0        10.234.188.135         Primary
 mysql/1             active    idle   1        10.234.188.214
 
@@ -430,6 +656,26 @@ Machine  State    Address         Inst id        Series  AZ  Message
 1        started  10.234.188.214  juju-ff9064-1  jammy       Running
 4        started  10.234.188.85   juju-ff9064-4  jammy       Running
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  22:55:44+01:00
+
+App              Version          Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
+data-integrator                   active       1  data-integrator  stable      363  10.152.183.180  no
+mysql-k8s        8.0.32-0ubun...  active       2  mysql-k8s        8.0/stable       10.152.183.234  no
+
+Unit                Workload  Agent  Address      Ports  Message
+data-integrator/0*  active    idle   10.1.84.66
+mysql-k8s/0*        active    idle   10.1.84.74
+mysql-k8s/1         active    idle   10.1.84.127
+```
+````
+`````
 
 To retrieve the username, password and database name, run the `get-credentials` Juju action:
 
@@ -459,7 +705,7 @@ Use `endpoints`, `username`, `password` from above to connect newly created data
 :user: ubuntu
 :host: my-vm
 
-mysql -h 10.234.188.135 -P 3306 -urelation-4 -pNZWCNOyfSElJW0u6bnQDOWAA -e "show databases"
+mysql -h ... -P 3306 -urelation-4 -pNZWCNOyfSElJW0u6bnQDOWAA -e "show databases"
 
 +--------------------+
 | Database           |
@@ -475,7 +721,7 @@ The newly created database `test-database` is also available on all other MySQL 
 :user: ubuntu
 :host: my-vm
 
-mysql -h 10.234.188.214 -P 3306 -urelation-5 -pNZWCNOyfSElJW0u6bnQDOWAA -e "show databases"
+mysql -h ... -P 3306 -urelation-5 -pNZWCNOyfSElJW0u6bnQDOWAA -e "show databases"
 
 +--------------------+
 | Database           |
@@ -492,37 +738,58 @@ Removing the integration automatically removes the user that was created when th
 
 To remove the integration, run the following command:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
 :user: ubuntu
 :host: my-vm
 
-juju remove-relation mysql data-integrator
+juju remove-relation data-integrator mysql
 ```
+````
 
-Try to connect to the same MySQL you just used in the [previous section](access-the-integrated-database), you'll get an error message:
+````{tab-item} K8s
+:sync: k8s
 
 ```{terminal}
-:scroll:
 :user: ubuntu
 :host: my-vm
 
-mysql -h 10.234.188.135 -P 3306 -urelation-5 -pNZWCNOyfSElJW0u6bnQDOWAA -e "show databases"
-
-
-ERROR 1045 (28000): Access denied for user 'relation-5'@'_gateway.lxd' (using password: YES)
+juju remove-relation data-integrator mysql-k8s
 ```
+````
+`````
 
-This is expected, since the user no longer exists after removing the integration. However, note that **data remains on the server** at this stage.
+If you try to connect to the same MySQL you just used in {ref}`access-the-integrated-database`, you'll get an "Access denied" error. This is expected, since the user no longer exists after removing the integration. However, note that **data remains on the server** at this stage.
 
 To create a user again, re-integrate the applications:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
-:scroll:
 :user: ubuntu
 :host: my-vm
 
-juju integrate data-integrator mysql
+juju relate data-integrator mysql
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju relate data-integrator mysql-k8s
+```
+````
+`````
+
 Re-integrating generates a new user and password. You can obtain these credentials as before, with the `get-credentials` action, and connect to the database with this new credentials. 
 
 From here you will see all of your data is still present in the database.
@@ -548,57 +815,119 @@ Before enabling TLS on Charmed MySQL, we must deploy the `self-signed-certificat
 :user: ubuntu
 :host: my-vm
 
-juju deploy self-signed-certificates --config ca-common-name="Tutorial CA"
+juju deploy self-signed-certificates --channel 1/stable --config ca-common-name="Tutorial CA"
 ```
 
 Wait until `self-signed-certificates` is up and active, using `juju status --watch 1s` to monitor its progress:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```text
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
-tutorial  overlord    localhost/localhost  3.5.2    unsupported  00:40:42+01:00
+tutorial  overlord    localhost/localhost  3.5.2    unsupported  23:04:02+01:00
 
 App                        Version          Status  Scale  Charm                      Channel     Rev  Exposed  Message
-mysql                      8.0.32-0ubun...  active      2  mysql                      8.0/stable  147  no
-self-signed-certificates                    active      1  self-signed-certificates   edge        77   no
+mysql                      8.0.32-0ubun...  active      2  mysql                      8.0/stable       no
+self-signed-certificates                    active      1  self-signed-certificates   1/stable    77   no
 
 Unit                          Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*                      active    idle   0        10.234.188.135         Primary
 mysql/1                       active    idle   1        10.234.188.214
-self-signed-certificates/1*   active    idle   6        10.234.188.19
+self-signed-certificates/0*   active    idle   5        10.234.188.19
 
 Machine  State    Address         Inst id        Series  AZ  Message
 0        started  10.234.188.135  juju-ff9064-0  jammy       Running
 1        started  10.234.188.214  juju-ff9064-1  jammy       Running
-6        started  10.234.188.19   juju-ff9064-6  focal       Running
+5        started  10.234.188.19   juju-ff9064-5  jammy       Running
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```text
+Model     Controller  Cloud/Region        Version  SLA          Timestamp
+tutorial  overlord    microk8s/localhost  3.5.2    unsupported  23:04:02+01:00
+
+App                        Version          Status  Scale  Charm                      Channel     Rev  Address         Exposed  Message
+mysql-k8s                  8.0.32-0ubun...  active      2  mysql-k8s                  8.0/stable       10.152.183.234  no       
+self-signed-certificates                    active      1  self-signed-certificates   1/stable    72   10.152.183.76   no       
+
+Unit                          Workload  Agent  Address      Ports  Message
+mysql-k8s/0*                  active    idle   10.1.84.74
+mysql-k8s/1                   active    idle   10.1.84.127
+self-signed-certificates/0*   active    idle   10.1.84.71
+```
+````
+`````
 
 To enable TLS on Charmed MySQL, integrate the two applications:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
-:scroll:
 :user: ubuntu
 :host: my-vm
 
-juju integrate mysql self-signed-certificates
+juju relate mysql self-signed-certificates
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju relate mysql-k8s self-signed-certificates
+```
+````
+`````
 
 MySQL is now using TLS certificate generated by the `self-signed-certificates` charm.
 
 Use `openssl` to connect to MySQL and check the TLS certificate in use:
 
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
+
 ```{terminal}
-:scroll:
 :user: ubuntu
 :host: my-vm
 
 openssl s_client -starttls mysql -connect 10.234.188.135:3306 | grep Issuer
 
 ...
-depth=1 C = US, CN = self-signed-certificates-operator
-...
+depth=1 C = US, CN = Tutorial CA
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+openssl s_client -starttls mysql -connect 10.1.84.74:3306 | grep Issuer
+
+...
+depth=1 C = US, CN = Tutorial CA
+```
+````
+`````
 
 To remove the external TLS and return to the locally generate one, remove the integration from the applications:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
@@ -606,8 +935,25 @@ To remove the external TLS and return to the locally generate one, remove the in
 
 juju remove-relation mysql self-signed-certificates
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+juju remove-relation mysql-k8s self-signed-certificates
+```
+````
+`````
 
 If you once again check the TLS certificates in use with the OpenSSL client, you will see something similar to the output below:
+
+`````{tab-set}
+````{tab-item} VM
+:sync: vm
 
 ```{terminal}
 :user: ubuntu
@@ -617,14 +963,29 @@ openssl s_client -starttls mysql -connect 10.234.188.135:3306 | grep Issuer
 
 ...
 depth=1 CN = MySQL_Server_8.0.32_Auto_Generated_CA_Certificate
-...
 ```
+````
+
+````{tab-item} K8s
+:sync: k8s
+
+```{terminal}
+:user: ubuntu
+:host: my-vm
+
+openssl s_client -starttls mysql -connect 10.1.84.74:3306 | grep Issuer
+
+...
+depth=1 CN = MySQL_Server_8.0.32_Auto_Generated_CA_Certificate
+```
+````
+`````
 
 The Charmed MySQL application reverted to the placeholder certificate that was created locally during the MySQL Server installation.
 
 ## Clean up your environment
 
-In this tutorial we've successfully deployed and accessed MySQL on LXD, added and removed cluster members, added and removed database users, and enabled a layer of security with TLS.
+In this tutorial we have successfully deployed MySQL on LXD / MicroK8s, added and removed cluster members, added and removed database users, and enabled a layer of security with TLS.
 
 You may now keep your MySQL deployment running and write to the database, or remove it entirely using the steps in this page.
 
