@@ -52,3 +52,21 @@ Separate the certificates charm and the Charmed MySQL application on the `client
     juju remove-relation self-signed-certificates mysql-k8s:client-certificates
 ```
 ````
+
+## Disable peer-to-peer encryption
+
+Separate the certificates charm and the Charmed MySQL application on the `peer-certificates` endpoint:
+
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju remove-relation self-signed-certificates mysql:peer-certificates
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju remove-relation self-signed-certificates mysql-k8s:peer-certificates
+```
+````
