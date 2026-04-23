@@ -57,12 +57,8 @@ class IPAddressObserver(Object):
 
         logger.info("Starting IP address observer process")
 
-        juju_command = (
-            os.path.exists("/usr/bin/juju-run") and "/usr/bin/juju-run"
-        ) or "/usr/bin/juju-exec"
-
         # We need to trick Juju into thinking that we are not running
-        # in a hook context, as Juju will disallow use of juju-run.
+        # in a hook context, as Juju will disallow use of juju-exec.
         new_env = os.environ.copy()
         if "JUJU_CONTEXT_ID" in new_env:
             new_env.pop("JUJU_CONTEXT_ID")
@@ -72,7 +68,7 @@ class IPAddressObserver(Object):
             [
                 "/usr/bin/python3",
                 "scripts/ip_address_dispatcher.py",
-                juju_command,
+                "/usr/bin/juju-exec",
                 self.charm.unit.name,
                 self.charm.charm_dir,
             ],
