@@ -596,13 +596,6 @@ class MySQLCharmBase(CharmBase, ABC):
         if event.params.get("scope") != "unit":
             return
 
-        if self._mysql.get_primary_label() == self.unit_label:
-            event.set_results({
-                "success": False,
-                "message": "Unit is already primary",
-            })
-            return
-
         if event.params.get("force"):
             # Failover
             logger.info("Forcing quorum from instance")
@@ -614,6 +607,12 @@ class MySQLCharmBase(CharmBase, ABC):
                 return
         else:
             # Switchover
+            if self._mysql.get_primary_label() == self.unit_label:
+                event.set_results({
+                    "success": False,
+                    "message": "Unit is already primary",
+                })
+                return
             logger.info("Setting unit as cluster primary")
             try:
                 self._mysql.set_cluster_primary(self.get_unit_hostname())
@@ -627,7 +626,7 @@ class MySQLCharmBase(CharmBase, ABC):
         self.unit_peer_data.update({"topology-change-timestamp": str(int(time.time()))})
         event.set_results({
             "success": True,
-            "message": "Unit is already primary",
+            "message": "Unit is now primary",
         })
 
     def _recreate_cluster(self, event: ActionEvent) -> None:
