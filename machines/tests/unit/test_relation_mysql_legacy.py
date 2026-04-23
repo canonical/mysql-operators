@@ -11,7 +11,7 @@ from charm import MySQLOperatorCharm
 from constants import LEGACY_MYSQL, PEER
 
 
-@patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+@patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks")
 class TestMariaDBRelation(unittest.TestCase):
     def setUp(self):
         self.harness = Harness(MySQLOperatorCharm)

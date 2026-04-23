@@ -24,7 +24,7 @@ from constants import (
 )
 
 
-@patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+@patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks")
 class TestAsyncRelation(unittest.TestCase):
     def setUp(self) -> None:
         self.harness = Harness(MySQLOperatorCharm)

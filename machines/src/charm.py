@@ -16,7 +16,6 @@ import socket
 import subprocess
 from time import sleep
 
-import ops
 from charms.data_platform_libs.v0.s3 import S3Requirer
 from charms.data_platform_libs.v1.data_models import TypedCharmBase
 from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
@@ -49,11 +48,10 @@ from charms.mysql.v0.mysql import (
     MySQLUnableToGetMemberStateError,
 )
 from charms.mysql.v0.tls import MySQLTLS
-from charms.rolling_ops.v0.rollingops import RollingOpsManager
+from charms.rolling_ops.v1.rollingops import RollingOpsManagerV1
 from ops import (
     ActiveStatus,
     BlockedStatus,
-    EventBase,
     InstallEvent,
     MaintenanceStatus,
     RelationBrokenEvent,
@@ -191,7 +189,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             substrate="vm",
         )
 
-        self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
+        self.restart = RollingOpsManagerV1(
+            charm=self,
+            relation_name="restart",
+            callback_targets={"restart": self._restart},
+        )
 
         self.mysql_logs = MySQLLogs(self)
         self.replication_offer = MySQLAsyncReplicationOffer(self)
@@ -286,7 +288,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 else:
                     self._mysql.uninstall_plugins(["audit_log"])
 
-            self.on[f"{self.restart.name}"].acquire_lock.emit()
+            self.restart.request_async_lock(callback_id="restart")
 
         elif dynamic_config := self.mysql_config.filter_static_keys(changed_config):
             # if only dynamic config changed, apply it
@@ -575,9 +577,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.debug("skip status update while setting up async replication")
             return
 
-        # unset restart control flag
-        del self.restart_peers.data[self.unit]["state"]
-
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
             return
@@ -677,11 +676,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def unit_fqdn(self) -> str:
         """Returns the unit's FQDN."""
         return socket.getfqdn()
-
-    @property
-    def restart_peers(self) -> ops.Relation | None:
-        """Retrieve the peer relation."""
-        return self.model.get_relation("restart")
 
     def is_unit_busy(self) -> bool:
         """Returns whether the unit is in blocked state and should not run any operations."""
@@ -1008,7 +1002,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self, _: EventBase) -> None:
+    def _restart(self) -> None:
         """Restart the service."""
         if not self.unit_initialized():
             logger.debug("Restarting standalone mysqld")

@@ -37,7 +37,7 @@ class TestMySQLBackups(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
-        with patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks") as _:
+        with patch("charms.rolling_ops.v1.rollingops.RollingOpsManagerV1._process_locks") as _:
             self.harness.set_leader(True)
         self.harness.charm.on.config_changed.emit()
         self.charm = self.harness.charm
