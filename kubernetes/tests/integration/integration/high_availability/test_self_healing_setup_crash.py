@@ -14,6 +14,7 @@ from ...helpers_ha import (
     load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 MYSQL_APP_NAME = "mysql-k8s"
@@ -30,6 +31,7 @@ def test_deploy_single_unit_cluster(juju: Juju, charm: str) -> None:
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=1,
+        trust=True,
     )
 
     logging.info("Wait for applications to become active")
@@ -53,10 +55,19 @@ def test_crash_during_cluster_setup(juju: Juju, charm: str) -> None:
 
     logging.info("Scaling to 3 units")
     juju.add_unit(MYSQL_APP_NAME, num_units=2)
+    # NOTE: This is prone to race conditions:
+    # if the units clear the "waiting" phase too quickly,
+    # this status function will never activate
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.any_waiting, MYSQL_APP_NAME),
+        ready=lambda status: any((
+            *(
+                wait_for_unit_status(MYSQL_APP_NAME, unit_name, "waiting")(status)
+                for unit_name in status.get_units(MYSQL_APP_NAME)
+            ),
+        )),
         error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
+        successes=1,
     )
 
     logging.info("Deleting pod")
