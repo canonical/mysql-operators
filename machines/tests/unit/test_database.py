@@ -46,7 +46,7 @@ class TestDatabase(unittest.TestCase):
         _unit_initialized.return_value = False
         _cluster_initialized.return_value = False
         # run start-up events to enable usage of the helper class
-        with patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks") as _:
+        with patch("charmlibs.rollingops.peer._backend.PeerRollingOpsBackend._process_locks") as _:
             self.harness.set_leader(True)
         self.charm.on.config_changed.emit()
 

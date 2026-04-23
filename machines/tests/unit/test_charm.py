@@ -28,8 +28,8 @@ class TestCharm(unittest.TestCase):
         self.harness.begin()
         self.charm = self.harness.charm
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
+        self.rolling_relation_id = self.harness.add_relation("rolling-ops", "rolling-ops")
         self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
-        self.harness.add_relation("restart", "restart")
 
     @patch("socket.getfqdn", return_value="test-hostname")
     @patch("socket.gethostbyname", return_value="")
