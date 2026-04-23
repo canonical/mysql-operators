@@ -128,7 +128,7 @@ Integration provider                   Requirer                               In
 data-integrator:data-integrator-peers  data-integrator:data-integrator-peers  data-integrator-peers  peer     
 mysql:database                         data-integrator:mysql                  mysql_client           regular  
 mysql:database-peers                   mysql:database-peers                   mysql_peers            peer     
-mysql:restart                          mysql:restart                          rolling_op             peer     
+mysql:rolling-ops                      mysql:rolling-ops                      rolling_op             peer     
 mysql:upgrade                          mysql:upgrade                          upgrade                peer     
 ```
 
@@ -257,4 +257,3 @@ Finally, remove AWS CLI user credentials (to avoid forgetting and leaking):
 ```shell
 rm -f ~/.aws/credentials.yaml
 ```
-

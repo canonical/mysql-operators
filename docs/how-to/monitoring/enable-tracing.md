@@ -145,7 +145,7 @@ Wait until the model settles. The following is an example of the `juju status --
     grafana-agent:peers   grafana-agent:peers      grafana_agent_replica  peer         
     mysql:cos-agent       grafana-agent:cos-agent  cos_agent              subordinate  
     mysql:database-peers  mysql:database-peers     mysql_peers            peer         
-    mysql:restart         mysql:restart            rolling_op             peer         
+    mysql:rolling-ops     mysql:rolling-ops        rolling_op             peer         
     mysql:upgrade         mysql:upgrade            upgrade                peer         
     tempo:tracing         grafana-agent:tracing    tracing                regular  
 ```
@@ -170,7 +170,7 @@ Wait until the model settles. The following is an example of the `juju status --
     grafana-agent-k8s:peers             grafana-agent-k8s:peers    grafana_agent_replica  peer     
     grafana-agent-k8s:tracing-provider  mysql-k8s:tracing          tracing                regular  
     mysql-k8s:database-peers            mysql-k8s:database-peers   mysql_peers            peer     
-    mysql-k8s:restart                   mysql-k8s:restart          rolling_op             peer     
+    mysql-k8s:rolling-ops               mysql-k8s:rolling-ops      rolling_op             peer     
     mysql-k8s:upgrade                   mysql-k8s:upgrade          upgrade                peer     
     tempo:tracing                       grafana-agent-k8s:tracing  tracing                regular  
 ```
