@@ -110,8 +110,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     config_type = CharmConfig
     # RotateMySQLLogsCharmEvents needs to be defined on the charm object for
-    # the log rotate manager process (which runs juju-run/juju-exec to dispatch
-    # a custom event)
+    # the log rotate manager process (which runs juju-exec to dispatch a custom event)
     on = RotateMySQLLogsCharmEvents()  # type: ignore
 
     def __init__(self, *args):
