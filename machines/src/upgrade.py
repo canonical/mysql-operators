@@ -10,11 +10,12 @@ import pathlib
 import subprocess
 from typing import TYPE_CHECKING
 
-from charms.data_platform_libs.v0.upgrade import (
+from charms.data_platform_libs.v1.upgrade import (
     ClusterNotReadyError,
     DataUpgrade,
     DependencyModel,
     UpgradeGrantedEvent,
+    UpgradeState,
     VersionError,
 )
 from charms.mysql.v0.mysql import (
@@ -26,7 +27,6 @@ from charms.mysql.v0.mysql import (
     MySQLStopMySQLDError,
 )
 from mysql_shell import InstanceState
-from ops import RelationDataContent
 from ops.model import BlockedStatus, MaintenanceStatus, Unit
 from pydantic import BaseModel
 from typing_extensions import override
@@ -71,16 +71,6 @@ class MySQLVMUpgrade(DataUpgrade):
             self.charm.on[self.relation_name].relation_changed, self._on_upgrade_changed
         )
         self.framework.observe(self.charm.on.upgrade_charm, self._on_upgrade_charm_check_legacy)
-
-    @property
-    def app_upgrade_data(self) -> RelationDataContent:
-        """Return the application upgrade data."""
-        return self.peer_relation.data[self.charm.app]
-
-    @property
-    def unit_upgrade_data(self) -> RelationDataContent:
-        """Return the application upgrade data."""
-        return self.peer_relation.data[self.charm.unit]
 
     @override
     def build_upgrade_stack(self) -> list[int]:
@@ -155,13 +145,17 @@ class MySQLVMUpgrade(DataUpgrade):
 
         if not self.charm.unit.is_leader():
             # set ready state on non-leader units
-            self.unit_upgrade_data.update({"state": "ready"})
+            self._set_state(self.charm.unit, UpgradeState.READY)
             return
 
-        peers_state = list(filter(lambda state: state != "", self.unit_states))
-        if len(peers_state) == len(self.peer_relation.units) and set(peers_state) == {"ready"}:
+        peer_states = [state for state in self.unit_states if state]
+
+        if all((
+            len(self.peer_relation.units) == len(peer_states),
+            all(state == UpgradeState.READY for state in peer_states),
+        )):
             # All peers have set the state to ready
-            self.unit_upgrade_data.update({"state": "ready"})
+            self._set_state(self.charm.unit, UpgradeState.READY)
             self._prepare_upgrade_from_legacy()
         else:
             logger.debug("Wait until all peers have set upgrade state to ready")
@@ -290,7 +284,7 @@ class MySQLVMUpgrade(DataUpgrade):
         self.upgrade_stack = upgrade_stack
         logger.debug("Persisting dependencies to upgrade relation data...")
         self.peer_relation.data[self.charm.app].update({
-            "dependencies": json.dumps(self.dependency_model.dict())
+            "dependencies": self.dependency_model.model_dump_json()
         })
 
     @staticmethod

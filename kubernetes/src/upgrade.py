@@ -7,11 +7,12 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from charms.data_platform_libs.v0.upgrade import (
+from charms.data_platform_libs.v1.upgrade import (
     ClusterNotReadyError,
     DataUpgrade,
     DependencyModel,
     KubernetesClientError,
+    UpgradeState,
 )
 from charms.mysql.v0.mysql import (
     MySQLGetMySQLVersionError,
@@ -24,7 +25,7 @@ from charms.mysql.v0.mysql import (
 )
 from mysql_shell import InstanceState
 from ops import JujuVersion
-from ops.model import BlockedStatus, MaintenanceStatus, RelationDataContent
+from ops.model import BlockedStatus, MaintenanceStatus
 from ops.pebble import ChangeError
 from pydantic import BaseModel
 from tenacity import RetryError
@@ -72,11 +73,6 @@ class MySQLK8sUpgrade(DataUpgrade):
     def highest_ordinal(self) -> int:
         """Return the max ordinal."""
         return self.charm.app.planned_units() - 1
-
-    @property
-    def unit_upgrade_data(self) -> RelationDataContent:
-        """Return the application upgrade data."""
-        return self.peer_relation.data[self.charm.unit]
 
     @override
     def pre_upgrade_check(self) -> None:
@@ -209,7 +205,7 @@ class MySQLK8sUpgrade(DataUpgrade):
             event.defer()
             return
 
-        if self.state not in ["upgrading", "recovery"]:
+        if self.state not in [UpgradeState.UPGRADING, UpgradeState.RECOVERY]:
             return
 
         container = event.workload

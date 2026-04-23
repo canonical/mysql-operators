@@ -7,6 +7,7 @@ import logging
 import typing
 
 from charms.data_platform_libs.v0.data_interfaces import DatabaseProvides, DatabaseRequestedEvent
+from charms.data_platform_libs.v1.upgrade import UpgradeState
 from charms.mysql.v0.mysql import (
     LEGACY_ROLE_ROUTER,
     MODERN_ROLE_ROUTER,
@@ -239,7 +240,7 @@ class MySQLProvider(Object):
         if self.charm._is_cluster_blocked():
             return
 
-        if self.charm.upgrade.state == "failed":
+        if self.charm.upgrade.state == UpgradeState.FAILED:
             # skip updating endpoints if upgrade failed
             # unit pod still will be labeled from another unit
             logger.debug("Skip labelling pods on failed upgrade")
