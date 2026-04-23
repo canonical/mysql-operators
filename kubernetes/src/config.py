@@ -9,9 +9,9 @@ import logging
 import re
 from typing import ClassVar
 
-from charms.data_platform_libs.v0.data_models import BaseConfigModel
+from charms.data_platform_libs.v1.data_models import BaseConfigModel
 from charms.mysql.v0.mysql import MAX_CONNECTIONS_FLOOR
-from pydantic import validator
+from pydantic import Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +51,10 @@ class CharmConfig(BaseConfigModel):
     """Manager for the structured configuration."""
 
     profile: str
-    cluster_name: str | None
-    cluster_set_name: str | None
-    profile_limit_memory: int | None
-    experimental_max_connections: int | None
+    cluster_name: str | None = Field(default=None)
+    cluster_set_name: str | None = Field(default=None)
+    profile_limit_memory: int | None = Field(default=None)
+    experimental_max_connections: int | None = Field(default=None)
     binlog_retention_days: int
     plugin_audit_enabled: bool
     plugin_audit_strategy: str
@@ -62,7 +62,7 @@ class CharmConfig(BaseConfigModel):
     logs_retention_period: str
     pause_after_unit_refresh: str
 
-    @validator("profile")
+    @field_validator("profile")
     @classmethod
     def profile_values(cls, value: str) -> str | None:
         """Check profile config option is one of `testing` or `production`."""
@@ -71,7 +71,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("cluster_name", "cluster_set_name")
+    @field_validator("cluster_name", "cluster_set_name")
     @classmethod
     def cluster_name_validator(cls, value: str) -> str | None:
         """Check for valid cluster, cluster-set name.
@@ -93,7 +93,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("profile_limit_memory")
+    @field_validator("profile_limit_memory")
     @classmethod
     def profile_limit_memory_validator(cls, value: int) -> int | None:
         """Check profile limit memory."""
@@ -104,7 +104,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("experimental_max_connections")
+    @field_validator("experimental_max_connections")
     @classmethod
     def experimental_max_connections_validator(cls, value: int) -> int | None:
         """Check experimental max connections."""
@@ -116,7 +116,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("binlog_retention_days")
+    @field_validator("binlog_retention_days")
     @classmethod
     def binlog_retention_days_validator(cls, value: int) -> int:
         """Check binlog retention days."""
@@ -125,7 +125,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("plugin_audit_strategy")
+    @field_validator("plugin_audit_strategy")
     @classmethod
     def plugin_audit_strategy_validator(cls, value: str) -> str | None:
         """Check profile config option is one of `testing` or `production`."""
@@ -134,7 +134,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("logs_audit_policy")
+    @field_validator("logs_audit_policy")
     @classmethod
     def logs_audit_policy_validator(cls, value: str) -> str | None:
         """Check values for audit log policy."""
@@ -144,7 +144,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("logs_retention_period")
+    @field_validator("logs_retention_period")
     @classmethod
     def logs_retention_period_validator(cls, value: str) -> str:
         """Check logs retention period."""
@@ -153,7 +153,7 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @validator("pause_after_unit_refresh")
+    @field_validator("pause_after_unit_refresh")
     @classmethod
     def pause_after_unit_refresh_validator(cls, value: str) -> str | None:
         """Check values for when to pause after unit refresh."""
