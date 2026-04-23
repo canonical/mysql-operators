@@ -16,6 +16,7 @@ from time import sleep
 
 import charm_refresh
 import ops
+from charmlibs.rollingops import RollingOpsManager
 from charms.data_platform_libs.v1.data_models import TypedCharmBase
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
@@ -47,7 +48,6 @@ from charms.mysql.v0.mysql import (
     MySQLUnableToGetMemberStateError,
 )
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
-from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from object_storage import S3Requirer
 from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
@@ -186,7 +186,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             if self._refresh.workload_allowed_to_start:
                 self._refresh.next_unit_allowed_to_refresh = True
 
-        self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
+        self.rolling_ops = RollingOpsManager(
+            charm=self,
+            base_dir="/var/lib/rollingops",
+            peer_relation_name="rolling-ops",
+            callback_targets={"restart": self._restart},
+        )
 
         self.log_rotate_manager = LogRotateManager(self)
         self.log_rotate_manager.start_log_rotate_manager()
@@ -287,11 +292,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             },
         }
         return Layer(layer)  # pyright: ignore [reportArgumentType]
-
-    @property
-    def restart_peers(self) -> ops.model.Relation | None:
-        """Retrieve the peer relation."""
-        return self.model.get_relation("restart")
 
     @property
     def unit_address(self) -> str:
@@ -553,7 +553,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self, _: EventBase) -> None:
+    def _restart(self) -> None:
         """Restart the service."""
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
@@ -655,8 +655,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             and self._mysql.is_mysqld_running()
         ):
             logger.info("Configuration change requires restart")
-            # restart the service
-            self.on[f"{self.restart.name}"].acquire_lock.emit()
+            self.rolling_ops.request_async_lock(callback_id="restart")
             return
 
         if dynamic_config := self.mysql_config.filter_static_keys(changed_config):
@@ -996,8 +995,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._is_cluster_blocked():
             logger.info("Cluster is blocked. Skipping.")
             return
-
-        del self.restart_peers.data[self.unit]["state"]
 
         if not self._mysql.is_mysqld_running():
             logger.info("Cannot connect to pebble in the mysql container")

@@ -58,7 +58,7 @@ class TestDatabase(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._on_mysql_pebble_ready")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.cluster_metadata_exists", return_value=True)
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charmlibs.rollingops.peer._backend.PeerRollingOpsBackend._process_locks")
     @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
     @patch("mysql_k8s_helpers.MySQL.update_endpoints")
     @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")

@@ -40,7 +40,7 @@ class TestCharm(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
-        self.restart_relation_id = self.harness.add_relation("restart", "restart")
+        self.rolling_relation_id = self.harness.add_relation("rolling-ops", "rolling-ops")
         self.harness.add_relation_unit(self.peer_relation_id, f"{APP_NAME}/1")
         self.harness.update_relation_data(
             self.peer_relation_id,
