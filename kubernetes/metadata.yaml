@@ -27,8 +27,14 @@ containers:
     gid: 584788
     resource: mysql-image
     mounts:
-      - storage: database
-        location: /var/lib/mysql
+      - storage: archive
+        location: /var/lib/mysql/archive
+      - storage: data
+        location: /var/lib/mysql/data
+      - storage: logs
+        location: /var/lib/mysql/logs
+      - storage: temp
+        location: /var/lib/mysql/temp
 
 resources:
   mysql-image:
@@ -81,9 +87,18 @@ requires:
     optional: true
 
 storage:
-  database:
+  archive:
+    type: filesystem
+    description: Persistent storage for rotated logs and other archival purposes
+  data:
     type: filesystem
     description: Persistent storage for MySQL data
+  temp:
+    type: filesystem
+    description: Persistent storage for InnoDB temporary tablespaces
+  logs:
+    type: filesystem
+    description: Persistent storage for MySQL error logs, general query logs, slow query logs, binary logs, redo logs and undo logs
 
 assumes:
   - k8s-api

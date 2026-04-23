@@ -24,7 +24,6 @@ from charms.mysql.v0.mysql import (
     MySQLGetAutoTuningParametersError,
     MySQLGetAvailableMemoryError,
     MySQLKillSessionError,
-    MySQLRestoreBackupError,
     MySQLServiceNotRunningError,
     MySQLStartMySQLDError,
     MySQLStopMySQLDError,
@@ -32,7 +31,15 @@ from charms.mysql.v0.mysql import (
 from charms.operator_libs_linux.v2 import snap
 from mysql_shell.executors import LocalExecutor
 from mysql_shell.executors.errors import ExecutionError
-from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from constants import (
     CHARMED_MYSQL_BINLOGS_COLLECTOR_SERVICE,
@@ -44,8 +51,11 @@ from constants import (
     CHARMED_MYSQLD_EXPORTER_SERVICE,
     CHARMED_MYSQLD_SERVICE,
     CHARMED_MYSQLSH,
+    MYSQL_ARCHIVE_DIR,
     MYSQL_DATA_DIR,
+    MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_USER,
+    MYSQL_TEMP_DIR,
     MYSQLD_CONFIG_DIRECTORY,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_DEFAULTS_CONFIG_FILE,
@@ -249,7 +259,6 @@ class MySQL(MySQLBase):
                 audit_log_enabled=self.charm.config.plugin_audit_enabled,
                 audit_log_strategy=self.charm.config.plugin_audit_strategy,
                 audit_log_policy=self.charm.config.logs_audit_policy,
-                snap_common=CHARMED_MYSQL_COMMON_DIRECTORY,
                 memory_limit=memory_limit,
                 binlog_retention_days=self.charm.config.binlog_retention_days,
                 experimental_max_connections=self.charm.config.experimental_max_connections,
@@ -285,7 +294,6 @@ class MySQL(MySQLBase):
         config_path = "/etc/logrotate.d/flush_mysql_logs"
         script_path = f"{self.charm.charm_dir}/logrotation.sh"
         cron_path = "/etc/cron.d/flush_mysql_logs"
-        logs_dir = f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql"
 
         # days * minutes/day = amount of rotated files to keep
         logs_rotations = logs_retention_period * 1440
@@ -295,7 +303,8 @@ class MySQL(MySQLBase):
 
         logrotate_conf_content = template.render(
             system_user=MYSQL_SYSTEM_USER,
-            log_dir=logs_dir,
+            log_dir=MYSQL_LOGS_DIR,
+            archive_dir=MYSQL_ARCHIVE_DIR,
             charm_directory=self.charm.charm_dir,
             unit_name=self.charm.unit.name,
             enabled_log_files=enabled_log_files,
@@ -312,7 +321,7 @@ class MySQL(MySQLBase):
             template = jinja2.Template(file.read())
 
         logrotation_script_content = template.render(
-            log_path=f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql",
+            log_path=MYSQL_LOGS_DIR,
             enabled_log_files=enabled_log_files,
             logrotate_conf=config_path,
             owner=MYSQL_SYSTEM_USER,
@@ -335,6 +344,12 @@ class MySQL(MySQLBase):
             "/snap/bin/charmed-mysql.mysqld-initialize",
             "--datadir",
             MYSQL_DATA_DIR,
+            "--innodb-log-group-home-dir",
+            MYSQL_LOGS_DIR,
+            "--innodb-undo-directory",
+            MYSQL_LOGS_DIR,
+            "--innodb-temp-tablespaces-dir",
+            MYSQL_TEMP_DIR,
         ]
 
         try:
@@ -434,9 +449,9 @@ class MySQL(MySQLBase):
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
         mysqld_socket_file: str = MYSQLD_SOCK_FILE,
-        tmp_base_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
         defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
-        user: str | None = ROOT_SYSTEM_USER,
+        user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = ROOT_SYSTEM_USER,
     ) -> tuple[str, str]:
         """Executes commands to create a backup."""
@@ -455,8 +470,8 @@ class MySQL(MySQLBase):
 
     def delete_temp_backup_directory(
         self,
-        tmp_base_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
-        user: str | None = ROOT_SYSTEM_USER,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
+        user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = ROOT_SYSTEM_USER,
     ) -> None:
         """Delete the temp backup directory."""
@@ -470,10 +485,10 @@ class MySQL(MySQLBase):
         self,
         backup_id: str,
         s3_parameters: dict[str, str],
-        temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
-        user=ROOT_SYSTEM_USER,
+        user=MYSQL_SYSTEM_USER,
         group=ROOT_SYSTEM_USER,
     ) -> tuple[str, str, str]:
         """Retrieve the provided backup with xbcloud."""
@@ -492,7 +507,7 @@ class MySQL(MySQLBase):
         backup_location: str,
         xtrabackup_location: str = CHARMED_MYSQL_XTRABACKUP_LOCATION,
         xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
-        user=ROOT_SYSTEM_USER,
+        user=MYSQL_SYSTEM_USER,
         group=ROOT_SYSTEM_USER,
     ) -> tuple[str, str]:
         """Prepare the download backup for restore with xtrabackup --prepare."""
@@ -507,14 +522,19 @@ class MySQL(MySQLBase):
     def empty_data_files(
         self,
         mysql_data_directory: str = MYSQL_DATA_DIR,
-        user: str | None = ROOT_SYSTEM_USER,
+        user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = ROOT_SYSTEM_USER,
+        extra_dirs: list[str] | None = None,
     ) -> None:
         """Empty the mysql data directory in preparation of the restore."""
+        if extra_dirs is None:
+            extra_dirs = [MYSQL_LOGS_DIR]
+
         super().empty_data_files(
             mysql_data_directory,
             user,
             group,
+            extra_dirs,
         )
 
     def restore_backup(
@@ -524,27 +544,10 @@ class MySQL(MySQLBase):
         defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
         mysql_data_directory: str = MYSQL_DATA_DIR,
         xtrabackup_plugin_directory: str = XTRABACKUP_PLUGIN_DIR,
-        user: str | None = ROOT_SYSTEM_USER,
+        user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = ROOT_SYSTEM_USER,
     ) -> tuple[str, str]:
         """Restore the provided prepared backup."""
-        # TODO: remove workaround for changing permissions and ownership of data
-        # files once restore backup commands can be run with snap_daemon user
-        try:
-            # provide write permissions to root (group owner of the data directory)
-            # so the root user can move back files into the data directory
-            # Input generated by the charm
-            subprocess.run(  # noqa: S603
-                ["/usr/bin/chmod", "770", MYSQL_DATA_DIR],
-                user=ROOT_SYSTEM_USER,
-                group=ROOT_SYSTEM_USER,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as e:
-            logger.exception("Failed to change data directory permissions before restoring")
-            raise MySQLRestoreBackupError from e
-
         stdout, stderr = super().restore_backup(
             backup_location,
             xtrabackup_location,
@@ -555,44 +558,12 @@ class MySQL(MySQLBase):
             group,
         )
 
-        try:
-            # Revert permissions for the data directory
-            # Input generated by the charm
-            subprocess.run(  # noqa: S603
-                ["/usr/bin/chmod", "750", MYSQL_DATA_DIR],
-                user=ROOT_SYSTEM_USER,
-                group=ROOT_SYSTEM_USER,
-                capture_output=True,
-                text=True,
-            )
-
-            # Change ownership to the snap_daemon user since the restore files
-            # are owned by root
-            # Input generated by the charm
-            subprocess.run(  # noqa: S603
-                [
-                    "/usr/bin/chown",
-                    "-R",
-                    f"{MYSQL_SYSTEM_USER}:{ROOT_SYSTEM_USER}",
-                    MYSQL_DATA_DIR,
-                ],
-                user=ROOT_SYSTEM_USER,
-                group=ROOT_SYSTEM_USER,
-                capture_output=True,
-                text=True,
-            )
-        except subprocess.CalledProcessError as e:
-            logger.exception(
-                "Failed to change data directory permissions or ownership after restoring"
-            )
-            raise MySQLRestoreBackupError from e
-
-        return (stdout, stderr)
+        return stdout, stderr
 
     def delete_temp_restore_directory(
         self,
-        temp_restore_directory: str = CHARMED_MYSQL_COMMON_DIRECTORY,
-        user: str | None = ROOT_SYSTEM_USER,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
+        user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = ROOT_SYSTEM_USER,
     ) -> None:
         """Delete the temp restore directory from the mysql data directory."""
@@ -602,7 +573,7 @@ class MySQL(MySQLBase):
             group,
         )
 
-    def _execute_commands(
+    def _execute_commands(  # noqa: C901
         self,
         commands: list[str],
         bash: bool = False,
@@ -634,6 +605,19 @@ class MySQL(MySQLBase):
             env.update(env_extra)
         if bash:
             commands = ["bash", "-c", "set -o pipefail; " + " ".join(commands)]
+
+        if any(
+            wrapped_command in "".join(commands)
+            for wrapped_command in (
+                CHARMED_MYSQL_XTRABACKUP_LOCATION,
+                CHARMED_MYSQL_XBCLOUD_LOCATION,
+                CHARMED_MYSQL_XBSTREAM_LOCATION,
+            )
+        ):
+            # Wrapped commands must be run as root because they use setpriv to drop privileges,
+            # see https://snapcraft.io/docs/explanation/snap-development/system-usernames/#dropping-privileges
+            logging.info("Running wrapped command as root: %s", commands)
+            user, group = ROOT_SYSTEM_USER, ROOT_SYSTEM_USER
 
         # Input generated by the charm
         process = subprocess.Popen(  # noqa: S603
@@ -912,21 +896,22 @@ class MySQL(MySQLBase):
     @staticmethod
     def fetch_error_log() -> str | None:
         """Fetch the mysqld error log."""
-        if os.path.exists(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log"):
+        if os.path.exists(f"{MYSQL_LOGS_DIR}/error.log"):
             # can be empty if just rotated
-            with open(f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/log/mysql/error.log") as fd:
+            with open(f"{MYSQL_LOGS_DIR}/error.log") as fd:
                 return fd.read()
 
     @staticmethod
     def reset_data_dir() -> None:
-        """Reset the data directory."""
+        """Remove all files from the data directory."""
         logger.warning(f"Resetting data directory: {MYSQL_DATA_DIR}")
 
-        # Remove the data directory
-        shutil.rmtree(MYSQL_DATA_DIR, ignore_errors=False)
-
-        # Recreate the data directory
-        os.makedirs(MYSQL_DATA_DIR)
+        # Remove the contents of the data directory
+        for root, dirs, files in pathlib.Path(MYSQL_DATA_DIR).walk(top_down=False):
+            for name in files:
+                (root / name).unlink()
+            for name in dirs:
+                (root / name).rmdir()
 
         # Change ownership of the data directory
         shutil.chown(MYSQL_DATA_DIR, user=MYSQL_SYSTEM_USER, group="root")
@@ -934,17 +919,25 @@ class MySQL(MySQLBase):
 
 def is_volume_mounted() -> bool:
     """Returns if data directory is attached."""
-    try:
-        for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(12)):
-            with attempt:
-                # Parameters are hardcoded by the charm
-                subprocess.check_call([  # noqa: S603
-                    "/usr/bin/mountpoint",
-                    "-q",
-                    CHARMED_MYSQL_COMMON_DIRECTORY,
-                ])
-    except RetryError:
-        return False
+    for directory in (MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR):
+        try:
+            for attempt in Retrying(
+                stop=stop_after_attempt(10),
+                wait=wait_fixed(12),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
+            ):
+                with attempt:
+                    # Parameters are hardcoded by the charm
+                    subprocess.run(  # noqa: S603
+                        [
+                            "/usr/bin/mountpoint",
+                            "-q",
+                            directory,
+                        ],
+                        check=True,
+                    )
+        except RetryError:
+            return False
     return True
 
 

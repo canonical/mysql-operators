@@ -35,12 +35,14 @@ from constants import (
     CHARMED_MYSQL_XTRABACKUP_LOCATION,
     CONTAINER_NAME,
     LOG_ROTATE_CONFIG_FILE,
+    MYSQL_ARCHIVE_DIR,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
     MYSQL_DATA_DIR,
-    MYSQL_LOG_DIR,
     MYSQL_LOG_ERROR,
+    MYSQL_LOGS_DIR,
     MYSQL_SYSTEM_GROUP,
     MYSQL_SYSTEM_USER,
+    MYSQL_TEMP_DIR,
     MYSQLD_DEFAULTS_CONFIG_FILE,
     MYSQLD_INIT_CONFIG_FILE,
     MYSQLD_LOCATION,
@@ -184,6 +186,14 @@ class MySQL(MySQLBase):
             "--initialize",
             "-u",
             MYSQL_SYSTEM_USER,
+            "--datadir",
+            MYSQL_DATA_DIR,
+            "--innodb-log-group-home-dir",
+            MYSQL_LOGS_DIR,
+            "--innodb-undo-directory",
+            MYSQL_LOGS_DIR,
+            "--innodb-temp-tablespaces-dir",
+            MYSQL_TEMP_DIR,
         ]
 
         try:
@@ -277,7 +287,8 @@ class MySQL(MySQLBase):
         rendered = template.render(
             system_user=MYSQL_SYSTEM_USER,
             system_group=MYSQL_SYSTEM_GROUP,
-            log_dir=MYSQL_LOG_DIR,
+            log_dir=MYSQL_LOGS_DIR,
+            archive_dir=MYSQL_ARCHIVE_DIR,
             logs_retention_period=logs_retention_period,
             logs_rotations=logs_rotations,
             logs_compression_enabled=logs_compression,
@@ -300,7 +311,7 @@ class MySQL(MySQLBase):
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xtrabackup_plugin_dir: str = XTRABACKUP_PLUGIN_DIR,
         mysqld_socket_file: str = MYSQLD_SOCK_FILE,
-        tmp_base_directory: str = MYSQL_DATA_DIR,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
         defaults_config_file: str = MYSQLD_DEFAULTS_CONFIG_FILE,
         user: str | None = MYSQL_SYSTEM_USER,
         group: str | None = MYSQL_SYSTEM_GROUP,
@@ -321,7 +332,7 @@ class MySQL(MySQLBase):
 
     def delete_temp_backup_directory(
         self,
-        tmp_base_directory: str = MYSQL_DATA_DIR,
+        tmp_base_directory: str = MYSQL_TEMP_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
     ) -> None:
@@ -336,7 +347,7 @@ class MySQL(MySQLBase):
         self,
         backup_id: str,
         s3_parameters: dict[str, str],
-        temp_restore_directory: str = MYSQL_DATA_DIR,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         xbcloud_location: str = CHARMED_MYSQL_XBCLOUD_LOCATION,
         xbstream_location: str = CHARMED_MYSQL_XBSTREAM_LOCATION,
         user: str | None = MYSQL_SYSTEM_USER,
@@ -379,12 +390,17 @@ class MySQL(MySQLBase):
         mysql_data_directory=MYSQL_DATA_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
+        extra_dirs: list[str] | None = None,
     ) -> None:
         """Empty the mysql data directory in preparation of backup restore."""
+        if extra_dirs is None:
+            extra_dirs = [MYSQL_LOGS_DIR]
+
         super().empty_data_files(
             mysql_data_directory,
             user,
             group,
+            extra_dirs,
         )
 
     def restore_backup(
@@ -410,7 +426,7 @@ class MySQL(MySQLBase):
 
     def delete_temp_restore_directory(
         self,
-        temp_restore_directory: str = MYSQL_DATA_DIR,
+        temp_restore_directory: str = MYSQL_TEMP_DIR,
         user=MYSQL_SYSTEM_USER,
         group=MYSQL_SYSTEM_GROUP,
     ) -> None:
@@ -608,8 +624,6 @@ class MySQL(MySQLBase):
 
             # minimal expected content for an integral mysqld data-dir
             expected_content = {
-                "#innodb_redo",
-                "#innodb_temp",
                 "auto.cnf",
                 "ca-key.pem",
                 "ca.pem",
@@ -624,9 +638,8 @@ class MySQL(MySQLBase):
                 "server-cert.pem",
                 "server-key.pem",
                 "sys",
-                "undo_001",
-                "undo_002",
             }
+            logger.debug("mysql data dir contents: %s", content_set)
 
             return expected_content <= content_set
         except (ExecError, APIError):

@@ -229,18 +229,24 @@ class TestMySQL(unittest.TestCase):
 
         config = "\n".join((
             "[mysqld]",
+            "datadir = /var/snap/charmed-mysql/common/var/lib/mysql/data",
             "bind_address = 0.0.0.0",
             "mysqlx_bind_address = 0.0.0.0",
             "admin_address = 127.0.0.1",
             "report_host = 127.0.0.1",
             "max_connections = 111",
             "innodb_buffer_pool_size = 1234",
+            "innodb_log_group_home_dir = /var/snap/charmed-mysql/common/var/lib/mysql/logs",
+            "innodb_temp_tablespaces_dir = /var/snap/charmed-mysql/common/var/lib/mysql/temp",
+            "innodb_undo_directory = /var/snap/charmed-mysql/common/var/lib/mysql/logs",
+            "log_bin = /var/snap/charmed-mysql/common/var/lib/mysql/logs/binlog",
+            "log_bin_index = /var/snap/charmed-mysql/common/var/lib/mysql/logs/binlog.index",
             "log_error_services = log_filter_internal;log_sink_internal",
-            "log_error = /var/snap/charmed-mysql/common/var/log/mysql/error.log",
+            "log_error = /var/snap/charmed-mysql/common/var/lib/mysql/logs/error.log",
             "general_log = OFF",
-            "general_log_file = /var/snap/charmed-mysql/common/var/log/mysql/general.log",
+            "general_log_file = /var/snap/charmed-mysql/common/var/lib/mysql/logs/general.log",
             "loose-group_replication_paxos_single_leader = ON",
-            "slow_query_log_file = /var/snap/charmed-mysql/common/var/log/mysql/slow.log",
+            "slow_query_log_file = /var/snap/charmed-mysql/common/var/lib/mysql/logs/slow.log",
             "binlog_expire_logs_seconds = 604800",
             "gtid_mode = ON",
             "enforce_gtid_consistency = ON",
@@ -252,7 +258,7 @@ class TestMySQL(unittest.TestCase):
             "loose-validate_password.number_count = 1",
             "loose-validate_password.policy = MEDIUM",
             "loose-validate_password.special_char_count = 0",
-            "loose-audit_log_filter.file = /var/snap/charmed-mysql/common/var/log/mysql/audit.log",
+            "loose-audit_log_filter.file = /var/snap/charmed-mysql/common/var/lib/mysql/logs/audit.log",
             "loose-audit_log_filter.format = JSON",
             "loose-audit_log_filter.policy = LOGINS",
             "loose-audit_log_filter.strategy = ASYNCHRONOUS",
@@ -465,14 +471,12 @@ class TestMySQL(unittest.TestCase):
         ):
             self.mysql.get_available_memory()
 
-    @patch("shutil.rmtree")
-    @patch("os.makedirs")
     @patch("shutil.chown")
-    def test_reset_data_dir(self, _chown, _makedirs, _rmtree):
+    @patch("pathlib.Path.walk", return_value=iter([]))
+    def test_reset_data_dir(self, _walk, _chown):
         self.mysql.reset_data_dir()
+        _walk.assert_called_once()
         _chown.assert_called_once()
-        _makedirs.assert_called_once()
-        _rmtree.assert_called_once()
 
     @patch("mysql_vm_helpers.MySQL.reset_data_dir")
     @patch("subprocess.run")
@@ -486,7 +490,13 @@ class TestMySQL(unittest.TestCase):
                 "/usr/bin/sudo",
                 "/snap/bin/charmed-mysql.mysqld-initialize",
                 "--datadir",
-                "/var/snap/charmed-mysql/common/var/lib/mysql",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/data",
+                "--innodb-log-group-home-dir",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/logs",
+                "--innodb-undo-directory",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/logs",
+                "--innodb-temp-tablespaces-dir",
+                "/var/snap/charmed-mysql/common/var/lib/mysql/temp",
             ],
             check=True,
         )

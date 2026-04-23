@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import tenacity
 from ops.pebble import ExecError, PathError
 
-from constants import PEER
+from constants import MYSQL_LOGS_DIR, PEER
 from mysql_k8s_helpers import (
     MySQL,
     MySQLInitialiseMySQLDError,
@@ -68,7 +68,20 @@ class TestMySQL(unittest.TestCase):
         self.mysql.initialise_mysqld()
 
         _container.exec.assert_called_once_with(
-            command=["/usr/sbin/mysqld", "--initialize", "-u", "mysql"],
+            command=[
+                "/usr/sbin/mysqld",
+                "--initialize",
+                "-u",
+                "mysql",
+                "--datadir",
+                "/var/lib/mysql/data",
+                "--innodb-log-group-home-dir",
+                "/var/lib/mysql/logs",
+                "--innodb-undo-directory",
+                "/var/lib/mysql/logs",
+                "--innodb-temp-tablespaces-dir",
+                "/var/lib/mysql/temp",
+            ],
             user="mysql",
             group="mysql",
         )
@@ -144,18 +157,25 @@ class TestMySQL(unittest.TestCase):
             "missingok\n"
             "nomail\n"
             "nosharedscripts\n"
-            "nocopytruncate\n\n\n"
-            "/var/log/mysql/error.log {\n"
-            "    olddir archive_error\n"
+            "# Needed because rotated logs might be in a different filesystem,\n"
+            "# `nocopytruncate` fails with `failed to rename ...: Invalid cross-device link`\n"
+            "copy\n"
+            "copytruncate\n\n\n"
+            f"{MYSQL_LOGS_DIR}/error.log"
+            " {\n"
+            "    olddir /var/lib/mysql/archive/archive_error\n"
             "}\n\n"
-            "/var/log/mysql/general.log {\n"
-            "    olddir archive_general\n"
+            f"{MYSQL_LOGS_DIR}/general.log"
+            " {\n"
+            "    olddir /var/lib/mysql/archive/archive_general\n"
             "}\n\n"
-            "/var/log/mysql/slowquery.log {\n"
-            "    olddir archive_slowquery\n"
+            f"{MYSQL_LOGS_DIR}/slowquery.log"
+            " {\n"
+            "    olddir /var/lib/mysql/archive/archive_slowquery\n"
             "}\n\n"
-            "/var/log/mysql/audit.log {\n"
-            "    olddir archive_audit\n"
+            f"{MYSQL_LOGS_DIR}/audit.log"
+            " {\n"
+            "    olddir /var/lib/mysql/archive/archive_audit\n"
             "}\n"
         )
 

@@ -15,6 +15,8 @@ from constants import (
     BACKUPS_PASSWORD_KEY,
     DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
+    MYSQL_DATA_DIR,
+    MYSQL_LOGS_DIR,
     MYSQLD_LOCATION,
     OPERATOR_PASSWORD_KEY,
     REPLICATION_PASSWORD_KEY,
@@ -56,9 +58,9 @@ class TestCharm(unittest.TestCase):
         mysqld_cmd = [
             MYSQLD_LOCATION,
             "--basedir=/usr",
-            "--datadir=/var/lib/mysql",
+            f"--datadir={MYSQL_DATA_DIR}",
             "--plugin-dir=/usr/lib/mysql/plugin",
-            "--log-error=/var/log/mysql/error.log",
+            f"--log-error={MYSQL_LOGS_DIR}/error.log",
             f"--pid-file={self.charm.unit_label}.pid",
         ]
         return {
@@ -80,7 +82,7 @@ class TestCharm(unittest.TestCase):
                 "mysql": {
                     "override": "replace",
                     "summary": "tail log",
-                    "command": "tail -F /var/log/mysql/error.log",
+                    "command": f"tail -F {MYSQL_LOGS_DIR}/error.log",
                     "startup": "enabled",
                 },
                 "mysqld_exporter": {
@@ -336,7 +338,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.remove_instance")
     @patch("mysql_k8s_helpers.MySQL.get_primary_label")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=True)
-    def test_database_storage_detaching(
+    def test_storage_detaching(
         self,
         mock_is_instance_in_cluster,
         mock_get_primary_label,
@@ -352,7 +354,7 @@ class TestCharm(unittest.TestCase):
         )
         mock_get_primary_label.return_value = self.charm.unit_label
 
-        self.charm._on_database_storage_detaching(None)
+        self.charm._on_storage_detaching(None)
         mock_remove_instance.assert_called_once_with(self.charm.unit_label, from_instance=None)
 
         self.assertEqual(
