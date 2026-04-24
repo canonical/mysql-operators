@@ -152,7 +152,6 @@ GET_MEMBER_STATE_TIME = 10  # seconds
 MAX_CONNECTIONS_FLOOR = 10
 MIM_MEM_BUFFERS = 200 * BYTES_1MiB
 ADMIN_PORT = 33062
-FORCE_QUORUM_TIMEOUT = 300  # seconds
 
 # Labels are not confidential
 SECRET_INTERNAL_LABEL = "secret-id"  # noqa: S105
@@ -2370,16 +2369,13 @@ class MySQLBase(ABC):
         instance_def = (
             f"{self.cluster_admin_user}:{self.cluster_admin_password}@{self.instance_address}"
         )
-        # TODO: modify/expose timeout in the mysql-shell-client library
-        address = f"{instance_def}:3306"
-        command = "\n".join((
-            f"cluster = dba.get_cluster('{self.cluster_name}')",
-            f"cluster.force_quorum_using_partition_of('{address}')",
-        ))
 
-        executor = self._build_cluster_tcp_executor(self.instance_address)
         try:
-            executor.execute_py(command, timeout=FORCE_QUORUM_TIMEOUT)
+            self._cluster_client_tcp.force_instance_quorum_into_cluster(
+                cluster_name=self.cluster_name,
+                instance_host=instance_def,
+                instance_port=str(3306),
+            )
         except ExecutionError as e:
             raise MySQLForceQuorumFromInstanceError() from e
 
