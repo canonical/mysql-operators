@@ -179,7 +179,7 @@ def test_integrate_mysql_router_and_test_app(juju: Juju):
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
         base="ubuntu@22.04",
-        channel="latest/edge/racing",
+        channel="latest/edge",
         num_units=1,
         config={"database_name": "test"},
     )
