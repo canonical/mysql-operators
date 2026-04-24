@@ -1,0 +1,21 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Scheduled run (8.4/edge)
+
+on:
+  # GitHub will only trigger workflows `on: schedule` for workflow files in the default GitHub branch
+  schedule:
+    - cron: '53 0 * * *'  # Daily at 00:53 UTC
+
+jobs:
+  trigger:
+    name: Trigger workflow on branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger workflow
+        run: gh workflow --repo '${{ github.repository }}' run nightly.yaml --ref 8.4/edge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      actions: write  # Needed to trigger workflow
