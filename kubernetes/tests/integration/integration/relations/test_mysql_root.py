@@ -39,7 +39,7 @@ def test_build_and_deploy(juju: Juju, charm):
     juju.deploy(
         APPLICATION_APP_NAME,
         num_units=2,
-        channel="latest/edge/racing",
+        channel="latest/edge",
         base="ubuntu@22.04",
         constraints=constraints,
     )

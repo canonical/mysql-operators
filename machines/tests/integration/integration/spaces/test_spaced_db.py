@@ -42,7 +42,7 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
         bind={"database": "client"},
         num_units=1,
         base="ubuntu@22.04",
-        channel="latest/edge/racing",
+        channel="latest/edge",
     )
 
     juju.wait(
@@ -96,7 +96,7 @@ def test_integrate_with_isolated_space(juju: Juju):
         bind={"database": "isolated"},
         num_units=1,
         base="ubuntu@22.04",
-        channel="latest/edge/racing",
+        channel="latest/edge",
     )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_waiting, isolated_app_name),

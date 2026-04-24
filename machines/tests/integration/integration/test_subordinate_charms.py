@@ -28,7 +28,7 @@ def test_ubuntu_pro(juju: Juju, charm):
     juju.deploy(
         APPLICATION_APP_NAME,
         APPLICATION_APP_NAME,
-        channel="latest/edge/racing",
+        channel="latest/edge",
         base="ubuntu@22.04",
     )
     juju.deploy(
