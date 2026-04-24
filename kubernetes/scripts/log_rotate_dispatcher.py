@@ -4,7 +4,6 @@
 """Log rotate event dispatcher."""
 
 import argparse
-import shutil
 import subprocess
 import time
 
@@ -13,13 +12,9 @@ def dispatch(unit: str, charm_directory: str):
     """Dispatch custom event to flush mysql logs."""
     dispatch_sub_command = f"{charm_directory}/dispatch"
 
-    juju_run = shutil.which("juju-run")
-    juju_exec = shutil.which("juju-exec")
-    command = juju_exec or juju_run or ""
-
     subprocess.run(  # noqa: S603
         [
-            command,
+            "/usr/bin/juju-exec",
             "-u",
             unit,
             "JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs",

@@ -12,7 +12,7 @@ import time
 logger = logging.getLogger(__name__)
 
 def dispatch(run_command, unit, charm_directory):
-    """Use the juju-run command to dispatch :class:`IPAddressChangeEvent`."""
+    """Use the juju-exec command to dispatch :class:`IPAddressChangeEvent`."""
     dispatch_sub_command = "JUJU_DISPATCH_PATH=hooks/ip_address_change {}/dispatch"
     subprocess.run([run_command, "-u", unit, dispatch_sub_command.format(charm_directory)])
 

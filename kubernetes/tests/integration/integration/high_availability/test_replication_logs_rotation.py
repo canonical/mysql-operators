@@ -5,11 +5,10 @@ import logging
 import os
 import subprocess
 import tempfile
-from contextlib import suppress
 from pathlib import Path
 
 import jubilant
-from jubilant import CLIError, Juju
+from jubilant import Juju
 from tenacity import (
     Retrying,
     stop_after_attempt,
@@ -239,18 +238,12 @@ def start_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
     """Start the logrotate dispatcher."""
     pod_name = get_mysql_instance_label(unit_name)
 
-    dispatch_command = None
-    for command in ("juju-exec", "juju-run"):
-        with suppress(CLIError):
-            dispatch_command = juju.ssh(command=f"which {command}", target=unit_name).strip()
-        if dispatch_command is not None:
-            break
-
+    dispatch_cmd = "juju-exec"
     dispatch_hook = "hooks/rotate_mysql_logs"
     dispatch_path = f"/var/lib/juju/agents/unit-{pod_name}/charm/dispatch"
 
     juju.ssh(
-        command=f"{dispatch_command} JUJU_DISPATCH_PATH={dispatch_hook} {dispatch_path}",
+        command=f"{dispatch_cmd} JUJU_DISPATCH_PATH={dispatch_hook} {dispatch_path}",
         target=unit_name,
     )
 
