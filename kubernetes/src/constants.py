@@ -22,6 +22,7 @@ BACKUPS_PASSWORD_KEY = "backups-password"  # noqa: S105
 CONTAINER_RESTARTS = "unit-container-restarts"
 UNIT_ENDPOINTS_KEY = "unit-endpoints"
 TLS_CLIENT_RELATION = "client-certificates"
+TLS_PEER_RELATION = "peer-certificates"
 TLS_SSL_CA_FILE = "custom-ca.pem"
 TLS_SSL_KEY_FILE = "custom-server-key.pem"
 TLS_SSL_CERT_FILE = "custom-server-cert.pem"
