@@ -1543,8 +1543,8 @@ class TestMySQLBase(unittest.TestCase):
                 group="test-group",
             )
 
-    def test_tls_set_custom(self):
-        """Test the successful execution of tls_set_custom."""
+    def test_setup_client_tls(self):
+        """Test the successful execution of setup_client_tls."""
         queries = [
             "SET @@PERSIST.`ssl_ca` = 'ca_path'",
             "SET @@PERSIST.`ssl_key` = 'key_path'",
@@ -1553,11 +1553,11 @@ class TestMySQLBase(unittest.TestCase):
             "ALTER INSTANCE RELOAD TLS",
         ]
 
-        self.mysql.tls_setup("ca_path", "key_path", "cert_path", True)
+        self.mysql.setup_client_tls("ca_path", "key_path", "cert_path", True)
         self.mock_executor.execute_sql.assert_has_calls([call(query) for query in queries])
 
-    def test_tls_restore_default(self):
-        """Test the successful execution of tls_set_custom."""
+    def test_restore_client_tls(self):
+        """Test the successful execution of setup_client_tls."""
         queries = [
             "SET @@PERSIST.`ssl_ca` = 'ca.pem'",
             "SET @@PERSIST.`ssl_key` = 'server-key.pem'",
@@ -1566,7 +1566,7 @@ class TestMySQLBase(unittest.TestCase):
             "ALTER INSTANCE RELOAD TLS",
         ]
 
-        self.mysql.tls_setup()
+        self.mysql.setup_client_tls()
         self.mock_executor.execute_sql.assert_has_calls([call(query) for query in queries])
 
     def test_kill_client_sessions(self):

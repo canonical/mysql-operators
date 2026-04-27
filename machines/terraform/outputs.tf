@@ -14,8 +14,8 @@ output "provides" {
 output "requires" {
   description = "Map of all the required endpoints"
   value = {
-    certificates  = "certificates"
-    s3_parameters = "s3-parameters"
-    tracing       = "tracing"
+    client_certificates = "client-certificates"
+    s3_parameters       = "s3-parameters"
+    tracing             = "tracing"
   }
 }

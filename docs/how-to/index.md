@@ -40,7 +40,7 @@ Networking and encryption:
 :titlesonly:
 :maxdepth: 2
 
-Enable TLS <enable-tls>
+TLS encryption <tls/index>
 External network access <external-network-access>
 ```
 

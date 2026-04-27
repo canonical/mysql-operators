@@ -1299,14 +1299,11 @@ class MySQLBase(ABC):
 
     def drop_root_user(self) -> None:
         """Drop the root user from the instance."""
-        logger.debug("Dropping root user after initial setup")
-        client = MySQLInstanceClient(
-            self._build_instance_tcp_executor(self.instance_address),
-            self._quoter,
-        )
         user = User("root", "localhost")
+
         try:
-            client.delete_instance_user(user)
+            logger.debug("Dropping root user after initial setup")
+            self._instance_client_tcp.delete_instance_user(user)
         except ExecutionError as e:
             logger.error(f"Failed to drop root user for {self.instance_address}")
             raise MySQLDropRootUserError() from e
@@ -2916,14 +2913,14 @@ class MySQLBase(ABC):
         """Execute commands on the server where MySQL is running."""
         raise NotImplementedError
 
-    def tls_setup(
+    def setup_client_tls(
         self,
         ca_path: str = "ca.pem",
         key_path: str = "server-key.pem",
         cert_path: str = "server-cert.pem",
         require_tls: bool = False,
     ) -> None:
-        """Setup TLS files and requirement mode."""
+        """Setup client-connection TLS files and requirement mode."""
         tls_var = "require_secure_transport"
         tls_val = "ON" if require_tls else "OFF"
 

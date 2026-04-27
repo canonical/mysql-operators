@@ -46,7 +46,6 @@ from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLUnableToGetMemberStateError,
 )
-from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from object_storage import S3Requirer
@@ -98,6 +97,7 @@ from log_rotation_setup import LogRotationSetup
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from refresh import KubernetesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
+from relations.tls import TLS
 from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
 from utils import compare_dictionaries, dotappend, generate_random_password, get_k8s_fqdn
 
@@ -148,7 +148,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
         self.database_relation = MySQLProvider(self)
-        self.tls = MySQLTLS(self)
+        self.tls = TLS(self)
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)
         self.grafana_dashboards = GrafanaDashboardProvider(self)
@@ -358,8 +358,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         Translate juju unit name to resolvable hostname.
         """
-        unit_hostname = self.get_unit_hostname(unit.name)
-        unit_dns_domain = get_k8s_fqdn(self.get_unit_hostname(unit.name))
+        try:
+            unit_hostname = self.get_unit_hostname(unit.name)
+            unit_dns_domain = get_k8s_fqdn(unit_hostname)
+        except RuntimeError:
+            logger.warning("Unit DNS domain name is not propagated yet")
+            return ""
 
         # When fully propagated, DNS domain name should contain unit hostname.
         # For example:
@@ -367,13 +371,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Fully propagated: mysql-k8s-0.mysql-k8s-endpoints.dev.svc.cluster.local
         # Not propagated yet: 10-1-142-191.mysql-k8s.dev.svc.cluster.local
         if unit_hostname not in unit_dns_domain:
-            logger.warning(
-                "get_unit_address: unit DNS domain name is not fully propagated yet, trying again"
-            )
+            logger.warning("Unit DNS domain name is not fully propagated yet.")
             raise RuntimeError("unit DNS domain name is not fully propagated yet")
         if unit_dns_domain == unit_hostname:
-            logger.warning("Can't get fully qualified domain name for unit. IS DNS not ready?")
-            raise RuntimeError("Can't get unit fqdn")
+            logger.warning("Can't get fully qualified domain name for unit")
+            raise RuntimeError("Can't get fully qualified domain name for unit")
 
         return dotappend(unit_dns_domain)
 
