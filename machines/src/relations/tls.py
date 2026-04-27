@@ -69,10 +69,10 @@ class TLS(Object):
         )
 
         self.framework.observe(
-            self.client_certificate.on.certificate_available, self._on_certificate_available
+            self.client_certificate.on.certificate_available, self._on_client_certificate_available
         )
         self.framework.observe(
-            self.charm.on[TLS_CLIENT_RELATION].relation_broken, self._on_relation_broken
+            self.charm.on[TLS_CLIENT_RELATION].relation_broken, self._on_client_relation_broken
         )
 
     def _get_client_common_name(self) -> str:
@@ -91,9 +91,9 @@ class TLS(Object):
         """Prepare TLS files in special MySQL way.
 
         MySQL needs three files:
-        — CA file should have a full chain.
-        — Key file should have private key.
-        — Certificate file should have certificate without certificate chain.
+        - CA file should have a full chain.
+        - Key file should have private key.
+        - Certificate file should have certificate without certificate chain.
         """
         ca_file = None
         cert_file = None
@@ -108,20 +108,20 @@ class TLS(Object):
 
         return key_file, ca_file, cert_file
 
-    def _on_certificate_available(self, event: EventBase) -> None:
+    def _on_client_certificate_available(self, event: EventBase) -> None:
         """Handler for the certificate available event."""
         state = self.charm._mysql.get_member_state()
         if state != InstanceState.ONLINE:
-            logger.debug("Unit not initialized yet, deferring TLS configuration.")
+            logger.debug("Unit not initialized yet, deferring client TLS configuration.")
             event.defer()
             return
 
-        self.charm.unit.status = MaintenanceStatus("Enabling TLS")
+        self.charm.unit.status = MaintenanceStatus("Enabling client TLS")
 
         try:
             self._push_tls_files_to_workload()
         except (PebbleConnectionError, PathError, ProtocolError) as e:
-            logger.error("Cannot push TLS certificates: %r", e)
+            logger.error(f"Cannot push TLS certificates: {e}")
             event.defer()
             return
 
@@ -133,27 +133,27 @@ class TLS(Object):
                 require_tls=True,
             )
             self.charm._mysql.kill_client_sessions()
-        except MySQLTLSSetupError:
-            logger.error("Failed to enable TLS configuration.")
-            self.charm.unit.status = BlockedStatus("Failed to enable TLS configuration.")
+        except MySQLTLSSetupError as e:
+            logger.error(f"Failed to enable client TLS: {e}")
+            self.charm.unit.status = BlockedStatus("Failed to enable client TLS.")
             return
 
         self.charm.unit.status = self.charm.build_unit_workload_status()
 
-    def _on_relation_broken(self, _: EventBase) -> None:
-        """Handler for the relation broken event."""
+    def _on_client_relation_broken(self, _: EventBase) -> None:
+        """Handler for the client relation broken event."""
         if self.charm.removing_unit:
-            logger.debug("Unit is being removed, skipping TLS cleanup.")
+            logger.debug("Unit is being removed, skipping client TLS cleanup.")
             return
 
-        self.charm.unit.status = MaintenanceStatus("Disabling TLS")
+        self.charm.unit.status = MaintenanceStatus("Disabling client TLS")
 
         try:
             self.charm._mysql.setup_client_tls()
             self.charm._mysql.kill_client_sessions()
-        except MySQLTLSSetupError:
-            logger.error("Failed to disable TLS configuration.")
-            self.charm.unit.status = BlockedStatus("Failed to disable TLS configuration.")
+        except MySQLTLSSetupError as e:
+            logger.error(f"Failed to disable client TLS: {e}")
+            self.charm.unit.status = BlockedStatus("Failed to disable client TLS.")
             return
 
         self.charm.unit.status = self.charm.build_unit_workload_status()
