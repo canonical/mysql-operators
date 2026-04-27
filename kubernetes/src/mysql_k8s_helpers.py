@@ -619,12 +619,13 @@ class MySQL(MySQLBase):
             self.container.remove_path(path)
 
     def reset_data_dir(self) -> None:
-        """Remove all files from the data directory."""
-        content = self.container.list_files(MYSQL_DATA_DIR)
-        content_set = {item.name for item in content}
-        logger.debug("Resetting MySQL data directory.")
-        for item in content_set:
-            self.container.remove_path(f"{MYSQL_DATA_DIR}/{item}", recursive=True)
+        """Remove all files from the data directories."""
+        for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+            content = self.container.list_files(path)
+            content_set = {item.name for item in content}
+            logger.debug("Resetting MySQL directory %s", path)
+            for item in content_set:
+                self.container.remove_path(f"{path}/{item}", recursive=True)
 
     def get_available_memory(self) -> int:
         """Get available memory for the container in bytes."""
