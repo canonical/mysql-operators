@@ -1569,6 +1569,32 @@ class TestMySQLBase(unittest.TestCase):
         self.mysql.setup_client_tls()
         self.mock_executor.execute_sql.assert_has_calls([call(query) for query in queries])
 
+    def test_setup_group_tls(self):
+        """Test the successful execution of setup_group_tls."""
+        queries = [
+            "SET @@PERSIST.`group_replication_recovery_ssl_ca` = 'ca_path'",
+            "SET @@PERSIST.`group_replication_recovery_ssl_key` = 'key_path'",
+            "SET @@PERSIST.`group_replication_recovery_ssl_cert` = 'cert_path'",
+            "SET @@PERSIST.`group_replication_recovery_use_ssl` = 'ON'",
+            "SET @@PERSIST.`group_replication_ssl_mode` = 'REQUIRED'",
+        ]
+
+        self.mysql.setup_group_tls("ca_path", "key_path", "cert_path", True)
+        self.mock_executor.execute_sql.assert_has_calls([call(query) for query in queries])
+
+    def test_restore_group_tls(self):
+        """Test the successful execution of setup_group_tls."""
+        queries = [
+            "SET @@PERSIST.`group_replication_recovery_ssl_ca` = 'ca.pem'",
+            "SET @@PERSIST.`group_replication_recovery_ssl_key` = 'server-key.pem'",
+            "SET @@PERSIST.`group_replication_recovery_ssl_cert` = 'server-cert.pem'",
+            "SET @@PERSIST.`group_replication_recovery_use_ssl` = 'OFF'",
+            "SET @@PERSIST.`group_replication_ssl_mode` = 'DISABLED'",
+        ]
+
+        self.mysql.setup_group_tls()
+        self.mock_executor.execute_sql.assert_has_calls([call(query) for query in queries])
+
     def test_kill_client_sessions(self):
         """Test kill_client_sessions."""
         search_query = (
