@@ -5,6 +5,7 @@
 """Helper class to manage the MySQL InnoDB cluster lifecycle with MySQL Shell."""
 
 import logging
+from collections import deque
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
@@ -206,7 +207,35 @@ class MySQL(MySQLBase):
             process.wait_output()
         except (ExecError, ChangeError, PathError, TimeoutError):
             logger.exception("Failed to initialise MySQL data directory")
+            # Try to recover logs from the instance
+            try:
+                error_log_lines = self._recover_error_logs()
+                logger.debug("Last lines of error.log: \n%s", "".join(error_log_lines))
+            except Exception:
+                logger.exception("Could not recover contents of error.log")
+            # List contents of relevant directories for easier debugging
+            try:
+                for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+                    logger.debug(
+                        "Contents of %s: %s",
+                        path,
+                        [f.name for f in self.container.list_files(path)],
+                    )
+            except Exception:
+                logger.exception("Could not list contents of %s", path)
+
             raise MySQLInitialiseMySQLDError from None
+
+    def _recover_error_logs(self, max_lines: int = 10) -> list[str]:
+        for error_log_path in f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log":
+            if self.container.exists(error_log_path):
+                error_log_reader = self.container.pull(error_log_path, encoding="utf-8")
+                lines = deque(maxlen=max_lines)
+                for line in error_log_reader:
+                    lines.append(line)
+            return list(lines)
+
+        raise RuntimeError("No error.log file found in expected locations")
 
     def set_operator_user_and_start_mysqld(self) -> None:
         """Set the operator user and start mysqld."""
