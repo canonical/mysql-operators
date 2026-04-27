@@ -233,7 +233,7 @@ class MySQL(MySQLBase):
                 lines = deque(maxlen=max_lines)
                 for line in error_log_reader:
                     lines.append(line)
-            return error_log_path, list(lines)
+                return error_log_path, list(lines)
 
         raise RuntimeError("No error.log file found in expected locations")
 
