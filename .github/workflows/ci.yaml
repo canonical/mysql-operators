@@ -14,6 +14,20 @@ on:
       - '.github/renovate.json5'
 
 jobs:
+
+  promote:
+    name: Promote charms
+    uses: canonical/data-platform-workflows/.github/workflows/_promote_charms.yaml@feat/dpe-9830-promote-revision
+    with:
+      revisions: 'mysql-k8s/rev406,mysql-k8s/rev407,mysql-k8s/rev408,mysql/rev498,mysql/rev499,mysql/rev500'
+      track: '8.4'
+      to-risk: beta
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      actions: read
+      contents: write  # Needed to edit GitHub releases
+
   lint:
     name: Lint | ${{ matrix.path }}
     runs-on: ubuntu-latest
