@@ -210,7 +210,6 @@ class MySQL(MySQLBase):
 
     def set_operator_user_and_start_mysqld(self) -> None:
         """Set the operator user and start mysqld."""
-        logger.debug("Set operator user and starting mysqld")
         create_user_queries = [
             f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}';",
             f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION;",
