@@ -618,12 +618,15 @@ class MySQL(MySQLBase):
         if self.container.exists(path):
             self.container.remove_path(path)
 
-    def reset_data_dir(self) -> None:
+    def reset_data_dir(self, keep_files: set[str] | None = None) -> None:
         """Remove all files from the data directories."""
+        if keep_files is None:
+            keep_files = {"audit.log", "error.log"}
+
         for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
             content = self.container.list_files(path)
-            content_set = {item.name for item in content}
-            logger.debug("Resetting MySQL directory %s", path)
+            content_set = {item.name for item in content if item.name not in keep_files}
+            logger.debug("Resetting MySQL directory %s, keeping %s", path, keep_files)
             for item in content_set:
                 self.container.remove_path(f"{path}/{item}", recursive=True)
 
