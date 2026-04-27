@@ -209,8 +209,8 @@ class MySQL(MySQLBase):
             logger.exception("Failed to initialise MySQL data directory")
             # Try to recover logs from the instance
             try:
-                error_log_lines = self._recover_error_logs()
-                logger.debug("Last lines of error.log: \n%s", "".join(error_log_lines))
+                error_log_path, error_log_lines = self._recover_error_logs()
+                logger.debug("Last lines of %s: \n%s", error_log_path, "".join(error_log_lines))
             except Exception:
                 logger.exception("Could not recover contents of error.log")
             # List contents of relevant directories for easier debugging
@@ -226,14 +226,14 @@ class MySQL(MySQLBase):
 
             raise MySQLInitialiseMySQLDError from None
 
-    def _recover_error_logs(self, max_lines: int = 10) -> list[str]:
-        for error_log_path in f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log":
+    def _recover_error_logs(self, max_lines: int = 10) -> tuple[str, list[str]]:
+        for error_log_path in {f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log"}:
             if self.container.exists(error_log_path):
                 error_log_reader = self.container.pull(error_log_path, encoding="utf-8")
                 lines = deque(maxlen=max_lines)
                 for line in error_log_reader:
                     lines.append(line)
-            return list(lines)
+            return error_log_path, list(lines)
 
         raise RuntimeError("No error.log file found in expected locations")
 
