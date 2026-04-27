@@ -199,6 +199,17 @@ class MySQL(MySQLBase):
 
         try:
             self.reset_data_dir()
+            # List contents of relevant directories for easier debugging
+            try:
+                for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+                    logger.debug(
+                        "Contents of %s before initialization: %s",
+                        path,
+                        [f.name for f in self.container.list_files(path)],
+                    )
+            except Exception:
+                logger.warning("Could not list contents of %s", path)
+
             process = self.container.exec(
                 command=bootstrap_command,
                 user=MYSQL_SYSTEM_USER,
@@ -213,16 +224,6 @@ class MySQL(MySQLBase):
                 logger.debug("Last lines of %s: \n%s", error_log_path, "".join(error_log_lines))
             except Exception:
                 logger.exception("Could not recover contents of error.log")
-            # List contents of relevant directories for easier debugging
-            try:
-                for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
-                    logger.debug(
-                        "Contents of %s: %s",
-                        path,
-                        [f.name for f in self.container.list_files(path)],
-                    )
-            except Exception:
-                logger.exception("Could not list contents of %s", path)
 
             raise MySQLInitialiseMySQLDError from None
 
