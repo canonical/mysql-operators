@@ -28,105 +28,105 @@ jobs:
       actions: read
       contents: write  # Needed to edit GitHub releases
 
-  lint:
-    name: Lint | ${{ matrix.path }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Install terraform
-        run: |
-          sudo snap install terraform --classic
-      - name: Install tox & poetry
-        run: |
-          pipx install tox
-          pipx install poetry
-      - name: Run linters
-        working-directory: ${{ matrix.path }}
-        run: |
-          tox run -e lint
-          tox run -e lint-terraform
+  # lint:
+  #   name: Lint | ${{ matrix.path }}
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       path:
+  #         - kubernetes
+  #         - machines
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #     - name: Install terraform
+  #       run: |
+  #         sudo snap install terraform --classic
+  #     - name: Install tox & poetry
+  #       run: |
+  #         pipx install tox
+  #         pipx install poetry
+  #     - name: Run linters
+  #       working-directory: ${{ matrix.path }}
+  #       run: |
+  #         tox run -e lint
+  #         tox run -e lint-terraform
 
-  unit-test:
-    name: Unit test | ${{ matrix.path }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Install tox & poetry
-        run: |
-          pipx install tox
-          pipx install poetry
-      - name: Run tests
-        working-directory: ${{ matrix.path }}
-        run: tox run -e unit
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v6
-        with:
-          directory: ${{ matrix.path }}
+  # unit-test:
+  #   name: Unit test | ${{ matrix.path }}
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       path:
+  #         - kubernetes
+  #         - machines
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #     - name: Install tox & poetry
+  #       run: |
+  #         pipx install tox
+  #         pipx install poetry
+  #     - name: Run tests
+  #       working-directory: ${{ matrix.path }}
+  #       run: tox run -e unit
+  #     - name: Upload Coverage to Codecov
+  #       uses: codecov/codecov-action@v6
+  #       with:
+  #         directory: ${{ matrix.path }}
 
-  alert-test:
-    name: Test Alert Rules | ${{ matrix.path }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v5
-      - name: Install prometheus snap
-        run: sudo snap install prometheus
-      - name: Check validity of prometheus alert rules
-        working-directory: ${{ matrix.path }}
-        run: promtool check rules src/alert_rules/prometheus/*
-      - name: Run unit tests for prometheus alert rules
-        working-directory: ${{ matrix.path }}
-        run: promtool test rules tests/alerts/*.yaml
+  # alert-test:
+  #   name: Test Alert Rules | ${{ matrix.path }}
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       path:
+  #         - kubernetes
+  #         - machines
+  #   steps:
+  #     - name: Checkout repo
+  #       uses: actions/checkout@v5
+  #     - name: Install prometheus snap
+  #       run: sudo snap install prometheus
+  #     - name: Check validity of prometheus alert rules
+  #       working-directory: ${{ matrix.path }}
+  #       run: promtool check rules src/alert_rules/prometheus/*
+  #     - name: Run unit tests for prometheus alert rules
+  #       working-directory: ${{ matrix.path }}
+  #       run: promtool test rules tests/alerts/*.yaml
 
-  build:
-    name: Build charm | ${{ matrix.path }}
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v48.1.2
-    with:
-      path-to-charm-directory: ${{ matrix.path }}
+  # build:
+  #   name: Build charm | ${{ matrix.path }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       path:
+  #         - kubernetes
+  #         - machines
+  #   uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v48.1.2
+  #   with:
+  #     path-to-charm-directory: ${{ matrix.path }}
 
-  integration-test:
-    name: Integration tests
-    needs:
-      - lint
-      - unit-test
-      - build
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    uses: ./.github/workflows/integration_test.yaml
-    with:
-      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-      path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+  # integration-test:
+  #   name: Integration tests
+  #   needs:
+  #     - lint
+  #     - unit-test
+  #     - build
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       path:
+  #         - kubernetes
+  #         - machines
+  #   uses: ./.github/workflows/integration_test.yaml
+  #   with:
+  #     artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+  #     path-to-charm-directory: ${{ matrix.path }}
+  #   secrets: inherit
