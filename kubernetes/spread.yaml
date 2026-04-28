@@ -124,18 +124,8 @@ prepare: |
   snap install --classic concierge
 
   # Install charmcraft & pipx (on lxd-vm backend)
-  concierge prepare --trace
-
-  pipx install tox poetry
-  poetry env use $pythonLocation/bin/python
-prepare-each: |
-  cd "$SPREAD_PATH"
   if [[ $SPREAD_VARIANT == *"juju29"* ]]
   then
-    # Each version of python-libjuju is only compatible with one major Juju version
-    # Override python-libjuju version pinned in poetry.lock
-    poetry add --lock --group integration juju@^2
-
     # Pin Juju version to 2.9.57, see https://github.com/juju/juju/issues/22356
     ARCH=$(dpkg --print-architecture)
     if [ "$ARCH" = "amd64" ]; then
@@ -148,6 +138,18 @@ prepare-each: |
     fi
     juju bootstrap microk8s concierge-microk8s --verbose --model-default 'logging-config=<root>=INFO;unit=DEBUG' --debug --keep-broken
     juju add-model -c concierge-microk8s testing
+  fi
+  concierge prepare --trace
+
+  pipx install tox poetry
+  poetry env use $pythonLocation/bin/python
+prepare-each: |
+  cd "$SPREAD_PATH"
+  if [[ $SPREAD_VARIANT == *"juju29"* ]]
+  then
+    # Each version of python-libjuju is only compatible with one major Juju version
+    # Override python-libjuju version pinned in poetry.lock
+    poetry add --lock --group integration juju@^2
   fi
   # `concierge prepare` needs to be run for each spread job in case Juju version changed
   concierge prepare --trace
