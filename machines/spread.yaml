@@ -138,6 +138,19 @@ prepare-each: |
     # Each version of python-libjuju is only compatible with one major Juju version
     # Override python-libjuju version pinned in poetry.lock
     poetry add --lock --group integration juju@^2
+
+    # Pin Juju version to 2.9.57, see https://github.com/juju/juju/issues/22356
+    ARCH=$(dpkg --print-architecture)
+    if [ "$ARCH" = "amd64" ]; then
+      snap install juju --channel 2.9/stable --revision 34482 --classic
+    elif [ "$ARCH" = "arm64" ]; then
+      snap install juju --channel 2.9/stable --revision 34483 --classic
+    else
+      echo "Unsupported architecture: $ARCH"
+      exit 1
+    fi
+    juju bootstrap localhost concierge-lxd --verbose --model-default 'logging-config=<root>=INFO;unit=DEBUG' --debug --keep-broken
+    juju add-model -c concierge-lxd testing
   fi
   # `concierge prepare` needs to be run for each spread job in case Juju version changed
   concierge prepare --trace
