@@ -228,7 +228,7 @@ class MySQL(MySQLBase):
             raise MySQLInitialiseMySQLDError from None
 
     def _recover_error_logs(self, max_lines: int = 10) -> tuple[str, list[str]]:
-        for error_log_path in {f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log"}:
+        for error_log_path in f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log":
             if self.container.exists(error_log_path):
                 error_log_reader = self.container.pull(error_log_path, encoding="utf-8")
                 lines = deque(maxlen=max_lines)
