@@ -200,15 +200,15 @@ class MySQL(MySQLBase):
         try:
             self.reset_data_dir()
             # List contents of relevant directories for easier debugging
-            try:
-                for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+            for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+                try:
                     logger.debug(
                         "Contents of %s before initialization: %s",
                         path,
                         [f.name for f in self.container.list_files(path)],
                     )
-            except Exception:
-                logger.warning("Could not list contents of %s", path)
+                except PathError:
+                    logger.warning("Could not list contents of %s", path)
 
             process = self.container.exec(
                 command=bootstrap_command,
