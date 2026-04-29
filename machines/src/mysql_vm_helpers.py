@@ -766,24 +766,20 @@ class MySQL(MySQLBase):
 
             # minimal expected content for an integral mysqld data-dir
             expected_content = {
-                "mysql",
-                "public_key.pem",
-                "sys",
-                "ca.pem",
-                "client-key.pem",
-                "mysql.ibd",
                 "auto.cnf",
-                "server-cert.pem",
-                "ib_buffer_pool",
-                "server-key.pem",
-                "undo_002",
-                "#innodb_redo",
-                "undo_001",
-                "#innodb_temp",
-                "private_key.pem",
-                "client-cert.pem",
                 "ca-key.pem",
+                "ca.pem",
+                "client-cert.pem",
+                "client-key.pem",
+                "ib_buffer_pool",
+                "mysql",
+                "mysql.ibd",
                 "performance_schema",
+                "private_key.pem",
+                "public_key.pem",
+                "server-cert.pem",
+                "server-key.pem",
+                "sys",
             }
 
             return expected_content <= set(content)

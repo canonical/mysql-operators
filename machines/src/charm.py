@@ -769,6 +769,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         Create users and configuration to setup instance as an Group Replication node.
         Raised errors must be treated on handlers.
         """
+        if self._mysql.is_data_dir_initialised():
+            logger.info("Data directory is already initialised, skipping configuration")
+            return
+
         # ensure hostname can be resolved
         self.hostname_resolution.update_etc_hosts(None)
 
