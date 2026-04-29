@@ -38,7 +38,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         DATABASE_APP_NAME,
         base="ubuntu@24.04",
         config={"profile": "testing"},
-        storage={"data": "5G"},  # Necessary to detach storage later
+        storage={"data": "1G", "logs": "1G"},  # Necessary to detach storage later
         num_units=1,
     )
 
@@ -129,6 +129,7 @@ def test_scale_up_from_zero_preserves_attached_storage(juju: Juju) -> None:
 
     storages = juju.status().storage.storage
     data_storage_id = next(storage_id for storage_id in storages if "data" in storage_id)
+    logs_storage_id = next(storage_id for storage_id in storages if "logs" in storage_id)
 
     logger.info("Scaling down to 0 units")
     juju.remove_unit(mysql_app_leader, destroy_storage=False)
@@ -139,7 +140,7 @@ def test_scale_up_from_zero_preserves_attached_storage(juju: Juju) -> None:
         timeout=TIMEOUT,
     )
 
-    juju.add_unit(DATABASE_APP_NAME, attach_storage=data_storage_id)
+    juju.add_unit(DATABASE_APP_NAME, attach_storage=[data_storage_id, logs_storage_id])
 
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
