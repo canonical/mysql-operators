@@ -218,14 +218,18 @@ class MySQL(MySQLBase):
             process.wait_output()
         except (ExecError, ChangeError, PathError, TimeoutError):
             logger.exception("Failed to initialise MySQL data directory")
-            # Try to recover logs from the instance
-            try:
-                error_log_path, error_log_lines = self._recover_error_logs()
-                logger.debug("Last lines of %s: \n%s", error_log_path, "".join(error_log_lines))
-            except Exception:
-                logger.exception("Could not recover contents of error.log")
+        else:
+            return
 
-            raise MySQLInitialiseMySQLDError from None
+        # An error was raised,
+        # Try to recover logs from the instance
+        try:
+            error_log_path, error_log_lines = self._recover_error_logs()
+            logger.debug("Last lines of %s: \n%s", error_log_path, "".join(error_log_lines))
+        except Exception:
+            logger.exception("Could not recover contents of error.log")
+
+        raise MySQLInitialiseMySQLDError from None
 
     def _recover_error_logs(self, max_lines: int = 10) -> tuple[str, list[str]]:
         for error_log_path in f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log":
