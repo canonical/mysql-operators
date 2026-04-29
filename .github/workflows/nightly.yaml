@@ -60,7 +60,10 @@ jobs:
 
   allure-report:
     name: Publish Allure report
-    if: ${{ !cancelled() && github.run_attempt == '1' }}
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
     needs:
       - integration-test
       - release-test
@@ -197,7 +200,7 @@ jobs:
           VAR_REPOSITORY: ${{ github.repository }}
       - name: Generate Allure report
         run: allure generate
-      - name: Create index.html
+      - name: Create branch index.html
         shell: python
         run: |
           import os
