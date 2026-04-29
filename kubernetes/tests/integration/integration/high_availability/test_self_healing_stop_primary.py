@@ -67,7 +67,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
-async def test_graceful_crash_of_primary(juju: Juju, continuous_writes) -> None:
+def test_graceful_crash_of_primary(juju: Juju, continuous_writes) -> None:
     """Test to send SIGTERM to primary instance and then verify recovery."""
     # Ensure continuous writes still incrementing for all units
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
