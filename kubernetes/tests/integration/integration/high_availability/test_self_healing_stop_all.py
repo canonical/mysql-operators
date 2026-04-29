@@ -69,7 +69,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
-async def test_graceful_full_cluster_crash(juju: Juju, continuous_writes) -> None:
+def test_graceful_full_cluster_crash(juju: Juju, continuous_writes) -> None:
     """Pause test.
 
     A graceful simultaneous restart of all instances,
