@@ -19,7 +19,7 @@ MYSQL_APP_NAME = "mysql-k8s"
 MINUTE_SECS = 60
 
 
-def test_deploy_and_crash_during_cluster_setup_and_recover(juju: Juju, charm: str) -> None:
+def test_build_and_deploy(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
     juju.deploy(
@@ -44,6 +44,8 @@ def test_deploy_and_crash_during_cluster_setup_and_recover(juju: Juju, charm: st
         timeout=20 * MINUTE_SECS,
     )
 
+
+def test_crash_during_cluster_setup_and_recover(juju: Juju) -> None:
     mysql_primary = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
 
     logging.info("Deleting pod")
