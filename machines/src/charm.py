@@ -47,6 +47,7 @@ from charms.mysql.v0.mysql import (
     MySQLRebootFromCompleteOutageError,
     MySQLRejoinInstanceToClusterError,
     MySQLSetClusterPrimaryError,
+    MySQLStartMySQLDError,
     MySQLUnableToGetMemberStateError,
 )
 from object_storage import S3Requirer
@@ -334,6 +335,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
         except MySQLCreateCustomMySQLDConfigError:
             self.set_unit_status(BlockedStatus("Failed to create custom mysqld config"))
+            return
+        except MySQLStartMySQLDError:
+            self.set_unit_status(BlockedStatus("Failed to start mysqld server"))
             return
         except MySQLDNotRestartedError:
             self.set_unit_status(BlockedStatus("Failed to restart instance"))
@@ -678,6 +682,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Returns whether the unit is the primary."""
         return self._mysql.get_primary_label() == self.unit_label
 
+    @property
+    def is_new_unit(self) -> bool:
+        """Return whether the unit is a clean state.
+
+        e.g. scaling from zero units
+        """
+        _default_unit_data_keys = {
+            "egress-subnets",
+            "ingress-address",
+            "private-address",
+        }
+        return self.unit_peer_data.keys() == _default_unit_data_keys
+
     def get_unit_hostname(self, unit_name: str | None = None) -> str:
         """Get the hostname of the unit."""
         if unit_name:
@@ -769,8 +786,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         Create users and configuration to setup instance as an Group Replication node.
         Raised errors must be treated on handlers.
         """
+        self._mysql.write_mysqld_config()
+        self.log_rotation_setup.setup()
+
         if self._mysql.is_data_dir_initialised():
             logger.info("Data directory is already initialised, skipping configuration")
+            self._mysql.start_mysqld()
+            if self.is_new_unit and self.unit.is_leader():
+                # when unit is new and has data, it means the app is scaling out
+                # from zero units
+                logger.info("Scaling out from zero units")
+                # create the cluster due it being dissolved on scale-down
+                self.create_cluster()
+                self._on_update_status(None)
             return
 
         # ensure hostname can be resolved
@@ -779,9 +807,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         logger.info("Initializing MySQL data directory")
         self._mysql.initialise_mysqld()
 
-        self._mysql.write_mysqld_config()
-        self.log_rotation_setup.setup()
+        logger.info("Set operator user and restart mysqld")
         self._mysql.set_operator_user_and_start_mysqld()
+
+        logger.info("Configuring initialized mysqld")
         self._mysql.configure_mysql_router_roles()
         self._mysql.configure_mysql_system_roles()
         self._mysql.configure_mysql_system_users()
