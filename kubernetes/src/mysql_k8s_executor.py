@@ -51,7 +51,12 @@ class ContainerExecutor(BaseExecutor):
         if not error:
             error = exc.stderr
 
-        return error or ""
+        if isinstance(error, str):
+            error = error
+        if isinstance(error, dict):
+            error = error.get("message")
+
+        return str(error)
 
     def _parse_output_py(self, output: str) -> str:
         """Parse the Python execution output."""
