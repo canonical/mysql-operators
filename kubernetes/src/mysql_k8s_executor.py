@@ -51,8 +51,6 @@ class ContainerExecutor(BaseExecutor):
         if not error:
             error = exc.stderr
 
-        if isinstance(error, str):
-            error = error
         if isinstance(error, dict):
             error = error.get("message")
 
