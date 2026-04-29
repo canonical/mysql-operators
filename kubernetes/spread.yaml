@@ -127,6 +127,13 @@ prepare: |
   if [[ $SPREAD_VARIANT == *"juju29"* ]]
   then
     # Pin Juju version to 2.9.57, see https://github.com/juju/juju/issues/22356
+    snap install microk8s --channel 1.35-strict/stable
+    microk8s status --wait-ready --timeout 270
+    microk8s enable dns
+    microk8s enable hostpath-storage
+    usermod -a -G snap_microk8s root
+    microk8s config
+
     ARCH=$(dpkg --print-architecture)
     if [ "$ARCH" = "amd64" ]; then
       snap install juju --channel 2.9/stable --revision 34482 --classic
