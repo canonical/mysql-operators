@@ -1,43 +1,48 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-name: TICS self-hosted run
+
+name: Weekly TICS scan
 
 on:
   schedule:
     - cron: "0 2 * * 6" # Every Saturday 2:00 AM UTC
   workflow_dispatch:
 
-
 jobs:
-  tiobe-scan:
-    name: Tiobe scan
-    runs-on: [self-hosted, tiobe]
-    timeout-minutes: 60
+  TICS:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout the project
+      - name: Checkout
         uses: actions/checkout@v6
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y python3-venv
-      - name: Install pipx
-        run: python3 -m pip install --user pipx && python3 -m pipx ensurepath
-      - name: Add pipx to PATH
-        run: echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-      - name: Install tox and poetry using pipx
+        with:
+          persist-credentials: false
+
+      - name: Create and activate virtual environment
         run: |
-          pipx install tox
-          pipx install poetry
-      - name: Run tox tests to create coverage.xml
-        run: tox run -e unit
-      - name: Move results to necessary folder for TICS
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install coverage flake8 poetry pylint pytest tox
+          echo PATH="$PATH" >> "$GITHUB_ENV"
+
+      - name: Run coverage tests
+        run: |
+          tox -e unit -c kubernetes/tox.ini
+          tox -e unit -c machines/tox.ini
+
+      - name: Combine coverage reports for TICS
         run: |
           mkdir -p .cover
-          mv coverage.xml .cover/cobertura.xml
-      - name: Run TICS analysis with github-action
+          coverage combine kubernetes/.coverage machines/.coverage
+          coverage xml -o .cover/cobertura.xml
+
+      - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v3
         with:
           mode: qserver
           project: mysql-operators
-          branchdir: .
           viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
-          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}
+          branchdir: ${{ env.GITHUB_WORKSPACE }}
+          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}  # zizmor: ignore[secrets-outside-env] Organization secret (does not support environments: https://github.com/orgs/community/discussions/15379)
           installTics: true
+          calc: ALL
+    permissions: {}
