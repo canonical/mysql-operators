@@ -347,15 +347,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLGetMySQLVersionError:
             logger.debug("Fail to get MySQL version")
 
-        if not self.unit.is_leader():
-            # Wait to be joined and set flags
-            self.set_unit_status(WaitingStatus("Waiting to join the cluster"))
-            self.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
-            self.unit_peer_data["member-state"] = "waiting"
-            return
-
-        self._create_cluster()
-
     def _on_peer_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle the peer relation changed event."""
         # Only execute if peer relation data contains cluster config values
@@ -682,19 +673,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Returns whether the unit is the primary."""
         return self._mysql.get_primary_label() == self.unit_label
 
-    @property
-    def is_new_unit(self) -> bool:
-        """Return whether the unit is a clean state.
-
-        e.g. scaling from zero units
-        """
-        _default_unit_data_keys = {
-            "egress-subnets",
-            "ingress-address",
-            "private-address",
-        }
-        return self.unit_peer_data.keys() == _default_unit_data_keys
-
     def get_unit_hostname(self, unit_name: str | None = None) -> str:
         """Get the hostname of the unit."""
         if unit_name:
@@ -792,7 +770,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._mysql.is_data_dir_initialised():
             logger.info("Data directory is already initialised, skipping configuration")
             self._mysql.start_mysqld()
-            if self.is_new_unit and self.unit.is_leader():
+            if not self.unit_initialized() and self.unit.is_leader():
                 # when unit is new and has data, it means the app is scaling out
                 # from zero units
                 logger.info("Scaling out from zero units")
@@ -840,6 +818,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._mysql.wait_until_mysql_connection()
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
+
+        if not self.unit.is_leader():
+            # Wait to be joined and set flags
+            self.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+            self.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
+            self.unit_peer_data["member-state"] = "waiting"
+            return
+
+        self._create_cluster()
 
     def get_unit_address(self, unit: Unit, relation_name: str) -> str:
         """Get the IP address of a specific unit."""
