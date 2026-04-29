@@ -120,37 +120,18 @@ environment:
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
   CONCIERGE_JUJU_CHANNEL/juju29: 2.9/stable
   pythonLocation: '$(HOST: echo $pythonLocation)'
+  # Fix for https://github.com/juju/juju/issues/22356
+  # Suggestion from https://github.com/canonical/concierge/issues/130
+  CONCIERGE_JUJU_EXTRA_ARGS/juju29: --config caas-image-repo=ghcr.io/juju
 prepare: |
   snap refresh --hold
   chown -R root:root "$SPREAD_PATH"
   cd "$SPREAD_PATH"
   snap install --classic concierge
+  snap install yq
 
   # Install charmcraft & pipx (on lxd-vm backend)
-  if [[ $SPREAD_VARIANT == *"juju29"* ]]
-  then
-    # Pin Juju version to 2.9.57, see https://github.com/juju/juju/issues/22356
-    snap refresh lxd
-    lxd waitready --timeout 270
-    lxd init --minimal
-    lxc network set lxdbr0 ipv6.address none
-    chmod a+wr /var/snap/lxd/common/lxd/unix.socket
-    usermod -a -G lxd root
-    iptables -F FORWARD
-    iptables -P FORWARD ACCEPT
-
-    ARCH=$(dpkg --print-architecture)
-    if [ "$ARCH" = "amd64" ]; then
-      snap install juju --channel 2.9/stable --revision 34482 --classic
-    elif [ "$ARCH" = "arm64" ]; then
-      snap install juju --channel 2.9/stable --revision 34483 --classic
-    else
-      echo "Unsupported architecture: $ARCH"
-      exit 1
-    fi
-    juju bootstrap localhost concierge-lxd --verbose --model-default 'logging-config=<root>=INFO;unit=DEBUG' --debug --keep-broken
-    juju add-model -c concierge-lxd testing
-  fi
+  yq -i '.juju.extra-bootstrap-args = "$CONCIERGE_JUJU_EXTRA_ARGS"' concierge.yaml
   concierge prepare --trace
 
   pipx install tox poetry
