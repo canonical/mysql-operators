@@ -23,7 +23,7 @@ from constants import (
 )
 
 
-@patch("charmlibs.rollingops.peer._backend.PeerRollingOpsBackend._process_locks")
+@patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
 class TestAsyncRelation(unittest.TestCase):
     def setUp(self) -> None:
         self.harness = Harness(MySQLOperatorCharm)

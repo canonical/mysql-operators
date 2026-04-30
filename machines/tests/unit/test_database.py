@@ -21,6 +21,7 @@ class TestDatabase(unittest.TestCase):
         self.harness.add_relation_unit(self.database_relation_id, "app/0")
         self.charm = self.harness.charm
 
+    @patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
     @patch("charm.MySQLOperatorCharm.unit_initialized")
     @patch("charm.MySQLOperatorCharm.cluster_initialized", new_callable=PropertyMock)
     @patch(
@@ -42,12 +43,13 @@ class TestDatabase(unittest.TestCase):
         _get_cluster_endpoints,
         _cluster_initialized,
         _unit_initialized,
+        _,
     ):
         _unit_initialized.return_value = False
         _cluster_initialized.return_value = False
+
         # run start-up events to enable usage of the helper class
-        with patch("charmlibs.rollingops.peer._backend.PeerRollingOpsBackend._process_locks") as _:
-            self.harness.set_leader(True)
+        self.harness.set_leader(True)
         self.charm.on.config_changed.emit()
 
         # confirm that the relation databag is empty
