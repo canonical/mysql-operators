@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def harness():
     harness = Harness(MySQLOperatorCharm, meta=METADATA, config=CONFIG, actions=ACTIONS)
-    harness.add_relation("restart", "mysql")
     harness.add_relation(PEER, "mysql")
     harness.begin()
     return harness

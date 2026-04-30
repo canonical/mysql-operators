@@ -4,7 +4,6 @@
 
 import logging
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 import yaml
@@ -22,9 +21,6 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def harness():
     harness = Harness(MySQLOperatorCharm, meta=METADATA, config=CONFIG, actions=ACTIONS)
-    harness.add_relation("restart", "mysql")
-    patcher = patch("lightkube.core.client.GenericSyncClient")
-    patcher.start()
     harness.begin()
     return harness
 

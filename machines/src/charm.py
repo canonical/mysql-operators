@@ -17,6 +17,7 @@ from time import sleep
 
 import charm_refresh
 import ops
+from charmlibs.rollingops import RollingOpsManager
 from charms.data_platform_libs.v1.data_models import TypedCharmBase
 from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
 from charms.mysql.v0.async_replication import (
@@ -48,12 +49,10 @@ from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLUnableToGetMemberStateError,
 )
-from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from object_storage import S3Requirer
 from ops import (
     ActiveStatus,
     BlockedStatus,
-    EventBase,
     InstallEvent,
     MaintenanceStatus,
     RelationBrokenEvent,
@@ -206,7 +205,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         else:
             self._refresh.next_unit_allowed_to_refresh = True
 
-        self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
+        self.rolling_ops = RollingOpsManager(
+            charm=self,
+            base_dir="/var/lib/rollingops",
+            peer_relation_name="rolling-ops",
+            callback_targets={"restart": self._restart},
+        )
 
         self.mysql_logs = MySQLLogs(self)
         self.replication_offer = MySQLAsyncReplicationOffer(self)
@@ -293,7 +297,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             and self._mysql.is_mysqld_running()
         ):
             logger.info("Configuration change requires restart")
-            self.on[f"{self.restart.name}"].acquire_lock.emit()
+            self.rolling_ops.request_async_lock(callback_id="restart")
 
         elif dynamic_config := self.mysql_config.filter_static_keys(changed_config):
             # if only dynamic config changed, apply it
@@ -584,9 +588,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.debug("skip status update while setting up async replication")
             return
 
-        # unset restart control flag
-        del self.restart_peers.data[self.unit]["state"]
-
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
             return
@@ -668,11 +669,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def unit_fqdn(self) -> str:
         """Returns the unit's FQDN."""
         return socket.getfqdn()
-
-    @property
-    def restart_peers(self) -> ops.Relation | None:
-        """Retrieve the peer relation."""
-        return self.model.get_relation("restart")
 
     def is_unit_busy(self) -> bool:
         """Returns whether the unit is in blocked state and should not run any operations."""
@@ -1021,7 +1017,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self, _: EventBase) -> None:
+    def _restart(self) -> None:
         """Restart the service."""
         if not self.unit_initialized():
             logger.debug("Restarting standalone mysqld")

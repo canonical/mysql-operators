@@ -17,7 +17,7 @@ class TestAsyncReplication(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
-        self.restart_relation_id = self.harness.add_relation("restart", "restart")
+        self.rolling_relation_id = self.harness.add_relation("rolling-ops", "rolling-ops")
         self.harness.set_leader(True)
 
     @patch("ops.framework.EventBase.defer")
