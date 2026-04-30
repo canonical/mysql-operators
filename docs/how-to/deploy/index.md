@@ -60,4 +60,5 @@ Terraform <terraform/index>
 Airgapped <airgapped>
 Multi-AZ <multi-az/index>
 Juju spaces <juju-spaces>
+Juju storage <juju-storage>
 ```
