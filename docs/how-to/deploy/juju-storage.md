@@ -9,8 +9,6 @@ myst:
 
 Charmed MySQL uses the [Juju storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/) abstraction to utilise data volume provided by different [clouds](https://documentation.ubuntu.com/juju/3.6/reference/cloud/#cloud) while keeping the same UI/UX for end users.
 
-Older versions and legacy charms do **not** support the Juju storage abstraction.
-
 ## Check Juju storage details
 
 Charmed MySQL 8.4 supports multiple storage types, both on [VM](https://charmhub.io/mysql?channel=8.4/edge) and [K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge): `archive`, `data`, `logs` and `temp`.
@@ -90,7 +88,7 @@ storage:
 :user: ubuntu
 :host: my-vm
 
-juju deploy mysql --channel 8.4/stable --storage data=10G
+juju deploy mysql --channel 8.4/edge --storage data=10G
 ```
 
 ```text
@@ -109,7 +107,7 @@ mysql/0  data/1      filesystem  lxd     10 GiB   attached
 :user: ubuntu
 :host: my-vm
 
-juju deploy mysql-k8s --channel 8.4/stable --storage data=10G
+juju deploy mysql-k8s --channel 8.4/edge --storage data=10G
 ```
 
 ```text
@@ -137,7 +135,7 @@ Juju supports wide list of different [storage pools](https://bobcares.com/blog/l
 Name           Provider  Attributes
 mystoragepool  lxd
 
-> juju deploy mysql --channel 8.4/stable --storage data=5G,mystoragepool
+> juju deploy mysql --channel 8.4/edge --storage data=5G,mystoragepool
 
 > $ juju storage | grep -E "Unit|data"
 Unit     Storage ID  Type        Pool           Size     Status    Message
@@ -155,7 +153,7 @@ mysql/0  data/1      filesystem  mystoragepool  5.0 GiB  attached
 Name           Provider    Attributes
 mystoragepool  kubernetes
 
-> juju deploy mysql-k8s --channel 8.4/stable --storage data=5G,mystoragepool
+> juju deploy mysql-k8s --channel 8.4/edge --storage data=5G,mystoragepool
 
 > $ juju storage | grep -E "Unit|data"
 Unit         Storage ID  Type        Pool           Size     Status    Message
