@@ -3,12 +3,15 @@
 
 """A collection of utility functions that are used in the charm."""
 
+import logging
 import re
 import secrets
 import socket
 import string
 
 from tenacity import retry, stop_after_delay, wait_fixed
+
+logger = logging.getLogger(__name__)
 
 
 def generate_random_password(length: int) -> str:
@@ -111,11 +114,26 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
 
     # fqdn resolve local in /etc/hosts
     name_prefix = name.split(".")[0]
+    logger.debug(
+        "get_k8s_fqdn: name=%r name_prefix=%r local_unit_label=%r",
+        name,
+        name_prefix,
+        local_unit_label,
+    )
     info = _addrinfo(local_unit_label)
+    logger.debug("get_k8s_fqdn: addrinfo(%r) returned %d entries", local_unit_label, len(info))
 
     for entry in info:
-        if canonname := entry[3]:
+        canonname = entry[3]
+        logger.debug(
+            "get_k8s_fqdn: entry canonname=%r (local_unit_label=%r, name_prefix=%r)",
+            canonname,
+            local_unit_label,
+            name_prefix,
+        )
+        if canonname:
             if local_unit_label == name_prefix:
+                logger.debug("get_k8s_fqdn: local unit path -> returning canonname=%r", canonname)
                 return canonname
             else:
                 # for peer units, replace the local unit pod name in the fqdn (cannoname) with the
@@ -126,12 +144,26 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
                 # fqdn = mysql-k8s-1.mysql-k8s-endpoints.default.svc.cluster.local
                 fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
                 # dotappend other units as local unit is mapped without end dot in /etc/hosts
-                return dotappend(fqdn)
+                result = dotappend(fqdn)
+                logger.debug(
+                    "get_k8s_fqdn: peer unit path -> canonname=%r fqdn=%r result=%r",
+                    canonname,
+                    fqdn,
+                    result,
+                )
+                return result
 
     # fallback to DNS
+    logger.debug(
+        "get_k8s_fqdn: no canonname from local lookup, falling back to DNS for name=%r", name
+    )
     info = _addrinfo(name)
+    logger.debug("get_k8s_fqdn: DNS addrinfo(%r) returned %d entries", name, len(info))
     for entry in info:
-        if canonname := entry[3]:
+        canonname = entry[3]
+        logger.debug("get_k8s_fqdn: DNS entry canonname=%r", canonname)
+        if canonname:
+            logger.debug("get_k8s_fqdn: DNS fallback path -> returning canonname=%r", canonname)
             return canonname
 
     raise RuntimeError(f"Could not determine canonical for {name=}")
