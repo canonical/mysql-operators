@@ -199,17 +199,6 @@ class MySQL(MySQLBase):
 
         try:
             self.reset_data_dir()
-            # List contents of relevant directories for easier debugging
-            for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
-                try:
-                    logger.debug(
-                        "Contents of %s before initialization: %s",
-                        path,
-                        [f.name for f in self.container.list_files(path)],
-                    )
-                except PathError:
-                    logger.warning("Could not list contents of %s", path)
-
             process = self.container.exec(
                 command=bootstrap_command,
                 user=MYSQL_SYSTEM_USER,
@@ -631,7 +620,12 @@ class MySQL(MySQLBase):
         for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
             content = self.container.list_files(path)
             content_set = {item.name for item in content if item.name not in keep_files}
-            logger.debug("Resetting MySQL directory %s, keeping %s", path, keep_files)
+            logger.debug(
+                "Resetting MySQL directory %s, keeping %s (contents before reset: %s)",
+                path,
+                keep_files,
+                content,
+            )
             for item in content_set:
                 self.container.remove_path(f"{path}/{item}", recursive=True)
 
