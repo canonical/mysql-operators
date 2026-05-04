@@ -53,8 +53,8 @@ class CharmConfig(BaseConfigModel):
     profile: str
     cluster_name: str | None = Field(default=None)
     cluster_set_name: str | None = Field(default=None)
+    max_connections: int | None = Field(default=None)
     profile_limit_memory: int | None = Field(default=None)
-    experimental_max_connections: int | None = Field(default=None)
     binlog_retention_days: int
     plugin_audit_enabled: bool
     plugin_audit_strategy: str
@@ -106,14 +106,13 @@ class CharmConfig(BaseConfigModel):
 
         return value
 
-    @field_validator("experimental_max_connections")
+    @field_validator("max_connections")
     @classmethod
-    def experimental_max_connections_validator(cls, value: int) -> int | None:
-        """Check experimental max connections."""
+    def max_connections_validator(cls, value: int) -> int | None:
+        """Check max connections."""
         if value < MAX_CONNECTIONS_FLOOR:
             raise ValueError(
-                f"experimental-max-connections ({value=}) must be equal or greater "
-                + f" than {MAX_CONNECTIONS_FLOOR}"
+                f"max-connections ({value=}) must be equal or greater than {MAX_CONNECTIONS_FLOOR}"
             )
 
         return value

@@ -261,7 +261,7 @@ class MySQL(MySQLBase):
                 audit_log_policy=self.charm.config.logs_audit_policy,
                 memory_limit=memory_limit,
                 binlog_retention_days=self.charm.config.binlog_retention_days,
-                experimental_max_connections=self.charm.config.experimental_max_connections,
+                max_connections=self.charm.config.max_connections,
             )
         except (MySQLGetAvailableMemoryError, MySQLGetAutoTuningParametersError) as e:
             logger.exception("Failed to get available memory or auto tuning parameters")

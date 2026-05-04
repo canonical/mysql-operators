@@ -1831,7 +1831,7 @@ class TestMySQLBase(unittest.TestCase):
             audit_log_enabled=True,
             audit_log_strategy="async",
             audit_log_policy="LOGINS",
-            experimental_max_connections=500,
+            max_connections=500,
             memory_limit=memory_limit,
         )
 
@@ -1844,7 +1844,7 @@ class TestMySQLBase(unittest.TestCase):
             audit_log_enabled=True,
             audit_log_strategy="async",
             audit_log_policy="LOGINS",
-            experimental_max_connections=800,
+            max_connections=800,
             memory_limit=memory_limit,
         )
 

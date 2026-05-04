@@ -1113,11 +1113,10 @@ class MySQLBase(ABC):
         audit_log_strategy: str,
         audit_log_policy: str,
         memory_limit: int | None = None,
-        experimental_max_connections: int | None = None,
+        max_connections: int | None = None,
         binlog_retention_days: int,
     ) -> tuple[str, dict]:
         """Render mysqld ini configuration file."""
-        max_connections = None
         performance_schema_instrument = ""
         if profile == "testing":
             innodb_buffer_pool_size = 20 * BYTES_1MiB
@@ -1132,12 +1131,9 @@ class MySQLBase(ABC):
                 # between the available memory and the limit
                 available_memory = min(available_memory, memory_limit)
 
-            if experimental_max_connections:
-                # when set, we use the experimental max connections
-                # and it takes precedence over buffers usage
-                max_connections = experimental_max_connections
-                # we reserve 200MiB for memory buffers
-                # even when there's some overcommittment
+            if max_connections:
+                # when set, we use the max connections as it takes precedence over buffers usage.
+                # we reserve 200MiB for memory buffers even when there's some overcommitment
                 available_memory = max(
                     available_memory - max_connections * 12 * BYTES_1MiB,
                     200 * BYTES_1MiB,
