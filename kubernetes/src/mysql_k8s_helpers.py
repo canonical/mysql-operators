@@ -5,6 +5,7 @@
 """Helper class to manage the MySQL InnoDB cluster lifecycle with MySQL Shell."""
 
 import logging
+from collections import deque
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
@@ -206,11 +207,32 @@ class MySQL(MySQLBase):
             process.wait_output()
         except (ExecError, ChangeError, PathError, TimeoutError):
             logger.exception("Failed to initialise MySQL data directory")
-            raise MySQLInitialiseMySQLDError from None
+        else:
+            return
+
+        # An error was raised,
+        # Try to recover logs from the instance
+        try:
+            error_log_path, error_log_lines = self._recover_error_logs()
+            logger.debug("Last lines of %s: \n%s", error_log_path, "".join(error_log_lines))
+        except Exception:
+            logger.exception("Could not recover contents of error.log")
+
+        raise MySQLInitialiseMySQLDError from None
+
+    def _recover_error_logs(self, max_lines: int = 10) -> tuple[str, list[str]]:
+        for error_log_path in f"{MYSQL_LOGS_DIR}/error.log", "/var/log/mysql/error.log":
+            if self.container.exists(error_log_path):
+                error_log_reader = self.container.pull(error_log_path, encoding="utf-8")
+                lines = deque(maxlen=max_lines)
+                for line in error_log_reader:
+                    lines.append(line)
+                return error_log_path, list(lines)
+
+        raise RuntimeError("No error.log file found in expected locations")
 
     def set_operator_user_and_start_mysqld(self) -> None:
         """Set the operator user and start mysqld."""
-        logger.debug("Set operator user and starting mysqld")
         create_user_queries = [
             f"CREATE USER '{self.operator_user}'@'%' IDENTIFIED BY '{self.operator_password}';",
             f"GRANT ALL ON *.* TO '{self.operator_user}'@'%' WITH GRANT OPTION;",
@@ -590,13 +612,22 @@ class MySQL(MySQLBase):
         if self.container.exists(path):
             self.container.remove_path(path)
 
-    def reset_data_dir(self) -> None:
-        """Remove all files from the data directory."""
-        content = self.container.list_files(MYSQL_DATA_DIR)
-        content_set = {item.name for item in content}
-        logger.debug("Resetting MySQL data directory.")
-        for item in content_set:
-            self.container.remove_path(f"{MYSQL_DATA_DIR}/{item}", recursive=True)
+    def reset_data_dir(self, keep_files: set[str] | None = None) -> None:
+        """Remove all files from the data directories."""
+        if keep_files is None:
+            keep_files = {"audit.log", "error.log"}
+
+        for path in MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR:
+            content = self.container.list_files(path)
+            content_set = {item.name for item in content if item.name not in keep_files}
+            logger.debug(
+                "Resetting MySQL directory %s, keeping %s (contents before reset: %s)",
+                path,
+                keep_files,
+                content,
+            )
+            for item in content_set:
+                self.container.remove_path(f"{path}/{item}", recursive=True)
 
     def get_available_memory(self) -> int:
         """Get available memory for the container in bytes."""
