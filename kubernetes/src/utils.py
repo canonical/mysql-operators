@@ -94,9 +94,18 @@ def dotappend(string: str) -> str:
 def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
     """Resolve the canonical FQDN for a Kubernetes service or pod name.
 
+    Fully-qualified domain names always have a trailing dot
+    representing the root of the DNS hierarchy, as per RFC 1034.
+
     Args:
         name: The Kubernetes service or pod name to resolve.
         local_unit_label: The label of the local unit (e.g., "mysql-k8s-1")
+
+    Examples:
+        >>> get_k8s_fqdn("mysql-k8s-0.mysql-k8s-endpoints", local_unit_label="mysql-k8s-0")
+        'mysql-k8s-0.mysql-k8s-endpoints.jubilant-a65bb303.svc.cluster.local.'
+        >>> get_k8s_fqdn("mysql-k8s-1.mysql-k8s-endpoints", local_unit_label="mysql-k8s-0")
+        'mysql-k8s-1.mysql-k8s-endpoints.jubilant-a65bb303.svc.cluster.local.'
     """
 
     def _addrinfo(_name):
@@ -133,8 +142,9 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
         )
         if canonname:
             if local_unit_label == name_prefix:
-                logger.debug("get_k8s_fqdn: local unit path -> returning canonname=%r", canonname)
-                return canonname
+                result = dotappend(canonname)
+                logger.debug("get_k8s_fqdn: local unit path -> returning result=%r", result)
+                return result
             else:
                 # for peer units, replace the local unit pod name in the fqdn (cannoname) with the
                 # peer unit pod name (name_prefix)
@@ -163,7 +173,8 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
         canonname = entry[3]
         logger.debug("get_k8s_fqdn: DNS entry canonname=%r", canonname)
         if canonname:
-            logger.debug("get_k8s_fqdn: DNS fallback path -> returning canonname=%r", canonname)
-            return canonname
+            result = dotappend(canonname)
+            logger.debug("get_k8s_fqdn: DNS fallback path -> returning result=%r", result)
+            return result
 
     raise RuntimeError(f"Could not determine canonical for {name=}")
