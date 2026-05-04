@@ -130,21 +130,12 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
         local_unit_label,
     )
     info = _addrinfo(local_unit_label)
-    logger.debug("get_k8s_fqdn: addrinfo(%r) returned %d entries", local_unit_label, len(info))
 
     for entry in info:
-        canonname = entry[3]
-        logger.debug(
-            "get_k8s_fqdn: entry canonname=%r (local_unit_label=%r, name_prefix=%r)",
-            canonname,
-            local_unit_label,
-            name_prefix,
-        )
-        if canonname:
+        if canonname := entry[3]:
             if local_unit_label == name_prefix:
-                result = dotappend(canonname)
-                logger.debug("get_k8s_fqdn: local unit path -> returning result=%r", result)
-                return result
+                logger.debug("get_k8s_fqdn: local unit path -> canonname=%r", canonname)
+                return dotappend(canonname)
             else:
                 # for peer units, replace the local unit pod name in the fqdn (cannoname) with the
                 # peer unit pod name (name_prefix)
@@ -153,28 +144,22 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
                 # name_prefix: mysql-k8s-1
                 # fqdn = mysql-k8s-1.mysql-k8s-endpoints.default.svc.cluster.local
                 fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
-                # dotappend other units as local unit is mapped without end dot in /etc/hosts
-                result = dotappend(fqdn)
                 logger.debug(
-                    "get_k8s_fqdn: peer unit path -> canonname=%r fqdn=%r result=%r",
+                    "get_k8s_fqdn: peer unit path -> canonname=%r fqdn=%r",
                     canonname,
                     fqdn,
-                    result,
                 )
-                return result
+                # dotappend other units as local unit is mapped without end dot in /etc/hosts
+                return dotappend(fqdn)
 
     # fallback to DNS
     logger.debug(
         "get_k8s_fqdn: no canonname from local lookup, falling back to DNS for name=%r", name
     )
     info = _addrinfo(name)
-    logger.debug("get_k8s_fqdn: DNS addrinfo(%r) returned %d entries", name, len(info))
     for entry in info:
-        canonname = entry[3]
-        logger.debug("get_k8s_fqdn: DNS entry canonname=%r", canonname)
-        if canonname:
-            result = dotappend(canonname)
-            logger.debug("get_k8s_fqdn: DNS fallback path -> returning result=%r", result)
-            return result
+        if canonname := entry[3]:
+            logger.debug("get_k8s_fqdn: DNS entry canonname=%r", canonname)
+            return dotappend(canonname)
 
     raise RuntimeError(f"Could not determine canonical for {name=}")
