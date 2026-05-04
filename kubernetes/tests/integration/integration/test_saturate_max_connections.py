@@ -24,7 +24,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         charm,
         MYSQL_APP_NAME,
-        config={"profile-limit-memory": "2000", "experimental-max-connections": CONNECTIONS},
+        config={"profile-limit-memory": "2000", "max-connections": CONNECTIONS},
         num_units=1,
         base="ubuntu@26.04",
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},

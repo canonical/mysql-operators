@@ -794,7 +794,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             audit_log_strategy=self.config.plugin_audit_strategy,
             audit_log_policy=self.config.logs_audit_policy,
             memory_limit=memory_limit_bytes,
-            experimental_max_connections=self.config.experimental_max_connections,
+            max_connections=self.config.max_connections,
             binlog_retention_days=self.config.binlog_retention_days,
         )
         self._mysql.write_content_to_file(path=MYSQLD_CONFIG_FILE, content=new_config_content)
