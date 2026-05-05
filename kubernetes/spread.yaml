@@ -117,13 +117,19 @@ environment:
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
   CONCIERGE_JUJU_CHANNEL/juju29: 2.9/stable
   pythonLocation: '$(HOST: echo $pythonLocation)'
+  # Fix for https://github.com/juju/juju/issues/22356
+  # Suggestion from https://github.com/canonical/concierge/issues/130
+  CONCIERGE_JUJU_EXTRA_ARGS:
+  CONCIERGE_JUJU_EXTRA_ARGS/juju29: --config caas-image-repo=ghcr.io/juju
 prepare: |
   snap refresh --hold
   chown -R root:root "$SPREAD_PATH"
   cd "$SPREAD_PATH"
   snap install --classic concierge
+  snap install yq
 
   # Install charmcraft & pipx (on lxd-vm backend)
+  yq -i ".juju.extra-bootstrap-args = \"$CONCIERGE_JUJU_EXTRA_ARGS\"" concierge.yaml
   concierge prepare --trace
 
   pipx install tox poetry
