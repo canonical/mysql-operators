@@ -52,7 +52,7 @@ def test_deploy_latest(juju: Juju) -> None:
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
         base="ubuntu@22.04",
-        channel="latest/edge/racing",
+        channel="latest/edge",
         num_units=1,
         trust=False,
         constraints=constraints,
