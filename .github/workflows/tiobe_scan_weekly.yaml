@@ -1,0 +1,35 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Weekly TICS scan
+
+on:
+  schedule:
+    - cron: "0 2 * * 6" # Every Saturday 2:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  TICS:
+    name: TICS scan | ${{ matrix.project }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ref: 8.0/edge
+            operator: kubernetes
+            project: mysql-k8s-8.0
+          - ref: 8.0/edge
+            operator: machines
+            project: mysql-vm-8.0
+          - ref: 8.4/edge
+            operator: kubernetes
+            project: mysql-k8s-8.4
+          - ref: 8.4/edge
+            operator: machines
+            project: mysql-vm-8.4
+    uses: ./.github/workflows/tiobe_scan.yaml
+    with:
+      operator: ${{ matrix.operator }}
+      ref: ${{ matrix.ref }}
+      project: ${{ matrix.project }}
+    secrets: inherit
