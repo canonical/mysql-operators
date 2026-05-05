@@ -39,7 +39,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
         num_units=1,
         base="ubuntu@22.04",
         config=config,
-        channel="latest/edge",
+        channel="latest/edge/racing",
     )
 
     logger.info("Relating test app to mysql")

@@ -48,7 +48,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
         base="ubuntu@22.04",
-        channel="latest/edge",
+        channel="latest/edge/racing",
         config={"sleep_interval": 300},
         num_units=1,
         constraints=constraints,
