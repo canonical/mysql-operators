@@ -3,12 +3,15 @@
 
 """A collection of utility functions that are used in the charm."""
 
+import logging
 import re
 import secrets
 import socket
 import string
 
 from tenacity import retry, stop_after_delay, wait_fixed
+
+logger = logging.getLogger(__name__)
 
 
 def generate_random_password(length: int) -> str:
@@ -91,9 +94,18 @@ def dotappend(string: str) -> str:
 def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
     """Resolve the canonical FQDN for a Kubernetes service or pod name.
 
+    Fully-qualified domain names always have a trailing dot
+    representing the root of the DNS hierarchy, as per RFC 1034.
+
     Args:
         name: The Kubernetes service or pod name to resolve.
         local_unit_label: The label of the local unit (e.g., "mysql-k8s-1")
+
+    Examples:
+        >>> get_k8s_fqdn("mysql-k8s-0.mysql-k8s-endpoints", local_unit_label="mysql-k8s-0")
+        'mysql-k8s-0.mysql-k8s-endpoints.jubilant-a65bb303.svc.cluster.local.'
+        >>> get_k8s_fqdn("mysql-k8s-1.mysql-k8s-endpoints", local_unit_label="mysql-k8s-0")
+        'mysql-k8s-1.mysql-k8s-endpoints.jubilant-a65bb303.svc.cluster.local.'
     """
 
     def _addrinfo(_name):
@@ -111,12 +123,19 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
 
     # fqdn resolve local in /etc/hosts
     name_prefix = name.split(".")[0]
+    logger.debug(
+        "get_k8s_fqdn: name=%r name_prefix=%r local_unit_label=%r",
+        name,
+        name_prefix,
+        local_unit_label,
+    )
     info = _addrinfo(local_unit_label)
 
     for entry in info:
         if canonname := entry[3]:
             if local_unit_label == name_prefix:
-                return canonname
+                logger.debug("get_k8s_fqdn: local unit path -> canonname=%r", canonname)
+                return dotappend(canonname)
             else:
                 # for peer units, replace the local unit pod name in the fqdn (cannoname) with the
                 # peer unit pod name (name_prefix)
@@ -125,13 +144,22 @@ def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
                 # name_prefix: mysql-k8s-1
                 # fqdn = mysql-k8s-1.mysql-k8s-endpoints.default.svc.cluster.local
                 fqdn = ".".join([name_prefix, *canonname.split(".")[1:]])
+                logger.debug(
+                    "get_k8s_fqdn: peer unit path -> canonname=%r fqdn=%r",
+                    canonname,
+                    fqdn,
+                )
                 # dotappend other units as local unit is mapped without end dot in /etc/hosts
                 return dotappend(fqdn)
 
     # fallback to DNS
+    logger.debug(
+        "get_k8s_fqdn: no canonname from local lookup, falling back to DNS for name=%r", name
+    )
     info = _addrinfo(name)
     for entry in info:
         if canonname := entry[3]:
-            return canonname
+            logger.debug("get_k8s_fqdn: DNS entry canonname=%r", canonname)
+            return dotappend(canonname)
 
     raise RuntimeError(f"Could not determine canonical for {name=}")
