@@ -781,7 +781,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.unit.status = MaintenanceStatus("Starting mysqld")
             logger.info("Data directory is already initialised, skipping configuration")
             self._reconcile_pebble_layer(container)
-            if self.is_new_unit:
+            if self._mysql.unit_initialized():
                 # when unit is new and has data, it means the app is scaling out
                 # from zero units
                 logger.info("Scaling out from zero units")
