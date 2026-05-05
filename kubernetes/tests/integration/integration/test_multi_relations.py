@@ -33,7 +33,7 @@ def test_build_and_deploy(juju: Juju, charm):
             "mysql-test-app",
             f"app{idx}",
             num_units=1,
-            channel="latest/edge/racing",
+            channel="latest/edge",
             config={"database_name": f"database{idx}", "sleep_interval": "2000"},
             base="ubuntu@22.04",
             constraints=constraints,
