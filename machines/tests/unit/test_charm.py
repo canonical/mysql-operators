@@ -116,12 +116,10 @@ class TestCharm(unittest.TestCase):
         self.assertIsNotNone(peer_relation_databag["cluster-name"])
 
     @patch("charm.MySQLOperatorCharm._can_start", return_value=True)
-    @patch("charm.MySQLOperatorCharm.create_cluster")
     @patch("charm.MySQLOperatorCharm.workload_initialise")
     def test_on_start(
         self,
         _workload_initialise,
-        _create_cluster,
         _can_start,
     ):
         # execute on_leader_elected and config_changed to populate the peer databag
@@ -130,16 +128,9 @@ class TestCharm(unittest.TestCase):
 
         self.charm.on.start.emit()
         _workload_initialise.assert_called_once()
-        _create_cluster.assert_called_once()
         _can_start.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
-
-        self.harness.set_leader(False)
-        self.charm.on.start.emit()
-        self.assertTrue(isinstance(self.harness.model.unit.status, WaitingStatus))
-        self.assertEqual(self.charm.unit_peer_data["member-role"], "SECONDARY")
-        self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
     @patch("charm.MySQLOperatorCharm._can_start", return_value=True)
     @patch("charm.MySQLOperatorCharm.create_cluster")

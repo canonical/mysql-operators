@@ -549,6 +549,7 @@ def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
             reraise=True,
             stop=stop_after_delay(5 * MINUTE_SECS),
             wait=wait_fixed(10),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
                 output = execute_queries_on_unit(

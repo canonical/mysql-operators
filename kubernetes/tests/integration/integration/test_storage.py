@@ -15,15 +15,21 @@ from constants import (
     MYSQL_TEMP_DIR,
 )
 
+from ..helpers import generate_random_string
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
+    get_app_leader,
+    get_mysql_server_credentials,
+    insert_mysql_test_data,
+    verify_mysql_test_data,
     wait_for_apps_status,
 )
 
 logger = logging.getLogger(__name__)
 
 DATABASE_APP_NAME = "mysql-k8s"
+TABLE_NAME = "test-table"
 TIMEOUT = 15 * MINUTE_SECS
 
 
@@ -112,6 +118,43 @@ def test_logs_directory_has_only_expected_contents_after_initialization(juju: Ju
     )
 
     assert all(redolog_pattern.match(fname) for fname in actual_content)
+
+
+def test_scale_up_from_zero_preserves_attached_storage(juju: Juju) -> None:
+    """Ensure scaling down to zero and back up can reuse storage."""
+    logger.info("Creating test data")
+    test_data = generate_random_string(255)
+    insert_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, test_data)
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, test_data)
+
+    mysql_app_leader = get_app_leader(juju, DATABASE_APP_NAME)
+    old_credentials = get_mysql_server_credentials(juju, mysql_app_leader)
+
+    logger.info("Scaling down to 0 units")
+    juju.remove_unit(DATABASE_APP_NAME, num_units=1)
+
+    # Sometimes the app will arrive to an "unknown" state, we can't check for "active"
+    juju.wait(
+        ready=lambda status: len(status.apps[DATABASE_APP_NAME].units) == 0,
+        timeout=TIMEOUT,
+    )
+
+    juju.add_unit(DATABASE_APP_NAME)
+
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
+        error=jubilant.any_error,
+        timeout=TIMEOUT,
+    )
+
+    # Check that credentials are the same
+    mysql_app_leader = get_app_leader(juju, DATABASE_APP_NAME)
+    new_credentials = get_mysql_server_credentials(juju, mysql_app_leader)
+
+    assert new_credentials == old_credentials
+
+    # Check that data is still there
+    verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, test_data)
 
 
 def list_container_files(

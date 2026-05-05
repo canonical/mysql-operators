@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import subprocess
 import uuid
 from collections.abc import Callable, Generator
@@ -18,6 +19,7 @@ from lightkube.core.client import Client
 from lightkube.resources.core_v1 import Endpoints, PersistentVolume, PersistentVolumeClaim, Pod
 from tenacity import (
     Retrying,
+    before_sleep_log,
     retry,
     stop_after_attempt,
     stop_after_delay,
@@ -39,6 +41,8 @@ TEST_DATABASE_NAME = "testing"
 
 JujuModelStatusFn = Callable[[Status], bool]
 JujuAppsStatusFn = Callable[[Status, str], bool]
+
+logger = logging.getLogger(__name__)
 
 
 def check_mysql_instances_online(
@@ -604,6 +608,7 @@ def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
             reraise=True,
             stop=stop_after_delay(5 * MINUTE_SECS),
             wait=wait_fixed(10),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
                 output = execute_queries_on_unit(

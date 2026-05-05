@@ -47,6 +47,7 @@ from charms.mysql.v0.mysql import (
     MySQLRebootFromCompleteOutageError,
     MySQLRejoinInstanceToClusterError,
     MySQLSetClusterPrimaryError,
+    MySQLStartMySQLDError,
     MySQLUnableToGetMemberStateError,
 )
 from object_storage import S3Requirer
@@ -335,6 +336,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLCreateCustomMySQLDConfigError:
             self.set_unit_status(BlockedStatus("Failed to create custom mysqld config"))
             return
+        except MySQLStartMySQLDError:
+            self.set_unit_status(BlockedStatus("Failed to start mysqld server"))
+            return
         except MySQLDNotRestartedError:
             self.set_unit_status(BlockedStatus("Failed to restart instance"))
             return
@@ -342,15 +346,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.warning("Failed to install MySQL components")
         except MySQLGetMySQLVersionError:
             logger.debug("Fail to get MySQL version")
-
-        if not self.unit.is_leader():
-            # Wait to be joined and set flags
-            self.set_unit_status(WaitingStatus("Waiting to join the cluster"))
-            self.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
-            self.unit_peer_data["member-state"] = "waiting"
-            return
-
-        self._create_cluster()
 
     def _on_peer_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle the peer relation changed event."""
@@ -769,15 +764,31 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         Create users and configuration to setup instance as an Group Replication node.
         Raised errors must be treated on handlers.
         """
+        self._mysql.write_mysqld_config()
+        self.log_rotation_setup.setup()
+
+        if self._mysql.is_data_dir_initialised():
+            logger.info("Data directory is already initialised, skipping configuration")
+            self._mysql.start_mysqld()
+            if not self.unit_initialized() and self.unit.is_leader():
+                # when unit is new and has data, it means the app is scaling out
+                # from zero units
+                logger.info("Scaling out from zero units")
+                # create the cluster due it being dissolved on scale-down
+                self.create_cluster()
+                self._on_update_status(None)
+            return
+
         # ensure hostname can be resolved
         self.hostname_resolution.update_etc_hosts(None)
 
         logger.info("Initializing MySQL data directory")
         self._mysql.initialise_mysqld()
 
-        self._mysql.write_mysqld_config()
-        self.log_rotation_setup.setup()
+        logger.info("Set operator user and restart mysqld")
         self._mysql.set_operator_user_and_start_mysqld()
+
+        logger.info("Configuring initialized mysqld")
         self._mysql.configure_mysql_router_roles()
         self._mysql.configure_mysql_system_roles()
         self._mysql.configure_mysql_system_users()
@@ -807,6 +818,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._mysql.wait_until_mysql_connection()
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
+
+        if not self.unit.is_leader():
+            # Wait to be joined and set flags
+            self.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+            self.unit_peer_data["member-role"] = InstanceRole.SECONDARY.value
+            self.unit_peer_data["member-state"] = "waiting"
+            return
+
+        self._create_cluster()
 
     def get_unit_address(self, unit: Unit, relation_name: str) -> str:
         """Get the IP address of a specific unit."""
