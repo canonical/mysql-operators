@@ -344,6 +344,81 @@ jobs:
           sudo k8s kubectl -n kube-system rollout restart deployment/coredns
           sudo k8s kubectl -n kube-system rollout status deployment/coredns \
             --timeout=60s
+          sudo k8s kubectl -n kube-system wait pod \
+            -l k8s-app=coredns \
+            --for=condition=Ready \
+            --timeout=60s
+
+          # Re-run the ClusterIP DNS gate after the second CoreDNS restart.
+          # The Corefile-patch restart can trigger the same Cilium bridge-IP race
+          # as the initial restart: if a new CoreDNS pod gets a bridge IP (10.88.x)
+          # instead of a Cilium IP (10.1.x), Cilium silently drops traffic to it
+          # via the ClusterIP.  Wait for the gate to confirm Cilium service maps are
+          # programmed before proceeding to the external DNS test.
+          echo "=== ClusterIP DNS gate after Corefile-patch restart ==="
+          sudo k8s kubectl delete pod dns-gate-post-patch --ignore-not-found=true || true
+          for attempt in $(seq 1 12); do
+            echo "Attempt ${attempt}/12: testing ClusterIP DNS after patch restart..."
+            result=$(
+              sudo k8s kubectl run dns-gate-post-patch \
+                --image=busybox:1.36 \
+                --restart=Never \
+                --rm \
+                -i \
+                --timeout=30s \
+                -- sh -c "nslookup kubernetes.default.svc.cluster.local ${DNS_SVC_IP}" \
+                2>&1 || true
+            )
+            echo "${result}"
+            if echo "${result}" | grep -q "^Name:"; then
+              echo "=== Post-patch ClusterIP DNS gate passed on attempt ${attempt} ==="
+              break
+            fi
+            if [ "${attempt}" -eq 12 ]; then
+              echo "=== Post-patch ClusterIP DNS gate FAILED after 12 attempts ==="
+              exit 1
+            fi
+            echo "ClusterIP DNS not yet responding after patch restart, waiting 10s..."
+            sleep 10
+          done
+
+          # -------------------------------------------------------------------
+          # Fix for pod egress masquerade (Root Cause 4):
+          #
+          # Even with the CoreDNS Corefile patched to use 8.8.8.8/1.1.1.1, pods
+          # cannot reach external IPs.  The symptom is "connection timed out" (not
+          # SERVFAIL) when querying 8.8.8.8:53 directly from a pod.  This proves
+          # the problem is NOT DNS configuration — it is network layer egress.
+          #
+          # Cause: Cilium masquerade (SNAT) is not applied to pod→external traffic.
+          # Without SNAT, pod packets leave the node with source IP 10.1.x.x
+          # (private overlay range).  Azure's fabric drops return traffic because
+          # it has no route back to 10.1.x.x from the internet.
+          #
+          # Fix: add explicit iptables MASQUERADE rules for the pod and service
+          # CIDRs on the node's default egress interface.  These rules fire in
+          # iptables POSTROUTING and do not conflict with Cilium's own BPF
+          # masquerade (if BPF masquerade is active, Cilium handles the SNAT in
+          # BPF before the packet reaches iptables POSTROUTING; the rule is a
+          # no-op in that case and harms nothing).
+          # -------------------------------------------------------------------
+          echo "=== Adding iptables MASQUERADE for pod/service egress ==="
+          MAIN_IF=$(ip route show default | awk '{print $5}' | head -1)
+          POD_CIDR=$(
+            sudo k8s kubectl get nodes \
+              -o jsonpath='{.items[0].spec.podCIDR}' 2>/dev/null \
+              || echo "10.1.0.0/16"
+          )
+          echo "Main interface: ${MAIN_IF}"
+          echo "Pod CIDR: ${POD_CIDR}"
+          # Add MASQUERADE for pod CIDR going out via the main interface.
+          # -C checks if the rule already exists before adding it.
+          sudo iptables -t nat -C POSTROUTING \
+            -s "${POD_CIDR}" -o "${MAIN_IF}" -j MASQUERADE 2>/dev/null \
+            || sudo iptables -t nat -A POSTROUTING \
+                 -s "${POD_CIDR}" -o "${MAIN_IF}" -j MASQUERADE
+          echo "=== iptables POSTROUTING rules (NAT) ==="
+          sudo iptables -t nat -L POSTROUTING -n -v
 
           echo "=== External DNS gate (api.charmhub.io must resolve before deploy) ==="
           # Verify that external DNS forwarding via 8.8.8.8/1.1.1.1 works.
@@ -421,6 +496,30 @@ jobs:
           echo "=== Cilium agent logs ===" | tee -a ~/logs/cluster-diag.txt
           sudo k8s kubectl -n kube-system logs \
             -l app.kubernetes.io/name=cilium-agent --tail=100 2>&1 \
+            | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "" | tee -a ~/logs/cluster-diag.txt
+          echo "=== Cilium status ===" | tee -a ~/logs/cluster-diag.txt
+          CILIUM_POD=$(
+            sudo k8s kubectl -n kube-system get pods \
+              -l app.kubernetes.io/name=cilium-agent \
+              -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo ""
+          )
+          if [ -n "${CILIUM_POD}" ]; then
+            sudo k8s kubectl -n kube-system exec "${CILIUM_POD}" \
+              -- cilium status --verbose 2>&1 \
+              | tee -a ~/logs/cluster-diag.txt || true
+            echo "=== Cilium config (masquerade-related) ===" \
+              | tee -a ~/logs/cluster-diag.txt
+            sudo k8s kubectl -n kube-system exec "${CILIUM_POD}" \
+              -- cilium config 2>&1 \
+              | grep -iE "masquerad|snat|tunnel|native-routing|bpf-masq" \
+              | tee -a ~/logs/cluster-diag.txt || true
+          fi
+
+          echo "" | tee -a ~/logs/cluster-diag.txt
+          echo "=== iptables NAT POSTROUTING rules ===" | tee -a ~/logs/cluster-diag.txt
+          sudo iptables -t nat -L POSTROUTING -n -v 2>&1 \
             | tee -a ~/logs/cluster-diag.txt || true
 
           echo "=== kube-proxy logs ===" | tee -a ~/logs/cluster-diag.txt
@@ -643,8 +742,14 @@ jobs:
                 echo '=== dig TCP: kubernetes.default.svc.cluster.local ==='
                 dig +tcp +time=3 +tries=1 @${DNS_SVC_IP} \
                   kubernetes.default.svc.cluster.local A || true
-                echo '=== dig api.charmhub.io ==='
+                echo '=== dig api.charmhub.io via ClusterIP ==='
                 dig +time=3 +tries=1 @${DNS_SVC_IP} api.charmhub.io A || true
+                echo '=== dig api.charmhub.io direct to 8.8.8.8 ==='
+                dig +time=5 +tries=1 @8.8.8.8 api.charmhub.io A || true
+                echo '=== ping 8.8.8.8 (ICMP) ==='
+                ping -c 2 -W 3 8.8.8.8 || echo 'FAILED: ping 8.8.8.8'
+                echo '=== traceroute 8.8.8.8 (max 5 hops) ==='
+                traceroute -n -w 2 -m 5 8.8.8.8 || true
                 echo '=== ip link ==='
                 ip link
                 echo '=== ip route ==='
