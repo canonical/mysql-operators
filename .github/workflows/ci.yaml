@@ -307,6 +307,74 @@ jobs:
             -l k8s-app=kube-proxy --tail=50 2>&1 \
             | tee -a ~/logs/cluster-diag.txt || true
 
+          # -----------------------------------------------------------------
+          # CoreDNS upstream-forwarding diagnostics.
+          #
+          # Hypothesis: k8s snap reconfigures the host's system DNS to route
+          # queries through systemd-resolved → CoreDNS ClusterIP.  If the
+          # CoreDNS Corefile uses "forward . /etc/resolv.conf", the pods
+          # inherit whatever is in the host's resolv.conf at pod-start time.
+          # If that file contains 127.0.0.53 (systemd-resolved loopback) or
+          # the ClusterIP itself, CoreDNS loops and returns SERVFAIL for all
+          # external names.
+          # -----------------------------------------------------------------
+
+          echo "=== HOST /etc/resolv.conf ===" | tee ~/logs/dns-upstream-diag.txt
+          cat /etc/resolv.conf 2>&1 | tee -a ~/logs/dns-upstream-diag.txt || true
+
+          echo "" | tee -a ~/logs/dns-upstream-diag.txt
+          echo "=== systemd-resolved / resolvectl status ===" \
+            | tee -a ~/logs/dns-upstream-diag.txt
+          resolvectl status 2>&1 \
+            | tee -a ~/logs/dns-upstream-diag.txt || true
+
+          echo "" | tee -a ~/logs/dns-upstream-diag.txt
+          echo "=== CoreDNS ConfigMap (Corefile) ===" \
+            | tee -a ~/logs/dns-upstream-diag.txt
+          sudo k8s kubectl -n kube-system get configmap coredns -o yaml 2>&1 \
+            | tee -a ~/logs/dns-upstream-diag.txt || true
+
+          echo "" | tee -a ~/logs/dns-upstream-diag.txt
+          echo "=== CoreDNS pod dnsPolicy + /etc/resolv.conf inside pod ===" \
+            | tee -a ~/logs/dns-upstream-diag.txt
+          COREDNS_POD=$(
+            sudo k8s kubectl -n kube-system get pods -l k8s-app=coredns \
+              -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo ""
+          )
+          if [ -n "${COREDNS_POD}" ]; then
+            echo "CoreDNS pod: ${COREDNS_POD}" \
+              | tee -a ~/logs/dns-upstream-diag.txt
+            sudo k8s kubectl -n kube-system get pod "${COREDNS_POD}" \
+              -o jsonpath='{.spec.dnsPolicy}{"\n"}' 2>&1 \
+              | tee -a ~/logs/dns-upstream-diag.txt || true
+            sudo k8s kubectl -n kube-system exec "${COREDNS_POD}" \
+              -- cat /etc/resolv.conf 2>&1 \
+              | tee -a ~/logs/dns-upstream-diag.txt || true
+
+            echo "" | tee -a ~/logs/dns-upstream-diag.txt
+            echo "=== External DNS via CoreDNS pod directly (bypassing ClusterIP) ===" \
+              | tee -a ~/logs/dns-upstream-diag.txt
+            COREDNS_POD_IP=$(
+              sudo k8s kubectl -n kube-system get pod "${COREDNS_POD}" \
+                -o jsonpath='{.status.podIP}' 2>/dev/null || echo ""
+            )
+            # Try to reach a known-good public resolver FROM INSIDE the CoreDNS
+            # pod, to test whether Cilium allows egress DNS from the pod.
+            sudo k8s kubectl -n kube-system exec "${COREDNS_POD}" \
+              -- sh -c "
+                echo '--- nslookup api.charmhub.io via 1.1.1.1 ---'
+                nslookup api.charmhub.io 1.1.1.1 || true
+                echo '--- nslookup api.charmhub.io via 8.8.8.8 ---'
+                nslookup api.charmhub.io 8.8.8.8 || true
+              " 2>&1 | tee -a ~/logs/dns-upstream-diag.txt || true
+          fi
+
+          echo "" | tee -a ~/logs/dns-upstream-diag.txt
+          echo "=== Cilium network policies (CiliumNetworkPolicy) ===" \
+            | tee -a ~/logs/dns-upstream-diag.txt
+          sudo k8s kubectl get ciliumnetworkpolicies -A 2>&1 \
+            | tee -a ~/logs/dns-upstream-diag.txt || true
+
       - name: DNS pod diagnostics – resolv.conf + nslookup (always)
         timeout-minutes: 5
         if: always()
