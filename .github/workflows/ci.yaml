@@ -165,6 +165,50 @@ jobs:
           sudo apt-get install -y dnsutils
           sudo snap install concierge --classic
 
+      # -----------------------------------------------------------------------
+      # Fix for systemd-resolved stub DNS → CoreDNS forwarding loop:
+      #
+      # GitHub Actions runners use systemd-resolved in stub mode.  The host's
+      # /etc/resolv.conf is a symlink to /run/systemd/resolve/stub-resolv.conf,
+      # which contains "nameserver 127.0.0.53" (the systemd-resolved loopback
+      # stub listener).  The actual upstream DNS (e.g. Azure's 168.63.129.16)
+      # is only accessible via the host's 127.0.0.53 proxy.
+      #
+      # Canonical K8s deploys CoreDNS with dnsPolicy: Default so it does not
+      # use itself as upstream (avoiding a circular dependency).  With Default,
+      # CoreDNS pods inherit the node's /etc/resolv.conf.  Their Corefile uses
+      # "forward . /etc/resolv.conf", which reads 127.0.0.53 as the upstream.
+      #
+      # From inside a pod's network namespace, 127.0.0.53 is the pod's own
+      # loopback – there is no DNS server listening there.  CoreDNS therefore
+      # cannot forward external queries and returns SERVFAIL for every non-
+      # cluster name (e.g. "api.charmhub.io").  Internal cluster.local names
+      # still work because CoreDNS serves them directly via the kubernetes
+      # plugin without hitting the forward plugin.
+      #
+      # Fix: before k8s bootstraps (so all CoreDNS pods inherit the corrected
+      # file from first start), switch /etc/resolv.conf from the stub variant
+      # to the "uplink" variant that lists the real upstream DNS server IPs.
+      # This is the standard Kubernetes pre-flight recommendation for nodes
+      # that run systemd-resolved in stub mode.
+      # -----------------------------------------------------------------------
+      - name: Fix systemd-resolved stub – point /etc/resolv.conf at real upstream DNS
+        timeout-minutes: 2
+        run: |
+          echo "=== /etc/resolv.conf before fix ==="
+          cat /etc/resolv.conf
+
+          echo "=== Switching /etc/resolv.conf to uplink (real upstream IPs) ==="
+          # /run/systemd/resolve/resolv.conf contains the real upstream DNS
+          # servers (not the 127.0.0.53 stub).
+          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+          echo "=== /etc/resolv.conf after fix ==="
+          cat /etc/resolv.conf
+
+          echo "=== Verifying external DNS from host now works ==="
+          nslookup api.charmhub.io || true
+
       - name: Bootstrap cluster via concierge (kubernetes/concierge.yaml)
         timeout-minutes: 45
         id: bootstrap
@@ -253,6 +297,36 @@ jobs:
           echo "=== k8s status ==="
           sudo k8s status
 
+          echo "=== External DNS gate (api.charmhub.io must resolve before deploy) ==="
+          # Verify that external DNS forwarding works.  This is the exact query
+          # that 'juju deploy' will make.  With the systemd-resolved stub fix in
+          # place, CoreDNS should forward to the real upstream (e.g. 168.63.129.16).
+          sudo k8s kubectl delete pod dns-gate-ext --ignore-not-found=true || true
+          for attempt in $(seq 1 12); do
+            echo "Attempt ${attempt}/12: testing external DNS..."
+            result=$(
+              sudo k8s kubectl run dns-gate-ext \
+                --image=busybox:1.36 \
+                --restart=Never \
+                --rm \
+                -i \
+                --timeout=30s \
+                -- sh -c "nslookup api.charmhub.io ${DNS_SVC_IP}" \
+                2>&1 || true
+            )
+            echo "${result}"
+            if echo "${result}" | grep -q "Address:"; then
+              echo "=== External DNS gate passed on attempt ${attempt} ==="
+              break
+            fi
+            if [ "${attempt}" -eq 12 ]; then
+              echo "=== External DNS gate FAILED after 12 attempts ==="
+              exit 1
+            fi
+            echo "External DNS not yet responding, waiting 10s..."
+            sleep 10
+          done
+
       # -----------------------------------------------------------------------
       # Cluster & DNS diagnostics – run unconditionally so we always get a
       # snapshot of the cluster state regardless of what happened above.
@@ -331,7 +405,13 @@ jobs:
           echo "" | tee -a ~/logs/dns-upstream-diag.txt
           echo "=== CoreDNS ConfigMap (Corefile) ===" \
             | tee -a ~/logs/dns-upstream-diag.txt
-          sudo k8s kubectl -n kube-system get configmap coredns -o yaml 2>&1 \
+          # Canonical K8s deploys CoreDNS via Helm (release: ck-dns).
+          # The ConfigMap is NOT named "coredns"; list all and grep for it.
+          sudo k8s kubectl -n kube-system get configmap 2>&1 \
+            | tee -a ~/logs/dns-upstream-diag.txt || true
+          # Dump the ck-dns ConfigMap (contains the Corefile)
+          sudo k8s kubectl -n kube-system get configmap \
+            -l app.kubernetes.io/instance=ck-dns -o yaml 2>&1 \
             | tee -a ~/logs/dns-upstream-diag.txt || true
 
           echo "" | tee -a ~/logs/dns-upstream-diag.txt
@@ -347,26 +427,33 @@ jobs:
             sudo k8s kubectl -n kube-system get pod "${COREDNS_POD}" \
               -o jsonpath='{.spec.dnsPolicy}{"\n"}' 2>&1 \
               | tee -a ~/logs/dns-upstream-diag.txt || true
-            sudo k8s kubectl -n kube-system exec "${COREDNS_POD}" \
+            # Note: CoreDNS image is distroless (no shell or cat).
+            # Read the resolv.conf via /proc instead.
+            COREDNS_PID=$(
+              sudo k8s kubectl -n kube-system get pod "${COREDNS_POD}" \
+                -o jsonpath='{.status.containerStatuses[0].containerID}' 2>/dev/null \
+                | sed 's|containerd://||' || echo ""
+            )
+            echo "CoreDNS container ID: ${COREDNS_PID}" \
+              | tee -a ~/logs/dns-upstream-diag.txt
+            # Get the pod's /etc/resolv.conf from the container's mount namespace.
+            sudo k8s kubectl -n kube-system debug -it "${COREDNS_POD}" \
+              --image=busybox:1.36 \
+              --target=coredns \
               -- cat /etc/resolv.conf 2>&1 \
               | tee -a ~/logs/dns-upstream-diag.txt || true
 
             echo "" | tee -a ~/logs/dns-upstream-diag.txt
-            echo "=== External DNS via CoreDNS pod directly (bypassing ClusterIP) ===" \
+            echo "=== Test external DNS from host pointing at CoreDNS pod directly ===" \
               | tee -a ~/logs/dns-upstream-diag.txt
             COREDNS_POD_IP=$(
               sudo k8s kubectl -n kube-system get pod "${COREDNS_POD}" \
                 -o jsonpath='{.status.podIP}' 2>/dev/null || echo ""
             )
-            # Try to reach a known-good public resolver FROM INSIDE the CoreDNS
-            # pod, to test whether Cilium allows egress DNS from the pod.
-            sudo k8s kubectl -n kube-system exec "${COREDNS_POD}" \
-              -- sh -c "
-                echo '--- nslookup api.charmhub.io via 1.1.1.1 ---'
-                nslookup api.charmhub.io 1.1.1.1 || true
-                echo '--- nslookup api.charmhub.io via 8.8.8.8 ---'
-                nslookup api.charmhub.io 8.8.8.8 || true
-              " 2>&1 | tee -a ~/logs/dns-upstream-diag.txt || true
+            if [ -n "${COREDNS_POD_IP}" ]; then
+              nslookup api.charmhub.io "${COREDNS_POD_IP}" 2>&1 \
+                | tee -a ~/logs/dns-upstream-diag.txt || true
+            fi
           fi
 
           echo "" | tee -a ~/logs/dns-upstream-diag.txt
