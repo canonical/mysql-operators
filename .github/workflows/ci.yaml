@@ -14,7 +14,15 @@ on:
       - '.github/renovate.json5'
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # TEMPORARY: All regular jobs below are disabled while we diagnose DNS/k8s
+  # bootstrap issues on the new Canonical K8s provider.  They will be
+  # re-enabled once the root cause is identified and fixed.
+  # ---------------------------------------------------------------------------
+
   lint:
+    # TEMPORARILY DISABLED – see dns-bootstrap-diagnostic job below
+    if: false
     name: Lint | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -41,6 +49,8 @@ jobs:
           tox run -e lint-terraform
 
   unit-test:
+    # TEMPORARILY DISABLED – see dns-bootstrap-diagnostic job below
+    if: false
     name: Unit test | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -66,6 +76,8 @@ jobs:
           directory: ${{ matrix.path }}
 
   alert-test:
+    # TEMPORARILY DISABLED – see dns-bootstrap-diagnostic job below
+    if: false
     name: Test Alert Rules | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -88,6 +100,8 @@ jobs:
         run: promtool test rules tests/alerts/*.yaml
 
   build:
+    # TEMPORARILY DISABLED – see dns-bootstrap-diagnostic job below
+    if: false
     name: Build charm | ${{ matrix.path }}
     strategy:
       fail-fast: false
@@ -100,6 +114,8 @@ jobs:
       path-to-charm-directory: ${{ matrix.path }}
 
   integration-test:
+    # TEMPORARILY DISABLED – see dns-bootstrap-diagnostic job below
+    if: false
     name: Integration tests
     needs:
       - lint
@@ -116,3 +132,211 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # TEMPORARY DIAGNOSTIC JOB
+  # Bootstraps Canonical K8s via concierge, runs DNS/network diagnostics, and
+  # performs a simple `juju deploy mysql-k8s` to surface DNS issues early.
+  # Remove (or gate behind a condition) once the DNS flakiness is resolved.
+  # ---------------------------------------------------------------------------
+  dns-bootstrap-diagnostic:
+    name: "[TEMP DIAG] DNS & K8s Bootstrap"
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - name: Free up disk space
+        timeout-minutes: 10
+        run: |
+          printf '\nDisk usage before cleanup\n'
+          df --human-readable
+          # Based on https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+          rm -rf /opt/hostedtoolcache/
+          printf '\nDisk usage after cleanup\n'
+          df --human-readable
+
+      - name: Checkout
+        timeout-minutes: 3
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        timeout-minutes: 15
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y dnsutils
+          sudo snap install concierge --classic
+
+      - name: Bootstrap cluster via concierge (kubernetes/concierge.yaml)
+        timeout-minutes: 45
+        id: bootstrap
+        run: |
+          cd kubernetes
+          sudo concierge prepare --trace
+
+      # -----------------------------------------------------------------------
+      # Cluster & DNS diagnostics – run unconditionally so we always get a
+      # snapshot of the cluster state regardless of what happened above.
+      # -----------------------------------------------------------------------
+      - name: Cluster & DNS diagnostics (always)
+        timeout-minutes: 10
+        if: always()
+        run: |
+          mkdir -p ~/logs
+
+          echo "=== k8s status ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s status 2>&1 | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "" | tee -a ~/logs/cluster-diag.txt
+          echo "=== snap.k8s.* systemd logs ===" | tee -a ~/logs/cluster-diag.txt
+          sudo journalctl -u 'snap.k8s.*' -n 300 --no-pager 2>&1 \
+            | tee ~/logs/k8s-journalctl.txt || true
+
+          echo "=== kubectl version ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl version --short 2>&1 | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "=== kubectl get nodes ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl get nodes -o wide 2>&1 | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "=== kubectl get pods -A ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl get pods -A -o wide 2>&1 | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "=== kube-system svc/endpoints/endpointslices ===" \
+            | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl -n kube-system \
+            get svc,endpoints,endpointslices -o wide 2>&1 \
+            | tee -a ~/logs/cluster-diag.txt || true
+
+          echo "=== CoreDNS logs ===" | tee ~/logs/coredns.txt
+          # Try both common label selectors used by different k8s distributions
+          sudo k8s kubectl -n kube-system logs \
+            -l k8s-app=kube-dns --tail=200 2>&1 \
+            | tee -a ~/logs/coredns.txt || true
+          sudo k8s kubectl -n kube-system logs \
+            -l app.kubernetes.io/name=coredns --tail=200 2>&1 \
+            | tee -a ~/logs/coredns.txt || true
+
+          echo "=== kube-proxy logs ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl -n kube-system logs \
+            -l k8s-app=kube-proxy --tail=50 2>&1 \
+            | tee -a ~/logs/cluster-diag.txt || true
+
+      - name: DNS pod diagnostics – resolv.conf + nslookup (always)
+        timeout-minutes: 5
+        if: always()
+        run: |
+          mkdir -p ~/logs
+          echo "=== DNS resolution from busybox pod ===" | tee ~/logs/dns-pod-diag.txt
+          # The pod name must be unique; clean up any prior attempt first
+          sudo k8s kubectl delete pod dns-diag --ignore-not-found=true || true
+          sudo k8s kubectl run dns-diag \
+            --image=busybox:1.36 \
+            --restart=Never \
+            --rm \
+            -i \
+            --timeout=120s \
+            -- sh -c '
+              echo "=== /etc/resolv.conf ==="
+              cat /etc/resolv.conf
+              echo ""
+              echo "=== nslookup kubernetes.default.svc.cluster.local ==="
+              nslookup kubernetes.default.svc.cluster.local \
+                || echo "FAILED: kubernetes.default.svc.cluster.local"
+              echo ""
+              echo "=== nslookup controller-service.controller-concierge-k8s.svc.cluster.local ==="
+              nslookup controller-service.controller-concierge-k8s.svc.cluster.local \
+                || echo "FAILED: controller-service.controller-concierge-k8s.svc.cluster.local"
+              echo ""
+              echo "=== nslookup api.charmhub.io ==="
+              nslookup api.charmhub.io || echo "FAILED: api.charmhub.io"
+            ' 2>&1 | tee -a ~/logs/dns-pod-diag.txt || true
+
+      - name: Deploy mysql-k8s from charmhub (8.4/edge)
+        timeout-minutes: 5
+        id: deploy
+        run: |
+          # Deploy 3 units to mirror production-like HA setup; 8.4/edge is the
+          # branch under test.  Deploying from charmhub avoids the build step
+          # so this diagnostic job can run as early as possible.
+          sudo juju switch testing
+          sudo juju deploy mysql-k8s --trust -n 3 --channel 8.4/edge
+
+      - name: Wait for mysql-k8s deployment (up to 25 min)
+        timeout-minutes: 30
+        id: wait-deploy
+        run: |
+          sudo juju wait-for application mysql-k8s --timeout=25m \
+            || echo "wait-for exited with non-zero (timed out or unsupported); collecting logs regardless"
+
+      - name: Juju status & debug-log (always)
+        timeout-minutes: 8
+        if: always()
+        run: |
+          mkdir -p ~/logs
+          sudo juju show-controller 2>&1 | tee ~/logs/juju-show-controller.txt || true
+          sudo juju show-model 2>&1 | tee ~/logs/juju-show-model.txt || true
+          sudo juju status --relations --storage --format yaml 2>&1 \
+            | tee ~/logs/juju-status.yaml || true
+          sudo juju status --color --relations 2>&1 \
+            | tee ~/logs/juju-status.txt || true
+          sudo juju debug-log --ms --replay --no-tail 2>&1 \
+            | tee ~/logs/juju-debug-log.txt || true
+          sudo juju debug-log --ms -m controller --replay --no-tail 2>&1 \
+            | tee ~/logs/juju-debug-log-controller.txt || true
+
+      - name: Kubectl describe Juju controller & unit pods (always)
+        timeout-minutes: 5
+        if: always()
+        run: |
+          mkdir -p ~/logs
+          sudo k8s kubectl get pods -A -o wide 2>&1 \
+            | tee ~/logs/kubectl-all-pods-final.txt || true
+          sudo k8s kubectl -n controller-concierge-k8s describe pod 2>&1 \
+            | tee ~/logs/kubectl-describe-controller-pods.txt || true
+          sudo k8s kubectl -n testing describe pod 2>&1 \
+            | tee ~/logs/kubectl-describe-testing-pods.txt || true
+
+      # -----------------------------------------------------------------------
+      # Extended netshoot diagnostics – only on failure, to keep normal runs
+      # fast and to avoid pulling a large image unnecessarily.
+      # -----------------------------------------------------------------------
+      - name: Extended netshoot DNS diagnostics (on failure)
+        timeout-minutes: 5
+        if: failure()
+        run: |
+          mkdir -p ~/logs
+          DNS_SVC_IP=$(
+            sudo k8s kubectl -n kube-system get svc kube-dns \
+              -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo ""
+          )
+          echo "DNS Service IP: ${DNS_SVC_IP}" | tee ~/logs/netshoot-diag.txt
+          if [ -n "${DNS_SVC_IP}" ]; then
+            sudo k8s kubectl delete pod netshoot-diag --ignore-not-found=true || true
+            sudo k8s kubectl run netshoot-diag \
+              --image=nicolaka/netshoot:latest \
+              --restart=Never \
+              --rm \
+              -i \
+              --timeout=120s \
+              -- bash -c "
+                echo '=== dig UDP: kubernetes.default.svc.cluster.local ==='
+                dig +time=3 +tries=1 @${DNS_SVC_IP} \
+                  kubernetes.default.svc.cluster.local A || true
+                echo '=== dig TCP: kubernetes.default.svc.cluster.local ==='
+                dig +tcp +time=3 +tries=1 @${DNS_SVC_IP} \
+                  kubernetes.default.svc.cluster.local A || true
+                echo '=== dig api.charmhub.io ==='
+                dig +time=3 +tries=1 @${DNS_SVC_IP} api.charmhub.io A || true
+                echo '=== ip link ==='
+                ip link
+                echo '=== ip route ==='
+                ip route
+              " 2>&1 | tee -a ~/logs/netshoot-diag.txt || true
+          fi
+
+      - name: Upload diagnostic logs
+        timeout-minutes: 5
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dns-bootstrap-diagnostic-logs
+          path: ~/logs/
+          if-no-files-found: warn
