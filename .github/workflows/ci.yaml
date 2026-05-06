@@ -173,6 +173,31 @@ jobs:
           sudo concierge prepare --trace
 
       # -----------------------------------------------------------------------
+      # Wait for Cilium CNI and CoreDNS to be fully operational before running
+      # any DNS tests.  The k8s snap uses Cilium; its BPF service maps take a
+      # few extra seconds to be programmed after "k8s status --wait-ready"
+      # returns.  Without this gate, DNS tests run too early and time out.
+      # -----------------------------------------------------------------------
+      - name: Wait for Cilium & CoreDNS readiness
+        timeout-minutes: 5
+        if: always()
+        run: |
+          echo "=== Waiting for CoreDNS deployment to roll out ==="
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns \
+            --timeout=120s || true
+          echo "=== Waiting for CoreDNS pods to be Ready ==="
+          # Canonical K8s labels CoreDNS pods with k8s-app=coredns (not kube-dns)
+          sudo k8s kubectl -n kube-system wait pod \
+            -l k8s-app=coredns \
+            --for=condition=Ready \
+            --timeout=120s || true
+          echo "=== Cilium agent pods ==="
+          sudo k8s kubectl -n kube-system get pods \
+            -l app.kubernetes.io/name=cilium-agent -o wide 2>&1 || true
+          echo "=== k8s status after wait ==="
+          sudo k8s status || true
+
+      # -----------------------------------------------------------------------
       # Cluster & DNS diagnostics – run unconditionally so we always get a
       # snapshot of the cluster state regardless of what happened above.
       # -----------------------------------------------------------------------
@@ -191,7 +216,8 @@ jobs:
             | tee ~/logs/k8s-journalctl.txt || true
 
           echo "=== kubectl version ===" | tee -a ~/logs/cluster-diag.txt
-          sudo k8s kubectl version --short 2>&1 | tee -a ~/logs/cluster-diag.txt || true
+          # Note: --short was removed in kubectl >=1.28; use plain 'version'
+          sudo k8s kubectl version 2>&1 | tee -a ~/logs/cluster-diag.txt || true
 
           echo "=== kubectl get nodes ===" | tee -a ~/logs/cluster-diag.txt
           sudo k8s kubectl get nodes -o wide 2>&1 | tee -a ~/logs/cluster-diag.txt || true
@@ -206,13 +232,19 @@ jobs:
             | tee -a ~/logs/cluster-diag.txt || true
 
           echo "=== CoreDNS logs ===" | tee ~/logs/coredns.txt
-          # Try both common label selectors used by different k8s distributions
+          # Canonical K8s labels CoreDNS pods with k8s-app=coredns
           sudo k8s kubectl -n kube-system logs \
-            -l k8s-app=kube-dns --tail=200 2>&1 \
+            -l k8s-app=coredns --tail=200 2>&1 \
             | tee -a ~/logs/coredns.txt || true
+          # Also try app.kubernetes.io/name=coredns as a fallback
           sudo k8s kubectl -n kube-system logs \
             -l app.kubernetes.io/name=coredns --tail=200 2>&1 \
             | tee -a ~/logs/coredns.txt || true
+
+          echo "=== Cilium agent logs ===" | tee -a ~/logs/cluster-diag.txt
+          sudo k8s kubectl -n kube-system logs \
+            -l app.kubernetes.io/name=cilium-agent --tail=100 2>&1 \
+            | tee -a ~/logs/cluster-diag.txt || true
 
           echo "=== kube-proxy logs ===" | tee -a ~/logs/cluster-diag.txt
           sudo k8s kubectl -n kube-system logs \
@@ -225,7 +257,17 @@ jobs:
         run: |
           mkdir -p ~/logs
           echo "=== DNS resolution from busybox pod ===" | tee ~/logs/dns-pod-diag.txt
-          # The pod name must be unique; clean up any prior attempt first
+
+          # Get CoreDNS pod IPs so we can test DNS directly (bypassing service
+          # ClusterIP routing) to distinguish CNI issues from CoreDNS issues.
+          COREDNS_POD_IPS=$(
+            sudo k8s kubectl -n kube-system get pods -l k8s-app=coredns \
+              -o jsonpath='{range .items[*]}{.status.podIP}{"\n"}{end}' 2>/dev/null \
+              | head -1
+          )
+          echo "CoreDNS pod IP: ${COREDNS_POD_IPS}" | tee -a ~/logs/dns-pod-diag.txt
+
+          # Clean up any prior attempt first
           sudo k8s kubectl delete pod dns-diag --ignore-not-found=true || true
           sudo k8s kubectl run dns-diag \
             --image=busybox:1.36 \
@@ -233,22 +275,33 @@ jobs:
             --rm \
             -i \
             --timeout=120s \
-            -- sh -c '
-              echo "=== /etc/resolv.conf ==="
+            -- sh -c "
+              echo '=== /etc/resolv.conf ==='
               cat /etc/resolv.conf
-              echo ""
-              echo "=== nslookup kubernetes.default.svc.cluster.local ==="
+              echo ''
+              echo '=== nslookup kubernetes.default.svc.cluster.local ==='
               nslookup kubernetes.default.svc.cluster.local \
-                || echo "FAILED: kubernetes.default.svc.cluster.local"
-              echo ""
-              echo "=== nslookup controller-service.controller-concierge-k8s.svc.cluster.local ==="
+                || echo 'FAILED: kubernetes.default.svc.cluster.local'
+              echo ''
+              echo '=== nslookup controller-service.controller-concierge-k8s.svc.cluster.local ==='
               nslookup controller-service.controller-concierge-k8s.svc.cluster.local \
-                || echo "FAILED: controller-service.controller-concierge-k8s.svc.cluster.local"
-              echo ""
-              echo "=== nslookup api.charmhub.io ==="
-              nslookup api.charmhub.io || echo "FAILED: api.charmhub.io"
-            ' 2>&1 | tee -a ~/logs/dns-pod-diag.txt || true
+                || echo 'FAILED: controller-service.controller-concierge-k8s.svc.cluster.local'
+              echo ''
+              echo '=== nslookup api.charmhub.io ==='
+              nslookup api.charmhub.io || echo 'FAILED: api.charmhub.io'
+              echo ''
+              if [ -n '${COREDNS_POD_IPS}' ]; then
+                echo '=== nslookup direct to CoreDNS pod IP ==='
+                nslookup kubernetes.default.svc.cluster.local '${COREDNS_POD_IPS}' \
+                  || echo 'FAILED: direct CoreDNS pod IP lookup'
+              fi
+            " 2>&1 | tee -a ~/logs/dns-pod-diag.txt || true
 
+      # -----------------------------------------------------------------------
+      # NOTE: Concierge bootstraps Juju as the 'runner' user (sudo -u runner).
+      # Juju data lives in /home/runner/.local/share/juju.  Running 'sudo juju'
+      # would use root's home and find no controllers.  Use plain 'juju' here.
+      # -----------------------------------------------------------------------
       - name: Deploy mysql-k8s from charmhub (8.4/edge)
         timeout-minutes: 5
         id: deploy
@@ -256,14 +309,14 @@ jobs:
           # Deploy 3 units to mirror production-like HA setup; 8.4/edge is the
           # branch under test.  Deploying from charmhub avoids the build step
           # so this diagnostic job can run as early as possible.
-          sudo juju switch testing
-          sudo juju deploy mysql-k8s --trust -n 3 --channel 8.4/edge
+          juju switch testing
+          juju deploy mysql-k8s --trust -n 3 --channel 8.4/edge
 
       - name: Wait for mysql-k8s deployment (up to 25 min)
         timeout-minutes: 30
         id: wait-deploy
         run: |
-          sudo juju wait-for application mysql-k8s --timeout=25m \
+          juju wait-for application mysql-k8s --timeout=25m \
             || echo "wait-for exited with non-zero (timed out or unsupported); collecting logs regardless"
 
       - name: Juju status & debug-log (always)
@@ -271,15 +324,15 @@ jobs:
         if: always()
         run: |
           mkdir -p ~/logs
-          sudo juju show-controller 2>&1 | tee ~/logs/juju-show-controller.txt || true
-          sudo juju show-model 2>&1 | tee ~/logs/juju-show-model.txt || true
-          sudo juju status --relations --storage --format yaml 2>&1 \
+          juju show-controller 2>&1 | tee ~/logs/juju-show-controller.txt || true
+          juju show-model 2>&1 | tee ~/logs/juju-show-model.txt || true
+          juju status --relations --storage --format yaml 2>&1 \
             | tee ~/logs/juju-status.yaml || true
-          sudo juju status --color --relations 2>&1 \
+          juju status --color --relations 2>&1 \
             | tee ~/logs/juju-status.txt || true
-          sudo juju debug-log --ms --replay --no-tail 2>&1 \
+          juju debug-log --ms --replay --no-tail 2>&1 \
             | tee ~/logs/juju-debug-log.txt || true
-          sudo juju debug-log --ms -m controller --replay --no-tail 2>&1 \
+          juju debug-log --ms -m controller --replay --no-tail 2>&1 \
             | tee ~/logs/juju-debug-log-controller.txt || true
 
       - name: Kubectl describe Juju controller & unit pods (always)
@@ -303,11 +356,12 @@ jobs:
         if: failure()
         run: |
           mkdir -p ~/logs
+          # In Canonical K8s the DNS service is named 'coredns', not 'kube-dns'
           DNS_SVC_IP=$(
-            sudo k8s kubectl -n kube-system get svc kube-dns \
+            sudo k8s kubectl -n kube-system get svc coredns \
               -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo ""
           )
-          echo "DNS Service IP: ${DNS_SVC_IP}" | tee ~/logs/netshoot-diag.txt
+          echo "DNS Service IP (coredns): ${DNS_SVC_IP}" | tee ~/logs/netshoot-diag.txt
           if [ -n "${DNS_SVC_IP}" ]; then
             sudo k8s kubectl delete pod netshoot-diag --ignore-not-found=true || true
             sudo k8s kubectl run netshoot-diag \
