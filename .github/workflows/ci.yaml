@@ -192,7 +192,7 @@ jobs:
       # This is the standard Kubernetes pre-flight recommendation for nodes
       # that run systemd-resolved in stub mode.
       # -----------------------------------------------------------------------
-      - name: Fix systemd-resolved stub – point /etc/resolv.conf at real upstream DNS
+      - name: Fix systemd-resolved stub - point /etc/resolv.conf at real upstream DNS
         timeout-minutes: 2
         run: |
           echo "=== /etc/resolv.conf before fix ==="
@@ -232,7 +232,7 @@ jobs:
       # the Cilium network.  Then gate on an active ClusterIP DNS probe from
       # inside the cluster – pod readiness alone is not a sufficient signal.
       # -----------------------------------------------------------------------
-      - name: Fix Cilium/CoreDNS CNI race – restart CoreDNS after Cilium is ready
+      - name: Fix Cilium/CoreDNS CNI race - restart CoreDNS after Cilium is ready
         timeout-minutes: 10
         run: |
           echo "=== Waiting for Cilium agent to be Ready ==="
@@ -260,17 +260,20 @@ jobs:
           echo "=== CoreDNS endpoints after restart (all should be 10.1.x.x) ==="
           sudo k8s kubectl -n kube-system get endpoints coredns -o wide
 
-          echo "=== Active ClusterIP DNS gate ==="
           DNS_SVC_IP=$(
             sudo k8s kubectl -n kube-system get svc coredns \
               -o jsonpath='{.spec.clusterIP}'
           )
           echo "CoreDNS ClusterIP: ${DNS_SVC_IP}"
+
+          echo "=== Active ClusterIP DNS gate (internal name) ==="
           # Run a busybox pod and retry until ClusterIP DNS resolves or timeout.
           # This confirms Cilium BPF service maps are programmed correctly.
+          # NOTE: nslookup always prints "Address: <server>:<port>" for the server
+          # itself; use "grep -q '^Name:'" to detect an actual resolved answer.
           sudo k8s kubectl delete pod dns-gate --ignore-not-found=true || true
           for attempt in $(seq 1 12); do
-            echo "Attempt ${attempt}/12: testing ClusterIP DNS..."
+            echo "Attempt ${attempt}/12: testing ClusterIP DNS (internal)..."
             result=$(
               sudo k8s kubectl run dns-gate \
                 --image=busybox:1.36 \
@@ -282,7 +285,7 @@ jobs:
                 2>&1 || true
             )
             echo "${result}"
-            if echo "${result}" | grep -q "Address:"; then
+            if echo "${result}" | grep -q "^Name:"; then
               echo "=== ClusterIP DNS gate passed on attempt ${attempt} ==="
               break
             fi
@@ -297,10 +300,53 @@ jobs:
           echo "=== k8s status ==="
           sudo k8s status
 
+          # -------------------------------------------------------------------
+          # Fix for Azure DNS not being reachable from Cilium pod overlay IPs:
+          #
+          # The uplink resolv.conf fix (step above) correctly gives CoreDNS pods
+          # /etc/resolv.conf with "nameserver 168.63.129.16" (Azure internal DNS).
+          # However, 168.63.129.16 is Azure's "magic" link-local DNS address –
+          # it only responds to queries originating from the VM's real eth0 IP.
+          # Cilium pod IPs (10.1.0.x) are on an overlay network and Azure rejects
+          # (SERVFAIL) queries from those IPs.  This means CoreDNS cannot forward
+          # any external name (e.g. api.charmhub.io) even with the resolv.conf
+          # fix in place.
+          #
+          # Fix: patch the CoreDNS Corefile to use public DNS resolvers (8.8.8.8,
+          # 1.1.1.1) instead of /etc/resolv.conf.  Public resolvers are reachable
+          # from pod overlay IPs via Cilium's masquerade (SNAT) to the node IP.
+          # -------------------------------------------------------------------
+          echo "=== Patching CoreDNS Corefile: forward to 8.8.8.8 1.1.1.1 ==="
+          COREDNS_CM=$(
+            sudo k8s kubectl -n kube-system get configmap \
+              -l app.kubernetes.io/instance=ck-dns \
+              -o jsonpath='{.items[0].metadata.name}'
+          )
+          echo "CoreDNS ConfigMap name: ${COREDNS_CM}"
+          sudo k8s kubectl -n kube-system get configmap "${COREDNS_CM}" \
+            -o jsonpath='{.data.Corefile}'
+          # Replace "forward . /etc/resolv.conf" with public resolvers.
+          PATCHED_COREFILE=$(
+            sudo k8s kubectl -n kube-system get configmap "${COREDNS_CM}" \
+              -o jsonpath='{.data.Corefile}' \
+              | sed 's|forward \. /etc/resolv.conf|forward . 8.8.8.8 1.1.1.1|'
+          )
+          sudo k8s kubectl -n kube-system patch configmap "${COREDNS_CM}" \
+            --type merge \
+            -p "{\"data\":{\"Corefile\":$(echo "${PATCHED_COREFILE}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}}"
+          echo "=== CoreDNS Corefile after patch ==="
+          sudo k8s kubectl -n kube-system get configmap "${COREDNS_CM}" \
+            -o jsonpath='{.data.Corefile}'
+          # CoreDNS reloads its config automatically (reload plugin is enabled).
+          # Wait a few seconds for the reload to take effect.
+          sleep 10
+          echo "=== Restarting CoreDNS to ensure Corefile reload ==="
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns \
+            --timeout=60s
+
           echo "=== External DNS gate (api.charmhub.io must resolve before deploy) ==="
-          # Verify that external DNS forwarding works.  This is the exact query
-          # that 'juju deploy' will make.  With the systemd-resolved stub fix in
-          # place, CoreDNS should forward to the real upstream (e.g. 168.63.129.16).
+          # Verify that external DNS forwarding via 8.8.8.8/1.1.1.1 works.
           sudo k8s kubectl delete pod dns-gate-ext --ignore-not-found=true || true
           for attempt in $(seq 1 12); do
             echo "Attempt ${attempt}/12: testing external DNS..."
@@ -315,7 +361,8 @@ jobs:
                 2>&1 || true
             )
             echo "${result}"
-            if echo "${result}" | grep -q "Address:"; then
+            # "^Name:" only appears when the hostname was actually resolved.
+            if echo "${result}" | grep -q "^Name:"; then
               echo "=== External DNS gate passed on attempt ${attempt} ==="
               break
             fi
@@ -462,7 +509,7 @@ jobs:
           sudo k8s kubectl get ciliumnetworkpolicies -A 2>&1 \
             | tee -a ~/logs/dns-upstream-diag.txt || true
 
-      - name: DNS pod diagnostics – resolv.conf + nslookup (always)
+      - name: DNS pod diagnostics - resolv.conf + nslookup (always)
         timeout-minutes: 5
         if: always()
         run: |
@@ -498,8 +545,16 @@ jobs:
               nslookup controller-service.controller-concierge-k8s.svc.cluster.local \
                 || echo 'FAILED: controller-service.controller-concierge-k8s.svc.cluster.local'
               echo ''
-              echo '=== nslookup api.charmhub.io ==='
-              nslookup api.charmhub.io || echo 'FAILED: api.charmhub.io'
+              echo '=== nslookup api.charmhub.io (via CoreDNS ClusterIP) ==='
+              nslookup api.charmhub.io || echo 'FAILED: api.charmhub.io via ClusterIP'
+              echo ''
+              echo '=== nslookup api.charmhub.io direct to 168.63.129.16 (Azure DNS) ==='
+              nslookup api.charmhub.io 168.63.129.16 \
+                || echo 'FAILED: api.charmhub.io via 168.63.129.16'
+              echo ''
+              echo '=== nslookup api.charmhub.io direct to 8.8.8.8 (Google DNS) ==='
+              nslookup api.charmhub.io 8.8.8.8 \
+                || echo 'FAILED: api.charmhub.io via 8.8.8.8'
               echo ''
               if [ -n '${COREDNS_POD_IPS}' ]; then
                 echo '=== nslookup direct to CoreDNS pod IP ==='
