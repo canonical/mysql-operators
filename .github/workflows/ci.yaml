@@ -173,29 +173,85 @@ jobs:
           sudo concierge prepare --trace
 
       # -----------------------------------------------------------------------
-      # Wait for Cilium CNI and CoreDNS to be fully operational before running
-      # any DNS tests.  The k8s snap uses Cilium; its BPF service maps take a
-      # few extra seconds to be programmed after "k8s status --wait-ready"
-      # returns.  Without this gate, DNS tests run too early and time out.
+      # Fix for Cilium CNI race condition:
+      #
+      # When the k8s snap bootstraps, CoreDNS pods can start before Cilium has
+      # become the active CNI plugin.  Those early pods get IPs from containerd's
+      # fallback bridge CNI (10.88.0.0/16) instead of Cilium's pod CIDR
+      # (10.1.0.0/16).  Cilium's BPF kube-proxy replacement then programs the
+      # coredns service ClusterIP with BOTH backends, but traffic DNAT'd to a
+      # bridge-network IP is silently dropped because Cilium has no BPF endpoint
+      # map for those addresses.  This produces ~50% DNS timeout failures (the
+      # exact error seen: "i/o timeout" on the CoreDNS ClusterIP).
+      #
+      # Fix: after Cilium is fully Ready, restart CoreDNS so every pod lands on
+      # the Cilium network.  Then gate on an active ClusterIP DNS probe from
+      # inside the cluster – pod readiness alone is not a sufficient signal.
       # -----------------------------------------------------------------------
-      - name: Wait for Cilium & CoreDNS readiness
-        timeout-minutes: 5
-        if: always()
+      - name: Fix Cilium/CoreDNS CNI race – restart CoreDNS after Cilium is ready
+        timeout-minutes: 10
         run: |
-          echo "=== Waiting for CoreDNS deployment to roll out ==="
+          echo "=== Waiting for Cilium agent to be Ready ==="
+          sudo k8s kubectl -n kube-system wait pod \
+            -l app.kubernetes.io/name=cilium-agent \
+            --for=condition=Ready \
+            --timeout=120s
+
+          echo "=== CoreDNS endpoints before restart ==="
+          sudo k8s kubectl -n kube-system get endpoints coredns -o wide
+
+          echo "=== Restarting CoreDNS to flush any pre-Cilium bridge IPs ==="
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+
+          echo "=== Waiting for CoreDNS rollout to complete ==="
           sudo k8s kubectl -n kube-system rollout status deployment/coredns \
-            --timeout=120s || true
-          echo "=== Waiting for CoreDNS pods to be Ready ==="
-          # Canonical K8s labels CoreDNS pods with k8s-app=coredns (not kube-dns)
+            --timeout=120s
+
+          echo "=== Waiting for all CoreDNS pods to be Ready ==="
           sudo k8s kubectl -n kube-system wait pod \
             -l k8s-app=coredns \
             --for=condition=Ready \
-            --timeout=120s || true
-          echo "=== Cilium agent pods ==="
-          sudo k8s kubectl -n kube-system get pods \
-            -l app.kubernetes.io/name=cilium-agent -o wide 2>&1 || true
-          echo "=== k8s status after wait ==="
-          sudo k8s status || true
+            --timeout=120s
+
+          echo "=== CoreDNS endpoints after restart (all should be 10.1.x.x) ==="
+          sudo k8s kubectl -n kube-system get endpoints coredns -o wide
+
+          echo "=== Active ClusterIP DNS gate ==="
+          DNS_SVC_IP=$(
+            sudo k8s kubectl -n kube-system get svc coredns \
+              -o jsonpath='{.spec.clusterIP}'
+          )
+          echo "CoreDNS ClusterIP: ${DNS_SVC_IP}"
+          # Run a busybox pod and retry until ClusterIP DNS resolves or timeout.
+          # This confirms Cilium BPF service maps are programmed correctly.
+          sudo k8s kubectl delete pod dns-gate --ignore-not-found=true || true
+          for attempt in $(seq 1 12); do
+            echo "Attempt ${attempt}/12: testing ClusterIP DNS..."
+            result=$(
+              sudo k8s kubectl run dns-gate \
+                --image=busybox:1.36 \
+                --restart=Never \
+                --rm \
+                -i \
+                --timeout=30s \
+                -- sh -c "nslookup kubernetes.default.svc.cluster.local ${DNS_SVC_IP}" \
+                2>&1 || true
+            )
+            echo "${result}"
+            if echo "${result}" | grep -q "Address:"; then
+              echo "=== ClusterIP DNS gate passed on attempt ${attempt} ==="
+              break
+            fi
+            if [ "${attempt}" -eq 12 ]; then
+              echo "=== ClusterIP DNS gate FAILED after 12 attempts ==="
+              exit 1
+            fi
+            echo "DNS not yet responding via ClusterIP, waiting 10s..."
+            sleep 10
+          done
+
+          echo "=== k8s status ==="
+          sudo k8s status
 
       # -----------------------------------------------------------------------
       # Cluster & DNS diagnostics – run unconditionally so we always get a
