@@ -49,6 +49,24 @@ Integrate the certificates charm with the Charmed MySQL application on the `clie
 ```
 ````
 
+## Enable peer-to-peer encryption
+
+Integrate the certificates charm with the Charmed MySQL application on the `peer-certificates` endpoint:
+
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju integrate self-signed-certificates mysql:peer-certificates
+```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju integrate self-signed-certificates mysql-k8s:peer-certificates
+```
+````
+
 ## Certificate expiration and rotation
 
 Charmed MySQL provides full automation of certificate rotation.

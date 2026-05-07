@@ -3,7 +3,6 @@
 
 import json
 import logging
-from time import sleep
 
 import jubilant
 from jubilant import Juju
@@ -25,10 +24,7 @@ logger = logging.getLogger(__name__)
 
 APP_NAME = CHARM_METADATA["name"]
 TLS_APP_NAME = "self-signed-certificates"
-
 CLUSTER_NAME = "test_cluster"
-MODEL_CONFIG = {"logging-config": "<root>=INFO;unit=DEBUG"}
-TLS_SETUP_SLEEP_TIME = 30
 TIMEOUT = 15 * MINUTE_SECS
 
 # Global config dictionary for connection testing
@@ -37,9 +33,6 @@ config = {}
 
 def test_build_and_deploy(juju: Juju, charm) -> None:
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
-    # Set model configuration
-    juju.model_config(MODEL_CONFIG)
-
     logger.info(f"Deploying {APP_NAME}")
     juju.deploy(
         charm,
@@ -104,9 +97,18 @@ def test_enable_tls(juju: Juju) -> None:
     # Relate with TLS charm
     logger.info("Relate to TLS operator")
     juju.integrate(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
-    # allow time for TLS enablement
-    sleep(TLS_SETUP_SLEEP_TIME)
+    juju.integrate(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
     # After relating to only encrypted connection should be possible
     logger.info("Asserting connections after relation")
@@ -132,9 +134,18 @@ def test_disable_tls(juju: Juju) -> None:
 
     logger.info("Removing relation")
     juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
-    # Allow time for reconfigure
-    sleep(TLS_SETUP_SLEEP_TIME)
+    juju.remove_relation(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
     # After relation removal both encrypted and unencrypted connection should be possible
     for unit_name in app_units:

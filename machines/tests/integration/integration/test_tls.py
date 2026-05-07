@@ -3,7 +3,6 @@
 
 import json
 import logging
-from time import sleep
 
 import jubilant
 from jubilant import Juju
@@ -26,10 +25,7 @@ logger = logging.getLogger(__name__)
 
 APP_NAME = "mysql"
 TLS_APP_NAME = "self-signed-certificates"
-
 CLUSTER_NAME = "test_cluster"
-SLEEP_WAIT = 5
-TLS_SETUP_SLEEP_TIME = 30
 TIMEOUT = 15 * MINUTE_SECS
 
 config = {}
@@ -100,15 +96,17 @@ def test_enable_tls(juju: Juju) -> None:
     # Relate with TLS charm
     logger.info("Relate to TLS operator")
     juju.integrate(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
-
-    # Wait for hooks start reconfiguring app
-    # add as a wait since app state does not change
-    # due tls setup running too briefly
-    sleep(TLS_SETUP_SLEEP_TIME)
-
     juju.wait(
-        jubilant.all_active,
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
         timeout=TIMEOUT,
+        delay=5,
+    )
+
+    juju.integrate(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
     )
 
     # After relating to only encrypted connection should be possible
@@ -135,9 +133,18 @@ def test_disable_tls(juju: Juju) -> None:
 
     logger.info("Removing relation")
     juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
-    # Allow time for reconfigure
-    sleep(TLS_SETUP_SLEEP_TIME)
+    juju.remove_relation(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
 
     # After relation removal both encrypted and unencrypted connection should be possible
     for unit_name in app_units:

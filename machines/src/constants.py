@@ -20,6 +20,7 @@ MONITORING_PASSWORD_KEY = "monitoring-password"  # noqa: S105
 BACKUPS_PASSWORD_KEY = "backups-password"  # noqa: S105
 
 TLS_CLIENT_RELATION = "client-certificates"
+TLS_PEER_RELATION = "peer-certificates"
 TLS_SSL_CA_FILE = "custom-ca.pem"
 TLS_SSL_KEY_FILE = "custom-server-key.pem"
 TLS_SSL_CERT_FILE = "custom-server-cert.pem"
