@@ -1,0 +1,15 @@
+May 08 01:58:32 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:80 Deploying mysql
+May 08 01:58:32 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql_ubuntu@24.04-amd64.charm mysql --base ubuntu@24.04 --config cluster-name=test_cluster --config profile=testing --num-units 3
+May 08 01:58:39 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing s3-integrator --base ubuntu@24.04 --channel 2/edge
+May 08 02:05:44 [32mINFO    [0m root:test_backup_aws.py:100 Loading test database
+May 08 02:05:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+May 08 02:05:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp851777ze
+May 08 02:05:47 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+May 08 02:05:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql/0 get-password --params /root/snap/juju/common/tmp321ukg23
+May 08 02:06:58 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:103 Rotating all mysql credentials
+May 08 02:06:58 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+May 08 02:06:58 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp04juwosl
+May 08 02:07:02 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql/0 set-password --params /root/snap/juju/common/tmpzos1o2u9
+May 08 02:07:11 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql/0 set-password --params /root/snap/juju/common/tmp9cz3om7v
+May 08 02:07:19 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:108 Configuring s3 integrator and integrating it with mysql
+May 08 02:07:19 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing mysql:s3-parameters s3-integrator:s3-credentials
