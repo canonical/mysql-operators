@@ -95,6 +95,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     )
 
     logging.info("Waiting for the applications to settle")
+
     def wait_model_1():
         model_1.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
