@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 
 import jubilant_backports
 import pytest
@@ -27,6 +28,7 @@ from ...markers import juju3
 MYSQL_APP_1 = "db1"
 MYSQL_APP_2 = "db2"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
+MYSQL_ROUTER = "mysql-router"
 
 MINUTE_SECS = 60
 
@@ -95,14 +97,23 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     )
 
     logging.info("Waiting for the applications to settle")
-    model_1.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
-        timeout=10 * MINUTE_SECS,
-    )
-    model_2.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
-        timeout=10 * MINUTE_SECS,
-    )
+
+    def wait_model_1():
+        model_1.wait(
+            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_1),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    def wait_model_2():
+        model_2.wait(
+            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_2),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(wait_model_1), executor.submit(wait_model_2)]
+        for future in futures:
+            future.result()
 
     if path := os.getenv("DATA_SOURCE_PATH"):
         logging.info("Loading test database")
@@ -150,10 +161,21 @@ def test_deploy_test_app(first_model: str) -> None:
         num_units=1,
     )
 
-    logging.info("Relating the test application")
+    model_1.deploy(
+        charm=MYSQL_ROUTER,
+        app=MYSQL_ROUTER,
+        base="ubuntu@22.04",
+        channel="8.0/edge",
+    )
+
+    logging.info("Relating mysql, app and router")
     model_1.integrate(
         f"{MYSQL_APP_1}:database",
+        f"{MYSQL_ROUTER}:backend-database",
+    )
+    model_1.integrate(
         f"{MYSQL_TEST_APP_NAME}:database",
+        f"{MYSQL_ROUTER}:database",
     )
 
     model_1.wait(
