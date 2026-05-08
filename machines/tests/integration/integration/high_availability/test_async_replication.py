@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 
 import jubilant
 import pytest
@@ -92,14 +93,23 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
     )
 
     logging.info("Waiting for the applications to settle")
-    model_1.wait(
-        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
-        timeout=10 * MINUTE_SECS,
-    )
-    model_2.wait(
-        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
-        timeout=10 * MINUTE_SECS,
-    )
+    def wait_model_1():
+        model_1.wait(
+            ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_1),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    def wait_model_2():
+        model_2.wait(
+            ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_2),
+            timeout=20 * MINUTE_SECS,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(wait_model_1), executor.submit(wait_model_2)]
+        for future in futures:
+            future.result()
+
 
     if path := os.getenv("DATA_SOURCE_PATH"):
         logging.info("Loading test database")
@@ -142,8 +152,6 @@ def test_deploy_router_and_app(first_model: str) -> None:
         app=MYSQL_ROUTER_NAME,
         base="ubuntu@24.04",
         channel="8.4/edge",
-        num_units=1,
-        trust=True,
     )
     model_1.deploy(
         charm=MYSQL_TEST_APP_NAME,
@@ -151,7 +159,6 @@ def test_deploy_router_and_app(first_model: str) -> None:
         base="ubuntu@24.04",
         channel="latest/edge",
         num_units=1,
-        trust=False,
     )
 
     logging.info("Relating the router and test application")

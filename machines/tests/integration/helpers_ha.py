@@ -80,16 +80,17 @@ def check_mysql_units_writes_increment(
     app_primary = get_mysql_primary_unit(juju, app_name, app_units[0])
     app_max_value = get_mysql_max_written_value(juju, app_name, app_primary)
 
-    for unit_name in app_units:
-        for attempt in Retrying(
-            reraise=True,
-            stop=stop_after_delay(5 * MINUTE_SECS),
-            wait=wait_fixed(10),
-        ):
-            with attempt:
-                unit_max_value = get_mysql_max_written_value(juju, app_name, unit_name)
-                assert unit_max_value > app_max_value, "Writes not incrementing"
-                app_max_value = unit_max_value
+    with update_interval(juju, "20s"):
+        for unit_name in app_units:
+            for attempt in Retrying(
+                reraise=True,
+                stop=stop_after_delay(5 * MINUTE_SECS),
+                wait=wait_fixed(10),
+            ):
+                with attempt:
+                    unit_max_value = get_mysql_max_written_value(juju, app_name, unit_name)
+                    assert unit_max_value > app_max_value, "Writes not incrementing"
+                    app_max_value = unit_max_value
 
 
 def get_app_leader(juju: Juju, app_name: str) -> str:
