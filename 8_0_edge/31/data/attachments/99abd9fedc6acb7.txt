@@ -1,0 +1,13 @@
+May 08 00:35:27 [32mINFO    [0m root:test_replication_unit_endpoints.py:79 Deploying MySQL cluster
+May 08 00:35:27 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql-k8s_ubuntu@22.04-amd64.charm mysql-k8s2 --base ubuntu@22.04 --config cluster-name=test-cluster --config profile=testing --num-units 3 --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:824b302484f83dbbd2cf4506f620a48e53f20053f6ff3c57aa6123e121705bfc
+May 08 00:35:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing mysql-test-app mysql-test-app2 --base ubuntu@22.04 --channel latest/edge --config sleep_interval=300
+May 08 00:35:36 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql-k8s2:database mysql-test-app2:database
+May 08 00:35:36 [32mINFO    [0m jubilant:_juju.py:316 cli: juju model-config --model testing --format json
+May 08 00:35:36 [32mINFO    [0m jubilant:_juju.py:316 cli: juju model-config --model testing update-status-hook-interval=10s
+May 08 00:35:37 [32mINFO    [0m root:test_replication_unit_endpoints.py:103 Wait for applications to become active
+May 08 00:39:43 [32mINFO    [0m jubilant:_juju.py:316 cli: juju model-config --model testing update-status-hook-interval=5m
+May 08 00:39:43 [32mINFO    [0m root:test_replication_unit_endpoints.py:116 Loading test database
+May 08 00:39:43 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+May 08 00:39:44 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-k8s2/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpe88c75bp
+May 08 00:39:54 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+May 08 00:39:54 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-k8s2/0 get-password --params /root/snap/juju/common/tmphhpeb7em
