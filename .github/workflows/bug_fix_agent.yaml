@@ -1,0 +1,74 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Bug Fix Agent
+
+on:
+  schedule:
+    # Weekly on Monday at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      max_issues:
+        description: "Maximum number of issues to process"
+        type: number
+        default: 5
+      confidence_threshold:
+        description: "Minimum confidence to create a PR (0.0–1.0)"
+        type: number
+        default: 0.85
+      dry_run:
+        description: "Analyse only — do not create branches or PRs"
+        type: boolean
+        default: false
+      issue_number:
+        description: "Process a single issue number (leave empty for all bug issues)"
+        type: number
+        required: false
+      base_branch:
+        description: "Override base branch (leave empty to auto-detect from issue content)"
+        type: string
+        required: false
+
+concurrency:
+  group: bug-fix-agent
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  fix-bugs:
+    name: Scan & fix bug issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install anthropic
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Bug Fix Agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAX_ISSUES: ${{ inputs.max_issues || 5 }}
+          CONFIDENCE_THRESHOLD: ${{ inputs.confidence_threshold || 0.85 }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+          SINGLE_ISSUE: ${{ inputs.issue_number || '' }}
+          BASE_BRANCH: ${{ inputs.base_branch || '' }}
+        run: python .github/scripts/bug_fix_agent.py
