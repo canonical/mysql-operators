@@ -39,7 +39,7 @@ log = logging.getLogger("bug-fix-agent")
 
 # ── Configuration ─────────────────────────────────────────────────────
 
-MODEL = "claude-opus-4-5-20250918"
+MODEL = "claude-opus-4-5"
 MAX_TOKENS = 16_384
 MAX_AGENT_TURNS = 40
 MAX_ISSUES = int(os.environ.get("MAX_ISSUES", "5"))
