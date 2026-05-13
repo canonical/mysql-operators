@@ -870,6 +870,10 @@ def main() -> None:
 
     write_github_summary(results)
 
+    if results and all(r["status"] == "error" for r in results):
+        log.error("All issues failed — marking workflow as failed.")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
