@@ -404,44 +404,11 @@ jobs:
           # -------------------------------------------------------------------
           echo "=== Adding iptables MASQUERADE for pod/service egress ==="
           MAIN_IF=$(ip route show default | awk '{print $5}' | head -1)
-          # On Canonical K8s (k8s snap), spec.podCIDR in the Kubernetes node
-          # object is often empty because k8sd manages the CIDR internally.
-          # Use a layered approach to find the pod CIDR reliably:
-          #  1. k8s status output (most authoritative for k8s snap).
-          #  2. spec.podCIDRs / spec.podCIDR from node object (standard K8s).
-          #  3. The Cilium pod subnet visible in the host routing table
-          #     (Cilium adds a route for each node's pod CIDR via cilium_host).
-          #  4. Hardcoded Canonical K8s default (10.1.0.0/16).
-          POD_CIDR=$(sudo k8s status 2>/dev/null \
-            | grep -oP 'pod-cidr\s*=\s*\K[^\s]+' \
-            | head -1)
-          if [ -n "${POD_CIDR}" ]; then
-            echo "Pod CIDR source: k8s status"
-          fi
-          if [ -z "${POD_CIDR}" ]; then
-            POD_CIDR=$(sudo k8s kubectl get nodes \
-              -o jsonpath='{.items[0].spec.podCIDRs[0]}' 2>/dev/null || true)
-            [ -n "${POD_CIDR}" ] && echo "Pod CIDR source: spec.podCIDRs"
-          fi
-          if [ -z "${POD_CIDR}" ]; then
-            POD_CIDR=$(sudo k8s kubectl get nodes \
-              -o jsonpath='{.items[0].spec.podCIDR}' 2>/dev/null || true)
-            [ -n "${POD_CIDR}" ] && echo "Pod CIDR source: spec.podCIDR"
-          fi
-          if [ -z "${POD_CIDR}" ]; then
-            # Cilium programs a route to the node's pod subnet via cilium_host.
-            # Match all RFC1918 private ranges (10/8, 172.16/12, 192.168/16).
-            POD_CIDR=$(ip route show \
-              | grep -v '^default' \
-              | grep -oP '(10\.[0-9]+\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]+\.[0-9]+|192\.168\.[0-9]+\.[0-9]+)/[0-9]+' \
-              | head -1)
-            [ -n "${POD_CIDR}" ] && echo "Pod CIDR source: ip route"
-          fi
-          # Final safety net
-          if [ -z "${POD_CIDR}" ]; then
-            POD_CIDR="10.1.0.0/16"
-            echo "WARNING: could not detect pod CIDR, using default ${POD_CIDR}"
-          fi
+          POD_CIDR=$(
+            sudo k8s kubectl get nodes \
+              -o jsonpath='{.items[0].spec.podCIDR}' 2>/dev/null \
+              || echo "10.1.0.0/16"
+          )
           echo "Main interface: ${MAIN_IF}"
           echo "Pod CIDR: ${POD_CIDR}"
           # Add MASQUERADE for pod CIDR going out via the main interface.
