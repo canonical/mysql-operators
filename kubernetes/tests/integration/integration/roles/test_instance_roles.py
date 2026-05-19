@@ -18,7 +18,6 @@ from ...helpers_ha import (
     get_mysql_server_credentials,
     get_unit_address,
     wait_for_apps_status,
-    wait_for_unit_status,
 )
 
 DATABASE_APP_NAME = CHARM_METADATA["name"]
@@ -51,16 +50,9 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
-        ready=lambda status: all((
-            *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")
-                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
-            ),
-            *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}2", unit_name, "blocked")
-                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}2")
-            ),
-        )),
+        ready=wait_for_apps_status(
+            jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1", f"{INTEGRATOR_APP_NAME}2"
+        ),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -138,14 +130,7 @@ def test_charmed_read_role(juju: Juju):
 
     juju.remove_relation(f"{DATABASE_APP_NAME}:database", f"{INTEGRATOR_APP_NAME}1:mysql")
     juju.wait(
-        ready=lambda status: all((
-            # wait for relation to be fully removed before adding it again in the following test
-            jubilant.all_agents_idle(status, f"{INTEGRATOR_APP_NAME}1"),
-            *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")
-                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
-            ),
-        )),
+        ready=wait_for_apps_status(jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1"),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -247,15 +232,8 @@ def test_charmed_dml_role(juju: Juju):
         f"{INTEGRATOR_APP_NAME}2:mysql",
     )
     juju.wait(
-        ready=lambda status: all((
-            *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")
-                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
-            ),
-            *(
-                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}2", unit_name, "blocked")
-                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}2")
-            ),
-        )),
+        ready=wait_for_apps_status(
+            jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1", f"{INTEGRATOR_APP_NAME}2"
+        ),
         timeout=15 * MINUTE_SECS,
     )

@@ -2921,15 +2921,46 @@ class MySQLBase(ABC):
         require_tls: bool = False,
     ) -> None:
         """Setup client-connection TLS files and requirement mode."""
-        tls_var = "require_secure_transport"
-        tls_val = "ON" if require_tls else "OFF"
+        client = self._instance_client_tcp
+        usage = "ON" if require_tls else "OFF"
 
         try:
-            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, "ssl_ca", ca_path)
-            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, "ssl_key", key_path)
-            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, "ssl_cert", cert_path)
-            self._instance_client_tcp.set_instance_variable(Scope.PERSIST, tls_var, tls_val)
-            self._instance_client_tcp.reload_instance_certs()
+            client.set_instance_variable(Scope.PERSIST, "ssl_ca", ca_path)
+            client.set_instance_variable(Scope.PERSIST, "ssl_key", key_path)
+            client.set_instance_variable(Scope.PERSIST, "ssl_cert", cert_path)
+            client.set_instance_variable(Scope.PERSIST, "require_secure_transport", usage)
+            client.reload_instance_certs()
+        except ExecutionError as e:
+            raise MySQLTLSSetupError() from e
+
+    def setup_group_tls(
+        self,
+        ca_path: str = "ca.pem",
+        key_path: str = "server-key.pem",
+        cert_path: str = "server-cert.pem",
+        require_tls: bool = False,
+    ) -> None:
+        """Setup group-replication TLS files and requirement mode."""
+        client = self._instance_client_tcp
+        usage_recovery = "ON" if require_tls else "OFF"
+        usage_replication = "REQUIRED" if require_tls else "DISABLED"
+
+        try:
+            client.set_instance_variable(
+                Scope.PERSIST, "group_replication_recovery_ssl_ca", ca_path
+            )
+            client.set_instance_variable(
+                Scope.PERSIST, "group_replication_recovery_ssl_key", key_path
+            )
+            client.set_instance_variable(
+                Scope.PERSIST, "group_replication_recovery_ssl_cert", cert_path
+            )
+            client.set_instance_variable(
+                Scope.PERSIST, "group_replication_recovery_use_ssl", usage_recovery
+            )
+            client.set_instance_variable(
+                Scope.PERSIST, "group_replication_ssl_mode", usage_replication
+            )
         except ExecutionError as e:
             raise MySQLTLSSetupError() from e
 

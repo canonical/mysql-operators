@@ -16,6 +16,7 @@ output "requires" {
   description = "Map of all the required endpoints"
   value = {
     client_certificates = "client-certificates"
+    peer_certificates   = "peer-certificates"
     s3_parameters       = "s3-parameters"
     logging             = "logging"
     tracing             = "tracing"

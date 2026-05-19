@@ -10,6 +10,7 @@ from ops.main import main
 if is_wrong_architecture() and __name__ == "__main__":
     main(WrongArchitectureWarningCharm)
 
+import json
 import logging
 import random
 import socket
@@ -17,7 +18,8 @@ from time import sleep
 
 import charm_refresh
 import ops
-from charmlibs.rollingops import RollingOpsManager
+from charmlibs.pathops import LocalPath
+from charmlibs.rollingops import OperationResult, RollingOpsManager
 from charms.data_platform_libs.v1.data_models import TypedCharmBase
 from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
 from charms.mysql.v0.async_replication import (
@@ -208,9 +210,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.rolling_ops = RollingOpsManager(
             charm=self,
-            base_dir="/var/lib/rollingops",
+            base_dir=LocalPath("/var/lib/juju/rollingops"),
             peer_relation_name="rolling-ops",
-            callback_targets={"restart": self._restart},
+            callback_targets={
+                "replication": self._restart_group_replication,
+                "restart": self._restart,
+            },
         )
 
         self.mysql_logs = MySQLLogs(self)
@@ -1037,12 +1042,50 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self) -> None:
+    def _restart_group_replication(self) -> OperationResult:
+        """Restarts Group replication on the instance."""
+        relation = self.model.get_relation("rolling-ops")
+        if not relation:
+            logger.info("Skipping group replication restart")
+            return OperationResult.RETRY_RELEASE
+
+        ongoing_ops = [relation.data[unit].get("operations", "[]") for unit in self.peers.units]
+        ongoing_ops = [json.loads(op) for op in ongoing_ops]
+
+        if self.is_unit_primary() and any(ongoing_ops):
+            logger.info("Skipping group replication restart")
+            return OperationResult.RETRY_RELEASE
+
+        if self.is_unit_primary() and self.app.planned_units() > 1:
+            try:
+                new_primary = self.get_unit_address(self.peers.units.pop(), PEER)
+                logger.debug(f"Switching primary to {new_primary}")
+                self._mysql.set_cluster_primary(new_primary)
+            except MySQLSetClusterPrimaryError:
+                logger.warning("Changing primary failed")
+                return OperationResult.RETRY_HOLD
+
+        cluster_primary = self._mysql.get_cluster_primary_address()
+        if not cluster_primary:
+            logger.warning("Getting primary failed")
+            return OperationResult.RETRY_HOLD
+
+        logger.info("Recreating group replication")
+        self._mysql.rejoin_instance_to_cluster(
+            unit_address=self.unit_address,
+            unit_label=self.unit_label,
+            from_instance=cluster_primary,
+        )
+
+        self._on_update_status(None)
+        return OperationResult.RELEASE
+
+    def _restart(self) -> OperationResult:
         """Restart the service."""
         if not self.unit_initialized():
             logger.debug("Restarting standalone mysqld")
             self._mysql.restart_mysqld()
-            return
+            return OperationResult.RELEASE
 
         if self.app.planned_units() > 1 and self.is_unit_primary():
             try:
@@ -1060,6 +1103,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.recover_unit_after_restart()
 
         self._on_update_status(None)
+        return OperationResult.RELEASE
 
 
 if __name__ == "__main__":
