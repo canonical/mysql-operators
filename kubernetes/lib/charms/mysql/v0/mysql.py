@@ -1960,6 +1960,8 @@ class MySQLBase(ABC):
         """Get the cluster status dictionary."""
         if not from_instance:
             from_instance = self.instance_address
+        if extended is None:
+            extended = False
 
         client = MySQLClusterClient(
             executor=self._build_instance_tcp_executor(from_instance),
