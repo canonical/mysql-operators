@@ -1918,11 +1918,6 @@ class MySQLBase(ABC):
         else:
             return unit_label in labels
 
-    @retry(
-        wait=wait_fixed(2),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(ExecutionError),
-    )
     def get_cluster_status(
         self, from_instance: str | None = None, extended: bool | None = False
     ) -> dict | None:
