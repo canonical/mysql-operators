@@ -78,6 +78,24 @@ from typing import (
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerUnitData
+from constants import (
+    BACKUPS_PASSWORD_KEY,
+    BACKUPS_USERNAME,
+    CHARMED_MYSQL_PITR_HELPER,
+    CLUSTER_ADMIN_PASSWORD_KEY,
+    CLUSTER_ADMIN_USERNAME,
+    COS_AGENT_RELATION_NAME,
+    GR_MAX_MEMBERS,
+    MONITORING_PASSWORD_KEY,
+    MONITORING_USERNAME,
+    PASSWORD_LENGTH,
+    PEER,
+    ROOT_PASSWORD_KEY,
+    ROOT_USERNAME,
+    SECRET_KEY_FALLBACKS,
+    SERVER_CONFIG_PASSWORD_KEY,
+    SERVER_CONFIG_USERNAME,
+)
 from mysql_shell.builders import (
     CharmAuthorizationQueryBuilder,
     CharmLockingQueryBuilder,
@@ -104,25 +122,6 @@ from tenacity import (
     stop_after_attempt,
     wait_fixed,
     wait_random,
-)
-
-from constants import (
-    BACKUPS_PASSWORD_KEY,
-    BACKUPS_USERNAME,
-    CHARMED_MYSQL_PITR_HELPER,
-    CLUSTER_ADMIN_PASSWORD_KEY,
-    CLUSTER_ADMIN_USERNAME,
-    COS_AGENT_RELATION_NAME,
-    GR_MAX_MEMBERS,
-    MONITORING_PASSWORD_KEY,
-    MONITORING_USERNAME,
-    PASSWORD_LENGTH,
-    PEER,
-    ROOT_PASSWORD_KEY,
-    ROOT_USERNAME,
-    SECRET_KEY_FALLBACKS,
-    SERVER_CONFIG_PASSWORD_KEY,
-    SERVER_CONFIG_USERNAME,
 )
 from utils import generate_random_password
 
