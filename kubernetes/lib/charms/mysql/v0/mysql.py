@@ -1919,13 +1919,11 @@ class MySQLBase(ABC):
             return unit_label in labels
 
     def get_cluster_status(
-        self, from_instance: str | None = None, extended: bool | None = False
+        self, from_instance: str | None = None, extended: bool = False
     ) -> dict | None:
         """Get the cluster status dictionary."""
         if not from_instance:
             from_instance = self.instance_address
-        if extended is None:
-            extended = False
 
         client = MySQLClusterClient(
             executor=self._build_instance_tcp_executor(from_instance),
