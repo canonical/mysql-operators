@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 variable "model" {
   description = "UUID of the juju model to deploy to"
   type        = string
@@ -18,7 +21,7 @@ variable "base" {
 variable "config" {
   description = "Application configuration. Details at https://charmhub.io/mysql/configurations"
   type        = map(string)
-  default     = {}
+  default     = null
 }
 
 variable "constraints" {
@@ -49,6 +52,12 @@ variable "storage_size" {
   description = "Storage size"
   type        = string
   default     = "10G"
+}
+
+variable "expose" {
+  description = "Exposed network access"
+  type        = map(string)
+  default     = null
 }
 
 variable "endpoint_bindings" {
