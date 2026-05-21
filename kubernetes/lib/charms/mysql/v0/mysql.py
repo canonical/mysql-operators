@@ -1949,7 +1949,8 @@ class MySQLBase(ABC):
 
         try:
             status = client.fetch_cluster_set_status(bool(extended))
-        except ExecutionError:
+        except ExecutionError as exc:
+            logger.debug(f"Failed when fetching cluster set status: {exc}")
             return None
         else:
             return status
