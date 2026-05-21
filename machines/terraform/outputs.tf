@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 output "app_name" {
   description = "Name of the MySQL Server VM application"
   value       = juju_application.mysql_server.name

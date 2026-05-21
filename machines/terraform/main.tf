@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 resource "juju_application" "mysql_server" {
   model_uuid = var.model
   name       = var.app_name
@@ -18,7 +21,13 @@ resource "juju_application" "mysql_server" {
   endpoint_bindings = var.endpoint_bindings
   units             = var.units
 
-  expose {
-    endpoints = "database"
+  dynamic "expose" {
+    for_each = var.expose != null ? [var.expose] : []
+
+    content {
+      endpoints = lookup(expose.value, "endpoints", null)
+      spaces    = lookup(expose.value, "spaces", null)
+      cidrs     = lookup(expose.value, "cirds", null)
+    }
   }
 }
