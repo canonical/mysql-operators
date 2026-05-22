@@ -16,4 +16,5 @@ preventing unauthorized access and ensuring confidentiality.
 
 Enable TLS <enable-tls>
 Disable TLS <disable-tls>
+Manage private keys <manage-private-keys>
 ```
