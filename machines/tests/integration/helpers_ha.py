@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import jubilant
 import yaml
@@ -219,6 +220,32 @@ def get_unit_status_log(juju: Juju, unit_name: str, log_lines: int = 0) -> list[
     )
 
     return json.loads(output)
+
+
+def get_unit_relation_data(juju: Juju, unit_name: str, relation_name: str) -> dict[str, Any]:
+    """Returns a list that contains the relation-data.
+
+    Args:
+        juju: The juju instance to use.
+        unit_name: The name of the unit
+        relation_name: name of the relation to get data from
+
+    Returns:
+        A dictionary containing the relation data-bags
+    """
+    unit_info = get_unit_info(juju, unit_name)
+    if not unit_info:
+        raise ValueError(f"No unit info could be grabbed for unit {unit_name}")
+
+    relation_data = [
+        value
+        for value in unit_info[unit_name]["relation-info"]
+        if value["endpoint"] == relation_name
+    ]
+    if not relation_data:
+        raise ValueError(f"No relation data could be grabbed for relation {relation_name}")
+
+    return relation_data[0]
 
 
 @retry(stop=stop_after_attempt(30), wait=wait_fixed(5), reraise=True)
