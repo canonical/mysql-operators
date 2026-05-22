@@ -21,8 +21,8 @@ from ...helpers_ha import (
     get_k8s_stateful_set_partitions,
     get_mysql_primary_unit,
     get_mysql_variable_value,
-    get_relation_data,
     get_unit_by_number,
+    get_unit_relation_data,
     load_mysql_test_data,
     wait_for_apps_status,
     wait_for_unit_message,
@@ -153,7 +153,7 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     shutil.copy(charm, tmp_folder_charm)
 
     logging.info("Inject dependency fault")
-    inject_dependency_fault(juju, MYSQL_APP_NAME, tmp_folder_charm)
+    inject_dependency_fault(juju, mysql_app_leader, tmp_folder_charm)
 
     logging.info("Refresh the charm")
     juju.refresh(app=MYSQL_APP_NAME, path=tmp_folder_charm)
@@ -202,16 +202,16 @@ def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
     tmp_folder_charm.unlink()
 
 
-def inject_dependency_fault(juju: Juju, app_name: str, charm_file: str | Path) -> None:
+def inject_dependency_fault(juju: Juju, unit_name: str, charm_file: str | Path) -> None:
     """Inject a dependency fault into the mysql charm."""
     # Open dependency.json and load current charm version
     with open("src/dependency.json") as dependency_file:
         current_charm_version = json.load(dependency_file)["charm"]["version"]
 
     # Query running dependency to overwrite with incompatible version
-    relation_data = get_relation_data(juju, app_name, "upgrade")
+    relation_data = get_unit_relation_data(juju, unit_name, "upgrade")
 
-    loaded_dependency_dict = json.loads(relation_data[0]["application-data"]["dependencies"])
+    loaded_dependency_dict = json.loads(relation_data["application-data"]["dependencies"])
     loaded_dependency_dict["charm"]["upgrade_supported"] = f">{current_charm_version}"
     loaded_dependency_dict["charm"]["version"] = "999.999.999"
 
