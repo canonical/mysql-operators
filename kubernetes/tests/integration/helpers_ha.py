@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import jubilant
 import kubernetes
@@ -324,31 +325,30 @@ def get_unit_process_id(juju: Juju, unit_name: str, process_name: str) -> int | 
         return None
 
 
-def get_relation_data(juju: Juju, app_name: str, rel_name: str) -> list[dict]:
+def get_unit_relation_data(juju: Juju, unit_name: str, relation_name: str) -> dict[str, Any]:
     """Returns a list that contains the relation-data.
 
     Args:
         juju: The juju instance to use.
-        app_name: The name of the application
-        rel_name: name of the relation to get connection data from
+        unit_name: The name of the unit
+        relation_name: name of the relation to get data from
 
     Returns:
-        A list that contains the relation-data
+        A dictionary containing the relation data-bags
     """
-    app_leader = get_app_leader(juju, app_name)
-    app_leader_info = get_unit_info(juju, app_leader)
-    if not app_leader_info:
-        raise ValueError(f"No unit info could be grabbed for unit {app_leader}")
+    unit_info = get_unit_info(juju, unit_name)
+    if not unit_info:
+        raise ValueError(f"No unit info could be grabbed for unit {unit_name}")
 
     relation_data = [
         value
-        for value in app_leader_info[app_leader]["relation-info"]
-        if value["endpoint"] == rel_name
+        for value in unit_info[unit_name]["relation-info"]
+        if value["endpoint"] == relation_name
     ]
     if not relation_data:
-        raise ValueError(f"No relation data could be grabbed for relation {rel_name}")
+        raise ValueError(f"No relation data could be grabbed for relation {relation_name}")
 
-    return relation_data
+    return relation_data[0]
 
 
 @retry(stop=stop_after_attempt(30), wait=wait_fixed(5), reraise=True)
