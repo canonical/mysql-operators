@@ -27,7 +27,7 @@ resource "juju_application" "mysql_server" {
     content {
       endpoints = lookup(expose.value, "endpoints", null)
       spaces    = lookup(expose.value, "spaces", null)
-      cidrs     = lookup(expose.value, "cirds", null)
+      cidrs     = lookup(expose.value, "cidrs", null)
     }
   }
 }
