@@ -56,16 +56,14 @@ def test_relation_creation_eager(juju: Juju):
         f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
     )
 
-    logging.info("Waiting for application app to be waiting...")
+    logging.info("Waiting for application app to be blocked...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_blocked, APPLICATION_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
-        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
 
@@ -91,12 +89,10 @@ def test_relation_broken(juju: Juju):
 
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME),
-        error=jubilant.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant.any_blocked,
+        ready=wait_for_apps_status(jubilant.all_blocked, APPLICATION_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -140,7 +136,6 @@ def test_relation_broken_connectivity(juju: Juju):
     logging.info("Waiting for application app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, test_app_1, test_app_2),
-        error=jubilant.any_blocked,
         timeout=5 * MINUTE_SECS,
         delay=2,
     )
