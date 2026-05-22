@@ -10,7 +10,6 @@ from ops.main import main
 if is_wrong_architecture() and __name__ == "__main__":
     main(WrongArchitectureWarningCharm)
 
-import json
 import logging
 import random
 from time import sleep
@@ -565,8 +564,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("Skipping group replication restart")
             return OperationResult.RETRY_RELEASE
 
-        ongoing_ops = [relation.data[unit].get("operations", "[]") for unit in self.peers.units]
-        ongoing_ops = [json.loads(op) for op in ongoing_ops]
+        ongoing_ops = [
+            self.rolling_ops.is_waiting_callback("replication", unit.name)
+            for unit in self.peers.units
+        ]
 
         if self.is_unit_primary and any(ongoing_ops):
             logger.info("Skipping group replication restart")
@@ -665,7 +666,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data.setdefault("member-role", "UNKNOWN")
         self.unit_peer_data.setdefault("member-state", "waiting")
 
-    def _on_config_changed(self, _: EventBase) -> None:
+    def _on_config_changed(self, _: EventBase) -> None:  # noqa: C901
         """Handle the config changed event."""
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
@@ -693,6 +694,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         # Override log rotation
         self.log_rotate_setup.setup()
+
+        # Rotate TLS keys
+        if self.config.tls_client_private_key:
+            self.tls.client_certificates_refresh_event.emit()
+        if self.config.tls_peer_private_key:
+            self.tls.peer_certificates_refresh_event.emit()
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)
