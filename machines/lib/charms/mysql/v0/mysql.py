@@ -1949,13 +1949,8 @@ class MySQLBase(ABC):
         else:
             return unit_label in labels
 
-    @retry(
-        wait=wait_fixed(2),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(ExecutionError),
-    )
     def get_cluster_status(
-        self, from_instance: str | None = None, extended: bool | None = False
+        self, from_instance: str | None = None, extended: bool = False
     ) -> dict | None:
         """Get the cluster status dictionary."""
         if not from_instance:
@@ -1967,7 +1962,8 @@ class MySQLBase(ABC):
 
         try:
             status = client.fetch_cluster_status(self.cluster_name, extended)
-        except ExecutionError:
+        except ExecutionError as exc:
+            logger.debug(f"Failed when fetching cluster status: {exc}")
             return None
         else:
             return status
@@ -1985,7 +1981,8 @@ class MySQLBase(ABC):
 
         try:
             status = client.fetch_cluster_set_status(bool(extended))
-        except ExecutionError:
+        except ExecutionError as exc:
+            logger.debug(f"Failed when fetching cluster set status: {exc}")
             return None
         else:
             return status
