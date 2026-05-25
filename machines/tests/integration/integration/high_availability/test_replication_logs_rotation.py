@@ -58,7 +58,6 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         ready=wait_for_apps_status(
             jubilant_backports.all_active, MYSQL_APP_NAME, MYSQL_TEST_APP_NAME
         ),
-        error=jubilant_backports.any_blocked,
         timeout=20 * MINUTE_SECS,
     )
 

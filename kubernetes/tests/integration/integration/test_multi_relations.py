@@ -60,7 +60,7 @@ def test_build_and_deploy(juju: Juju, charm):
 
     juju.wait(
         wait_for_apps_status(
-            jubilant_backports.all_waiting,
+            jubilant_backports.all_blocked,
             *(f"app{idx}" for idx in range(SCALE_APPS)),
         ),
         delay=5.0,

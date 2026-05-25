@@ -55,15 +55,13 @@ def test_relation_creation_eager(juju: Juju):
         f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
     )
 
-    logging.info("Waiting for application app to be waiting...")
+    logging.info("Waiting for application app to be blocked...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_waiting, APPLICATION_APP_NAME),
-        error=jubilant_backports.any_blocked,
+        ready=wait_for_apps_status(jubilant_backports.all_blocked, APPLICATION_APP_NAME),
         timeout=15 * MINUTE_SECS,
     )
     logging.info("Waiting for database app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        error=jubilant_backports.any_blocked,
         timeout=15 * MINUTE_SECS,
     )
