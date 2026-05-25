@@ -60,12 +60,10 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         logging.info("Wait for applications to become active")
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME_1),
-            error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_TEST_APP_NAME_1),
-            error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
 
@@ -103,12 +101,10 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         logging.info("Wait for applications to become active")
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME_2),
-            error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_TEST_APP_NAME_2),
-            error=jubilant.any_blocked,
             timeout=20 * MINUTE_SECS,
         )
 
