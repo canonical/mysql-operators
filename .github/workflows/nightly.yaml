@@ -187,15 +187,14 @@ jobs:
           DATA = {
               "name": "GitHub Actions",
               "type": "github",
-              "buildOrder": os.environ["VAR_RUN_NUMBER"],  # TODO future improvement: use run ID
+              "buildOrder": os.environ["VAR_RUN_ID"],
               "buildName": f"Run {os.environ["VAR_RUN_ID"]}",
               "buildUrl": f"https://github.com/{os.environ["VAR_REPOSITORY"]}/actions/runs/{os.environ["VAR_RUN_ID"]}",
-              "reportUrl": f"../{os.environ["VAR_RUN_NUMBER"]}/",
+              "reportUrl": f"../{os.environ["VAR_RUN_ID"]}/",
           }
           with open("allure-results/executor.json", "w") as file:
               json.dump(DATA, file)
         env:
-          VAR_RUN_NUMBER: ${{ github.run_number }}
           VAR_RUN_ID: ${{ github.run_id }}
           VAR_REPOSITORY: ${{ github.repository }}
       - name: Generate Allure report
@@ -208,27 +207,27 @@ jobs:
           DATA = f"""<!DOCTYPE html>
           <meta charset="utf-8">
           <meta http-equiv="cache-control" content="no-cache">
-          <meta http-equiv="refresh" content="0; url={os.environ['VAR_RUN_NUMBER']}">
+          <meta http-equiv="refresh" content="0; url={os.environ['VAR_RUN_ID']}">
           """
           report_dir = os.environ["ALLURE_REPORT_DIR"]
           with open(f"repo/{report_dir}/index.html", "w") as file:
               file.write(DATA)
         env:
-          VAR_RUN_NUMBER: ${{ github.run_number }}
+          VAR_RUN_ID: ${{ github.run_id }}
           ALLURE_REPORT_DIR: ${{ steps.branch.outputs.branch }}
       - name: Update GitHub pages branch
         working-directory: repo/${{ steps.branch.outputs.branch }}/
         # TODO future improvement: commit message
         run: |
-          mkdir "${VAR_RUN_NUMBER}"
+          mkdir "${VAR_RUN_ID}"
           rm -f _latest
-          ln -s "${VAR_RUN_NUMBER}" _latest
+          ln -s "${VAR_RUN_ID}" _latest
           cp -r ../../allure-report/. _latest/
           git add ..
           git config user.name "GitHub Actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Allure report ${VAR_RUN_NUMBER}"
+          git commit -m "Allure report ${VAR_RUN_ID}"
           # Uses token set in checkout step
           git push origin gh-pages-beta
         env:
-          VAR_RUN_NUMBER: ${{ github.run_number }}
+          VAR_RUN_ID: ${{ github.run_id }}
