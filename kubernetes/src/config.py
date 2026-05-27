@@ -172,7 +172,7 @@ class CharmConfig(BaseConfigModel):
     @classmethod
     def logs_retention_period_validator(cls, value: str) -> str:
         """Check logs retention period."""
-        if not re.match(r"auto|\d{1,3}", value) or value == "0":
+        if not re.fullmatch(r"auto|\d{1,3}", value) or value == "0":
             raise ValueError("logs_retention_period must be integer greater than 0 or `auto`")
 
         return value
