@@ -60,12 +60,14 @@ from charms.mysql.v0.mysql import (
     MySQLSetVariableError,
     MySQLUnableToGetMemberStateError,
 )
-from mysql_shell.builders import CharmAuthorizationQueryBuilder
 from mysql_shell.executors.errors import ExecutionError
 from mysql_shell.models import (
     ClusterGlobalStatus,
     InstanceRole,
     InstanceState,
+)
+from mysql_shell_contrib.builders import (
+    CharmAuthorizationQueryBuilder,
 )
 
 from constants import (
@@ -274,7 +276,7 @@ class TestMySQLBase(unittest.TestCase):
         granting_query = ";".join([
             "GRANT SELECT ON `test_database`.* TO `charmed_read`",
             "GRANT SELECT, INSERT, DELETE, UPDATE ON `test_database`.* TO `charmed_dml`",
-            "CREATE ROLE `test_database_00`",
+            "CREATE ROLE IF NOT EXISTS `test_database_00`",
             "GRANT SELECT, INSERT, DELETE, UPDATE, EXECUTE, ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE VIEW, DROP, INDEX, LOCK TABLES, REFERENCES, TRIGGER ON `test_database`.* TO `test_database_00`",
         ])
 
@@ -507,7 +509,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_py.return_value = '{"status": "ok"}'
 
         commands = [
-            "result = dba.check_instance_configuration(options=None)",
+            "result = dba.check_instance_configuration(options={})",
             "print(result)",
         ]
 
@@ -520,7 +522,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_py.side_effect = ExecutionError
 
         commands = [
-            "result = dba.check_instance_configuration(options=None)",
+            "result = dba.check_instance_configuration(options={})",
             "print(result)",
         ]
 
@@ -720,10 +722,7 @@ class TestMySQLBase(unittest.TestCase):
 
         self.mock_executor.execute_py.return_value = '{"status": "ONLINE"}'
         self.mysql.get_cluster_status()
-        self.mock_executor.execute_py.assert_called_once_with(
-            "\n".join(commands),
-            timeout=30,
-        )
+        self.mock_executor.execute_py.assert_called_once_with("\n".join(commands))
 
     @patch("json.loads")
     def test_get_cluster_status_failure(self, _json_loads):
