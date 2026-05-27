@@ -137,7 +137,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 LIBAPI = 0
 LIBPATCH = 103
 
-PYDEPS = ["charm_refresh ~= 3.1.1", "mysql_shell_client ~= 0.7"]
+PYDEPS = ["charm_refresh ~= 3.1.1", "mysql-shell-client[contrib] ~= 1.0"]
 
 UNIT_TEARDOWN_LOCKNAME = "unit-teardown"
 UNIT_ADD_LOCKNAME = "unit-add"
