@@ -96,16 +96,8 @@ from constants import (
     REPLICATION_PASSWORD_KEY,
     REPLICATION_USERNAME,
 )
-from mysql_shell.builders import (
-    CharmAuthorizationQueryBuilder,
-    CharmLockingQueryBuilder,
-    CharmLoggingQueryBuilder,
-    StringQueryQuoter,
-)
-from mysql_shell.clients import (
-    MySQLClusterClient,
-    MySQLInstanceClient,
-)
+from mysql_shell.builders import QueryQuoter
+from mysql_shell.clients import ClusterClient, InstanceClient
 from mysql_shell.executors import BaseExecutor
 from mysql_shell.executors.errors import ExecutionError
 from mysql_shell.models.account import User
@@ -114,6 +106,11 @@ from mysql_shell.models.connection import ConnectionDetails
 from mysql_shell.models.instance import InstanceRole, InstanceState
 from mysql_shell.models.statement import LogType
 from mysql_shell.models.statement import VariableScope as Scope
+from mysql_shell_contrib.builders import (
+    CharmAuthorizationQueryBuilder,
+    CharmLockingQueryBuilder,
+    CharmLoggingQueryBuilder,
+)
 from ops.charm import ActionEvent, CharmBase, RelationBrokenEvent
 from ops.model import Unit
 from tenacity import (
@@ -1049,15 +1046,15 @@ class MySQLBase(ABC):
         )
         self._log_query_builder = CharmLoggingQueryBuilder()
 
-        self._quoter = StringQueryQuoter()
-        self._cluster_client_tcp = MySQLClusterClient(
+        self._quoter = QueryQuoter()
+        self._cluster_client_tcp = ClusterClient(
             self._build_cluster_tcp_executor(instance_address),
         )
-        self._instance_client_tcp = MySQLInstanceClient(
+        self._instance_client_tcp = InstanceClient(
             self._build_instance_tcp_executor(instance_address),
             self._quoter,
         )
-        self._instance_client_sock = MySQLInstanceClient(
+        self._instance_client_sock = InstanceClient(
             self._build_instance_sock_executor(),
             self._quoter,
         )
@@ -1072,6 +1069,7 @@ class MySQLBase(ABC):
                 port=str(port),
             ),
             shell_path=self.mysqlsh_path,
+            timeout=120,
         )
 
     def _build_instance_tcp_executor(self, host: str, port: int = ADMIN_PORT):
@@ -1084,6 +1082,7 @@ class MySQLBase(ABC):
                 port=str(port),
             ),
             shell_path=self.mysqlsh_path,
+            timeout=120,
         )
 
     def _build_instance_sock_executor(self):
@@ -1095,6 +1094,7 @@ class MySQLBase(ABC):
                 socket=self.socket_path,
             ),
             shell_path=self.mysqlsh_path,
+            timeout=120,
         )
 
     def render_mysqld_configuration(  # noqa: C901
@@ -1397,7 +1397,7 @@ class MySQLBase(ABC):
 
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
+        primary_client = InstanceClient(primary_executor, self._quoter)
 
         try:
             logger.info(f"Creating application {database=}")
@@ -1443,7 +1443,7 @@ class MySQLBase(ABC):
 
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
+        primary_client = InstanceClient(primary_executor, self._quoter)
 
         user = User(username, hostname, attributes)
 
@@ -1483,7 +1483,7 @@ class MySQLBase(ABC):
         """Delete users for a unit."""
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
+        primary_client = InstanceClient(primary_executor, self._quoter)
 
         try:
             primary_client.delete_instance_users(
@@ -1496,7 +1496,7 @@ class MySQLBase(ABC):
         """Delete users for a relation."""
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
+        primary_client = InstanceClient(primary_executor, self._quoter)
 
         user = User(username, "%")
 
@@ -1512,7 +1512,7 @@ class MySQLBase(ABC):
         """Delete user."""
         primary_address = self.get_cluster_primary_address()
         primary_executor = self._build_instance_tcp_executor(primary_address)
-        primary_client = MySQLInstanceClient(primary_executor, self._quoter)
+        primary_client = InstanceClient(primary_executor, self._quoter)
 
         user = User(username, "%")
 
@@ -1544,7 +1544,7 @@ class MySQLBase(ABC):
         if not instance_address:
             instance_address = self.instance_address
 
-        client = MySQLInstanceClient(
+        client = InstanceClient(
             executor=self._build_instance_tcp_executor(instance_address),
             quoter=self._quoter,
         )
@@ -1570,7 +1570,7 @@ class MySQLBase(ABC):
                 "clusterAdminPassword": self.replication_password,
             })
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_instance_tcp_executor(self.instance_address),
         )
 
@@ -1685,12 +1685,12 @@ class MySQLBase(ABC):
         the cluster is initialized.
         """
         if from_instance:
-            client = MySQLInstanceClient(
+            client = InstanceClient(
                 self._build_instance_tcp_executor(from_instance),
                 self._quoter,
             )
         else:
-            client = MySQLInstanceClient(
+            client = InstanceClient(
                 self._build_instance_sock_executor(),
                 self._quoter,
             )
@@ -1755,7 +1755,7 @@ class MySQLBase(ABC):
 
         locking_executor = self._build_instance_tcp_executor(lock_instance)
         connect_executor = self._build_cluster_tcp_executor(from_instance)
-        client = MySQLClusterClient(connect_executor)
+        client = ClusterClient(connect_executor)
 
         if not self._acquire_lock(
             executor=locking_executor,
@@ -1808,7 +1808,7 @@ class MySQLBase(ABC):
             from_instance = self.instance_address
 
         executor = self._build_cluster_tcp_executor(from_instance)
-        client = MySQLClusterClient(executor)
+        client = ClusterClient(executor)
 
         if not self._acquire_lock(
             executor=executor,
@@ -1834,7 +1834,7 @@ class MySQLBase(ABC):
 
     def is_instance_configured_for_innodb(self, instance_address: str) -> bool:
         """Confirm if instance is configured for use in an InnoDB cluster."""
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_instance_tcp_executor(instance_address),
         )
 
@@ -1869,7 +1869,7 @@ class MySQLBase(ABC):
         if not from_instance:
             from_instance = self.instance_address
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_cluster_tcp_executor(from_instance),
         )
 
@@ -1924,7 +1924,7 @@ class MySQLBase(ABC):
         if not from_instance:
             from_instance = self.instance_address
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_instance_tcp_executor(from_instance),
         )
 
@@ -1943,7 +1943,7 @@ class MySQLBase(ABC):
         if not from_instance:
             from_instance = self.instance_address
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_instance_tcp_executor(from_instance),
         )
 
@@ -1987,7 +1987,7 @@ class MySQLBase(ABC):
         from_instance = from_instance if from_instance else self.instance_address
         node_statuses = [node_status] if node_status else None
 
-        client = MySQLInstanceClient(
+        client = InstanceClient(
             executor=self._build_instance_tcp_executor(from_instance),
             quoter=self._quoter,
         )
@@ -2042,7 +2042,7 @@ class MySQLBase(ABC):
 
         locking_executor = self._build_instance_tcp_executor(lock_instance)
         connect_executor = self._build_cluster_tcp_executor(from_instance)
-        client = MySQLClusterClient(connect_executor)
+        client = ClusterClient(connect_executor)
 
         if not self._acquire_lock(
             executor=locking_executor,
@@ -2144,7 +2144,7 @@ class MySQLBase(ABC):
         if not from_instance:
             from_instance = self.instance_address
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_cluster_tcp_executor(from_instance),
         )
 
@@ -2167,7 +2167,7 @@ class MySQLBase(ABC):
         if not from_instance:
             from_instance = self.instance_address
 
-        client = MySQLClusterClient(
+        client = ClusterClient(
             executor=self._build_cluster_tcp_executor(from_instance),
         )
 
@@ -2231,7 +2231,7 @@ class MySQLBase(ABC):
         if not instance_address:
             raise MySQLCheckUserExistenceError("No primary found")
 
-        client = MySQLInstanceClient(
+        client = InstanceClient(
             executor=self._build_instance_tcp_executor(instance_address),
             quoter=self._quoter,
         )
