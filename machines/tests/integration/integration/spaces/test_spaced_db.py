@@ -49,7 +49,7 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
         timeout=TIMEOUT,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant.all_waiting, APPLICATION_APP_NAME),
+        ready=wait_for_apps_status(jubilant.all_blocked, APPLICATION_APP_NAME),
         timeout=TIMEOUT,
     )
 
@@ -96,7 +96,7 @@ def test_integrate_with_isolated_space(juju: Juju):
         channel="latest/edge",
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant.all_waiting, isolated_app_name),
+        ready=wait_for_apps_status(jubilant.all_blocked, isolated_app_name),
         timeout=TIMEOUT,
     )
 

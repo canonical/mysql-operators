@@ -11,7 +11,8 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
-    get_relation_data,
+    get_app_leader,
+    get_unit_relation_data,
     wait_for_apps_status,
 )
 
@@ -75,9 +76,11 @@ def test_relation_creation(juju: Juju):
         timeout=15 * MINUTE_SECS,
     )
 
-    relation_data = get_relation_data(juju, APPLICATION_APP_NAME, "database")
-    assert not {"password", "username"} <= set(relation_data[0]["application-data"])
-    assert "secret-user" in relation_data[0]["application-data"]
+    app_leader = get_app_leader(juju, APPLICATION_APP_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, "database")
+
+    assert not {"password", "username"} <= set(relation_data["application-data"])
+    assert "secret-user" in relation_data["application-data"]
 
 
 def test_relation_broken(juju: Juju):
