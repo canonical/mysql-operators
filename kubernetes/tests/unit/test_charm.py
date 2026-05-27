@@ -75,7 +75,7 @@ class TestCharm(unittest.TestCase):
                     "user": "mysql",
                     "group": "mysql",
                     "kill-delay": "24h",
-                    "environment": {"MYSQLD_PARENT_PID": 1},
+                    "environment": {"MYSQLD_PARENT_PID": "1"},
                     "requires": ["mysql"],
                     "after": ["mysql"],
                 },
