@@ -45,13 +45,16 @@ class ContainerExecutor(BaseExecutor):
                 f"--user={self._conn_details.username}",
             ]
 
-    def _parse_error(self, output: str) -> dict:
+    def _parse_exception(self, exc: ops.pebble.ExecError) -> str:
         """Parse the execution error."""
-        error = next(self._iter_output(output, "error"), None)
+        error = next(self._iter_output(exc.stdout or "", "error"), None)
         if not error:
-            error = {}
+            error = exc.stderr
 
-        return error
+        if isinstance(error, dict):
+            error = error.get("message")
+
+        return str(error)
 
     def _parse_output_py(self, output: str) -> str:
         """Parse the Python execution output."""
@@ -117,7 +120,7 @@ class ContainerExecutor(BaseExecutor):
             )
             process.wait_output()
         except ops.pebble.ExecError as exc:
-            err = self._parse_error(exc.stdout)
+            err = self._parse_exception(exc)
             raise ExecutionError(err) from exc
         except ops.pebble.TimeoutError as exc:
             raise ExecutionError() from exc
@@ -153,7 +156,7 @@ class ContainerExecutor(BaseExecutor):
             )
             stdout, _ = process.wait_output()
         except ops.pebble.ExecError as exc:
-            err = self._parse_error(exc.stdout)
+            err = self._parse_exception(exc)
             raise ExecutionError(err) from exc
         except ops.pebble.TimeoutError as exc:
             raise ExecutionError() from exc
@@ -186,7 +189,7 @@ class ContainerExecutor(BaseExecutor):
             )
             stdout, _ = process.wait_output()
         except ops.pebble.ExecError as exc:
-            err = self._parse_error(exc.stdout)
+            err = self._parse_exception(exc)
             exc = self._strip_password(exc)
             raise ExecutionError(err) from exc
         except ops.pebble.TimeoutError as exc:

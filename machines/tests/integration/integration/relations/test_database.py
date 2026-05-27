@@ -15,11 +15,12 @@ from ... import markers
 from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
-    get_relation_data,
     get_unit_ip,
+    get_unit_relation_data,
     remove_leader_unit,
     scale_app_units,
     wait_for_apps_status,
@@ -143,8 +144,10 @@ def test_relation_creation_databag(juju: Juju):
         timeout=TIMEOUT,
     )
 
-    relation_data = get_relation_data(juju, APPLICATION_APP_NAME, DB_RELATION_NAME)
-    assert {"password", "username"} <= set(relation_data[0]["application-data"])
+    app_leader = get_app_leader(juju, APPLICATION_APP_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, DB_RELATION_NAME)
+
+    assert {"password", "username"} <= set(relation_data["application-data"])
 
 
 @markers.only_with_juju_secrets
@@ -157,15 +160,17 @@ def test_relation_creation(juju: Juju):
         timeout=TIMEOUT,
     )
 
-    relation_data = get_relation_data(juju, APPLICATION_APP_NAME, DB_RELATION_NAME)
-    assert not {"password", "username"} <= set(relation_data[0]["application-data"])
-    assert "secret-user" in relation_data[0]["application-data"]
+    app_leader = get_app_leader(juju, APPLICATION_APP_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, DB_RELATION_NAME)
+
+    assert not {"password", "username"} <= set(relation_data["application-data"])
+    assert "secret-user" in relation_data["application-data"]
 
 
 def test_read_only_endpoints(juju: Juju):
     """Check read-only-endpoints are correctly updated."""
-    relation_data = get_relation_data(juju, DATABASE_APP_NAME, DB_RELATION_NAME)
-    assert len(relation_data) == 1
+    relation_data = get_unit_relation_data(juju, DATABASE_APP_NAME, DB_RELATION_NAME)
+    assert relation_data
 
     check_read_only_endpoints(juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME)
 
@@ -221,19 +226,23 @@ def check_read_only_endpoints(juju: Juju, app_name: str, relation_name: str) -> 
         app_name: The name of the application
         relation_name: The name of the relation
     """
-    relation_data = get_relation_data(juju=juju, app_name=app_name, rel_name=relation_name)
+    app_leader = get_app_leader(juju, app_name)
+    relation_data = get_unit_relation_data(juju, app_leader, relation_name)
     read_only_endpoint_ips = get_read_only_endpoint_ips(relation_data)
+
     # check that the number of read-only-endpoints is correct
     if len(get_app_units(juju, app_name)) - 1 != len(read_only_endpoint_ips):
         return False
+
     unit_ips = [
         get_unit_ip(juju, app_name, unit_name) for unit_name in get_app_units(juju, app_name)
     ]
+
     # check that endpoints are the one of the application
     return all(read_endpoint_ip in unit_ips for read_endpoint_ip in read_only_endpoint_ips)
 
 
-def get_read_only_endpoints(relation_data: list) -> set[str]:
+def get_read_only_endpoints(relation_data: dict) -> set[str]:
     """Returns the read-only-endpoints from the relation data.
 
     Args:
@@ -241,7 +250,7 @@ def get_read_only_endpoints(relation_data: list) -> set[str]:
     Returns:
         a set that contains the read-only-endpoints
     """
-    related_units = relation_data[0]["related-units"]
+    related_units = relation_data["related-units"]
     read_only_endpoints = set()
     for _, relation_data in related_units.items():
         assert "data" in relation_data
@@ -261,7 +270,7 @@ def get_read_only_endpoints(relation_data: list) -> set[str]:
     return read_only_endpoints
 
 
-def get_read_only_endpoint_ips(relation_data: list) -> list[str]:
+def get_read_only_endpoint_ips(relation_data: dict) -> list[str]:
     """Returns the read-only-endpoint hostnames from the relation data.
 
     Args:
