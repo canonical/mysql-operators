@@ -29,7 +29,7 @@ Learn about what's in the charm, how to set up your environment, and perform the
 
 Advanced deployments and operations focused on production scenarios and high availability.
 
-* **Advanced deployments**: {ref}`Terraform <terraform>` • {ref}`Airgapped <airgapped>` • {ref}`Multiple availability zones <multi-az>` • {ref}`Cluster-cluster replication <cluster-cluster-replication>` 
+* **Advanced deployments**: {ref}`Terraform <terraform>` • {ref}`Multiple availability zones <multi-az>` • {ref}`Cluster-cluster replication <cluster-cluster-replication>` 
 * **Networking**: {ref}`Juju spaces <juju-spaces>` • {ref}`TLS encryption <enable-tls>` • {ref}`External network access <external-network-access>`
 * **Upgrades and data migration**: {ref}`In-place upgrades <refresh>` • {ref}`Cluster and data migration <migrate-data-backup-restore>`
 * **Troubleshooting**: {ref}`Overview and tools <troubleshooting>` • {ref}`known-scenarios` • {ref}`Logs <logs>` 

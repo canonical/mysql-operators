@@ -1,7 +1,7 @@
 ---
 myst:
   html_meta:
-    description: "Deploy Charmed MySQL via Juju CLI or Terraform on VM or Kubernetes clouds, with guides for multi-AZ and airgapped environments."
+    description: "Deploy Charmed MySQL via Juju CLI or Terraform on VM or Kubernetes clouds, with guides for multi-AZ environments."
 ---
 
 (deploy)=
@@ -57,7 +57,6 @@ K8s clouds <k8s-clouds/index>
 :titlesonly:
 
 Terraform <terraform/index>
-Airgapped <airgapped>
 Multi-AZ <multi-az/index>
 Juju spaces <juju-spaces>
 Juju storage <juju-storage>
