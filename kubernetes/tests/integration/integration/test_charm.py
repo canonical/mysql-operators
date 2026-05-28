@@ -39,7 +39,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         charm,
         APP_NAME,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
         trust=True,
