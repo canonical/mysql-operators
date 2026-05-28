@@ -68,8 +68,8 @@ juju model-config logging-config="<root>=INFO;unit=DEBUG"
 export MYSQL_IMAGE=$(yq -r '.["resources"]["mysql-image"]["upstream-source"]' kubernetes/metadata.yaml)
 
 # Deploy the K8s or VM charm
-(cd kubernetes && juju deploy ./mysql-k8s_ubuntu@24.04-amd64.charm --resource mysql-image=${MYSQL_IMAGE})
-(cd machines && juju deploy ./mysql_ubuntu@24.04-amd64.charm)
+(cd kubernetes && juju deploy ./mysql-k8s_ubuntu@26.04-amd64.charm --resource mysql-image=${MYSQL_IMAGE})
+(cd machines && juju deploy ./mysql_ubuntu@26.04-amd64.charm)
 ```
 
 ## Canonical Contributor Agreement
