@@ -14,14 +14,14 @@ MYSQL_APP_NAME = "myqsl"
 @markers.amd64_only
 def test_arm_charm_on_amd_host(juju: Juju) -> None:
     """Tries deploying an arm64 charm on amd64 host."""
-    charm = "./mysql_ubuntu@24.04-arm64.charm"
+    charm = "./mysql_ubuntu@26.04-arm64.charm"
 
     juju.deploy(
         charm,
         MYSQL_APP_NAME,
         num_units=1,
         config={"profile": "testing"},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
 
     juju.wait(ready=jubilant.all_error, timeout=300)
@@ -30,14 +30,14 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
 @markers.arm64_only
 def test_amd_charm_on_arm_host(juju: Juju) -> None:
     """Tries deploying an amd64 charm on arm64 host."""
-    charm = "./mysql_ubuntu@24.04-amd64.charm"
+    charm = "./mysql_ubuntu@26.04-amd64.charm"
 
     juju.deploy(
         charm,
         MYSQL_APP_NAME,
         num_units=1,
         config={"profile": "testing"},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
 
     juju.wait(ready=jubilant.all_error, timeout=300)

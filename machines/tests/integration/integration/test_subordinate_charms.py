@@ -24,14 +24,14 @@ def test_ubuntu_pro(juju: Juju, charm):
         charm,
         DATABASE_APP_NAME,
         config={"cluster-name": "test_cluster", "profile": "testing"},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         trust=True,
     )
     juju.deploy(
         APPLICATION_APP_NAME,
         APPLICATION_APP_NAME,
         channel="latest/edge",
-        base="ubuntu@22.04",
+        base="ubuntu@26.04",
     )
     juju.deploy(
         UBUNTU_PRO_APP_NAME,

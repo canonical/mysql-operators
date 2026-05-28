@@ -44,7 +44,7 @@ def test_build_and_deploy(juju: Juju, charm):
         DATABASE_APP_NAME,
         config={"cluster-name": "test_cluster", "profile": "testing"},
         num_units=3,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
     juju.deploy(
         APPLICATION_APP_NAME,
