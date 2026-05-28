@@ -273,7 +273,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Handle the leader settings changed event."""
         self.unit_peer_data.update({"leader": "false"})
 
-    def _on_config_changed(self, _) -> None:  # noqa: C901
+    def _on_config_changed(self, _) -> None:
         """Handle the config changed event."""
         if not self._is_peer_data_set:
             # skip when not initialized
@@ -298,10 +298,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.log_rotation_setup.setup()
 
         # Rotate TLS keys
-        if self.config.tls_client_private_key:
-            self.tls.client_certificates_refresh_event.emit()
-        if self.config.tls_peer_private_key:
-            self.tls.peer_certificates_refresh_event.emit()
+        self._rotate_private_keys()
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)
@@ -1111,6 +1108,24 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._on_update_status(None)
         return OperationResult.RELEASE
+
+    def _rotate_private_keys(self) -> None:
+        """Rotates either of the TLS private keys if the config values are new."""
+        new_client_private_key = self.config.tls_client_private_key
+        old_client_private_key = self.app_peer_data.get("client-private-key", None)
+
+        if new_client_private_key != old_client_private_key:
+            self.tls.client_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["client-private-key"] = new_client_private_key
+
+        new_peer_private_key = self.config.tls_peer_private_key
+        old_peer_private_key = self.app_peer_data.get("peer-private-key", None)
+
+        if new_peer_private_key != old_peer_private_key:
+            self.tls.peer_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["peer-private-key"] = new_peer_private_key
 
 
 if __name__ == "__main__":

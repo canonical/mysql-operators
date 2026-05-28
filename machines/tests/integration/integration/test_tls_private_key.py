@@ -109,8 +109,8 @@ def test_set_private_key(juju: Juju) -> None:
         "password": credentials["password"],
     }
 
-    current_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
-    current_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
+    first_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
+    first_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
 
     logger.info("Generating new private key")
     private_key = create_private_key()
@@ -125,10 +125,10 @@ def test_set_private_key(juju: Juju) -> None:
         timeout=TIMEOUT,
     )
 
-    new_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
-    new_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
-    assert current_client_certs != new_client_certs
-    assert current_peer_certs == new_peer_certs
+    second_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
+    second_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
+    assert first_client_certs != second_client_certs
+    assert first_peer_certs == second_peer_certs
 
     logger.info("Configuring the application with the new peer private key")
     juju.config(app=APP_NAME, values={"tls-peer-private-key": secret_uri})
@@ -137,10 +137,10 @@ def test_set_private_key(juju: Juju) -> None:
         timeout=TIMEOUT,
     )
 
-    new_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
-    new_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
-    assert current_client_certs != new_client_certs
-    assert current_peer_certs != new_peer_certs
+    third_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
+    third_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
+    assert second_client_certs == third_client_certs
+    assert second_peer_certs != third_peer_certs
 
     logger.info("Verifying cluster accessibility after client key rotation")
     for unit_name in get_app_units(juju, APP_NAME):
