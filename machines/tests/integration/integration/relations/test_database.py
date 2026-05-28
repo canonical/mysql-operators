@@ -169,7 +169,8 @@ def test_relation_creation(juju: Juju):
 
 def test_read_only_endpoints(juju: Juju):
     """Check read-only-endpoints are correctly updated."""
-    relation_data = get_unit_relation_data(juju, DATABASE_APP_NAME, DB_RELATION_NAME)
+    app_leader = get_app_leader(juju, DATABASE_APP_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, DB_RELATION_NAME)
     assert relation_data
 
     check_read_only_endpoints(juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME)
