@@ -165,7 +165,7 @@ def test_deploy_test_app(first_model: str) -> None:
         charm=MYSQL_ROUTER,
         app=MYSQL_ROUTER,
         base="ubuntu@22.04",
-        channel="8.0/edge",
+        channel="dpe/edge",
     )
 
     logging.info("Relating mysql, app and router")
