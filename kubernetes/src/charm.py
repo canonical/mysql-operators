@@ -660,13 +660,31 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.current_event = event
         self._reconcile_pebble_layer(container)
 
+    def _rotate_private_keys(self) -> None:
+        """Rotates either of the TLS private keys if the config values are new."""
+        new_client_private_key = self.config.tls_client_private_key
+        old_client_private_key = self.app_peer_data.get("client-private-key", None)
+
+        if new_client_private_key != old_client_private_key:
+            self.tls.client_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["client-private-key"] = new_client_private_key
+
+        new_peer_private_key = self.config.tls_peer_private_key
+        old_peer_private_key = self.app_peer_data.get("peer-private-key", None)
+
+        if new_peer_private_key != old_peer_private_key:
+            self.tls.peer_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["peer-private-key"] = new_peer_private_key
+
     def _on_peer_relation_joined(self, _) -> None:
         """Handle the peer relation joined event."""
         # set some initial unit data
         self.unit_peer_data.setdefault("member-role", "UNKNOWN")
         self.unit_peer_data.setdefault("member-state", "waiting")
 
-    def _on_config_changed(self, _: EventBase) -> None:  # noqa: C901
+    def _on_config_changed(self, _: EventBase) -> None:
         """Handle the config changed event."""
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
@@ -696,10 +714,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.log_rotate_setup.setup()
 
         # Rotate TLS keys
-        if self.config.tls_client_private_key:
-            self.tls.client_certificates_refresh_event.emit()
-        if self.config.tls_peer_private_key:
-            self.tls.peer_certificates_refresh_event.emit()
+        self._rotate_private_keys()
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)

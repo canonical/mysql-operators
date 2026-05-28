@@ -4,6 +4,7 @@
 """TLS Handler."""
 
 import base64
+import binascii
 import logging
 import re
 import socket
@@ -208,7 +209,7 @@ class TLS(Object):
 
         try:
             private_key = base64.b64decode(private_key).decode("utf-8").strip()
-        except UnicodeDecodeError as e:
+        except (UnicodeDecodeError, binascii.Error) as e:
             logger.error(e)
             return None
 
@@ -305,6 +306,9 @@ class TLS(Object):
             self.charm.unit.status = BlockedStatus("Failed to disable client TLS.")
             return
 
+        if self.charm.unit.is_leader():
+            del self.charm.app_peer_data["client-private-key"]
+
         self.charm.unit.status = self.charm.build_unit_workload_status()
 
     def _on_peer_relation_broken(self, _: EventBase) -> None:
@@ -322,6 +326,9 @@ class TLS(Object):
             logger.error(f"Failed to disable peer TLS: {e}")
             self.charm.unit.status = BlockedStatus("Failed to disable peer TLS.")
             return
+
+        if self.charm.unit.is_leader():
+            del self.charm.app_peer_data["peer-private-key"]
 
     def _push_tls_files_to_workload(self) -> None:
         """Push TLS files to unit."""
