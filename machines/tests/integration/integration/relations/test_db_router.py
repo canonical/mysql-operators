@@ -45,15 +45,16 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     juju.deploy(
         "keystone",
         KEYSTONE_APP_NAME,
-        base="ubuntu@20.04",
-        num_units=2,
+        base="ubuntu@22.04",
         channel="yoga/stable",
+        num_units=2,
     )
 
     # Deploy mysqlrouter and relate it to keystone
     juju.deploy(
         "mysql-router",
         KEYSTONE_MYSQLROUTER_APP_NAME,
+        base="ubuntu@22.04",
         channel="8.0/stable",
     )
 
@@ -109,15 +110,16 @@ def test_keystone_bundle_db_router(juju: Juju, charm) -> None:
     juju.deploy(
         "keystone",
         ANOTHER_KEYSTONE_APP_NAME,
-        base="ubuntu@20.04",
-        num_units=2,
+        base="ubuntu@22.04",
         channel="yoga/stable",
+        num_units=2,
     )
 
     # Deploy mysqlrouter and relate it to keystone
     juju.deploy(
         "mysql-router",
         ANOTHER_KEYSTONE_MYSQLROUTER_APP_NAME,
+        base="ubuntu@22.04",
         channel="8.0/stable",
     )
 
