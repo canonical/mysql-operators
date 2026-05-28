@@ -226,7 +226,7 @@ Output:
 5c5
 < -- Server version 5.5.5-10.3.17-MariaDB-1:10.3.17+maria~bionic
 ---
-> -- Server version 8.4.7-0ubuntu0.24.04.1
+> -- Server version 8.4.7-0ubuntu0.26.04.1
 16a17,26
 > SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
 > SET @@SESSION.SQL_LOG_BIN= 0;

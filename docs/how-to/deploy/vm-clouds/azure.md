@@ -186,8 +186,8 @@ data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@26.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@26.04  
 ```
 
 Once deployed, request the credentials for your newly bootstrapped MySQL database:
@@ -239,8 +239,8 @@ data-integrator/1*  active    idle   3        20.83.8.228
 mysql/0*            active    idle   4        20.83.9.99      3306,33060/tcp  Primary
 
 Machine  State    Address      Inst id        Base          AZ  Message
-3        started  20.83.8.228  juju-07d319-3  ubuntu@24.04
-4        started  20.83.9.99   juju-07d319-4  ubuntu@24.04  
+3        started  20.83.8.228  juju-07d319-3  ubuntu@26.04
+4        started  20.83.9.99   juju-07d319-4  ubuntu@26.04  
 ```
 
 Note the IP and port (`20.83.9.99:3306`) and connect via `mysql`:
@@ -317,4 +317,3 @@ Finally, log out of the Azure CLI user credentials to prevent any credential lea
 ```shell
 az logout 
 ```
-

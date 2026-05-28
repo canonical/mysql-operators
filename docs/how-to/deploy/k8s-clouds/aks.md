@@ -133,7 +133,7 @@ juju deploy mysql-k8s --trust -n 3
 ```
 Sample output:
 ```shell
-Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.4/edge on ubuntu@24.04/stable
+Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.4/edge on ubuntu@26.04/stable
 ```
 
 Check the status:
@@ -199,4 +199,3 @@ Finally, logout from AKS to clean the local credentials (to avoid forgetting and
 ```shell
 az logout
 ```
-

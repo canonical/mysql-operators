@@ -19,7 +19,7 @@ Several [revisions](https://documentation.ubuntu.com/juju/3.6/reference/charm/#c
 
 If you do not specify a revision on deploy time, Juju will automatically choose the revision that matches your base and architecture.
 
-All revisions of MySQL described below are built for *Ubuntu 24.04 LTS (Noble)*.
+All revisions of MySQL described below are built for *Ubuntu 26.04 LTS (Resolute)*.
 
 | Revision (`amd`) | Revision (`arm`) | Revision (`s390x`) | MySQL version | Juju version |
 |:----------------:|:----------------:|:------------------:|:-------------:|:------------:|

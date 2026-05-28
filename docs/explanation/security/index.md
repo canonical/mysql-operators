@@ -61,7 +61,7 @@ In the following, we provide guidance on how to harden your deployment using:
 
 ### Operating system
 
-Charmed MySQL and Charmed MySQL Router run on top of Ubuntu 24.04 LTS (Noble). Deploy a [Landscape Client Charm](https://charmhub.io/landscape-client?) to connect the underlying VM to a Landscape User Account to manage security upgrades and integrate [Ubuntu Pro](https://ubuntu.com/pro) subscriptions. 
+Charmed MySQL and Charmed MySQL Router run on top of Ubuntu 26.04 LTS (Resolute). Deploy a [Landscape Client Charm](https://charmhub.io/landscape-client?) to connect the underlying VM to a Landscape User Account to manage security upgrades and integrate [Ubuntu Pro](https://ubuntu.com/pro) subscriptions. 
 
 ### Security upgrades
 
