@@ -110,9 +110,9 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     non_primary_units = app_units - {primary_unit}
 
-    unit_to_promote = non_primary_units.pop()
+    unit_to_survive = non_primary_units.pop()
 
-    logging.info(f"Unit selected for promotion: {unit_to_promote}")
+    logging.info(f"Unit selected for promotion: {unit_to_survive}")
 
     logging.info("Simulate quorum loss")
     units_to_kill = [non_primary_units.pop(), primary_unit]
@@ -122,7 +122,7 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
         logging.info("Waiting to settle in error state")
         juju.wait(
             ready=lambda status: all((
-                wait_for_unit_status(app_name, unit_to_promote, "active")(status),
+                wait_for_unit_status(app_name, unit_to_survive, "active")(status),
                 wait_for_unit_message(app_name, units_to_kill[0], "OFFLINE")(status),
                 wait_for_unit_message(app_name, units_to_kill[1], "OFFLINE")(status),
             )),
@@ -132,7 +132,7 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     logging.info("Attempting to promote a unit to primary after quorum loss...")
     juju.run(
-        unit=unit_to_promote,
+        unit=primary_unit,
         action="promote-to-primary",
         params={"scope": "unit", "force": True},
         wait=600,
@@ -146,7 +146,7 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
             delay=5,
         )
 
-    assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"
+    assert get_mysql_primary_unit(juju, app_name) == primary_unit, "Failover failed"
 
 
 def kill_pods(juju: Juju, unit_names: list[str]) -> None:
