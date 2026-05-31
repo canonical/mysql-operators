@@ -7,7 +7,7 @@ import json
 import logging
 import typing
 
-from charms.mysql.v0.mysql import MySQLCheckUserExistenceError, MySQLDeleteUsersForUnitError
+from charms.mysql.v0.mysql import MySQLCheckUserExistenceError
 from ops.charm import (
     LeaderElectedEvent,
     RelationBrokenEvent,
@@ -20,6 +20,7 @@ from constants import CONTAINER_NAME, LEGACY_MYSQL_ROOT, PASSWORD_LENGTH, ROOT_P
 from mysql_k8s_helpers import (
     MySQLCreateDatabaseError,
     MySQLCreateUserError,
+    MySQLDeleteUsersWithLabelError,
     MySQLEscalateUserPrivilegesError,
 )
 from utils import generate_random_password
@@ -261,7 +262,7 @@ class MySQLRootRelation(Object):
 
         try:
             self.charm._mysql.delete_users_with_label("label", "mysql-root-legacy-relation")
-        except MySQLDeleteUsersForUnitError:
+        except MySQLDeleteUsersWithLabelError:
             self.charm.unit.status = BlockedStatus("Failed to delete database users")
 
         del self.charm.app_peer_data[MYSQL_ROOT_RELATION_USER_KEY]
