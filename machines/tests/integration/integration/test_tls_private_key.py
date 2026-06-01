@@ -148,6 +148,37 @@ def test_set_private_key(juju: Juju) -> None:
         assert is_connection_possible(config, **{"ssl_disabled": False})
 
 
+def test_disable_tls(juju: Juju) -> None:
+    """Verify TLS is disabled and the cluster is accessible."""
+    leader_unit = get_app_leader(juju, APP_NAME)
+    credentials = get_mysql_server_credentials(juju, leader_unit)
+
+    config = {
+        "username": credentials["username"],
+        "password": credentials["password"],
+    }
+
+    logger.info("Removing relation")
+    juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
+
+    juju.remove_relation(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
+        timeout=TIMEOUT,
+        delay=5,
+    )
+
+    for unit_name in get_app_units(juju, APP_NAME):
+        config["host"] = get_unit_ip(juju, APP_NAME, unit_name)
+        assert is_connection_possible(config, **{"ssl_disabled": False})
+        assert is_connection_possible(config, **{"ssl_disabled": True})
+
+
 def create_private_key() -> str:
     """Generates a private key using the PEM format (valid for certificates)."""
     private_key = generate_private_key(
