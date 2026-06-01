@@ -3,12 +3,16 @@
 
 """TLS Handler."""
 
+import base64
+import binascii
 import logging
+import re
 import socket
 from typing import TYPE_CHECKING
 
 from charmlibs.interfaces.tls_certificates import (
     CertificateRequestAttributes,
+    PrivateKey,
     TLSCertificatesRequiresV4,
 )
 from charms.mysql.v0.async_replication import (
@@ -18,7 +22,7 @@ from charms.mysql.v0.async_replication import (
 from charms.mysql.v0.mysql import MySQLTLSSetupError
 from mysql_shell.models import InstanceState
 from ops.framework import EventBase, EventSource, Object
-from ops.model import BlockedStatus, MaintenanceStatus
+from ops.model import BlockedStatus, MaintenanceStatus, SecretNotFoundError
 from ops.pebble import ConnectionError as PebbleConnectionError
 from ops.pebble import PathError, ProtocolError
 
@@ -46,7 +50,8 @@ class RefreshTLSCertificatesEvent(EventBase):
 class TLS(Object):
     """In this class we manage certificates relation."""
 
-    refresh_tls_certificates_event = EventSource(RefreshTLSCertificatesEvent)
+    client_certificates_refresh_event = EventSource(RefreshTLSCertificatesEvent)
+    peer_certificates_refresh_event = EventSource(RefreshTLSCertificatesEvent)
 
     def __init__(self, charm: "MySQLOperatorCharm"):
         super().__init__(charm, "certificates")
@@ -71,7 +76,8 @@ class TLS(Object):
                     },
                 ),
             ],
-            refresh_events=[self.refresh_tls_certificates_event],
+            private_key=self._parse_client_private_key(),
+            refresh_events=[self.client_certificates_refresh_event],
         )
         self.peer_certificate = TLSCertificatesRequiresV4(
             self.charm,
@@ -85,7 +91,8 @@ class TLS(Object):
                     },
                 ),
             ],
-            refresh_events=[self.refresh_tls_certificates_event],
+            private_key=self._parse_peer_private_key(),
+            refresh_events=[self.peer_certificates_refresh_event],
         )
 
         self.framework.observe(
@@ -171,6 +178,47 @@ class TLS(Object):
 
         return key_file, ca_file, cert_file
 
+    def _parse_private_key(self, secret_id: str | None) -> PrivateKey | None:
+        """Parse the received private key."""
+        if not secret_id:
+            return None
+
+        try:
+            secret_content = self.charm.model.get_secret(id=secret_id).get_content(refresh=True)
+        except SecretNotFoundError as e:
+            logger.error(e)
+            return None
+
+        private_key = secret_content.get("private-key")
+        if private_key is None:
+            logger.error(f"Secret {secret_id} does not contain a private key.")
+            return None
+
+        if re.match(r"(-+(BEGIN|END) [A-Z ]+-+)", private_key):
+            logger.error(f"Secret {secret_id} must be base64 encoded.")
+            return None
+
+        try:
+            private_key = base64.b64decode(private_key).decode("utf-8").strip()
+        except (UnicodeDecodeError, binascii.Error) as e:
+            logger.error(e)
+            return None
+
+        private_key = PrivateKey(raw=private_key)
+        if not private_key.is_valid():
+            logger.error("Invalid private key format.")
+            return None
+
+        return private_key
+
+    def _parse_client_private_key(self) -> PrivateKey | None:
+        """Parse the client private key from the config."""
+        return self._parse_private_key(self.charm.config.tls_client_private_key)
+
+    def _parse_peer_private_key(self) -> PrivateKey | None:
+        """Parse the peer private key from the config."""
+        return self._parse_private_key(self.charm.config.tls_peer_private_key)
+
     def _on_client_certificate_available(self, event: EventBase) -> None:
         """Handler for the certificate available event."""
         state = self.charm._mysql.get_member_state()
@@ -249,6 +297,9 @@ class TLS(Object):
             self.charm.unit.status = BlockedStatus("Failed to disable client TLS.")
             return
 
+        if self.charm.unit.is_leader():
+            del self.charm.app_peer_data["client-private-key"]
+
         self.charm.unit.status = self.charm.build_unit_workload_status()
 
     def _on_peer_relation_broken(self, _: EventBase) -> None:
@@ -266,6 +317,9 @@ class TLS(Object):
             logger.error(f"Failed to disable peer TLS: {e}")
             self.charm.unit.status = BlockedStatus("Failed to disable peer TLS.")
             return
+
+        if self.charm.unit.is_leader():
+            del self.charm.app_peer_data["peer-private-key"]
 
     def _push_tls_files_to_workload(self) -> None:
         """Push TLS files to unit."""

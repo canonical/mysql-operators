@@ -10,7 +10,6 @@ from ops.main import main
 if is_wrong_architecture() and __name__ == "__main__":
     main(WrongArchitectureWarningCharm)
 
-import json
 import logging
 import random
 import socket
@@ -297,6 +296,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         # Override log rotation
         self.log_rotation_setup.setup()
+
+        # Rotate TLS keys
+        self._rotate_private_keys()
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)
@@ -1049,8 +1051,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.info("Skipping group replication restart")
             return OperationResult.RETRY_RELEASE
 
-        ongoing_ops = [relation.data[unit].get("operations", "[]") for unit in self.peers.units]
-        ongoing_ops = [json.loads(op) for op in ongoing_ops]
+        ongoing_ops = [
+            self.rolling_ops.is_waiting_callback("replication", unit.name)
+            for unit in self.peers.units
+        ]
 
         if self.is_unit_primary() and any(ongoing_ops):
             logger.info("Skipping group replication restart")
@@ -1104,6 +1108,24 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self._on_update_status(None)
         return OperationResult.RELEASE
+
+    def _rotate_private_keys(self) -> None:
+        """Rotates either of the TLS private keys if the config values are new."""
+        new_client_private_key = self.config.tls_client_private_key
+        old_client_private_key = self.app_peer_data.get("client-private-key", None)
+
+        if new_client_private_key != old_client_private_key:
+            self.tls.client_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["client-private-key"] = new_client_private_key
+
+        new_peer_private_key = self.config.tls_peer_private_key
+        old_peer_private_key = self.app_peer_data.get("peer-private-key", None)
+
+        if new_peer_private_key != old_peer_private_key:
+            self.tls.peer_certificates_refresh_event.emit()
+            if self.unit.is_leader():
+                self.app_peer_data["peer-private-key"] = new_peer_private_key
 
 
 if __name__ == "__main__":

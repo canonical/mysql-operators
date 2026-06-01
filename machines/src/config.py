@@ -61,6 +61,8 @@ class CharmConfig(BaseConfigModel):
     logs_audit_policy: str
     logs_retention_period: str
     pause_after_unit_refresh: str
+    tls_client_private_key: str | None = Field(default=None)
+    tls_peer_private_key: str | None = Field(default=None)
 
     @field_validator("profile")
     @classmethod

@@ -19,8 +19,9 @@ remove the relation between Charmed MySQL and the TLS provider.
 
     > Integration provider                   Requirer                   Interface         Type     Message
     > mysql:database-peers                   mysql:database-peers       mysql_peers       peer
-    > mysql:restart                          mysql:restart              rolling_op        peer
+    > mysql:rolling-ops                      mysql:rolling-ops          rolling_op        peer
     > self-signed-certificates:certificates  mysql:client-certificates  tls-certificates  regular
+    > self-signed-certificates:certificates  mysql:peer-certificates    tls-certificates  regular
 ```
 
 ```{tab-item} K8s
@@ -30,8 +31,9 @@ remove the relation between Charmed MySQL and the TLS provider.
 
     > Integration provider                   Requirer                      Interface         Type     Message
     > mysql-k8s:database-peers               mysql-k8s:database-peers      mysql_peers       peer
-    > mysql-k8s:restart                      mysql-k8s:restart             rolling_op        peer
+    > mysql-k8s:rolling-ops                  mysql-k8s:rolling-ops         rolling_op        peer
     > self-signed-certificates:certificates  mysql-k8s:client-certificates tls-certificates  regular
+    > self-signed-certificates:certificates  mysql-k8s:peer-certificates   tls-certificates  regular
 ```
 ````
 
