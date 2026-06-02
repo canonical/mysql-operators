@@ -8,8 +8,7 @@ import typing
 
 from charms.mysql.v0.mysql import MySQLExecError
 from mysql_shell import LogType
-from ops.charm import CharmEvents
-from ops.framework import EventBase, EventSource, Object
+from ops.framework import EventBase, Object
 
 from constants import LOG_ROTATE_CONFIG_FILE
 
@@ -23,16 +22,7 @@ class RotateMySQLLogsEvent(EventBase):
     """A custom event to rotate the mysql logs."""
 
 
-class RotateMySQLLogsCharmEvents(CharmEvents):
-    """A CharmEvent extension to rotate mysql logs.
-
-    Includes :class:`RotateMySQLLogsEvent` in those that can be handled.
-    """
-
-    rotate_mysql_logs = EventSource(RotateMySQLLogsEvent)
-
-
-class RotateMySQLLogs(Object):
+class RotateMySQLLogsObserver(Object):
     """Encapsulates the rotation of mysql logs."""
 
     def __init__(self, charm: "MySQLOperatorCharm"):
