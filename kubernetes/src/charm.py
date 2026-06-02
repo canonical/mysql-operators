@@ -222,7 +222,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     "group": MYSQL_SYSTEM_GROUP,
                     "kill-delay": "24h",
                     "environment": {
-                        "MYSQLD_PARENT_PID": 1,
+                        "MYSQLD_PARENT_PID": "1",
                     },
                     "requires": [MYSQL_LOG_SERVICE],
                     "after": [MYSQL_LOG_SERVICE],
