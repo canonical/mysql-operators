@@ -98,9 +98,6 @@ from constants import (
     REPLICATION_USERNAME,
     TRACING_PROTOCOL,
 )
-from flush_mysql_logs import FlushMySQLLogsCharmEvents, MySQLLogs
-from hostname_resolution import MySQLMachineHostnameResolution
-from ip_address_observer import IPAddressChangeCharmEvents
 from log_rotation_setup import LogRotationSetup
 from mysql_vm_helpers import (
     MySQL,
@@ -116,6 +113,9 @@ from mysql_vm_helpers import (
 from refresh import MachinesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
 from relations.tls import TLS
+from services.events import CharmServicesEvents
+from services.managers import IPAddressManager
+from services.observers import IPAddressObserver, RotateMySQLLogsObserver
 from utils import compare_dictionaries, generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -131,15 +131,11 @@ class MySQLDNotRestartedError(Error):
     """Exception raised when MySQLD is not restarted after configuring instance."""
 
 
-class MySQLCustomCharmEvents(FlushMySQLLogsCharmEvents, IPAddressChangeCharmEvents):
-    """Custom event sources for the charm."""
-
-
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
     config_type = CharmConfig
-    on = MySQLCustomCharmEvents()  # type: ignore
+    on = CharmServicesEvents()
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -185,10 +181,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.on[COS_AGENT_RELATION_NAME].relation_broken, self._on_cos_agent_relation_broken
         )
 
-        self.log_rotation_setup = LogRotationSetup(self)
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)
-        self.hostname_resolution = MySQLMachineHostnameResolution(self)
 
         try:
             self._refresh = charm_refresh.Machines(
@@ -217,7 +211,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             },
         )
 
-        self.mysql_logs = MySQLLogs(self)
+        self.hostname_observer = IPAddressObserver(self)
+        self.hostname_manager = IPAddressManager(self)
+        self.hostname_manager.start_observer()
+
+        self.log_rotation_setup = LogRotationSetup(self)
+        self.log_rotate_observer = RotateMySQLLogsObserver(self)
+
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
@@ -455,7 +455,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             }
 
             if all_states | {state} == {state} and self.unit.is_leader():
-                loopback_entry_exists = self.hostname_resolution.update_etc_hosts(None)
+                loopback_entry_exists = self.hostname_observer.update_etc_hosts(None)
                 if loopback_entry_exists and not snap_service_operation(
                     CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
                 ):
@@ -787,7 +787,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         # ensure hostname can be resolved
-        self.hostname_resolution.update_etc_hosts(None)
+        self.hostname_observer.update_etc_hosts(None)
 
         logger.info("Initializing MySQL data directory")
         self._mysql.initialise_mysqld()
