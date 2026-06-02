@@ -61,12 +61,14 @@ from charms.mysql.v0.mysql import (
     MySQLSetVariableError,
     MySQLUnableToGetMemberStateError,
 )
-from mysql_shell.builders import CharmAuthorizationQueryBuilder
 from mysql_shell.executors.errors import ExecutionError
 from mysql_shell.models import (
     ClusterGlobalStatus,
     InstanceRole,
     InstanceState,
+)
+from mysql_shell_contrib.builders import (
+    CharmAuthorizationQueryBuilder,
 )
 
 from constants import CHARMED_MYSQLSH, MYSQLD_SOCK_FILE
@@ -541,7 +543,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_py.return_value = '{"status": "ok"}'
 
         commands = [
-            "result = dba.check_instance_configuration(options=None)",
+            "result = dba.check_instance_configuration(options={})",
             "print(result)",
         ]
 
@@ -554,7 +556,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_py.side_effect = ExecutionError
 
         commands = [
-            "result = dba.check_instance_configuration(options=None)",
+            "result = dba.check_instance_configuration(options={})",
             "print(result)",
         ]
 
@@ -754,10 +756,7 @@ class TestMySQLBase(unittest.TestCase):
 
         self.mock_executor.execute_py.return_value = '{"status": "ONLINE"}'
         self.mysql.get_cluster_status()
-        self.mock_executor.execute_py.assert_called_once_with(
-            "\n".join(commands),
-            timeout=30,
-        )
+        self.mock_executor.execute_py.assert_called_once_with("\n".join(commands))
 
     @patch("json.loads")
     def test_get_cluster_status_failure(self, _json_loads):

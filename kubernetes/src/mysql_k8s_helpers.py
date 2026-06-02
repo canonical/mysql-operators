@@ -20,6 +20,8 @@ from charms.mysql.v0.mysql import (
     MySQLStartMySQLDError,
     MySQLStopMySQLDError,
 )
+from mysql_shell.executors.errors import ExecutionError
+from mysql_shell_contrib.executors import PebbleExecutor
 from ops.model import Container
 from ops.pebble import APIError, ChangeError, ExecError, PathError
 from tenacity import (
@@ -52,7 +54,6 @@ from constants import (
     XTRABACKUP_PLUGIN_DIR,
 )
 from k8s_helpers import KubernetesClientError, KubernetesHelpers
-from mysql_k8s_executor import ContainerExecutor, ExecutionError
 from utils import any_memory_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -175,7 +176,7 @@ class MySQL(MySQLBase):
             backups_user=backups_user,
             backups_password=backups_password,
             mysqlsh_path=MYSQLSH_LOCATION,
-            executor_class=ContainerExecutor,
+            executor_class=PebbleExecutor,
         )
 
     def _build_cluster_tcp_executor(self, host: str, port: int = 3306):
