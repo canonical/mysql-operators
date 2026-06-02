@@ -93,12 +93,13 @@ from constants import (
     SERVER_CONFIG_USERNAME,
 )
 from k8s_helpers import KubernetesHelpers
-from log_rotate_manager import LogRotateManager
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
 from relations.mysql_root import MySQLRootRelation
-from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
+from services.events import CharmServicesEvents
+from services.managers import LogRotateManager
+from services.observers import RotateMySQLLogsObserver
 from upgrade import MySQLK8sUpgrade, get_mysql_k8s_dependencies_model
 from utils import compare_dictionaries, generate_random_password, get_k8s_fqdn
 
@@ -109,10 +110,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
     config_type = CharmConfig
-    # RotateMySQLLogsCharmEvents needs to be defined on the charm object for
-    # the log rotate manager process (which runs juju-run/juju-exec to dispatch
-    # a custom event)
-    on = RotateMySQLLogsCharmEvents()  # type: ignore
+    on = CharmServicesEvents()
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -170,7 +168,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.log_rotate_manager.start_log_rotate_manager()
 
         self.log_rotate_setup = LogRotationSetup(self)
-        self.rotate_mysql_logs = RotateMySQLLogs(self)
+        self.log_rotate_observer = RotateMySQLLogsObserver(self)
+
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
