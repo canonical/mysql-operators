@@ -830,8 +830,13 @@ class MySQLCharmBase(CharmBase, ABC):
         if self.unit_peer_data.get("member-role") != "primary":
             return ""
 
-        if self._mysql.is_cluster_replica() is False:
+        is_replica = self._mysql.is_cluster_replica()
+        if is_replica is False:
             return "Primary"
+        if is_replica is None:
+            # cluster-set status unreadable (e.g. lost quorum): a primary that
+            # cannot accept writes. Avoid mislabelling it as "Standby".
+            return "Primary (read-only)"
 
         status = self._mysql.get_replica_cluster_status()
         if status == ClusterGlobalStatus.OK:
@@ -2355,6 +2360,13 @@ class MySQLBase(ABC):
         """Start Group replication on the instance."""
         with suppress(ExecutionError):
             self._instance_client_tcp.start_instance_replication()
+
+    def is_cluster_in_no_quorum(self) -> bool:
+        """Check whether the cluster has lost quorum as seen from this instance."""
+        status = self.get_cluster_status()
+        if not status:
+            return False
+        return status["defaultReplicaSet"]["status"] == ClusterStatus.NO_QUORUM
 
     def force_quorum_from_instance(self) -> None:
         """Force quorum from the current instance.
