@@ -849,7 +849,7 @@ class MySQL(MySQLBase):
 
         Returns: list of cluster members in MySQL MEMBER_HOST format.
         """
-        return [host.names[1] for host in self.charm.hostname_resolution._get_host_details()]
+        return [host.names[1] for host in self.charm.hostname_observer._get_host_details()]
 
     @staticmethod
     def write_content_to_file(
