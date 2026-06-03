@@ -127,23 +127,25 @@ jobs:
         run: |
           curl -L https://github.com/datacharmer/test_db/releases/download/v1.0.7/test_db-1.0.7.tar.gz | tar zx
           echo "DATA_SOURCE_PATH=$PWD/test_db/employees.sql" >> $GITHUB_ENV
+      - name: Install Juju and jhack
+        timeout-minutes: 5
+        run: |
+          sudo snap install juju --channel "${{ inputs.juju-channel }}"
+          sudo snap install jhack --channel latest/edge
+          sudo snap connect jhack:dot-local-share-juju snapd
       - name: Bootstrap Juju on LXD
         if: ${{ inputs.path-to-charm-directory == 'machines' }}
         timeout-minutes: 20
         run: |
+          set -x
           sudo snap install lxd
           sudo lxd init --auto
-          sudo snap install juju --channel "${{ inputs.juju-channel }}"
-          sudo snap install jhack --channel latest/edge
-          sudo snap connect jhack:dot-local-share-juju snapd
           juju bootstrap localhost
-          juju model-config logging-config="<root>=INFO; unit=DEBUG"
-          juju add-model testing
-          juju set-model-constraints arch="$(dpkg --print-architecture)"
       - name: Bootstrap Juju on Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
         run: |
+          set -x
           # Avoid conflicts with existing Docker and containerd installations
           sudo apt-get remove -y docker-ce docker-ce-cli containerd.io || true
           sudo rm -rf /run/containerd
@@ -156,14 +158,12 @@ jobs:
           sudo k8s enable load-balancer
           sudo k8s enable local-storage
 
-          sudo snap install juju --channel "${{ inputs.juju-channel }}"
-          sudo snap install jhack --channel latest/edge
-          sudo snap connect jhack:dot-local-share-juju snapd
-
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
-          juju add-k8s k8s --client
-          juju bootstrap k8s k8s --bootstrap-constraints "root-disk=5G"
+          juju bootstrap k8s ck8s --bootstrap-constraints "root-disk=5G"
+      - name: Configure Juju model
+        timeout-minutes: 5
+        run: |
           juju model-config logging-config="<root>=INFO; unit=DEBUG"
           juju add-model testing
           juju set-model-constraints arch="$(dpkg --print-architecture)"
