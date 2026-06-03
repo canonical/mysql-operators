@@ -208,7 +208,24 @@ jobs:
           sudo rm -rf /run/containerd
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
-          sudo k8s bootstrap
+
+          # Fix CoreDNS upstream DNS loop: on CI, kubelet is already configured with
+          # --cluster-dns=<ClusterIP> by the time CoreDNS pods start. CoreDNS pods then
+          # get "nameserver <ClusterIP>" in /etc/resolv.conf, and the Corefile's
+          # "forward . /etc/resolv.conf" creates an infinite loop for external queries.
+          # Pass the real upstream nameservers at bootstrap time so CoreDNS never uses
+          # /etc/resolv.conf and the loop cannot form.
+          # /run/systemd/resolve/resolv.conf has the real upstreams (not the stub 127.0.0.53).
+          upstream_dns=$(awk '/^nameserver/{print $2}' /run/systemd/resolve/resolv.conf 2>/dev/null | grep -v '^127\.' | head -1)
+          upstream_dns="${upstream_dns:-8.8.8.8}"
+          echo "Upstream DNS for CoreDNS: ${upstream_dns}"
+          cat > /tmp/k8s-bootstrap.yaml <<EOF
+cluster-config:
+  dns:
+    upstream-nameservers:
+      - ${upstream_dns}
+EOF
+          sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml
 
           # k8s status --wait-ready can return before components are actually ready
           # (e.g. network: disabled, ingress: Failed). Poll ourselves instead.
