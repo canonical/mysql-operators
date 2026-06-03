@@ -133,10 +133,6 @@ jobs:
           sudo snap install juju --channel "${{ inputs.juju-channel }}"
           sudo snap install jhack --channel latest/edge
           sudo snap connect jhack:dot-local-share-juju snapd
-      - name: Add user to lxd group
-        if: ${{ inputs.path-to-charm-directory == 'machines' }}
-        run: |
-          sudo usermod -aG lxd "$USER"
       - name: Bootstrap Juju on LXD
         if: ${{ inputs.path-to-charm-directory == 'machines' }}
         timeout-minutes: 20
@@ -144,6 +140,7 @@ jobs:
           set -x
           sudo snap install lxd
           sudo lxd init --auto
+          sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
           juju bootstrap localhost
       - name: Install and configure Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
