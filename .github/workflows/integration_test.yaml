@@ -152,11 +152,18 @@ jobs:
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
           sudo k8s bootstrap
-          sudo k8s status --wait-ready --timeout 300s
+          sudo k8s status --wait-ready --timeout 300s | tee /tmp/k8s-status.txt
+          sudo k8s kubectl get pods -n kube-system
+          if grep -qi "failed" /tmp/k8s-status.txt; then
+            echo "k8s status reports failures — aborting" >&2
+            exit 1
+          fi
 
-          sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.20.30.40/32
-          sudo k8s enable load-balancer
-          sudo k8s enable local-storage
+          # Commented out while we figure out some Cilium issues
+          # sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.20.30.40/32
+          # sudo k8s enable load-balancer
+          # Not needed, local-storage is already enabled
+          # sudo k8s enable local-storage
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
