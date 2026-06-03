@@ -271,6 +271,18 @@ jobs:
             -l app.kubernetes.io/name=cilium-agent \
             --for=condition=Ready --timeout=120s
 
+          echo "=== Fix CoreDNS upstream DNS loop ==="
+          # On CI, kubelet is already configured with --cluster-dns=<ClusterIP> by the time
+          # CoreDNS pods are created. As a result, CoreDNS pod's /etc/resolv.conf contains
+          # "nameserver <CoreDNS-ClusterIP>" and the Corefile's "forward . /etc/resolv.conf"
+          # makes CoreDNS forward all external queries to itself — an infinite loop.
+          # Fix: override upstream-nameservers with the real upstream from the host's
+          # /run/systemd/resolve/resolv.conf (which has actual IPs, not the 127.0.0.53 stub).
+          upstream_dns=$(awk '/^nameserver/{print $2}' /run/systemd/resolve/resolv.conf 2>/dev/null | grep -v '^127\.' | head -1)
+          upstream_dns="${upstream_dns:-8.8.8.8}"
+          echo "Setting CoreDNS upstream to: ${upstream_dns}"
+          sudo k8s set "dns.upstream-nameservers=${upstream_dns}"
+
           echo "=== Pod IPs BEFORE restart (any 10.88.x.x = on bridge, not Cilium) ==="
           sudo k8s kubectl -n kube-system get pods -o wide
 
