@@ -599,22 +599,22 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # complete-outage path below only fires on state == OFFLINE, so
         # without this the leader stays stuck and the cluster never recovers.
         if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
-            logger.warning("Cluster has lost quorum.")
+            logger.warning("Cluster has lost quorum")
             try:
                 # reboot_cluster_from_complete_outage rejects an instance whose
                 # GR is still running; drop it to OFFLINE first.
                 self._mysql.stop_group_replication()
                 if self.unit.is_leader():
                     # run on leader only for coordinate recovery
-                    logger.warning("Attempting reboot from complete outage.")
+                    logger.warning("Attempting reboot from complete outage")
                     self._mysql.reboot_from_complete_outage()
                 else:
                     # set offline state and delegate reboot from outage to leader
                     logger.warning("Set instance to offline")
                     self.unit_peer_data["member-state"] = InstanceState.OFFLINE.lower()
             except MySQLRebootFromCompleteOutageError:
-                logger.error("Failed to reboot cluster from complete outage.")
-                self.unit.status = BlockedStatus("failed to recover cluster.")
+                logger.error("Failed to reboot cluster from complete outage")
+                self.unit.status = BlockedStatus("failed to recover cluster")
             return
 
         # set unit status based on member-{state,role}
