@@ -169,7 +169,7 @@ def refresh_from_stable(juju: Juju, charm: str) -> None:
 
     logging.info("Wait for refresh to finish on first unit")
     juju.wait(
-        ready=jubilant.all_agents_idle,
+        ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_units[-1], "active"),
         timeout=5 * MINUTE_SECS,
     )
 

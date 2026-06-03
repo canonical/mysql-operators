@@ -22,6 +22,7 @@ from ...helpers_ha import (
     get_mysql_variable_value,
     load_mysql_test_data,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 MYSQL_APP_1 = "db1"
@@ -196,11 +197,11 @@ def test_refresh_from_edge(
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
 
-    run_pre_refresh_checks(model_1, MYSQL_APP_1)
-    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
-
     run_pre_refresh_checks(model_2, MYSQL_APP_2)
     run_refresh_from_edge(model_2, MYSQL_APP_2, charm)
+
+    run_pre_refresh_checks(model_1, MYSQL_APP_1)
+    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
 
 
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
@@ -280,6 +281,10 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
         ready=wait_for_apps_status(jubilant.any_blocked, app_name),
         timeout=10 * MINUTE_SECS,
     )
+    juju.wait(
+        ready=wait_for_unit_status(app_name, app_units[-1], "blocked"),
+        timeout=5 * MINUTE_SECS,
+    )
 
     app_status = juju.status().apps[app_name]
     upgrade_unit_status = app_status.units[app_units[-1]]
@@ -296,7 +301,7 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
 
     logging.info("Wait for refresh to finish on first unit")
     juju.wait(
-        ready=jubilant.all_agents_idle,
+        ready=wait_for_unit_status(app_name, app_units[-1], "active"),
         timeout=5 * MINUTE_SECS,
     )
 

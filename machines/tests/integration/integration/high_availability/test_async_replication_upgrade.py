@@ -188,11 +188,11 @@ def test_refresh_from_edge(
     model_1 = Juju(model=first_model)
     model_2 = Juju(model=second_model)
 
-    run_pre_refresh_checks(model_1, MYSQL_APP_1)
-    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
-
     run_pre_refresh_checks(model_2, MYSQL_APP_2)
     run_refresh_from_edge(model_2, MYSQL_APP_2, charm)
+
+    run_pre_refresh_checks(model_1, MYSQL_APP_1)
+    run_refresh_from_edge(model_1, MYSQL_APP_1, charm)
 
 
 def test_data_replication(first_model: str, second_model: str, continuous_writes) -> None:
