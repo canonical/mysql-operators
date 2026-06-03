@@ -82,6 +82,8 @@ jobs:
           if-no-files-found: error
     outputs:
       jobs: ${{ steps.collect-jobs.outputs.jobs }}
+    permissions:
+      contents: read
 
   integration-test:
     strategy:
@@ -92,8 +94,6 @@ jobs:
     needs:
       - collect-integration-tests
     runs-on: ${{ matrix.job.runner }}
-    permissions:
-      contents: read
     timeout-minutes: 236  # Sum of steps `timeout-minutes` + 5
     steps:
       - name: Free up disk space
@@ -176,6 +176,10 @@ jobs:
             "tests/integration/integration/${{ matrix.job.test_module }}" \
             --alluredir=allure-results
         env:
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+          GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
           DATA_SOURCE_PATH: ${{ env.DATA_SOURCE_PATH }}
           UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
           LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
