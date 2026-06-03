@@ -231,6 +231,7 @@ class TestCharm(unittest.TestCase):
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
 
+    @patch("mysql_vm_helpers.MySQL.is_cluster_in_no_quorum", return_value=False)
     @patch(
         "charm.MySQLOperatorCharm.cluster_initialized",
         new_callable=PropertyMock(return_value=True),
@@ -264,6 +265,7 @@ class TestCharm(unittest.TestCase):
         _active_status_message,
         _unit_initialized,
         _cluster_initialized,
+        _is_cluster_no_quorum,
     ):
         self.harness.update_relation_data(
             self.peer_relation_id,
