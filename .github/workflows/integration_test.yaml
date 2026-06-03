@@ -145,7 +145,7 @@ jobs:
           sudo snap install lxd
           sudo lxd init --auto
           juju bootstrap localhost
-      - name: Bootstrap Juju on Canonical K8s
+      - name: Install and configure Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
         run: |
@@ -171,6 +171,11 @@ jobs:
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
+      - name: Bootstrap Juju on Canonical K8s
+        if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 20
+        run: |
+          set -x
           juju bootstrap k8s ck8s --bootstrap-constraints "root-disk=5G"
       - name: Configure Juju model
         timeout-minutes: 5
