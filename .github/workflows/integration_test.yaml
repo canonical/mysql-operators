@@ -167,7 +167,8 @@ jobs:
             fi
 
             if ! grep -qi "network:.*disabled" /tmp/k8s-status.txt; then
-              echo "k8s network is up, proceeding"
+              echo "k8s network is up, waiting for all kube-system pods to be Ready..."
+              sudo k8s kubectl wait pod --all -n kube-system --for=condition=Ready --timeout=5m
               break
             fi
 
