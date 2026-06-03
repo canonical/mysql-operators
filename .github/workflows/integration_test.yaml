@@ -161,17 +161,18 @@ jobs:
             sudo k8s status --wait-ready --timeout 300s | tee /tmp/k8s-status.txt || true
             sudo k8s kubectl get pods -n kube-system || true
 
-            if grep -qi "failed" /tmp/k8s-status.txt; then
-              echo "k8s status reports failures — aborting" >&2
-              exit 1
-            fi
-
-            if ! grep -qi "network:.*disabled" /tmp/k8s-status.txt; then
+            if grep -qi "network:.*disabled" /tmp/k8s-status.txt; then
+              echo "Network not yet up, continuing to wait..."
+            else
+              if grep -qi "network:.*failed" /tmp/k8s-status.txt; then
+                echo "Network reports failure — aborting" >&2
+                exit 1
+              fi
               pod_count=$(sudo k8s kubectl get pods -n kube-system --no-headers 2>/dev/null | wc -l)
               if [ "$pod_count" -eq 0 ]; then
                 echo "Network is up but no pods yet, continuing to wait..."
               else
-                echo "Network is up and pods present, waiting for all kube-system pods to be Ready..."
+                echo "Network is up, waiting for all kube-system pods to be Ready..."
                 sudo k8s kubectl wait pod --all -n kube-system --for=condition=Ready --timeout=5m
                 break
               fi
