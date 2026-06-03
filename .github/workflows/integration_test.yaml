@@ -172,8 +172,16 @@ jobs:
               if [ "$pod_count" -eq 0 ]; then
                 echo "Network is up but no pods yet, continuing to wait..."
               else
-                echo "Network is up, waiting for all kube-system pods to be Ready..."
-                sudo k8s kubectl wait pod --all -n kube-system --for=condition=Ready --timeout=5m
+                echo "Network is up, waiting for kube-system workloads to roll out..."
+                # Use rollout status per workload instead of `kubectl wait pod --all`:
+                # the latter includes terminating pods from old ReplicaSets (created during
+                # k8sd's own bootstrap rollout) which never become Ready and cause a timeout.
+                sudo k8s kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
+                sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=5m
+                sudo k8s kubectl -n kube-system rollout status deployment/metrics-server --timeout=5m
+                sudo k8s kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
+                sudo k8s kubectl -n kube-system rollout status daemonset/ck-storage-rawfile-csi-node --timeout=5m
+                sudo k8s kubectl -n kube-system rollout status statefulset/ck-storage-rawfile-csi-controller --timeout=5m
                 break
               fi
             fi
