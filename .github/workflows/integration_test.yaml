@@ -16,10 +16,14 @@ on:
         description: Relative path to charm directory from repository directory
         default: .
         type: string
+      juju-channel:
+        description: Juju snap channel to use for integration tests
+        default: 3.6/stable
+        type: string
 
 jobs:
   collect-integration-tests:
-    name: Collect spread jobs | ${{ inputs.path-to-charm-directory }}
+    name: Collect integration test jobs | ${{ inputs.path-to-charm-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -27,11 +31,9 @@ jobs:
         uses: actions/checkout@v6
       - name: Set up environment
         run: |
-          sudo snap install go --classic
-          go install github.com/canonical/spread/cmd/spread@latest
           pipx install tox
           pipx install poetry
-      - name: Collect spread jobs
+      - name: Collect integration test jobs
         id: collect-jobs
         working-directory: ${{ inputs.path-to-charm-directory }}
         shell: python
@@ -39,38 +41,28 @@ jobs:
           import json
           import os
           import pathlib
-          import subprocess
 
-          spread_jobs = (
-              subprocess.run(
-                  [pathlib.Path.home() / "go/bin/spread", "-list", "github-ci:tests/spread/integration/"],
-                  capture_output=True,
-                  check=True,
-                  text=True,
-              )
-              .stdout.strip()
-              .split("\n")
-          )
+          integration_dir = pathlib.Path("tests/integration/integration")
+          architectures = [
+              ("ubuntu-24.04", "amd64"),
+              ("ubuntu-24.04-arm", "arm64"),
+          ]
+
           jobs = []
-          for job in spread_jobs:
-              # Example `job`: "github-ci:ubuntu-24.04:tests/spread/integration/test_charm.py:juju36"
-              _, runner, task, variant = job.split(":")
-              # Example: "test_charm.py"
-              task = task.removeprefix("tests/spread/integration/")
-              if runner.endswith("-arm"):
-                  architecture = "arm64"
-              else:
-                  architecture = "amd64"
-              # Example: "test_charm.py:juju36 | amd64"
-              name = f"{task}:{variant} | {architecture}"
-              # ":" character not valid in GitHub Actions artifact
-              name_in_artifact = f"{task}-{variant}-{architecture}"
-              jobs.append({
-                  "spread_job": job,
-                  "name": name,
-                  "name_in_artifact": name_in_artifact,
-                  "runner": runner,
-              })
+          for test_file in sorted(integration_dir.rglob("test_*.py")):
+              # Relative path used as pytest argument, e.g. "high_availability/test_async_replication.py"
+              test_module = test_file.relative_to(integration_dir).as_posix()
+              task_name = test_file.name  # e.g. "test_async_replication.py"
+              for runner, architecture in architectures:
+                  name = f"{task_name} | {architecture}"
+                  name_in_artifact = f"{task_name}-{architecture}"
+                  jobs.append({
+                      "test_module": test_module,
+                      "name": name,
+                      "name_in_artifact": name_in_artifact,
+                      "runner": runner,
+                  })
+
           output = f"jobs={json.dumps(jobs)}"
           print(output)
           with open(os.environ["GITHUB_OUTPUT"], "a") as file:
@@ -120,8 +112,8 @@ jobs:
           sudo apt update
           sudo apt install mysql-client --yes
           sudo snap install charmcraft --classic
-          sudo snap install go --classic
-          go install github.com/canonical/spread/cmd/spread@latest
+          pipx install tox
+          pipx install poetry
       - name: Download packed charm(s)
         timeout-minutes: 5
         uses: actions/download-artifact@v8
@@ -133,67 +125,103 @@ jobs:
         run: |
           curl -L https://github.com/datacharmer/test_db/releases/download/v1.0.7/test_db-1.0.7.tar.gz | tar zx
           echo "DATA_SOURCE_PATH=$PWD/test_db/employees.sql" >> $GITHUB_ENV
-      - name: Run spread job
+      - name: Bootstrap Juju on LXD
+        if: ${{ inputs.path-to-charm-directory == 'machines' }}
+        timeout-minutes: 20
+        run: |
+          sudo snap install lxd
+          sudo lxd init --auto
+          sudo snap install juju --channel "${{ inputs.juju-channel }}"
+          sudo snap install jhack --channel latest/edge
+          sudo snap connect jhack:dot-local-share-juju snapd
+          juju bootstrap localhost
+          juju model-config logging-config="<root>=INFO; unit=DEBUG"
+          juju add-model testing
+          juju set-model-constraints arch="$(dpkg --print-architecture)"
+      - name: Bootstrap Juju on Canonical K8s
+        if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 20
+        run: |
+          # Avoid conflicts with existing Docker and containerd installations
+          sudo apt-get remove -y docker-ce docker-ce-cli containerd.io || true
+          sudo rm -rf /run/containerd
+
+          sudo snap install k8s --channel 1.32-classic/stable --classic
+          sudo k8s bootstrap
+          sudo k8s status --wait-ready --timeout 300s
+
+          sudo k8s enable load-balancer --l2-mode --cidrs 10.20.30.40/32
+          sudo k8s enable local-storage
+
+          sudo snap install juju --channel "${{ inputs.juju-channel }}"
+          sudo snap install jhack --channel latest/edge
+          sudo snap connect jhack:dot-local-share-juju snapd
+
+          mkdir -p ~/.kube
+          sudo k8s config > ~/.kube/config
+          juju add-k8s k8s --client
+          juju bootstrap k8s k8s --bootstrap-constraints "root-disk=5G"
+          juju model-config logging-config="<root>=INFO; unit=DEBUG"
+          juju add-model testing
+          juju set-model-constraints arch="$(dpkg --print-architecture)"
+      - name: Run integration test
         timeout-minutes: 180
-        id: spread
+        id: integration-test
         working-directory: ${{ inputs.path-to-charm-directory }}
-        run: ~/go/bin/spread -vv -artifacts=artifacts '${{ matrix.job.spread_job }}'
+        run: |
+          tox run -e integration -- \
+            "tests/integration/integration/${{ matrix.job.test_module }}" \
+            --alluredir=allure-results
         env:
-          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
-          GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
-          GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
           DATA_SOURCE_PATH: ${{ env.DATA_SOURCE_PATH }}
           UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
           LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
           LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
       - name: Upload Allure results
         timeout-minutes: 3
-        # Only upload results from one spread system & one spread variant
-        # Allure can only process one result per pytest test ID. If parameterization is done via
-        # spread instead of pytest, there will be overlapping pytest test IDs.
-        if: ${{ (success() || (failure() && steps.spread.outcome == 'failure')) && startsWith(matrix.job.spread_job, 'github-ci:ubuntu-24.04:') && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' }}
+        # Only upload results from amd64 runners
+        # Allure can only process one result per pytest test ID,
+        # and uploading from both architectures would produce overlapping IDs
+        if: ${{ (success() || (failure() && steps.integration-test.outcome == 'failure')) && matrix.job.runner == 'ubuntu-24.04' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' }}
         uses: actions/upload-artifact@v7
         with:
           name: allure-results-integration-test-${{ inputs.path-to-charm-directory }}-${{ matrix.job.name_in_artifact }}
-          path: ${{ inputs.path-to-charm-directory }}/artifacts/${{ matrix.job.spread_job }}/allure-results/
+          path: ${{ inputs.path-to-charm-directory }}/allure-results/
           if-no-files-found: error
-      - timeout-minutes: 1
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+      - name: snap list
+        timeout-minutes: 1
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
         run: snap list
       - name: lxc image list
         timeout-minutes: 1
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        # sudo needed since spread runs scripts as root
+        if: ${{ (success() || (failure() && steps.integration-test.outcome == 'failure')) && inputs.path-to-charm-directory == 'machines' }}
         run: sudo lxc image list
       - name: Select model
         timeout-minutes: 1
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
         id: juju-switch
         run: |
-          # sudo needed since spread runs scripts as root
-          # "testing" is default model created by concierge
-          sudo juju switch testing
+          juju switch testing
           mkdir ~/logs/
       - name: juju status
         timeout-minutes: 1
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        run: sudo juju status --color --relations | tee ~/logs/juju-status.txt
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
+        run: juju status --color --relations | tee ~/logs/juju-status.txt
       - name: juju debug-log
         timeout-minutes: 3
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        run: sudo juju debug-log --ms --color --replay --no-tail | tee ~/logs/juju-debug-log.txt
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
+        run: juju debug-log --ms --color --replay --no-tail | tee ~/logs/juju-debug-log.txt
       - name: juju debug-log controller
         timeout-minutes: 3
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        run: sudo juju debug-log --ms -m controller --color --replay --no-tail | tee ~/logs/juju-debug-log-controller.txt
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
+        run: juju debug-log --ms -m controller --color --replay --no-tail | tee ~/logs/juju-debug-log-controller.txt
       - name: jhack tail
         timeout-minutes: 3
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
-        run: sudo jhack tail --printer raw --replay --no-watch | tee ~/logs/jhack-tail.txt
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
+        run: jhack tail --printer raw --replay --no-watch | tee ~/logs/jhack-tail.txt
       - name: Upload logs
         timeout-minutes: 5
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
         uses: actions/upload-artifact@v7
         with:
           name: logs-integration-test-${{ inputs.path-to-charm-directory }}-${{ matrix.job.name_in_artifact }}
@@ -201,5 +229,5 @@ jobs:
           if-no-files-found: error
       - name: Disk usage
         timeout-minutes: 1
-        if: ${{ success() || (failure() && steps.spread.outcome == 'failure') }}
+        if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
         run: df --human-readable
