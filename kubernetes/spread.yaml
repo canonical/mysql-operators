@@ -122,6 +122,12 @@ prepare: |
   # Install charmcraft & pipx (on lxd-vm backend)
   concierge prepare --trace
 
+  # Configure Cilium for Istio
+  # for context, see https://docs.cilium.io/en/stable/network/servicemesh/istio/
+  k8s kubectl -n kube-system patch configmap cilium-config --type merge --patch '{"data":{"bpf-lb-sock-hostns-only":"true"}}'
+  k8s kubectl -n kube-system patch configmap cilium-config --type merge --patch '{"data":{"cni-exclusive":"false"}}'
+  k8s kubectl -n kube-system rollout restart daemonset cilium
+
   pipx install tox poetry
 prepare-each: |
   cd "$SPREAD_PATH"
