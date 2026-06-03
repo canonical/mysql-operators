@@ -110,6 +110,10 @@ environment:
   PATH: $PATH:$(pipx environment --value PIPX_BIN_DIR)
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
 prepare: |
+  # Avoid conflicts with existing Docker and containerd installations
+  apt-get remove -y docker-ce docker-ce-cli containerd.io
+  rm -rf /run/containerd
+
   snap refresh --hold
   chown -R root:root "$SPREAD_PATH"
   cd "$SPREAD_PATH"
