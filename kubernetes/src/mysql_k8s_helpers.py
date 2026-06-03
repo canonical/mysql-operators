@@ -205,6 +205,9 @@ class MySQL(MySQLBase):
                 group=MYSQL_SYSTEM_GROUP,
             )
             process.wait_output()
+            if not self.is_data_dir_initialised():
+                logger.error("MySQL data directory is not fully initialised after bootstrap")
+                raise MySQLInitialiseMySQLDError
         except (ExecError, ChangeError, PathError, TimeoutError):
             logger.exception("Failed to initialise MySQL data directory")
         else:

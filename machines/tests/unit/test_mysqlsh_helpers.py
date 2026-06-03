@@ -478,13 +478,15 @@ class TestMySQL(unittest.TestCase):
         _walk.assert_called_once()
         _chown.assert_called_once()
 
+    @patch("mysql_vm_helpers.MySQL.is_data_dir_initialised", return_value=True)
     @patch("mysql_vm_helpers.MySQL.reset_data_dir")
     @patch("subprocess.run")
-    def test_initialise_mysqld(self, _subprocess_run, _reset_data_dir):
+    def test_initialise_mysqld(self, _subprocess_run, _reset_data_dir, _is_data_dir_initialised):
         """Test successful execution of initialise_mysqld()."""
         self.mysql.initialise_mysqld()
 
         _reset_data_dir.assert_called_once()
+        _is_data_dir_initialised.assert_called_once()
         _subprocess_run.assert_called_once_with(
             [
                 "/usr/bin/sudo",
@@ -501,9 +503,12 @@ class TestMySQL(unittest.TestCase):
             check=True,
         )
 
+    @patch("mysql_vm_helpers.MySQL.is_data_dir_initialised", return_value=False)
     @patch("mysql_vm_helpers.MySQL.reset_data_dir")
     @patch("subprocess.run")
-    def test_initialise_mysqld_exception(self, _subprocess_run, _reset_data_dir):
+    def test_initialise_mysqld_exception(
+        self, _subprocess_run, _reset_data_dir, _is_data_dir_initialised
+    ):
         """Test failing execution of initialise_mysqld()."""
         from mysql_vm_helpers import MySQLInitialiseMySQLDError
 
@@ -513,3 +518,19 @@ class TestMySQL(unittest.TestCase):
             self.mysql.initialise_mysqld()
 
         _reset_data_dir.assert_called_once()
+        _is_data_dir_initialised.assert_not_called()
+
+    @patch("mysql_vm_helpers.MySQL.is_data_dir_initialised", return_value=False)
+    @patch("mysql_vm_helpers.MySQL.reset_data_dir")
+    @patch("subprocess.run")
+    def test_initialise_mysqld_missing_expected_files(
+        self, _subprocess_run, _reset_data_dir, _is_data_dir_initialised
+    ):
+        """Test failing execution when bootstrap leaves an incomplete data directory."""
+        from mysql_vm_helpers import MySQLInitialiseMySQLDError
+
+        with self.assertRaises(MySQLInitialiseMySQLDError):
+            self.mysql.initialise_mysqld()
+
+        _reset_data_dir.assert_called_once()
+        _is_data_dir_initialised.assert_called_once()

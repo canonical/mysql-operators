@@ -58,9 +58,10 @@ class TestMySQL(unittest.TestCase):
         )
         self.mysql.executor_class = self.mock_executor_cls
 
+    @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=True)
     @patch("ops.pebble.ExecProcess")
     @patch("ops.model.Container")
-    def test_initialise_mysqld(self, _container, _process):
+    def test_initialise_mysqld(self, _container, _process, _is_data_dir_initialised):
         """Test a successful execution of bootstrap_instance."""
         _container.exec.return_value = _process
         self.mysql.container = _container
@@ -87,6 +88,7 @@ class TestMySQL(unittest.TestCase):
         )
 
         _process.wait_output.assert_called_once()
+        _is_data_dir_initialised.assert_called_once()
 
     @patch("ops.model.Container")
     def test_initialise_mysqld_exception(self, _container):
@@ -99,6 +101,22 @@ class TestMySQL(unittest.TestCase):
 
         with self.assertRaises(MySQLInitialiseMySQLDError):
             self.mysql.initialise_mysqld()
+
+    @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)
+    @patch("ops.pebble.ExecProcess")
+    @patch("ops.model.Container")
+    def test_initialise_mysqld_missing_expected_files(
+        self, _container, _process, _is_data_dir_initialised
+    ):
+        """Test a failing execution when bootstrap leaves an incomplete data directory."""
+        _container.exec.return_value = _process
+        self.mysql.container = _container
+
+        with self.assertRaises(MySQLInitialiseMySQLDError):
+            self.mysql.initialise_mysqld()
+
+        _process.wait_output.assert_called_once()
+        _is_data_dir_initialised.assert_called_once()
 
     @patch("ops.model.Container")
     def test_wait_until_mysql_connection(self, _container):
