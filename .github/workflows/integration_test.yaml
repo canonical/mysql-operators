@@ -152,6 +152,52 @@ jobs:
           sudo lxd init --auto
           sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
           juju bootstrap localhost
+      - name: Diagnose CNI directory pre-bootstrap
+        # Checks whether this runner is affected by the lexicographical CNI race condition
+        # described in "Kubernetes CNI Startup Race Condition.md": if any file in
+        # /etc/cni/net.d/ sorts before Cilium's config (05-cilium.conflist), containerd
+        # will declare networking ready before Cilium is up, bypass the
+        # node.kubernetes.io/network-unavailable taint, and schedule pods onto the
+        # fallback bridge (10.88.0.0/16) instead of the Cilium pod CIDR.
+        if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
+        run: |
+          echo "=== CNI config directory contents (sorted — first file wins) ==="
+          ls -1 /etc/cni/net.d/ 2>/dev/null || echo "(directory does not exist)"
+
+          echo "=== Full CNI config file names with stat ==="
+          ls -la /etc/cni/net.d/ 2>/dev/null || true
+
+          echo "=== First file containerd will load (lexicographic winner) ==="
+          first=$(ls /etc/cni/net.d/ 2>/dev/null | sort | head -1)
+          if [ -n "$first" ]; then
+            echo "Winner: $first"
+            # Flag if it is NOT a Cilium config (race condition present)
+            if echo "$first" | grep -qi "cilium"; then
+              echo "STATUS: OK — Cilium config sorts first, no race expected"
+            else
+              echo "STATUS: RACE CONDITION LIKELY — '$first' sorts before cilium config"
+              echo "        Pods scheduled before Cilium is up will get bridge IPs (10.88.x.x)"
+            fi
+            echo "--- file contents ---"
+            cat "/etc/cni/net.d/$first" || true
+          else
+            echo "STATUS: OK — directory empty, Kubelet will taint node until Cilium writes its config"
+          fi
+
+          echo "=== Podman installation and network backend ==="
+          if command -v podman &>/dev/null; then
+            podman --version
+            podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || true
+          else
+            echo "podman: not installed"
+          fi
+
+          echo "=== cni-podman0 bridge interface ==="
+          ip link show cni-podman0 2>/dev/null && echo "PRESENT — bridge exists" || echo "absent"
+
+          echo "=== containerd CNI conf_dir setting ==="
+          grep -r "conf_dir\|cni" /etc/containerd/config.toml 2>/dev/null || echo "(no containerd config found)"
+
       - name: Install and configure Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
