@@ -2059,7 +2059,7 @@ class MySQLBase(ABC):
             auto_dissolve: (optional) Whether to automatically dissolve the cluster
                 if this is the last instance in the cluster.
         """
-        if self.get_cluster_node_count() == 1:
+        if self.get_cluster_node_count(from_instance=from_instance) == 1:
             self.dissolve_cluster(auto_dissolve)
             return
 
