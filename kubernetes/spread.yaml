@@ -122,16 +122,51 @@ prepare: |
   # Install charmcraft & pipx (on lxd-vm backend)
   concierge prepare --trace
 
+  pipx install tox poetry
+prepare-each: |
+  cd "$SPREAD_PATH"
+  concierge prepare --trace
+
   # Configure Cilium for Istio
   # for context, see https://docs.cilium.io/en/stable/network/servicemesh/istio/
   k8s kubectl -n kube-system patch configmap cilium-config --type merge --patch '{"data":{"bpf-lb-sock-hostns-only":"true"}}'
   k8s kubectl -n kube-system patch configmap cilium-config --type merge --patch '{"data":{"cni-exclusive":"false"}}'
   k8s kubectl -n kube-system rollout restart daemonset cilium
 
-  pipx install tox poetry
-prepare-each: |
-  cd "$SPREAD_PATH"
-  concierge prepare --trace
+  echo "=== Waiting for Cilium agent to be Ready ==="
+  k8s kubectl -n kube-system rollout status daemonset/cilium --timeout=120s
+  k8s kubectl -n kube-system wait pod \
+    -l app.kubernetes.io/name=cilium-agent \
+    --for=condition=Ready \
+    --timeout=120s
+
+  echo "=== Restarting CoreDNS after Cilium is Ready ==="
+  k8s kubectl -n kube-system rollout restart deployment/coredns
+  k8s kubectl -n kube-system rollout status deployment/coredns --timeout=120s
+  k8s kubectl -n kube-system wait pod \
+    -l k8s-app=coredns \
+    --for=condition=Ready \
+    --timeout=120s
+
+  DNS_SVC_IP=$(k8s kubectl -n kube-system get svc coredns -o jsonpath='{.spec.clusterIP}')
+  echo "=== Probing ClusterIP DNS on ${DNS_SVC_IP} ==="
+  k8s kubectl delete pod dns-gate-post-bootstrap --ignore-not-found=true || true
+  for attempt in $(seq 1 12); do
+    result=$(
+      k8s kubectl run dns-gate-post-bootstrap \
+        --image=busybox:1.36 \
+        --restart=Never \
+        --rm \
+        -i \
+        --timeout=30s \
+        -- sh -c "nslookup kubernetes.default.svc.cluster.local ${DNS_SVC_IP}" \
+        2>&1 || true
+    )
+    echo "${result}"
+    if echo "${result}" | grep -q '^Name:'; then break; fi
+    if [ "${attempt}" -eq 12 ]; then exit 1; fi
+    sleep 10
+  done
 
   # Unable to set constraint on all models because of Juju bug:
   # https://bugs.launchpad.net/juju/+bug/2065050
