@@ -190,6 +190,62 @@ jobs:
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
+      - name: Fix Cilium/CoreDNS CNI race
+        # One CoreDNS pod can start before Cilium becomes the active CNI and gets an IP
+        # from containerd's fallback bridge (10.88.0.0/16). Cilium then programs both IPs
+        # into its BPF service map; ~50% of DNS queries to the ClusterIP hit the
+        # unreachable bridge IP and time out. Fix: once Cilium is Ready, restart CoreDNS
+        # so every pod lands on the Cilium network, then gate on a live ClusterIP DNS probe.
+        if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 15
+        run: |
+          echo "=== Waiting for Cilium agent to be Ready ==="
+          sudo k8s kubectl -n kube-system wait pod \
+            -l app.kubernetes.io/name=cilium-agent \
+            --for=condition=Ready --timeout=120s
+
+          echo "=== CoreDNS endpoints BEFORE restart (any 10.88.x.x means race occurred) ==="
+          sudo k8s kubectl -n kube-system get endpoints coredns -o wide
+
+          echo "=== DNS check BEFORE restart (informational only) ==="
+          DNS_SVC_IP=$(sudo k8s kubectl -n kube-system get svc coredns \
+            -o jsonpath='{.spec.clusterIP}')
+          echo "CoreDNS ClusterIP: ${DNS_SVC_IP}"
+          sudo k8s kubectl run dns-gate --image=busybox:1.36 \
+            --restart=Never --rm -i --timeout=30s \
+            -- sh -c "nslookup kubernetes.default.svc.cluster.local ${DNS_SVC_IP} && nslookup api.charmhub.io ${DNS_SVC_IP}" \
+            2>&1 || true
+
+          echo "=== Restarting CoreDNS to flush pre-Cilium bridge IPs ==="
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=120s
+          sudo k8s kubectl -n kube-system wait pod \
+            -l k8s-app=coredns --for=condition=Ready --timeout=120s
+
+          echo "=== CoreDNS endpoints AFTER restart (all should be 10.1.x.x) ==="
+          sudo k8s kubectl -n kube-system get endpoints coredns -o wide
+
+          echo "=== Active ClusterIP DNS gate ==="
+          DNS_SVC_IP=$(sudo k8s kubectl -n kube-system get svc coredns \
+            -o jsonpath='{.spec.clusterIP}')
+          echo "CoreDNS ClusterIP: ${DNS_SVC_IP}"
+          for attempt in $(seq 1 12); do
+            echo "Attempt ${attempt}/12..."
+            # Always clean up before creating — --rm can leave the pod behind on timeout/error
+            sudo k8s kubectl delete pod dns-gate --ignore-not-found=true --wait=true
+            result=$(sudo k8s kubectl run dns-gate --image=busybox:1.36 \
+              --restart=Never --rm -i --timeout=30s \
+              -- sh -c "nslookup kubernetes.default.svc.cluster.local ${DNS_SVC_IP} && nslookup api.charmhub.io ${DNS_SVC_IP}" \
+              2>&1 || true)
+            echo "${result}"
+            # "^Address: " matches answer IPs, not the "Address: <server>:53" header line
+            if echo "${result}" | grep -q "^Address: "; then
+              echo "DNS gate passed on attempt ${attempt}"
+              break
+            fi
+            [ "${attempt}" -eq 12 ] && { echo "DNS gate FAILED after 12 attempts" >&2; exit 1; }
+            sleep 10
+          done
       - name: Bootstrap Juju on Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
