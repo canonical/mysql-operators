@@ -249,3 +249,15 @@ jobs:
         timeout-minutes: 1
         if: ${{ success() || (failure() && steps.integration-test.outcome == 'failure') }}
         run: df --human-readable
+      - name: k8s inspect
+        if: ${{ always() && inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 5
+        run: sudo k8s inspect
+      - name: Upload k8s inspect report
+        if: ${{ always() && inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v7
+        with:
+          name: k8s-inspect-${{ matrix.job.name_in_artifact }}
+          path: inspection-report-*.tar.gz
+          if-no-files-found: error
