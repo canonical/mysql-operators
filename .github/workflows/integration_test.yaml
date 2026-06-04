@@ -283,19 +283,41 @@ jobs:
 
           # --- DNS smoke test ---
           echo "=== DNS smoke test ==="
+
+          # --- systemd-resolved state ---
+          echo "--- resolvectl status (systemd-resolved upstream config) ---"
+          resolvectl status || true
+
+          # --- CoreDNS pod direct-DNS test ---
+          # Bypass CoreDNS and test whether a pod can reach ${AZURE_DNS}:53
+          # directly.  This isolates whether Cilium blocks pod→external DNS at
+          # all, independently of the CoreDNS forwarding path.
+          echo "--- Direct pod DNS test (dnsPolicy:None, nameserver=${AZURE_DNS}) ---"
+          sudo k8s kubectl run dns-direct-test \
+            --rm --restart=Never -i \
+            --image=busybox:1.28 \
+            --timeout=60s \
+            --overrides="{
+              \"spec\": {
+                \"dnsPolicy\": \"None\",
+                \"dnsConfig\": {\"nameservers\": [\"${AZURE_DNS}\"]}
+              }
+            }" \
+            -- nslookup api.charmhub.io 2>&1 || \
+            echo "WARNING: direct pod DNS test failed"
+
+          # --- Host DNS ---
           echo "--- Host DNS ---"
           nslookup api.charmhub.io || echo "WARNING: host DNS smoke test failed"
 
-          # Start tcpdump on eth0 to capture all DNS UDP traffic during the pod
-          # smoke test.  This lets us determine whether:
-          #   (A) UDP:53 packets from the CoreDNS pod never reach eth0 at all
-          #       (dropped inside Cilium's eBPF/TPROXY layer), or
-          #   (B) packets do leave eth0 but Azure drops them (no reply packets).
-          # The .pcap is uploaded as an artifact for offline analysis with Wireshark.
+          # --- Broad tcpdump: capture ALL interfaces (incl. loopback) ---
+          # Previous run captured only eth0 and saw zero api.charmhub.io packets,
+          # confirming that CoreDNS's upstream query never reaches eth0.
+          # Capturing 'any' will reveal whether traffic is being routed via
+          # loopback (127.0.0.53 → systemd-resolved) instead.
           mkdir -p /tmp/dns-diag
-          sudo tcpdump -i eth0 -n -w /tmp/dns-diag/dns-smoke.pcap 'port 53' &
+          sudo tcpdump -i any -n -w /tmp/dns-diag/dns-smoke.pcap 'port 53' &
           TCPDUMP_PID=$!
-          # Give tcpdump a moment to open the interface before the test runs
           sleep 1
 
           echo "--- Pod DNS (ClusterFirst → CoreDNS → ${AZURE_DNS}) ---"
@@ -313,8 +335,8 @@ jobs:
             > /tmp/dns-diag/dns-smoke.txt 2>&1 || true
           echo "--- tcpdump packet count ---"
           wc -l /tmp/dns-diag/dns-smoke.txt || true
-          echo "--- tcpdump output (first 60 lines) ---"
-          head -60 /tmp/dns-diag/dns-smoke.txt || true
+          echo "--- tcpdump output (first 80 lines) ---"
+          head -80 /tmp/dns-diag/dns-smoke.txt || true
 
           echo "=== End DNS smoke test ==="
 
