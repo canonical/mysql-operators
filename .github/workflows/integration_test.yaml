@@ -285,6 +285,19 @@ jobs:
           echo "=== DNS smoke test ==="
           echo "--- Host DNS ---"
           nslookup api.charmhub.io || echo "WARNING: host DNS smoke test failed"
+
+          # Start tcpdump on eth0 to capture all DNS UDP traffic during the pod
+          # smoke test.  This lets us determine whether:
+          #   (A) UDP:53 packets from the CoreDNS pod never reach eth0 at all
+          #       (dropped inside Cilium's eBPF/TPROXY layer), or
+          #   (B) packets do leave eth0 but Azure drops them (no reply packets).
+          # The .pcap is uploaded as an artifact for offline analysis with Wireshark.
+          mkdir -p /tmp/dns-diag
+          sudo tcpdump -i eth0 -n -w /tmp/dns-diag/dns-smoke.pcap 'port 53' &
+          TCPDUMP_PID=$!
+          # Give tcpdump a moment to open the interface before the test runs
+          sleep 1
+
           echo "--- Pod DNS (ClusterFirst → CoreDNS → ${AZURE_DNS}) ---"
           sudo k8s kubectl run dns-smoke-test \
             --rm --restart=Never -i \
@@ -292,6 +305,17 @@ jobs:
             --timeout=60s \
             -- nslookup api.charmhub.io 2>&1 || \
             echo "WARNING: pod DNS smoke test failed (non-fatal)"
+
+          # Stop tcpdump and write a human-readable text version alongside the pcap
+          sudo kill "${TCPDUMP_PID}" 2>/dev/null || true
+          wait "${TCPDUMP_PID}" 2>/dev/null || true
+          sudo tcpdump -r /tmp/dns-diag/dns-smoke.pcap -v -n \
+            > /tmp/dns-diag/dns-smoke.txt 2>&1 || true
+          echo "--- tcpdump packet count ---"
+          wc -l /tmp/dns-diag/dns-smoke.txt || true
+          echo "--- tcpdump output (first 60 lines) ---"
+          head -60 /tmp/dns-diag/dns-smoke.txt || true
+
           echo "=== End DNS smoke test ==="
 
           mkdir -p ~/.kube
@@ -391,3 +415,11 @@ jobs:
           name: k8s-inspect-${{ matrix.job.name_in_artifact }}
           path: inspection-report-*.tar.gz
           if-no-files-found: error
+      - name: Upload DNS tcpdump
+        if: ${{ always() && inputs.path-to-charm-directory == 'kubernetes' }}
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v7
+        with:
+          name: dns-tcpdump-${{ matrix.job.name_in_artifact }}
+          path: /tmp/dns-diag/
+          if-no-files-found: ignore
