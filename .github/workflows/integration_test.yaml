@@ -171,7 +171,8 @@ jobs:
           sudo rm -rf /run/containerd
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
-          sudo k8s bootstrap
+          # Default timeout is 90s, which might be too short
+          sudo k8s bootstrap --timeout 300s
 
           # k8s status --wait-ready can return before components are actually ready
           # (e.g. network: disabled, ingress: Failed). Poll ourselves instead.
