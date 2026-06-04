@@ -285,12 +285,55 @@ jobs:
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
+
+          # --- Pre-juju-bootstrap DNS state ---
+          # Confirm /etc/resolv.conf is still our plain file and has not been
+          # recreated as a symlink by the k8s snap or systemd-resolved.
+          echo "=== Pre-juju-bootstrap DNS state ==="
+          echo "--- /etc/resolv.conf type and content ---"
+          ls -la /etc/resolv.conf
+          cat /etc/resolv.conf
+          echo "--- /run/systemd/resolve/resolv.conf ---"
+          cat /run/systemd/resolve/resolv.conf || echo "(not present)"
+          echo "--- resolvectl status (shows per-interface DNS) ---"
+          resolvectl status || true
+          echo "--- Test: can CoreDNS pod network reach 8.8.8.8:53? ---"
+          # nc exits 0 if TCP connection succeeds, non-zero (or timeout) if blocked.
+          # UDP can't be tested with nc reliably; use a timed dig from a pod instead.
+          nc -zw3 8.8.8.8 53 && echo "HOST → 8.8.8.8:53 TCP: OPEN" || echo "HOST → 8.8.8.8:53 TCP: BLOCKED/TIMEOUT"
+          # Run a pod with dnsPolicy:None (bypasses CoreDNS) pointing directly at
+          # 8.8.8.8 to test whether pod egress to 8.8.8.8:53 is reachable.
+          sudo k8s kubectl run dns-egress-test \
+            --rm --restart=Never -i \
+            --image=busybox:1.28 \
+            --timeout=30s \
+            --overrides='{"spec":{"dnsPolicy":"None","dnsConfig":{"nameservers":["8.8.8.8"]}}}' \
+            -- nslookup api.charmhub.io 8.8.8.8 2>&1 \
+            && echo "POD → 8.8.8.8:53: REACHABLE" \
+            || echo "POD → 8.8.8.8:53: FAILED (Cilium/network policy blocks pod egress DNS)"
+          echo "=== End pre-juju-bootstrap DNS state ==="
       - name: Bootstrap Juju on Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
         run: |
           set -x
           juju bootstrap k8s ck8s --bootstrap-constraints "root-disk=5G"
+
+          # --- Post-juju-bootstrap DNS state ---
+          # Juju bootstrap creates pods and services; check whether that triggers
+          # the k8s snap to reconfigure systemd-resolved (which would re-point
+          # /etc/resolv.conf or the stub at the CoreDNS ClusterIP).
+          echo "=== Post-juju-bootstrap DNS state ==="
+          echo "--- /etc/resolv.conf type and content ---"
+          ls -la /etc/resolv.conf
+          cat /etc/resolv.conf
+          echo "--- /run/systemd/resolve/resolv.conf ---"
+          cat /run/systemd/resolve/resolv.conf || echo "(not present)"
+          echo "--- resolvectl status ---"
+          resolvectl status || true
+          echo "--- host nslookup api.charmhub.io ---"
+          nslookup api.charmhub.io || echo "FAILED"
+          echo "=== End post-juju-bootstrap DNS state ==="
       - name: Configure Juju model
         timeout-minutes: 5
         run: |
@@ -302,6 +345,10 @@ jobs:
         id: integration-test
         working-directory: ${{ inputs.path-to-charm-directory }}
         run: |
+          echo "=== Pre-test DNS state ==="
+          ls -la /etc/resolv.conf
+          cat /etc/resolv.conf
+          echo "==="
           tox run -e integration -- \
             "tests/integration/integration/${{ matrix.job.test_module }}" \
             --alluredir=allure-results
