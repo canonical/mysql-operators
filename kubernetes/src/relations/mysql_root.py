@@ -225,6 +225,7 @@ class MySQLRootRelation(Object):
             self.charm.unit.status = BlockedStatus(
                 "Failed to retrieve the cluster primary address"
             )
+            return
 
         updates = {
             "database": database,
