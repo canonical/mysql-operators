@@ -203,8 +203,15 @@ jobs:
         timeout-minutes: 20
         run: |
           set -x
-          # Avoid conflicts with existing Docker and containerd installations
-          sudo apt-get remove -y docker-ce docker-ce-cli containerd.io || true
+          # Ubuntu 24.04 runners ship podman with a CNI bridge config
+          # (87-podman-bridge.conflist) that sorts lexicographically before Cilium's
+          # config (05-cilium.conflist). When that file is present, containerd picks the
+          # podman bridge as the active CNI before Cilium is ready, bypassing the
+          # node.kubernetes.io/network-unavailable taint and scheduling pods onto the
+          # 10.88.0.0/16 bridge instead of the Cilium pod CIDR. Removing the file
+          # leaves the CNI directory empty until Cilium writes its own config, so pods
+          # stay Pending rather than landing on the wrong network.
+          sudo rm -f /etc/cni/net.d/87-podman-bridge.conflist
           sudo rm -rf /run/containerd
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
@@ -216,14 +223,23 @@ jobs:
           # Pass the real upstream nameservers at bootstrap time so CoreDNS never uses
           # /etc/resolv.conf and the loop cannot form.
           # /run/systemd/resolve/resolv.conf has the real upstreams (not the stub 127.0.0.53).
+          #
+          # NOTE: when using --file, bool fields with "default true" in the docs (network.enabled,
+          # dns.enabled) are NOT auto-enabled — Go unmarshals omitted *bool fields as nil, which
+          # the feature controller treats as false. All desired features must be listed explicitly.
           upstream_dns=$(awk '/^nameserver/{print $2}' /run/systemd/resolve/resolv.conf 2>/dev/null | grep -v '^127\.' | head -1)
           upstream_dns="${upstream_dns:-8.8.8.8}"
           echo "Upstream DNS for CoreDNS: ${upstream_dns}"
           cat > /tmp/k8s-bootstrap.yaml <<EOF
 cluster-config:
+  network:
+    enabled: true
   dns:
+    enabled: true
     upstream-nameservers:
       - ${upstream_dns}
+  local-storage:
+    enabled: true
 EOF
           sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml
 
@@ -267,49 +283,17 @@ EOF
           # Commented out while we figure out some Cilium issues
           # sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.20.30.40/32
           # sudo k8s enable load-balancer
-          # Not needed, local-storage is already enabled
-          # sudo k8s enable local-storage
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
-      - name: Fix Cilium CNI race
-        # Pods that start before Cilium becomes the active CNI get IPs from containerd's
-        # fallback bridge (10.88.0.0/16, cni-podman0) instead of the Cilium pod CIDR.
-        # Cilium's BPF socket-level LB only covers pods on the Cilium network, so any
-        # pod still on the bridge cannot reach ClusterIPs — including ephemeral probe pods
-        # created in later steps. Fix: once Cilium is Ready, unconditionally restart every
-        # kube-system workload so all pods land on the Cilium network, then gate on a live
-        # ClusterIP DNS probe before proceeding.
+      - name: DNS gate
+        # Verify that CoreDNS can resolve both cluster-internal and external names via
+        # its ClusterIP before handing off to Juju bootstrap. Runs a one-shot busybox
+        # pod that queries the CoreDNS ClusterIP directly, so it exercises the full
+        # path: pod → Cilium BPF LB → CoreDNS pod → upstream nameserver.
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
-        timeout-minutes: 15
+        timeout-minutes: 5
         run: |
-          echo "=== Waiting for Cilium agent to be Ready ==="
-          sudo k8s kubectl -n kube-system wait pod \
-            -l app.kubernetes.io/name=cilium-agent \
-            --for=condition=Ready --timeout=120s
-
-          echo "=== Pod IPs BEFORE restart (any 10.88.x.x = on bridge, not Cilium) ==="
-          sudo k8s kubectl -n kube-system get pods -o wide
-
-          echo "=== Restarting all kube-system workloads to flush pre-Cilium bridge IPs ==="
-          sudo k8s kubectl -n kube-system rollout restart \
-            deployment/cilium-operator \
-            deployment/coredns \
-            deployment/metrics-server \
-            daemonset/ck-storage-rawfile-csi-node \
-            statefulset/ck-storage-rawfile-csi-controller
-
-          echo "=== Waiting for all kube-system workloads to roll out ==="
-          sudo k8s kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
-          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=5m
-          sudo k8s kubectl -n kube-system rollout status deployment/metrics-server --timeout=5m
-          sudo k8s kubectl -n kube-system rollout status daemonset/ck-storage-rawfile-csi-node --timeout=5m
-          sudo k8s kubectl -n kube-system rollout status statefulset/ck-storage-rawfile-csi-controller --timeout=5m
-
-          echo "=== Pod IPs AFTER restart (all should be 10.1.x.x) ==="
-          sudo k8s kubectl -n kube-system get pods -o wide
-
-          echo "=== Active ClusterIP DNS gate ==="
           DNS_SVC_IP=$(sudo k8s kubectl -n kube-system get svc coredns \
             -o jsonpath='{.spec.clusterIP}')
           echo "CoreDNS ClusterIP: ${DNS_SVC_IP}"
