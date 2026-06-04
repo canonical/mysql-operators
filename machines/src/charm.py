@@ -114,8 +114,8 @@ from refresh import MachinesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
 from relations.tls import TLS
 from services.events import CharmServicesEvents
-from services.managers import IPAddressManager
-from services.observers import IPAddressObserver, RotateMySQLLogsObserver
+from services.managers import IPAddressManager, SelfHealingManager
+from services.observers import IPAddressObserver, RotateMySQLLogsObserver, SelfHealingMySQLObserver
 from utils import compare_dictionaries, generate_random_password
 
 logger = logging.getLogger(__name__)
@@ -213,7 +213,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.hostname_observer = IPAddressObserver(self)
         self.hostname_manager = IPAddressManager(self)
-        self.hostname_manager.start_observer()
+        self.hostname_manager.start_manager()
+
+        self.self_healing_observer = SelfHealingMySQLObserver(self)
+        self.self_healing_manager = SelfHealingManager(self)
+        self.self_healing_manager.start_manager()
 
         self.log_rotation_setup = LogRotationSetup(self)
         self.log_rotate_observer = RotateMySQLLogsObserver(self)
