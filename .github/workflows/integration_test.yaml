@@ -273,22 +273,30 @@ jobs:
           # (Strategy 1 equivalent) so the setting survives any future k8sd-triggered
           # Corefile regeneration.
 
-          # Attempt native k8s snap DNS upstream configuration first.
-          # k8s-snap PR #2543 (merged into release-1.32, Apr 30 2026) added a
-          # ServiceArgsController that restarts kubelet whenever the args file changes
-          # (e.g. when k8sd writes --cluster-dns after CoreDNS ClusterIP is assigned).
-          # That restart can trigger k8sd to reconcile and regenerate the Corefile from
-          # its own configuration store, which would overwrite any direct ConfigMap patch.
-          # Using 'k8s set dns.upstream-nameservers' writes into k8sd's store, so the
-          # setting survives any future reconciliation / Corefile regeneration.
-          echo "--- Attempting native k8s set dns.upstream-nameservers ---"
-          sudo k8s set dns.upstream-nameservers='["8.8.8.8"]' 2>&1 || \
-            echo "(sudo k8s set dns.upstream-nameservers not supported on this revision — falling through to manual Corefile patch)"
+          # Set the upstream nameservers via k8sd's documented API.
+          #
+          # dns.upstream-nameservers is a first-class, registered key in k8sd
+          # (k8sd/cmd/k8s/k8s_set.go, k8sd/pkg/k8sd/types/cluster_config_features.go).
+          # The default value is ["/etc/resolv.conf"], which is exactly the Corefile
+          # "forward . /etc/resolv.conf" behavior encoded at the k8sd config level —
+          # the root cause in k8sd terms.  Setting it to 8.8.8.8 makes k8sd regenerate
+          # the Corefile with "forward . 8.8.8.8" and restart CoreDNS; the setting
+          # persists through any future k8sd reconciliation (e.g. ServiceArgsController
+          # restarts triggered by PR #2543 landing in release-1.32).
+          #
+          # The field type is *[]string; the k8s CLI accepts comma-separated values
+          # (StringToFieldsSliceHookFunc), so plain "8.8.8.8" is valid syntax.
+          echo "--- DNS config before k8s set ---"
+          sudo k8s get dns 2>&1 || true
+          echo "--- Setting dns.upstream-nameservers=8.8.8.8 ---"
+          sudo k8s set dns.upstream-nameservers=8.8.8.8
+          echo "--- DNS config after k8s set ---"
+          sudo k8s get dns 2>&1 || true
 
-          # Manual Corefile patch (Strategy 3): replace the 'forward' directive.
-          # Acts as a fallback and also takes effect immediately (before any k8sd
-          # reconciliation loop fires) on snap revisions that don't support the
-          # native dns.upstream-nameservers key.
+          # Manual Corefile patch as belt-and-suspenders.
+          # k8sd will have triggered its own CoreDNS reconciliation above, but we also
+          # patch the ConfigMap directly so the change takes effect immediately even if
+          # the k8sd reconciliation loop hasn't fired yet.
           COREFILE=$(sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
             -o jsonpath='{.data.Corefile}')
           echo "Corefile before patch:"
