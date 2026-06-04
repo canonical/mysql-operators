@@ -194,8 +194,19 @@ jobs:
           echo "=== End pre-bootstrap DNS state ==="
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
+
+          # The k8s snap defaults pod-cidr to 10.1.0.0/16.  GitHub-hosted Azure
+          # runners sit in 10.1.0.0/20, so the pod CIDR strictly contains the
+          # host subnet.  Cilium sees the node IP (10.1.0.x), default gateway
+          # (10.1.0.1), and Azure DNS (168.63.129.16) as "inside the pod fabric"
+          # and misroutes (drops) pod-egress packets through the VXLAN path
+          # instead of out eth0.  Use a non-overlapping pod CIDR.
+          cat > /tmp/k8s-bootstrap.yaml <<'EOF'
+pod-cidr: 10.244.0.0/16
+service-cidr: 10.152.183.0/24
+EOF
           # Default timeout is 90s, which is too short on arm64
-          sudo k8s bootstrap --timeout 300s
+          sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml --timeout 300s
 
           # k8s status --wait-ready can return before components are actually ready
           # (e.g. network: disabled, ingress: Failed). Poll ourselves instead.
