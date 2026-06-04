@@ -8,6 +8,7 @@ from ops.framework import EventSource
 
 from services.observers.ip_address_observer import IPAddressChangeEvent
 from services.observers.log_rotate_observer import RotateMySQLLogsEvent
+from services.observers.self_healing_observer import SelfHealingMySQLEvent
 
 
 class CharmServicesEvents(CharmEvents):
@@ -15,3 +16,4 @@ class CharmServicesEvents(CharmEvents):
 
     ip_address_change = EventSource(IPAddressChangeEvent)
     rotate_mysql_logs = EventSource(RotateMySQLLogsEvent)
+    heal_mysql_cluster = EventSource(SelfHealingMySQLEvent)
