@@ -24,14 +24,14 @@ APPLICATION_ENDPOINT = "database"
 APPS = [DATABASE_APP_NAME, APPLICATION_APP_NAME]
 
 
-def test_build_and_deploy(juju: Juju, charm):
+def test_build_and_deploy(juju: Juju, charm, charm_channel):
     """Build the charm and deploy 3 units to ensure a cluster is formed."""
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
+        channel=charm_channel,
         config={"cluster-name": "test_cluster", "profile": "testing"},
         num_units=3,
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         base="ubuntu@24.04",
         trust=True,
     )

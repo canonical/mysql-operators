@@ -24,13 +24,13 @@ DATABASE_APP_NAME = CHARM_METADATA["name"]
 INTEGRATOR_APP_NAME = "data-integrator"
 
 
-def test_build_and_deploy(juju: Juju, charm) -> None:
+def test_build_and_deploy(juju: Juju, charm, charm_channel) -> None:
     """Simple test to ensure that the mysql and data-integrator charms get deployed."""
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
+        channel=charm_channel,
         num_units=3,
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         base="ubuntu@24.04",
         config={"profile": "testing"},
         trust=True,

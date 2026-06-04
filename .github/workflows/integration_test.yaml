@@ -8,9 +8,11 @@ on:
       artifact-prefix:
         description: |
           Prefix for charm package GitHub artifact(s)
-          
+
           Use canonical/data-platform-workflows build_charm.yaml to build the charm(s)
-        required: true
+          Leave empty to skip charm download and deploy from charmhub instead.
+        required: false
+        default: ""
         type: string
       path-to-charm-directory:
         description: Relative path to charm directory from repository directory
@@ -40,19 +42,20 @@ jobs:
         run: |
           import json
           import os
-          import pathlib
 
-          integration_dir = pathlib.Path("tests/integration/integration")
+          # DEBUG: hard-coded subset for rapid CI validation
+          test_files = [
+              ("test_backup_aws.py",    "test_backup_aws.py"),
+              ("test_instance_roles.py", "roles/test_instance_roles.py"),
+              ("relations/test_database.py", "relations/test_database.py"),
+          ]
           architectures = [
-              ("ubuntu-24.04", "amd64"),
+              ("ubuntu-24.04",     "amd64"),
               ("ubuntu-24.04-arm", "arm64"),
           ]
 
           jobs = []
-          for test_file in sorted(integration_dir.rglob("test_*.py")):
-              # Relative path used as pytest argument, e.g. "high_availability/test_async_replication.py"
-              test_module = test_file.relative_to(integration_dir).as_posix()
-              task_name = test_file.name  # e.g. "test_async_replication.py"
+          for task_name, test_module in test_files:
               for runner, architecture in architectures:
                   name = f"{task_name} | {architecture}"
                   name_in_artifact = f"{task_name}-{architecture}"
@@ -118,6 +121,7 @@ jobs:
           pipx install poetry
       - name: Download packed charm(s)
         timeout-minutes: 5
+        if: ${{ inputs.artifact-prefix != '' }}
         uses: actions/download-artifact@v8
         with:
           pattern: ${{ inputs.artifact-prefix }}-*

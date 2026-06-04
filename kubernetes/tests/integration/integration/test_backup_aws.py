@@ -80,15 +80,15 @@ def clean_backups_from_buckets(cloud_configs_aws):
         bucket_object.delete()
 
 
-def test_build_and_deploy(juju: Juju, charm) -> None:
+def test_build_and_deploy(juju: Juju, charm, charm_channel) -> None:
     """Simple test to ensure that the mysql charm gets deployed."""
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
+        channel=charm_channel,
         base="ubuntu@24.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         trust=True,
     )
 
@@ -266,7 +266,7 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     ), "cluster should migrate to blocked status after restore"
 
 
-def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
+def test_restore_on_new_cluster(juju: Juju, charm, charm_channel, cloud_configs_aws) -> None:
     """Test to restore a backup on a new mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_aws
 
@@ -276,10 +276,10 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
     juju.deploy(
         charm,
         new_mysql_application_name,
+        channel=charm_channel,
         base="ubuntu@24.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=1,
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         trust=True,
     )
 

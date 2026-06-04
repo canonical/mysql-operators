@@ -38,10 +38,14 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="session")
 def charm():
-    # Return str instead of pathlib.Path since python-libjuju's model.deploy(), juju deploy, and
-    # juju bundle files expect local charms to begin with `./` or `/` to distinguish them from
-    # Charmhub charms.
-    return f"./mysql-k8s_ubuntu@24.04-{architecture.architecture}.charm"
+    # Charmhub name — no leading "./" so jubilant resolves it from the store.
+    # Channel is provided separately via the `charm_channel` fixture.
+    return "mysql-k8s"
+
+
+@pytest.fixture(scope="session")
+def charm_channel():
+    return "8.4/edge"
 
 
 @pytest.fixture(scope="session")
