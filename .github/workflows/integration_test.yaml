@@ -163,6 +163,8 @@ jobs:
         timeout-minutes: 20
         run: |
           set -x
+          # Avoid conflicts with existing Docker and containerd installations
+          sudo apt-get remove -y docker-ce docker-ce-cli containerd.io || true
           # Ubuntu 24.04 runners ship podman with a CNI bridge config
           # (87-podman-bridge.conflist) that sorts lexicographically before Cilium's
           # config (05-cilium.conflist). When that file is present, containerd picks the
