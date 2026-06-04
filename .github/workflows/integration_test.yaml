@@ -321,12 +321,29 @@ jobs:
           # SNATs the packet, and it exits eth0 normally.  On a single-node
           # cluster native routing is always correct.
           echo "=== Switching Cilium to native routing mode ==="
+          # ipv4-native-routing-cidr is REQUIRED whenever routing-mode=native
+          # together with enable-ipv4-masquerade=true and ipam=cluster-pool.
+          # Without it, the agent fails with:
+          #   level=fatal msg="invalid daemon configuration: native routing
+          #   cidr must be configured with option --ipv4-native-routing-cidr
+          #   ..."
+          # Set it to the pod CIDR: traffic to other pods is routed natively
+          # (no SNAT), everything else (including 168.63.129.16) still hits
+          # the CILIUM_POST_nat MASQUERADE rule because of its `! -d 10.244.0.0/24`
+          # guard.  auto-direct-node-routes=true is a no-op on a single-node
+          # cluster but also satisfies the validation.
           sudo k8s kubectl -n kube-system patch cm cilium-config --type merge \
-            -p '{"data":{"routing-mode":"native","auto-direct-node-routes":"false"}}'
+            -p '{"data":{"routing-mode":"native","auto-direct-node-routes":"true","ipv4-native-routing-cidr":"10.244.0.0/16"}}'
           sudo k8s kubectl -n kube-system rollout restart ds/cilium
-          sudo k8s kubectl -n kube-system rollout status ds/cilium --timeout=5m
+          if ! sudo k8s kubectl -n kube-system rollout status ds/cilium --timeout=3m; then
+            echo "::error::Cilium DaemonSet failed to roll out after switching to native routing mode"
+            sudo k8s kubectl -n kube-system get pods -l k8s-app=cilium -o wide || true
+            sudo k8s kubectl -n kube-system describe pod -l k8s-app=cilium | tail -200 || true
+            sudo k8s kubectl -n kube-system logs -l k8s-app=cilium --all-containers --tail=200 --prefix || true
+            exit 1
+          fi
           sudo k8s kubectl -n kube-system rollout restart deployment/coredns
-          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=5m
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=3m
           echo "--- Verify Cilium routing-mode (should be 'native') ---"
           sudo k8s kubectl -n kube-system get cm cilium-config \
             -o 'jsonpath={.data.routing-mode}'
