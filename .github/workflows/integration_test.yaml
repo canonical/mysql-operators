@@ -201,10 +201,8 @@ jobs:
           # (10.1.0.1), and Azure DNS (168.63.129.16) as "inside the pod fabric"
           # and misroutes (drops) pod-egress packets through the VXLAN path
           # instead of out eth0.  Use a non-overlapping pod CIDR.
-          cat > /tmp/k8s-bootstrap.yaml <<'EOF'
-pod-cidr: 10.244.0.0/16
-service-cidr: 10.152.183.0/24
-EOF
+          printf 'pod-cidr: 10.244.0.0/16\nservice-cidr: 10.152.183.0/24\n' \
+            > /tmp/k8s-bootstrap.yaml
           # Default timeout is 90s, which is too short on arm64
           sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml --timeout 300s
 
