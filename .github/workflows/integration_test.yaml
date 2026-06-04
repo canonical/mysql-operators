@@ -176,28 +176,45 @@ jobs:
           sudo rm -f /etc/cni/net.d/87-podman-bridge.conflist
           sudo rm -rf /run/containerd
 
-          # --- Pre-bootstrap DNS state (diagnostic runbook Step 1) ---
-          # Capture the real upstream BEFORE k8sd reconfigures systemd-resolved to
-          # route through the CoreDNS ClusterIP.  On Azure the real upstream is
-          # 168.63.129.16 (wire-level DNS), which is reachable from the host NIC but
-          # NOT from inside Cilium-managed pod network namespaces.  We log it here
-          # solely for diagnostics; we intentionally do not use it in the Corefile
-          # (see patch below for why 8.8.8.8 is the right choice).
+          # --- Pre-bootstrap DNS state (diagnostic) ---
           echo "=== Pre-bootstrap DNS state ==="
           ls -la /etc/resolv.conf
-          echo "--- /etc/resolv.conf ---"
           cat /etc/resolv.conf
-          echo "--- /run/systemd/resolve/resolv.conf (real upstream, no stub) ---"
           cat /run/systemd/resolve/resolv.conf || echo "(file not present)"
-          echo "--- /run/systemd/resolve/stub-resolv.conf ---"
-          cat /run/systemd/resolve/stub-resolv.conf || echo "(file not present)"
-          echo "--- systemd-resolved status ---"
           systemctl is-active systemd-resolved || true
           echo "=== End pre-bootstrap DNS state ==="
 
+          # Bootstrap config: set dns.upstream-nameservers=8.8.8.8 so that k8sd
+          # generates the initial Corefile with "forward . 8.8.8.8" from the start.
+          #
+          # The default value of dns.upstream-nameservers is ["/etc/resolv.conf"].
+          # After bootstrap the k8s snap reconfigures systemd-resolved to forward
+          # through the CoreDNS ClusterIP; kubelet then injects that ClusterIP into
+          # every pod's /etc/resolv.conf via dnsPolicy:Default — including the CoreDNS
+          # pods themselves.  The Corefile's "forward . /etc/resolv.conf" reloads via
+          # the reload plugin and starts forwarding to itself → SERVFAIL.
+          # Passing 8.8.8.8 here eliminates that window entirely: CoreDNS is correct
+          # from its very first start, with no post-bootstrap patch needed.
+          #
+          # All default-enabled services must be listed explicitly because omitted
+          # *bool fields become nil, which k8sd treats as false (disabled).
+          cat << 'EOF' | sed 's/^          //' > /tmp/k8s-bootstrap.yaml
+          dns:
+            enabled: true
+            upstream-nameservers:
+              - 8.8.8.8
+          network:
+            enabled: true
+          metrics-server:
+            enabled: true
+          local-storage:
+            enabled: true
+            default: true
+          EOF
+
           sudo snap install k8s --channel 1.32-classic/stable --classic
-          # Default timeout is 90s, which might be too short
-          sudo k8s bootstrap --timeout 300s
+          # Default timeout is 90s, which is too short on arm64
+          sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml --timeout 300s
 
           # k8s status --wait-ready can return before components are actually ready
           # (e.g. network: disabled, ingress: Failed). Poll ourselves instead.
@@ -236,94 +253,27 @@ jobs:
             sleep 20
           done
 
-          # --- Post-bootstrap DNS state (before any patch) ---
-          # The k8s snap reconfigures systemd-resolved after bootstrap.  By this point
-          # /run/systemd/resolve/resolv.conf typically contains the CoreDNS ClusterIP.
-          # Kubelet reads this file (log: "Using /run/systemd/resolve/resolv.conf for
-          # the DNS resolver config") and injects it into every pod's /etc/resolv.conf
-          # via dnsPolicy:Default — including CoreDNS pods.
+          # --- Post-bootstrap DNS verification ---
           echo "=== Post-bootstrap DNS state ==="
+          echo "--- k8sd DNS config (upstream-nameservers should be 8.8.8.8) ---"
+          sudo k8s get dns
           echo "--- /run/systemd/resolve/resolv.conf (what kubelet injects into pods) ---"
           cat /run/systemd/resolve/resolv.conf || echo "(file not present)"
-          echo "--- CoreDNS pod status (check for CrashLoopBackOff) ---"
-          sudo k8s kubectl -n kube-system get pods -l app.kubernetes.io/name=coredns || true
-          echo "--- CoreDNS pod logs (check for 'plugin/loop: Loop detected') ---"
-          sudo k8s kubectl -n kube-system logs -l app.kubernetes.io/name=coredns \
-            --tail=50 2>&1 || true
-          echo "--- Corefile in use ---"
+          echo "--- Corefile in use (forward line should reference 8.8.8.8) ---"
           sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
-            -o jsonpath='{.data.Corefile}' || true
+            -o jsonpath='{.data.Corefile}'
           echo ""
           echo "=== End post-bootstrap DNS state ==="
 
-          # Patch the CoreDNS Corefile to use a publicly routable upstream DNS.
-          # The k8s snap rewrites systemd-resolved to forward through the CoreDNS
-          # ClusterIP; kubelet then propagates that IP into every pod's /etc/resolv.conf
-          # via dnsPolicy:Default — including the CoreDNS pods themselves.  The Corefile's
-          # "forward . /etc/resolv.conf" reloads (via the reload plugin) and starts
-          # forwarding to itself → SERVFAIL for all external names.
-          # Using UPSTREAM_DNS (168.63.129.16 on Azure) does NOT fix this: that IP is
-          # Azure's internal wire-level DNS, reachable only from the VM's primary NIC —
-          # not from inside Cilium-managed pod network namespaces.  8.8.8.8 is publicly
-          # routable and reachable from pods.  Once CoreDNS can forward externally, the
-          # host chain (systemd-resolved → CoreDNS → 8.8.8.8) also resolves correctly.
-          #
-          # Strategy 3 (in-cluster Corefile customisation) from the DNS resolution
-          # loopback research.  We also attempt the k8s snap's native DNS upstream API
-          # (Strategy 1 equivalent) so the setting survives any future k8sd-triggered
-          # Corefile regeneration.
-
-          # Set the upstream nameservers via k8sd's documented API.
-          #
-          # dns.upstream-nameservers is a first-class, registered key in k8sd
-          # (k8sd/cmd/k8s/k8s_set.go, k8sd/pkg/k8sd/types/cluster_config_features.go).
-          # The default value is ["/etc/resolv.conf"], which is exactly the Corefile
-          # "forward . /etc/resolv.conf" behavior encoded at the k8sd config level —
-          # the root cause in k8sd terms.  Setting it to 8.8.8.8 makes k8sd regenerate
-          # the Corefile with "forward . 8.8.8.8" and restart CoreDNS; the setting
-          # persists through any future k8sd reconciliation (e.g. ServiceArgsController
-          # restarts triggered by PR #2543 landing in release-1.32).
-          #
-          # The field type is *[]string; the k8s CLI accepts comma-separated values
-          # (StringToFieldsSliceHookFunc), so plain "8.8.8.8" is valid syntax.
-          echo "--- DNS config before k8s set ---"
-          sudo k8s get dns 2>&1 || true
-          echo "--- Setting dns.upstream-nameservers=8.8.8.8 ---"
-          sudo k8s set dns.upstream-nameservers=8.8.8.8
-          echo "--- DNS config after k8s set ---"
-          sudo k8s get dns 2>&1 || true
-
-          # Manual Corefile patch as belt-and-suspenders.
-          # k8sd will have triggered its own CoreDNS reconciliation above, but we also
-          # patch the ConfigMap directly so the change takes effect immediately even if
-          # the k8sd reconciliation loop hasn't fired yet.
-          COREFILE=$(sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
-            -o jsonpath='{.data.Corefile}')
-          echo "Corefile before patch:"
-          echo "${COREFILE}"
-          PATCHED=$(echo "${COREFILE}" | sed "s|forward \. .*|forward . 8.8.8.8|")
-          echo "Corefile after patch:"
-          echo "${PATCHED}"
-          sudo k8s kubectl -n kube-system patch configmap ck-dns-coredns \
-            --type=merge \
-            -p "{\"data\":{\"Corefile\":$(echo "${PATCHED}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}}"
-          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
-          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=2m
-
-          # Fix host-level DNS for dnsPolicy:Default pods.
-          # Strategy 3 (Corefile patch) fixes pods that query CoreDNS (dnsPolicy:
-          # ClusterFirst / ClusterFirstWithHostNet).  Pods with dnsPolicy:Default
-          # inherit the host's resolver directly from kubelet, which reads
-          # /run/systemd/resolve/resolv.conf.  After bootstrap that file contains the
-          # CoreDNS ClusterIP, so those pods forward to CoreDNS — which now works —
-          # but only after the Corefile patch above lands.  Write a clean resolv.conf
-          # pointing directly to 8.8.8.8 so both pre-patch and post-patch dnsPolicy:
-          # Default pods (including any Juju controller bootstrap pods) resolve correctly.
-          # Rationale: in CI we have no private split-horizon zones, so public DNS is safe.
-          echo "--- Updating /run/systemd/resolve/resolv.conf for dnsPolicy:Default pods ---"
+          # Fix host-level resolver for dnsPolicy:Default pods.
+          # After bootstrap the k8s snap rewrites systemd-resolved to forward through
+          # the CoreDNS ClusterIP.  Kubelet reads /run/systemd/resolve/resolv.conf and
+          # injects it into dnsPolicy:Default pod resolv.conf files.  CoreDNS itself
+          # now forwards to 8.8.8.8 (set at bootstrap), so those pods would eventually
+          # resolve correctly — but only after the ClusterIP round-trip.  Writing 8.8.8.8
+          # directly makes dnsPolicy:Default pods (e.g. Juju controller bootstrap pods)
+          # resolve without the detour.
           echo "nameserver 8.8.8.8" | sudo tee /run/systemd/resolve/resolv.conf
-          # Keep /etc/resolv.conf consistent for host processes (it may be a symlink to
-          # the stub; overwrite the symlink target so host nslookup also uses 8.8.8.8).
           sudo rm -f /etc/resolv.conf
           echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
 
