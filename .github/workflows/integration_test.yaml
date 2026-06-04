@@ -243,12 +243,18 @@ jobs:
           # CoreDNS → itself → SERVFAIL.
           #
           # We fix this by pointing CoreDNS at the Azure wire-level DNS server
-          # (168.63.129.16, captured above as AZURE_DNS).  This server is:
-          #   • Reachable from the node NIC (it's the VM's own DNS)
-          #   • Reachable from pod namespaces via Cilium's SNAT (pods exit as
-          #     the node IP, and Azure DNS accepts queries from the node IP)
-          #   • NOT subject to the UDP:53-to-external-IPs block that prevents
-          #     pods from reaching 8.8.8.8 (Azure DNS is fabric-internal)
+          # (168.63.129.16, captured above as AZURE_DNS).
+          #
+          # DNS path after fix:
+          #   pod → Cilium TPROXY → Cilium DNS proxy → 127.0.0.53
+          #   → systemd-resolved stub → eth0 → 168.63.129.16
+          #
+          # Cilium intercepts ALL pod UDP:53 (including CoreDNS upstream queries)
+          # via iptables TPROXY, then forwards to its configured upstream.  At
+          # Cilium start-up that upstream is 127.0.0.53 (read from
+          # stub-resolv.conf via /etc/resolv.conf).  systemd-resolved's stub at
+          # 127.0.0.53 then forwards to AZURE_DNS via eth0.  This chain works as
+          # long as the /etc/resolv.conf symlink is NOT broken (see below).
           #
           # "k8s set dns.upstream-nameservers" writes to k8sd's dqlite config
           # store; k8sd reconciles the CoreDNS Helm chart to "forward . <IP>"
@@ -273,48 +279,40 @@ jobs:
           echo ""
           echo "=== End post-DNS-fix state ==="
 
-          # Fix host-level resolver.
-          # Replace the /etc/resolv.conf symlink (→ stub → 127.0.0.53) with a
-          # plain file pointing directly at AZURE_DNS.  This keeps the host juju
-          # CLI and any dnsPolicy:Default pods independent of CoreDNS.
-          echo "nameserver ${AZURE_DNS}" | sudo tee /run/systemd/resolve/resolv.conf
-          sudo rm -f /etc/resolv.conf
-          echo "nameserver ${AZURE_DNS}" | sudo tee /etc/resolv.conf
+          # Ensure the host-level resolver still points at AZURE_DNS.
+          #
+          # DO NOT replace /etc/resolv.conf or remove the symlink.  The k8s snap
+          # and Cilium both start before this step.  Cilium reads its DNS-proxy
+          # upstream from /etc/resolv.conf at startup: at that point the symlink
+          # resolves to stub-resolv.conf → nameserver 127.0.0.53.  Cilium
+          # therefore forwards all intercepted pod DNS (including CoreDNS's own
+          # upstream queries via TPROXY) to 127.0.0.53.
+          #
+          # If we delete the symlink and write a plain static file, systemd-
+          # resolved immediately enters "resolv.conf mode: foreign" and DISABLES
+          # its stub listener on 127.0.0.53.  Cilium's proxy then tries to
+          # forward to a dead socket → SERVFAIL for all pod DNS.
+          #
+          # Instead, keep the symlink intact so systemd-resolved stays in stub
+          # mode.  Just make sure eth0 has AZURE_DNS as its upstream (it already
+          # does from DHCP, but be explicit in case k8sd changed it):
+          sudo resolvectl dns eth0 "${AZURE_DNS}"
 
           # --- DNS smoke test ---
           echo "=== DNS smoke test ==="
 
           # --- systemd-resolved state ---
-          echo "--- resolvectl status (systemd-resolved upstream config) ---"
+          echo "--- resolvectl status ---"
           resolvectl status || true
-
-          # --- CoreDNS pod direct-DNS test ---
-          # Bypass CoreDNS and test whether a pod can reach ${AZURE_DNS}:53
-          # directly.  This isolates whether Cilium blocks pod→external DNS at
-          # all, independently of the CoreDNS forwarding path.
-          echo "--- Direct pod DNS test (dnsPolicy:None, nameserver=${AZURE_DNS}) ---"
-          sudo k8s kubectl run dns-direct-test \
-            --rm --restart=Never -i \
-            --image=busybox:1.28 \
-            --timeout=60s \
-            --overrides="{
-              \"spec\": {
-                \"dnsPolicy\": \"None\",
-                \"dnsConfig\": {\"nameservers\": [\"${AZURE_DNS}\"]}
-              }
-            }" \
-            -- nslookup api.charmhub.io 2>&1 || \
-            echo "WARNING: direct pod DNS test failed"
 
           # --- Host DNS ---
           echo "--- Host DNS ---"
           nslookup api.charmhub.io || echo "WARNING: host DNS smoke test failed"
 
-          # --- Broad tcpdump: capture ALL interfaces (incl. loopback) ---
-          # Previous run captured only eth0 and saw zero api.charmhub.io packets,
-          # confirming that CoreDNS's upstream query never reaches eth0.
-          # Capturing 'any' will reveal whether traffic is being routed via
-          # loopback (127.0.0.53 → systemd-resolved) instead.
+          # --- Pod DNS (ClusterFirst → CoreDNS → AZURE_DNS → eth0) ---
+          # Capture all interfaces so we can see: lxc veth (pod egress),
+          # lo (Cilium TPROXY redirect to 127.0.0.53), eth0 (systemd-resolved
+          # forwarding to AZURE_DNS).
           mkdir -p /tmp/dns-diag
           sudo tcpdump -i any -n -w /tmp/dns-diag/dns-smoke.pcap 'port 53' &
           TCPDUMP_PID=$!
@@ -328,15 +326,15 @@ jobs:
             -- nslookup api.charmhub.io 2>&1 || \
             echo "WARNING: pod DNS smoke test failed (non-fatal)"
 
-          # Stop tcpdump and write a human-readable text version alongside the pcap
+          # Stop tcpdump and write a human-readable text version
           sudo kill "${TCPDUMP_PID}" 2>/dev/null || true
           wait "${TCPDUMP_PID}" 2>/dev/null || true
           sudo tcpdump -r /tmp/dns-diag/dns-smoke.pcap -v -n \
             > /tmp/dns-diag/dns-smoke.txt 2>&1 || true
           echo "--- tcpdump packet count ---"
           wc -l /tmp/dns-diag/dns-smoke.txt || true
-          echo "--- tcpdump output (first 80 lines) ---"
-          head -80 /tmp/dns-diag/dns-smoke.txt || true
+          echo "--- tcpdump output (first 100 lines) ---"
+          head -100 /tmp/dns-diag/dns-smoke.txt || true
 
           echo "=== End DNS smoke test ==="
 
