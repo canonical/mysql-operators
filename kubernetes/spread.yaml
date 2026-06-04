@@ -129,6 +129,16 @@ prepare: |
   # Install charmcraft & pipx (on lxd-vm backend)
   concierge prepare --trace
 
+  # k8s status --wait-ready returns as soon as 1 node is ready
+  # (see https://github.com/canonical/k8s-snap/issues/1789)
+  # but Cilium, CoreDNS, and storage may still be initialising
+  k8s kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
+  k8s kubectl -n kube-system rollout status deployment/coredns --timeout=5m
+  k8s kubectl -n kube-system rollout status deployment/metrics-server --timeout=5m
+  k8s kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
+  k8s kubectl -n kube-system rollout status daemonset/ck-storage-rawfile-csi-node --timeout=5m
+  k8s kubectl -n kube-system rollout status statefulset/ck-storage-rawfile-csi-controller --timeout=5m
+
   pipx install tox poetry
 prepare-each: |
   cd "$SPREAD_PATH"
