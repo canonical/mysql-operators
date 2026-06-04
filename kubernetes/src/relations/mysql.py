@@ -268,6 +268,7 @@ class MySQLRelation(Object):
         if not primary_address:
             logger.error("Unable to get cluster primary address")
             self.charm.unit.status = BlockedStatus("Failed to retrieve cluster primary address")
+            return
 
         updates = {
             "database": database,
