@@ -143,13 +143,15 @@ jobs:
           # bootstrap container fails with ENETUNREACH and Juju bootstrap exits with code 100.
           sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
           sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
+          sudo snap install lxd
+          sudo lxd init --auto
+
           # Disable IPv6 on the LXD bridge: containers get a ULA fd42::/prefix address
           # but the runner has no upstream IPv6 routing, so apt-get inside the bootstrap
           # container fails with ENETUNREACH and Juju bootstrap exits with code 100.
           sudo lxc network set lxdbr0 ipv6.address none
 
-          sudo snap install lxd
-          sudo lxd init --auto
           sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
           juju bootstrap localhost
       - name: Install and configure Canonical K8s
