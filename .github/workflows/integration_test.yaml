@@ -176,16 +176,6 @@ jobs:
           sudo rm -f /etc/cni/net.d/87-podman-bridge.conflist
           sudo rm -rf /run/containerd
 
-          # Capture the host's real upstream DNS *before* the k8s snap reconfigures
-          # systemd-resolved to forward queries through CoreDNS (10.152.183.x).
-          # After bootstrap, /run/systemd/resolve/resolv.conf will contain the CoreDNS
-          # ClusterIP.  Kubelet then injects that IP into every pod's /etc/resolv.conf
-          # (including CoreDNS pods, which use dnsPolicy:Default).  The Corefile's
-          # "forward . /etc/resolv.conf" reloads and starts forwarding to itself →
-          # SERVFAIL loop.  Hardcoding the real upstream in the Corefile breaks the loop.
-          UPSTREAM_DNS=$(awk '/^nameserver/{print $2; exit}' /run/systemd/resolve/resolv.conf)
-          echo "Upstream DNS before bootstrap: ${UPSTREAM_DNS}"
-
           sudo snap install k8s --channel 1.32-classic/stable --classic
           # Default timeout is 90s, which might be too short
           sudo k8s bootstrap --timeout 300s
@@ -227,19 +217,22 @@ jobs:
             sleep 20
           done
 
-          # Patch the CoreDNS Corefile to use the real upstream DNS captured before
-          # bootstrap.  The k8s snap rewrites systemd-resolved to forward through the
-          # CoreDNS ClusterIP; kubelet then propagates that IP into every pod's
-          # /etc/resolv.conf via dnsPolicy:Default — including the CoreDNS pods
-          # themselves.  The Corefile's "forward . /etc/resolv.conf" reloads (via the
-          # reload plugin) and starts forwarding to itself → SERVFAIL for all external
-          # names (including api.charmhub.io).  Replacing the forward target with the
-          # real upstream IP breaks the loop.
+          # Patch the CoreDNS Corefile to use a publicly routable upstream DNS.
+          # The k8s snap rewrites systemd-resolved to forward through the CoreDNS
+          # ClusterIP; kubelet then propagates that IP into every pod's /etc/resolv.conf
+          # via dnsPolicy:Default — including the CoreDNS pods themselves.  The Corefile's
+          # "forward . /etc/resolv.conf" reloads (via the reload plugin) and starts
+          # forwarding to itself → SERVFAIL for all external names.
+          # Using UPSTREAM_DNS (168.63.129.16 on Azure) does NOT fix this: that IP is
+          # Azure's internal wire-level DNS, reachable only from the VM's primary NIC —
+          # not from inside Cilium-managed pod network namespaces.  8.8.8.8 is publicly
+          # routable and reachable from pods.  Once CoreDNS can forward externally, the
+          # host chain (systemd-resolved → CoreDNS → 8.8.8.8) also resolves correctly.
           COREFILE=$(sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
             -o jsonpath='{.data.Corefile}')
           echo "Corefile before patch:"
           echo "${COREFILE}"
-          PATCHED=$(echo "${COREFILE}" | sed "s|forward \. .*|forward . ${UPSTREAM_DNS}|")
+          PATCHED=$(echo "${COREFILE}" | sed "s|forward \. .*|forward . 8.8.8.8|")
           echo "Corefile after patch:"
           echo "${PATCHED}"
           sudo k8s kubectl -n kube-system patch configmap ck-dns-coredns \
