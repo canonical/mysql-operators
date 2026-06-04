@@ -310,6 +310,29 @@ jobs:
           echo ""
           echo "=== End post-bootstrap state ==="
 
+          # --- Switch Cilium from tunnel mode to native routing ---
+          # In Cilium tunnel mode (Canonical K8s 1.32 default), cil_from_container
+          # on the lxc veth redirects pod-external packets toward the VXLAN path.
+          # There is no remote endpoint for external IPs like 168.63.129.16, so
+          # the packet is silently dropped before POSTROUTING — iptables MASQUERADE
+          # never fires, CoreDNS forward times out, and juju deploy fails.
+          # Native mode removes the VXLAN encap path entirely: pod-egress is
+          # routed via the kernel routing table (default via eth0), MASQUERADE
+          # SNATs the packet, and it exits eth0 normally.  On a single-node
+          # cluster native routing is always correct.
+          echo "=== Switching Cilium to native routing mode ==="
+          sudo k8s kubectl -n kube-system patch cm cilium-config --type merge \
+            -p '{"data":{"routing-mode":"native","auto-direct-node-routes":"false"}}'
+          sudo k8s kubectl -n kube-system rollout restart ds/cilium
+          sudo k8s kubectl -n kube-system rollout status ds/cilium --timeout=5m
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=5m
+          echo "--- Verify Cilium routing-mode (should be 'native') ---"
+          sudo k8s kubectl -n kube-system get cm cilium-config \
+            -o 'jsonpath={.data.routing-mode}'
+          echo ""
+          echo "=== End Cilium native routing switch ==="
+
           # --- DNS smoke test ---
           echo "=== DNS smoke test ==="
 
@@ -326,6 +349,16 @@ jobs:
           # lo (Cilium TPROXY redirect to 127.0.0.53), eth0 (systemd-resolved
           # forwarding to AZURE_DNS).
           mkdir -p /tmp/dns-diag
+          # Start Cilium BPF event monitor in background.
+          # setsid puts it in its own process group (PGID == PID), so
+          # "kill -- -${MON_PID}" later reliably kills the entire
+          # sudo→snap-wrapper→kubectl chain.  Without setsid, $! gives
+          # only the outer sudo PID; the snap wrapper and kubectl children
+          # survive the kill and the subsequent wait hangs.
+          setsid sudo k8s kubectl -n kube-system exec ds/cilium -- \
+            cilium monitor --type drop --type trace -j \
+            > /tmp/dns-diag/cilium-monitor.json &
+          MON_PID=$!
           sudo tcpdump -i any -n -w /tmp/dns-diag/dns-smoke.pcap 'port 53' &
           TCPDUMP_PID=$!
           sleep 1
@@ -341,12 +374,25 @@ jobs:
           # Stop tcpdump and write a human-readable text version
           sudo kill "${TCPDUMP_PID}" 2>/dev/null || true
           wait "${TCPDUMP_PID}" 2>/dev/null || true
+          # Stop Cilium monitor — kill the entire process group (see setsid note above)
+          sudo kill -- -"${MON_PID}" 2>/dev/null || true
+          wait "${MON_PID}" 2>/dev/null || true
           sudo tcpdump -r /tmp/dns-diag/dns-smoke.pcap -v -n \
             > /tmp/dns-diag/dns-smoke.txt 2>&1 || true
           echo "--- tcpdump packet count ---"
           wc -l /tmp/dns-diag/dns-smoke.txt || true
           echo "--- tcpdump output (first 100 lines) ---"
           head -100 /tmp/dns-diag/dns-smoke.txt || true
+          # Collect one-shot Cilium BPF diagnostics
+          sudo k8s kubectl -n kube-system exec ds/cilium -- \
+            cilium-dbg bpf metrics list \
+            > /tmp/dns-diag/cilium-bpf-metrics.txt 2>&1 || true
+          sudo k8s kubectl -n kube-system exec ds/cilium -- \
+            cilium-dbg endpoint list \
+            > /tmp/dns-diag/cilium-endpoints.txt 2>&1 || true
+          sudo k8s kubectl -n kube-system exec ds/cilium -- \
+            cilium-dbg status --verbose \
+            > /tmp/dns-diag/cilium-status.txt 2>&1 || true
 
           echo "=== End DNS smoke test ==="
 
