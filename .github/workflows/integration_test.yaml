@@ -165,6 +165,11 @@ jobs:
           set -x
           # Avoid conflicts with existing Docker and containerd installations
           sudo apt-get remove -y docker-ce docker-ce-cli containerd.io || true
+          # conntrack(1) is needed by the net-state diagnostic dump below to
+          # inspect the NAT translation table during the DNS smoke test.
+          # iproute2 / nstat / nft / tcpdump are already present on the
+          # Ubuntu 24.04 runner image.
+          sudo apt-get install -y conntrack
           # Ubuntu 24.04 runners ship podman with a CNI bridge config
           # (87-podman-bridge.conflist) that sorts lexicographically before Cilium's
           # config (05-cilium.conflist). When that file is present, containerd picks the
@@ -293,6 +298,85 @@ jobs:
           sudo resolvectl dns eth0 "${AZURE_DNS}"
 
           # --- Post-bootstrap verification ---
+          # Define a reusable network-state dump that captures every kernel /
+          # iptables / Cilium fact we need to localize a silent packet drop.
+          # Called once here (post-bootstrap baseline) and twice around the
+          # DNS smoke test below (pre / post, so we can diff counters).
+          #
+          # All output goes under /tmp/dns-diag and is uploaded as a workflow
+          # artifact regardless of step outcome.
+          mkdir -p /tmp/dns-diag
+          dump_net_state() {
+            local label="$1"
+            local out="/tmp/dns-diag/net-state-${label}.txt"
+            {
+              echo "=== net-state ${label} ($(date -u +%FT%TZ)) ==="
+
+              echo "--- net.ipv4.ip_forward ---"
+              cat /proc/sys/net/ipv4/ip_forward
+
+              echo "--- per-interface forwarding (forwarding=0 silently drops) ---"
+              for f in /proc/sys/net/ipv4/conf/*/forwarding; do
+                printf '%s = %s\n' "$f" "$(cat "$f")"
+              done
+
+              echo "--- per-interface rp_filter (should be 0/2 on cilium_*, lxc*) ---"
+              for f in /proc/sys/net/ipv4/conf/*/rp_filter; do
+                printf '%s = %s\n' "$f" "$(cat "$f")"
+              done
+
+              echo "--- iptables backend (which command is actually used?) ---"
+              sudo update-alternatives --display iptables 2>&1 || true
+              ls -l /etc/alternatives/iptables \
+                    /etc/alternatives/iptables-save \
+                    /etc/alternatives/iptables-restore 2>&1 || true
+
+              echo "--- iptables -t nat -L -v -n -x (PACKET COUNTERS) ---"
+              sudo iptables -t nat -L -v -n -x 2>&1 || true
+
+              echo "--- iptables -t filter -L FORWARD -v -n -x (PACKET COUNTERS) ---"
+              sudo iptables -t filter -L FORWARD -v -n -x 2>&1 || true
+              echo "--- iptables -t filter -L CILIUM_FORWARD -v -n -x ---"
+              sudo iptables -t filter -L CILIUM_FORWARD -v -n -x 2>&1 || true
+
+              echo "--- iptables -t mangle -L CILIUM_PRE_mangle -v -n -x ---"
+              sudo iptables -t mangle -L CILIUM_PRE_mangle -v -n -x 2>&1 || true
+
+              echo "--- nft list ruleset (full, with counters) ---"
+              sudo nft list ruleset 2>&1 || true
+
+              echo "--- nstat -az (forward/drop/martian/noroute/invalid) ---"
+              sudo nstat -az 2>&1 | \
+                grep -iE 'forward|drop|martian|noroute|invalid|nocache|inhdrerror|innoroutes' || true
+
+              echo "--- ip -s -s link show eth0 (drop/error counters) ---"
+              ip -s -s link show eth0 2>&1 || true
+              echo "--- ip -s -s link show cilium_host ---"
+              ip -s -s link show cilium_host 2>&1 || true
+
+              echo "--- conntrack -L (filter 168.63.129.16 + 10.244.0.0/16) ---"
+              sudo conntrack -L 2>&1 | \
+                grep -E '168\.63\.129\.16|10\.244\.0\.' || \
+                echo "(conntrack: no matching entries)"
+              echo "--- conntrack -S (per-CPU summary) ---"
+              sudo conntrack -S 2>&1 || true
+
+              echo "--- cilium-dbg bpf nat list (head 50) ---"
+              sudo k8s kubectl -n kube-system exec ds/cilium -- \
+                cilium-dbg bpf nat list 2>&1 | head -50 || true
+
+              echo "=== end net-state ${label} ==="
+            } > "${out}" 2>&1
+            echo "captured net-state ${label} -> ${out}"
+          }
+
+          # Capture ip-link snapshot once: needed to decode SLL2 ifindex in
+          # the .pcap when an analyst replays it OFF the runner.  Without
+          # this snapshot, `tcpdump -r dns-smoke.pcap` on any other host
+          # silently substitutes interface names whose ifindex happens to
+          # match the runner's (eth0->ens3, lxc<runner>->lxc<localhost>, etc.).
+          ip -o link show > /tmp/dns-diag/ip-link.txt 2>&1 || true
+
           echo "=== Post-bootstrap state ==="
           echo "--- rp_filter values (cilium_host, cilium_net, lxc* should all be 2) ---"
           for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
@@ -308,6 +392,7 @@ jobs:
           sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
             -o jsonpath='{.data.Corefile}'
           echo ""
+          dump_net_state post-bootstrap
           echo "=== End post-bootstrap state ==="
 
           # --- Switch Cilium from tunnel mode to native routing ---
@@ -366,6 +451,11 @@ jobs:
           # lo (Cilium TPROXY redirect to 127.0.0.53), eth0 (systemd-resolved
           # forwarding to AZURE_DNS).
           mkdir -p /tmp/dns-diag
+
+          # Baseline net-state BEFORE smoke test.  The pre/post pair lets us
+          # diff iptables packet counters, nstat counters, conntrack entries.
+          dump_net_state pre-smoke
+
           # Start Cilium BPF event monitor in background.
           # setsid puts it in its own process group (PGID == PID), so
           # "kill -- -${MON_PID}" later reliably kills the entire
@@ -394,6 +484,13 @@ jobs:
           # Stop Cilium monitor — kill the entire process group (see setsid note above)
           sudo kill -- -"${MON_PID}" 2>/dev/null || true
           wait "${MON_PID}" 2>/dev/null || true
+
+          # Post-smoke net-state: counters here MINUS counters in pre-smoke
+          # tell us exactly which iptables chains the test traffic hit (or
+          # didn't), whether conntrack created NAT entries for the flow,
+          # and whether per-interface forwarding=0 silently dropped frames.
+          dump_net_state post-smoke
+
           sudo tcpdump -r /tmp/dns-diag/dns-smoke.pcap -v -n \
             > /tmp/dns-diag/dns-smoke.txt 2>&1 || true
           echo "--- tcpdump packet count ---"
