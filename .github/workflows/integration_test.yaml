@@ -97,7 +97,7 @@ jobs:
     needs:
       - collect-integration-tests
     runs-on: ${{ matrix.job.runner }}
-    timeout-minutes: 236  # Sum of steps `timeout-minutes` + 5
+    timeout-minutes: 246  # Sum of steps `timeout-minutes` + 5
     steps:
       - name: Free up disk space
         timeout-minutes: 10
@@ -160,7 +160,7 @@ jobs:
           juju bootstrap localhost
       - name: Install and configure Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
-        timeout-minutes: 20
+        timeout-minutes: 30
         run: |
           set -x
           # Avoid conflicts with existing Docker and containerd installations
@@ -268,17 +268,47 @@ jobs:
             sleep 20
           done
 
-          # CoreDNS upstream-nameservers was set to AZURE_DNS at bootstrap time
-          # (cluster-config.dns.upstream-nameservers in the bootstrap config file
-          # above), so no post-bootstrap k8s-set or CoreDNS restart is needed.
+          # Fix Cilium pod-egress drop.
           #
+          # Canonical K8s 1.32 ships Cilium with:
+          #   routing-mode=tunnel (VXLAN)
+          #   bpf-masquerade=false  (relies on iptables for SNAT)
+          #   ipv4-native-routing-cidr=''  (empty)
+          #
+          # With an empty ipv4-native-routing-cidr the cil_from_container BPF
+          # program on the lxc veth has no "return to host stack" verdict for
+          # non-cluster destinations.  Pod-egress packets to 168.63.129.16 are
+          # redirected toward the VXLAN tunnel path, find no remote endpoint, and
+          # are silently consumed before reaching POSTROUTING.  The iptables
+          # CILIUM_POST_nat MASQUERADE rule therefore never fires and nothing ever
+          # appears on eth0.
+          #
+          # Fix: set ipv4-native-routing-cidr=0.0.0.0/0.  This tells the BPF
+          # program to return any non-pod-CIDR packet to the kernel stack, where
+          # the existing iptables MASQUERADE rule SNATs it to the node IP and
+          # routes it out eth0.
+          sudo k8s kubectl -n kube-system patch cm cilium-config \
+            --type merge -p '{"data":{"ipv4-native-routing-cidr":"0.0.0.0/0"}}'
+          sudo k8s kubectl -n kube-system rollout restart ds/cilium
+          sudo k8s kubectl -n kube-system rollout status ds/cilium --timeout=5m
+          # Restart CoreDNS so it re-establishes upstream connections through the
+          # now-working pod-egress path.
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=2m
+
           # Ensure the host-level resolver still points at AZURE_DNS.
           # DO NOT replace /etc/resolv.conf or remove the symlink — doing so puts
           # systemd-resolved into "foreign" mode and disables its 127.0.0.53 stub.
           sudo resolvectl dns eth0 "${AZURE_DNS}"
 
-          # --- Post-DNS-fix verification ---
-          echo "=== Post-DNS-fix state ==="
+          # --- Post-fix verification ---
+          echo "=== Post-fix state ==="
+          echo "--- cilium-config ipv4-native-routing-cidr (should be 0.0.0.0/0) ---"
+          sudo k8s kubectl -n kube-system get cm cilium-config \
+            -o jsonpath='{.data.ipv4-native-routing-cidr}'
+          echo ""
+          echo "--- iptables CILIUM_POST_nat MASQUERADE rule ---"
+          sudo iptables -t nat -L CILIUM_POST_nat -n --line-numbers || true
           echo "--- k8sd DNS config (upstream-nameservers should be ${AZURE_DNS}) ---"
           sudo k8s get dns
           echo "--- /run/systemd/resolve/resolv.conf ---"
@@ -287,7 +317,7 @@ jobs:
           sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
             -o jsonpath='{.data.Corefile}'
           echo ""
-          echo "=== End post-DNS-fix state ==="
+          echo "=== End post-fix state ==="
 
           # --- DNS smoke test ---
           echo "=== DNS smoke test ==="
