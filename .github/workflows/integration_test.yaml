@@ -204,10 +204,10 @@ jobs:
           # The sysctl.d file persists through the bootstrap so every Cilium
           # interface (cilium_host, cilium_net, lxc*) inherits rp_filter=2 on
           # creation.
-          sudo tee /etc/sysctl.d/99-cilium-rp-filter.conf <<'EOF'
-net.ipv4.conf.all.rp_filter = 2
-net.ipv4.conf.default.rp_filter = 2
-EOF
+          printf '%s\n' \
+            'net.ipv4.conf.all.rp_filter = 2' \
+            'net.ipv4.conf.default.rp_filter = 2' \
+            | sudo tee /etc/sysctl.d/99-cilium-rp-filter.conf
           sudo sysctl --system
           # Also apply immediately to any interfaces that already exist:
           for i in /proc/sys/net/ipv4/conf/*/rp_filter; do echo 2 | sudo tee "$i"; done
