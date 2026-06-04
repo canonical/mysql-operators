@@ -152,52 +152,6 @@ jobs:
           sudo lxd init --auto
           sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
           juju bootstrap localhost
-      - name: Diagnose CNI directory pre-bootstrap
-        # Checks whether this runner is affected by the lexicographical CNI race condition
-        # described in "Kubernetes CNI Startup Race Condition.md": if any file in
-        # /etc/cni/net.d/ sorts before Cilium's config (05-cilium.conflist), containerd
-        # will declare networking ready before Cilium is up, bypass the
-        # node.kubernetes.io/network-unavailable taint, and schedule pods onto the
-        # fallback bridge (10.88.0.0/16) instead of the Cilium pod CIDR.
-        if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
-        run: |
-          echo "=== CNI config directory contents (sorted — first file wins) ==="
-          ls -1 /etc/cni/net.d/ 2>/dev/null || echo "(directory does not exist)"
-
-          echo "=== Full CNI config file names with stat ==="
-          ls -la /etc/cni/net.d/ 2>/dev/null || true
-
-          echo "=== First file containerd will load (lexicographic winner) ==="
-          first=$(ls /etc/cni/net.d/ 2>/dev/null | sort | head -1)
-          if [ -n "$first" ]; then
-            echo "Winner: $first"
-            # Flag if it is NOT a Cilium config (race condition present)
-            if echo "$first" | grep -qi "cilium"; then
-              echo "STATUS: OK — Cilium config sorts first, no race expected"
-            else
-              echo "STATUS: RACE CONDITION LIKELY — '$first' sorts before cilium config"
-              echo "        Pods scheduled before Cilium is up will get bridge IPs (10.88.x.x)"
-            fi
-            echo "--- file contents ---"
-            cat "/etc/cni/net.d/$first" || true
-          else
-            echo "STATUS: OK — directory empty, Kubelet will taint node until Cilium writes its config"
-          fi
-
-          echo "=== Podman installation and network backend ==="
-          if command -v podman &>/dev/null; then
-            podman --version
-            podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || true
-          else
-            echo "podman: not installed"
-          fi
-
-          echo "=== cni-podman0 bridge interface ==="
-          ip link show cni-podman0 2>/dev/null && echo "PRESENT — bridge exists" || echo "absent"
-
-          echo "=== containerd CNI conf_dir setting ==="
-          grep -r "conf_dir\|cni" /etc/containerd/config.toml 2>/dev/null || echo "(no containerd config found)"
-
       - name: Install and configure Canonical K8s
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 20
@@ -215,33 +169,7 @@ jobs:
           sudo rm -rf /run/containerd
 
           sudo snap install k8s --channel 1.32-classic/stable --classic
-
-          # Fix CoreDNS upstream DNS loop: on CI, kubelet is already configured with
-          # --cluster-dns=<ClusterIP> by the time CoreDNS pods start. CoreDNS pods then
-          # get "nameserver <ClusterIP>" in /etc/resolv.conf, and the Corefile's
-          # "forward . /etc/resolv.conf" creates an infinite loop for external queries.
-          # Pass the real upstream nameservers at bootstrap time so CoreDNS never uses
-          # /etc/resolv.conf and the loop cannot form.
-          # /run/systemd/resolve/resolv.conf has the real upstreams (not the stub 127.0.0.53).
-          #
-          # NOTE: when using --file, bool fields with "default true" in the docs (network.enabled,
-          # dns.enabled) are NOT auto-enabled — Go unmarshals omitted *bool fields as nil, which
-          # the feature controller treats as false. All desired features must be listed explicitly.
-          upstream_dns=$(awk '/^nameserver/{print $2}' /run/systemd/resolve/resolv.conf 2>/dev/null | grep -v '^127\.' | head -1)
-          upstream_dns="${upstream_dns:-8.8.8.8}"
-          echo "Upstream DNS for CoreDNS: ${upstream_dns}"
-          cat > /tmp/k8s-bootstrap.yaml <<EOF
-cluster-config:
-  network:
-    enabled: true
-  dns:
-    enabled: true
-    upstream-nameservers:
-      - ${upstream_dns}
-  local-storage:
-    enabled: true
-EOF
-          sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml
+          sudo k8s bootstrap
 
           # k8s status --wait-ready can return before components are actually ready
           # (e.g. network: disabled, ingress: Failed). Poll ourselves instead.
@@ -279,10 +207,6 @@ EOF
             echo "Not ready yet, waiting 20s..."
             sleep 20
           done
-
-          # Commented out while we figure out some Cilium issues
-          # sudo k8s set load-balancer.l2-mode=true load-balancer.cidrs=10.20.30.40/32
-          # sudo k8s enable load-balancer
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
