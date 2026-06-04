@@ -58,7 +58,7 @@ jobs:
           for task_name, test_module in test_files:
               for runner, architecture in architectures:
                   name = f"{task_name} | {architecture}"
-                  name_in_artifact = f"{task_name}-{architecture}"
+                  name_in_artifact = f"{task_name}-{architecture}".replace("/", "-")
                   jobs.append({
                       "test_module": test_module,
                       "name": name,
@@ -176,6 +176,16 @@ jobs:
           sudo rm -f /etc/cni/net.d/87-podman-bridge.conflist
           sudo rm -rf /run/containerd
 
+          # Capture the host's real upstream DNS *before* the k8s snap reconfigures
+          # systemd-resolved to forward queries through CoreDNS (10.152.183.x).
+          # After bootstrap, /run/systemd/resolve/resolv.conf will contain the CoreDNS
+          # ClusterIP.  Kubelet then injects that IP into every pod's /etc/resolv.conf
+          # (including CoreDNS pods, which use dnsPolicy:Default).  The Corefile's
+          # "forward . /etc/resolv.conf" reloads and starts forwarding to itself →
+          # SERVFAIL loop.  Hardcoding the real upstream in the Corefile breaks the loop.
+          UPSTREAM_DNS=$(awk '/^nameserver/{print $2; exit}' /run/systemd/resolve/resolv.conf)
+          echo "Upstream DNS before bootstrap: ${UPSTREAM_DNS}"
+
           sudo snap install k8s --channel 1.32-classic/stable --classic
           # Default timeout is 90s, which might be too short
           sudo k8s bootstrap --timeout 300s
@@ -216,6 +226,27 @@ jobs:
             echo "Not ready yet, waiting 20s..."
             sleep 20
           done
+
+          # Patch the CoreDNS Corefile to use the real upstream DNS captured before
+          # bootstrap.  The k8s snap rewrites systemd-resolved to forward through the
+          # CoreDNS ClusterIP; kubelet then propagates that IP into every pod's
+          # /etc/resolv.conf via dnsPolicy:Default — including the CoreDNS pods
+          # themselves.  The Corefile's "forward . /etc/resolv.conf" reloads (via the
+          # reload plugin) and starts forwarding to itself → SERVFAIL for all external
+          # names (including api.charmhub.io).  Replacing the forward target with the
+          # real upstream IP breaks the loop.
+          COREFILE=$(sudo k8s kubectl -n kube-system get configmap ck-dns-coredns \
+            -o jsonpath='{.data.Corefile}')
+          echo "Corefile before patch:"
+          echo "${COREFILE}"
+          PATCHED=$(echo "${COREFILE}" | sed "s|forward \. .*|forward . ${UPSTREAM_DNS}|")
+          echo "Corefile after patch:"
+          echo "${PATCHED}"
+          sudo k8s kubectl -n kube-system patch configmap ck-dns-coredns \
+            --type=merge \
+            -p "{\"data\":{\"Corefile\":$(echo "${PATCHED}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}}"
+          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
+          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=2m
 
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
