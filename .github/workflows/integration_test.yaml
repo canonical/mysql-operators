@@ -201,8 +201,33 @@ jobs:
           # (10.1.0.1), and Azure DNS (168.63.129.16) as "inside the pod fabric"
           # and misroutes (drops) pod-egress packets through the VXLAN path
           # instead of out eth0.  Use a non-overlapping pod CIDR.
-          printf 'pod-cidr: 10.244.0.0/16\nservice-cidr: 10.152.183.0/24\n' \
+          #
+          # When --file is supplied, ALL cluster-config features not listed are
+          # disabled by default (unlike the no-file path where network/dns/gateway/
+          # metrics-server default to enabled).  List every feature we need.
+          #
+          # Also set dns.upstream-nameservers here so CoreDNS starts with the
+          # correct upstream immediately, avoiding the post-bootstrap k8s-set +
+          # rollout-restart dance.
+          printf '%s\n' \
+            'cluster-config:' \
+            '  network:' \
+            '    enabled: true' \
+            '  dns:' \
+            '    enabled: true' \
+            '    upstream-nameservers:' \
+            "    - ${AZURE_DNS}" \
+            '  local-storage:' \
+            '    enabled: true' \
+            '  gateway:' \
+            '    enabled: true' \
+            '  metrics-server:' \
+            '    enabled: true' \
+            'pod-cidr: 10.244.0.0/16' \
+            'service-cidr: 10.152.183.0/24' \
             > /tmp/k8s-bootstrap.yaml
+          echo "--- bootstrap config ---"
+          cat /tmp/k8s-bootstrap.yaml
           # Default timeout is 90s, which is too short on arm64
           sudo k8s bootstrap --file /tmp/k8s-bootstrap.yaml --timeout 300s
 
@@ -243,38 +268,14 @@ jobs:
             sleep 20
           done
 
-          # Fix CoreDNS upstream DNS.
+          # CoreDNS upstream-nameservers was set to AZURE_DNS at bootstrap time
+          # (cluster-config.dns.upstream-nameservers in the bootstrap config file
+          # above), so no post-bootstrap k8s-set or CoreDNS restart is needed.
           #
-          # After bootstrap, k8sd defaults dns.upstream-nameservers to
-          # /etc/resolv.conf.  /etc/resolv.conf → stub (127.0.0.53) → systemd-
-          # resolved → CoreDNS ClusterIP.  CoreDNS pods (dnsPolicy:Default)
-          # therefore inherit this and loop: forward . /etc/resolv.conf →
-          # CoreDNS → itself → SERVFAIL.
-          #
-          # We fix this by pointing CoreDNS at the Azure wire-level DNS server
-          # (168.63.129.16, captured above as AZURE_DNS).
-          #
-          # DNS path after fix:
-          #   pod → Cilium TPROXY → Cilium DNS proxy → 127.0.0.53
-          #   → systemd-resolved stub → eth0 → 168.63.129.16
-          #
-          # Cilium intercepts ALL pod UDP:53 (including CoreDNS upstream queries)
-          # via iptables TPROXY, then forwards to its configured upstream.  At
-          # Cilium start-up that upstream is 127.0.0.53 (read from
-          # stub-resolv.conf via /etc/resolv.conf).  systemd-resolved's stub at
-          # 127.0.0.53 then forwards to AZURE_DNS via eth0.  This chain works as
-          # long as the /etc/resolv.conf symlink is NOT broken (see below).
-          #
-          # "k8s set dns.upstream-nameservers" writes to k8sd's dqlite config
-          # store; k8sd reconciles the CoreDNS Helm chart to "forward . <IP>"
-          # and future reconciliation cycles preserve it (unlike a raw kubectl
-          # patch which k8sd reverts within seconds).
-          sudo k8s set dns.upstream-nameservers="${AZURE_DNS}"
-          # Give k8sd a moment to reconcile the ConfigMap, then restart CoreDNS
-          # so the reload plugin picks up the new Corefile without the 30s wait.
-          sleep 5
-          sudo k8s kubectl -n kube-system rollout restart deployment/coredns
-          sudo k8s kubectl -n kube-system rollout status deployment/coredns --timeout=2m
+          # Ensure the host-level resolver still points at AZURE_DNS.
+          # DO NOT replace /etc/resolv.conf or remove the symlink — doing so puts
+          # systemd-resolved into "foreign" mode and disables its 127.0.0.53 stub.
+          sudo resolvectl dns eth0 "${AZURE_DNS}"
 
           # --- Post-DNS-fix verification ---
           echo "=== Post-DNS-fix state ==="
@@ -287,25 +288,6 @@ jobs:
             -o jsonpath='{.data.Corefile}'
           echo ""
           echo "=== End post-DNS-fix state ==="
-
-          # Ensure the host-level resolver still points at AZURE_DNS.
-          #
-          # DO NOT replace /etc/resolv.conf or remove the symlink.  The k8s snap
-          # and Cilium both start before this step.  Cilium reads its DNS-proxy
-          # upstream from /etc/resolv.conf at startup: at that point the symlink
-          # resolves to stub-resolv.conf → nameserver 127.0.0.53.  Cilium
-          # therefore forwards all intercepted pod DNS (including CoreDNS's own
-          # upstream queries via TPROXY) to 127.0.0.53.
-          #
-          # If we delete the symlink and write a plain static file, systemd-
-          # resolved immediately enters "resolv.conf mode: foreign" and DISABLES
-          # its stub listener on 127.0.0.53.  Cilium's proxy then tries to
-          # forward to a dead socket → SERVFAIL for all pod DNS.
-          #
-          # Instead, keep the symlink intact so systemd-resolved stays in stub
-          # mode.  Just make sure eth0 has AZURE_DNS as its upstream (it already
-          # does from DHCP, but be explicit in case k8sd changed it):
-          sudo resolvectl dns eth0 "${AZURE_DNS}"
 
           # --- DNS smoke test ---
           echo "=== DNS smoke test ==="
