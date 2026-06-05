@@ -16,6 +16,7 @@ from typing import override
 
 import jinja2
 import tomli
+from charmlibs import snap
 from charms.mysql.v0.mysql import (
     BYTES_1MB,
     Error,
@@ -28,7 +29,6 @@ from charms.mysql.v0.mysql import (
     MySQLStartMySQLDError,
     MySQLStopMySQLDError,
 )
-from charms.operator_libs_linux.v2 import snap
 from mysql_shell.executors import LocalExecutor
 from mysql_shell.executors.errors import ExecutionError
 from tenacity import (
