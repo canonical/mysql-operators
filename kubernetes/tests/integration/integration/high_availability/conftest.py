@@ -60,7 +60,9 @@ def deploy_chaos_mesh(namespace: str) -> None:
             with attempt:
                 output = subprocess.check_output(
                     [
-                        "microk8s.kubectl",
+                        "sudo",
+                        "k8s",
+                        "kubectl",
                         "get",
                         "pods",
                         f"--namespace={namespace}",
