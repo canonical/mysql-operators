@@ -908,7 +908,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         if not self._mysql.instance_belongs_to_cluster(
-            self.unit_label, from_instance=cluster_primary
+            unit_label=self.unit_label,
+            from_instance=cluster_primary,
         ):
             logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
             return
