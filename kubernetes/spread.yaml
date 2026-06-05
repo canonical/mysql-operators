@@ -110,7 +110,7 @@ environment:
   PATH: $PATH:$(pipx environment --value PIPX_BIN_DIR)
   CONCIERGE_JUJU_CHANNEL/juju36: 3.6/stable
 prepare: |
-  # Purge Docker - packages, kernel-resident nft tables, interfaces.
+  # Purge Docker - packages, kernel-resident FORWARD policy, interfaces.
   #
   # Why this matters:
   # GitHub-hosted Azure runners ship Docker pre-installed and active.
@@ -132,11 +132,23 @@ prepare: |
   # rules in iptables-legacy filter FORWARD never get a chance.
   sudo systemctl stop docker.service docker.socket containerd.service 2>/dev/null || true
   sudo apt-get remove --purge -y docker-ce docker-ce-cli containerd.io 2>/dev/null || true
-  # Wipe Docker's nft tables. `delete table` is idempotent-ish: the
-  # `|| true` covers the case where Docker was never installed.
-  for tbl in 'ip filter' 'ip nat' 'ip mangle' 'ip6 filter' 'ip6 nat' 'ip6 mangle'; do
-      sudo nft delete table $tbl 2>/dev/null || true
+
+  # Reset FORWARD policy to ACCEPT
+  # Uses iptables-nft compatibility shim:
+  # well-defined semantics, modifies only the default policy of the existing chain,
+  # does not flush rules belonging to other tenants of `table ip filter`.
+  sudo iptables-nft -P FORWARD ACCEPT 2>/dev/null || true
+
+  # Flush FORWARD so jumps to DOCKER-* chains disappear,
+  # then delete the chains themselves
+  # (chain deletion fails if jumps still reference them).
+  sudo nft flush chain ip filter FORWARD 2>/dev/null || true
+  for chain in DOCKER DOCKER-USER DOCKER-FORWARD \
+               DOCKER-ISOLATION-STAGE-1 DOCKER-ISOLATION-STAGE-2 DOCKER-INGRESS; do
+      sudo nft delete chain ip filter "$chain" 2>/dev/null || true
+      sudo nft delete chain ip nat    "$chain" 2>/dev/null || true
   done
+
   # Bring down and remove leftover Docker network interfaces.
   sudo ip link set docker0 down 2>/dev/null || true
   sudo ip link delete docker0 type bridge 2>/dev/null || true
