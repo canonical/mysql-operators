@@ -1,7 +1,7 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Set up IP address changes observer."""
+"""Set up IP address changes manager."""
 
 import logging
 import os
@@ -9,8 +9,7 @@ import signal
 import subprocess
 import typing
 
-from ops.charm import CharmEvents
-from ops.framework import EventBase, EventSource, Object
+from ops.framework import Object
 from ops.model import ActiveStatus
 
 logger = logging.getLogger(__name__)
@@ -23,27 +22,14 @@ if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
 
 
-class IPAddressChangeEvent(EventBase):
-    """A custom event for IP address change."""
+class IPAddressManager(Object):
+    """Manages changes in the unit's IP address.
 
-
-class IPAddressChangeCharmEvents(CharmEvents):
-    """A CharmEvents extension for IP address changes.
-
-    Includes :class:`IPAddressChangeEvent` in those that can be handled.
-    """
-
-    ip_address_change = EventSource(IPAddressChangeEvent)
-
-
-class IPAddressObserver(Object):
-    """Observes changes in the unit's IP address.
-
-    Observed IP address changes cause :class:`IPAddressChangeEvent` to be emitted.
+    Dispatches a custom event every 30s to update hostnames in the charm container.
     """
 
     def __init__(self, charm: "MySQLOperatorCharm"):
-        super().__init__(charm, "ip-address-observer")
+        super().__init__(charm, "ip-address-manager")
 
         self.charm = charm
 
@@ -52,6 +38,9 @@ class IPAddressObserver(Object):
         if not isinstance(self.charm.unit.status, ActiveStatus) or self.charm.peers is None:
             return
 
+        # NOTE:
+        # The `observer-pid` name is preserved for backwards compatibility reasons.
+        # The name is so generic that it does not mention which service process it relates to
         if (pid := self.charm.unit_peer_data.get("observer-pid")) and check_pid(int(pid)):
             return
 
@@ -82,6 +71,9 @@ class IPAddressObserver(Object):
             env=new_env,
         )
 
+        # NOTE:
+        # The `observer-pid` name is preserved for backwards compatibility reasons.
+        # The name is so generic that it does not mention which service process it relates to
         self.charm.unit_peer_data.update({"observer-pid": f"{process.pid}"})
         logging.info(f"Started IP address observer process with PID {process.pid}")
 
@@ -90,6 +82,9 @@ class IPAddressObserver(Object):
         if self.charm.peers is None or "observer-pid" not in self.charm.unit_peer_data:
             return
 
+        # NOTE:
+        # The `observer-pid` name is preserved for backwards compatibility reasons.
+        # The name is so generic that it does not mention which service process it relates to
         observer_pid = int(self.charm.unit_peer_data["observer-pid"])
 
         try:
