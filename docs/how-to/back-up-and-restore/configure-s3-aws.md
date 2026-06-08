@@ -20,7 +20,7 @@ This guide will teach you how to deploy and configure the S3-integrator charm fo
 Deploy and configure the `s3-integrator` charm for AWS S3:
 
 ```shell
-juju deploy s3-integrator --channel=2/edge
+juju deploy s3-integrator --channel=2/stable
 
 juju add-secret s3-credentials access-key=<access-key-here> secret-key=<secret-key-here>
 juju grant-secret s3-credentials s3-integrator
