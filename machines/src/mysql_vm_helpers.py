@@ -15,6 +15,7 @@ import typing
 from collections.abc import Iterable
 
 import jinja2
+from charmlibs import snap
 from charms.mysql.v0.mysql import (
     BYTES_1MB,
     Error,
@@ -28,7 +29,6 @@ from charms.mysql.v0.mysql import (
     MySQLStartMySQLDError,
     MySQLStopMySQLDError,
 )
-from charms.operator_libs_linux.v2 import snap
 from mysql_shell.executors import LocalExecutor
 from mysql_shell.executors.errors import ExecutionError
 from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
