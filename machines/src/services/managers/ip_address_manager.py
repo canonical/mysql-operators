@@ -33,8 +33,8 @@ class IPAddressManager(Object):
 
         self.charm = charm
 
-    def start_observer(self):
-        """Start the IP address observer running in a new process."""
+    def start_manager(self):
+        """Start the IP address manager running in a new process."""
         if not isinstance(self.charm.unit.status, ActiveStatus) or self.charm.peers is None:
             return
 
@@ -72,16 +72,16 @@ class IPAddressManager(Object):
         self.charm.unit_peer_data.update({"ip-address-manager-pid": f"{process.pid}"})
         logging.info(f"Started IP address manager process with PID {process.pid}")
 
-    def stop_observer(self):
-        """Stop running the observer if it is indeed running."""
+    def stop_manager(self):
+        """Stop running the manager if it is indeed running."""
         if self.charm.peers is None or "ip-address-manager-pid" not in self.charm.unit_peer_data:
             return
 
-        observer_pid = int(self.charm.unit_peer_data["ip-address-manager-pid"])
+        manager_pid = int(self.charm.unit_peer_data["ip-address-manager-pid"])
 
         try:
-            os.kill(observer_pid, signal.SIGTERM)
-            logger.info(f"Stopped running IP address manager process with PID {observer_pid}")
+            os.kill(manager_pid, signal.SIGTERM)
+            logger.info(f"Stopped running IP address manager process with PID {manager_pid}")
             del self.charm.unit_peer_data["ip-address-manager-pid"]
         except OSError:
             pass
