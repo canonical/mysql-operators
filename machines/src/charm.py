@@ -850,7 +850,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
         self.database_relation._update_endpoints_all_relations(None)
-        self._on_update_status(None)
 
     def _can_start(self, event: StartEvent) -> bool:
         """Check if the unit can start.
