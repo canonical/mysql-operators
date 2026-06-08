@@ -2,3 +2,7 @@
 # See LICENSE file for licensing details.
 
 from .log_rotate_manager import LogRotateManager
+
+__all__ = [
+    "LogRotateManager",
+]
