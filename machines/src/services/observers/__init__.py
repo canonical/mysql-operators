@@ -3,3 +3,8 @@
 
 from .ip_address_observer import IPAddressObserver
 from .log_rotate_observer import RotateMySQLLogsObserver
+
+__all__ = [
+    "IPAddressObserver",
+    "RotateMySQLLogsObserver",
+]
