@@ -27,7 +27,7 @@ mc mb dest/backups-bucket
 Then, deploy and run the charm:
 
 ```shell
-juju deploy s3-integrator --channel=2/edge
+juju deploy s3-integrator --channel=2/stable
 juju add-secret s3-credentials access-key=<access-key-here> secret-key=<secret-key-here>
 juju grant-secret s3-credentials s3-integrator
 ```
@@ -47,7 +47,7 @@ juju config s3-integrator \
     region="" \
     s3-api-version="" \
     s3-uri-style="path"
-```    
+```
 ````
 
 ````{tab-item} K8s
