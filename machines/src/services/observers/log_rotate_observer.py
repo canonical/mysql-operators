@@ -1,15 +1,14 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Custom event for flushing mysql logs to be called from a logrotate script."""
+"""Custom event for flushing mysql logs."""
 
 import logging
 import os
 import typing
 
 from mysql_shell import LogType
-from ops.charm import CharmEvents
-from ops.framework import EventBase, EventSource, Object
+from ops.framework import EventBase, Object
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -17,31 +16,22 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class FlushMySQLLogsEvent(EventBase):
-    """A custom event to flush logs."""
+class RotateMySQLLogsEvent(EventBase):
+    """A custom event to rotate the mysql logs."""
 
 
-class FlushMySQLLogsCharmEvents(CharmEvents):
-    """A CharmEvent extension for flush logs.
-
-    Includes :class:`FlushMySQLLogsEvent` in those that can be handled.
-    """
-
-    flush_mysql_logs = EventSource(FlushMySQLLogsEvent)
-
-
-class MySQLLogs(Object):
-    """Encapsulates the handling of MySQL logs (including flushing them)."""
+class RotateMySQLLogsObserver(Object):
+    """Encapsulates the handling of MySQL logs."""
 
     def __init__(self, charm: "MySQLOperatorCharm"):
         super().__init__(charm, "mysql-logs")
 
         self.charm = charm
 
-        self.framework.observe(self.charm.on.flush_mysql_logs, self._flush_mysql_logs)
+        self.framework.observe(self.charm.on.rotate_mysql_logs, self._rotate_mysql_logs)
 
-    def _flush_mysql_logs(self, _) -> None:
-        """Flush the specified (via LOGS_TYPE env var) mysql logs."""
+    def _rotate_mysql_logs(self, _) -> None:
+        """Rotate the mysql logs (via LOGS_TYPE env var)."""
         if (
             self.charm.peers is None
             or not self.charm.unit_initialized()

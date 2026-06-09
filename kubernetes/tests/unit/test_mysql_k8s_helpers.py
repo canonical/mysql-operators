@@ -176,7 +176,7 @@ class TestMySQL(unittest.TestCase):
     def test_delete_users_with_label(self):
         """Test successful execution of delete_users_with_label."""
         search_query = (
-            "SELECT user.user, user.host"
+            "SELECT user.user, user.host "
             "FROM mysql.user AS user "
             "JOIN information_schema.user_attributes AS attributes "
             "   ON (user.user = attributes.user AND user.host = attributes.host) "

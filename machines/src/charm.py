@@ -98,9 +98,6 @@ from constants import (
     SERVER_CONFIG_USERNAME,
     TRACING_PROTOCOL,
 )
-from flush_mysql_logs import FlushMySQLLogsCharmEvents, MySQLLogs
-from hostname_resolution import MySQLMachineHostnameResolution
-from ip_address_observer import IPAddressChangeCharmEvents
 from log_rotation_setup import LogRotationSetup
 from mysql_vm_helpers import (
     MySQL,
@@ -117,6 +114,9 @@ from relations.db_router import DBRouterRelation
 from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
 from relations.shared_db import SharedDBRelation
+from services.events import CharmServicesEvents
+from services.managers import IPAddressManager
+from services.observers import IPAddressObserver, RotateMySQLLogsObserver
 from upgrade import MySQLVMUpgrade, get_mysql_dependencies_model
 from utils import compare_dictionaries, generate_random_password
 
@@ -131,15 +131,11 @@ class MySQLDNotRestartedError(Error):
     """Exception raised when MySQLD is not restarted after configuring instance."""
 
 
-class MySQLCustomCharmEvents(FlushMySQLLogsCharmEvents, IPAddressChangeCharmEvents):
-    """Custom event sources for the charm."""
-
-
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
     config_type = CharmConfig
-    on = MySQLCustomCharmEvents()  # type: ignore
+    on = CharmServicesEvents()
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -180,10 +176,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.on[COS_AGENT_RELATION_NAME].relation_broken, self._on_cos_agent_relation_broken
         )
 
-        self.log_rotation_setup = LogRotationSetup(self)
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
         self.backups = MySQLBackups(self, self.s3_integrator)
-        self.hostname_resolution = MySQLMachineHostnameResolution(self)
         self.upgrade = MySQLVMUpgrade(
             self,
             dependency_model=get_mysql_dependencies_model(),
@@ -193,7 +187,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
 
-        self.mysql_logs = MySQLLogs(self)
+        self.hostname_observer = IPAddressObserver(self)
+        self.hostname_manager = IPAddressManager(self)
+        self.hostname_manager.start_observer()
+
+        self.log_rotation_setup = LogRotationSetup(self)
+        self.log_rotate_observer = RotateMySQLLogsObserver(self)
+
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
@@ -453,7 +453,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             peers_waiting = all_states == {"waiting"}
 
             if (all_offline and self.unit.is_leader()) or peers_waiting:
-                loopback_entry_exists = self.hostname_resolution.update_etc_hosts(None)
+                loopback_entry_exists = self.hostname_observer.update_etc_hosts(None)
                 if loopback_entry_exists and not snap_service_operation(
                     CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
                 ):
@@ -504,13 +504,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         It is supposed to be called when the MySQL 8.0.21+ auto-rejoin attempts have been exhausted,
         on an OFFLINE replica that still belongs to the cluster
         """
-        if not self._mysql.instance_belongs_to_cluster(self.unit_label):
-            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
-            return
-
         cluster_primary = self._get_primary_from_online_peer()
         if not cluster_primary:
             logger.warning("Instance does not have ONLINE peers. Cannot perform manual rejoin")
+            return
+
+        if not self._mysql.instance_belongs_to_cluster(
+            unit_label=self.unit_label,
+            from_instance=cluster_primary,
+        ):
+            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
             return
 
         # add random delay to mitigate collisions when multiple units are rejoining
@@ -785,7 +788,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         Raised errors must be treated on handlers.
         """
         # ensure hostname can be resolved
-        self.hostname_resolution.update_etc_hosts(None)
+        self.hostname_observer.update_etc_hosts(None)
 
         logger.info("Initializing MySQL data directory")
         self._mysql.initialise_mysqld()
