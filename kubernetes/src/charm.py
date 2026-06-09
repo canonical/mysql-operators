@@ -942,7 +942,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Handle potential full cluster crash scenarios.
 
         Returns:
-            bool indicating whether the caller should return
+            bool
+                True if the handling worked correctly and the caller can continue,
+                False otherwise.
+
         """
         single_node_cluster = self.only_one_cluster_node_thats_uninitialized
         if not single_node_cluster and not self.cluster_initialized:
@@ -1119,9 +1122,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.set_unit_status(self.build_unit_workload_status())
 
         if self._handle_potential_cluster_crash_scenario(state):
-            return
-
-        self._set_app_status(state)
+            self._set_app_status(state)
 
     def _set_app_status(self, state: str) -> None:
         """Set the application status based on the cluster state."""

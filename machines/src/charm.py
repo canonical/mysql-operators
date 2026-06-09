@@ -446,6 +446,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Helper method to handle non-online instance statuses.
 
         Invoked from the update status event handler.
+
+        Returns:
+            bool
+                True if the handling worked correctly and the caller can continue,
+                False otherwise.
+
         """
         # A surviving member can stay ONLINE in its local view while the
         # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
@@ -631,10 +637,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-state"] = state
         self.set_unit_status(self.build_unit_workload_status())
 
-        if not self._handle_non_online_instance_status(state):
-            return
-
-        self._set_app_status(state)
+        if self._handle_non_online_instance_status(state):
+            self._set_app_status(state)
 
     def _on_cos_agent_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the cos_agent relation created event.
