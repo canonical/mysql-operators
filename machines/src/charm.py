@@ -504,13 +504,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         It is supposed to be called when the MySQL 8.0.21+ auto-rejoin attempts have been exhausted,
         on an OFFLINE replica that still belongs to the cluster
         """
-        if not self._mysql.instance_belongs_to_cluster(self.unit_label):
-            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
-            return
-
         cluster_primary = self._get_primary_from_online_peer()
         if not cluster_primary:
             logger.warning("Instance does not have ONLINE peers. Cannot perform manual rejoin")
+            return
+
+        if not self._mysql.instance_belongs_to_cluster(
+            unit_label=self.unit_label,
+            from_instance=cluster_primary,
+        ):
+            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
             return
 
         # add random delay to mitigate collisions when multiple units are rejoining
