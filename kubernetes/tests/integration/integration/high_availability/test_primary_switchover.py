@@ -11,12 +11,12 @@ from jubilant import Juju
 from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
+    force_kill_mysqld_service,
     get_app_name,
     get_app_units,
     get_mysql_primary_unit,
     load_mysql_test_data,
     start_mysqld_service,
-    stop_mysqld_service,
     update_interval,
     wait_for_apps_status,
 )
@@ -112,15 +112,15 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     logging.info(f"Unit selected for promotion: {unit_to_promote}")
 
     logging.info("Simulate quorum loss")
-    units_to_stop = [non_primary_units.pop(), primary_unit]
+    units_to_kill = [non_primary_units.pop(), primary_unit]
 
     # ensure no update-status is triggered
     with update_interval(juju, "30m"):
-        # Stop mysqld via Pebble on a majority of units:
-        # `pebble stop` is honoured until an explicit `pebble start`,
-        # so the survivor stays in NO_QUORUM until we restart mysqld below
-        for unit in units_to_stop:
-            stop_mysqld_service(juju, unit)
+        # SIGKILL mysqld on a majority of units
+        # so the survivor sees the killed units as UNREACHABLE
+        # rather than gracefully departed
+        for unit in units_to_kill:
+            force_kill_mysqld_service(juju, unit)
         # allow time to cluster settled in no_quorum
         sleep(10)
         logging.info("Attempting to promote a unit to primary after quorum loss...")
