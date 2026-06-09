@@ -576,7 +576,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         # unset restart control flag
-        del self.restart_peers.data[self.unit]["state"]
+        if self.restart_peers:
+            self.restart_peers.data[self.unit].pop("state", None)
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
