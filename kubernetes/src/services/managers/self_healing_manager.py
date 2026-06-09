@@ -12,8 +12,6 @@ import typing
 from ops.framework import Object
 from ops.model import ActiveStatus
 
-from constants import CONTAINER_NAME
-
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
 
@@ -32,11 +30,9 @@ class SelfHealingManager(Object):
 
     def start_self_healing_manager(self):
         """Forks off a process that periodically dispatch a custom event to self-heal."""
-        container = self.charm.unit.get_container(CONTAINER_NAME)
         if (
             not isinstance(self.charm.unit.status, ActiveStatus)
-            or self.charm.peers is None
-            or not container.can_connect()
+            or not self.charm.peers
             or not self.charm.unit_initialized()
         ):
             return
