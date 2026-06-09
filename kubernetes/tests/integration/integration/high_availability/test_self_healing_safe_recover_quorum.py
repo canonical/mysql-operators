@@ -26,7 +26,7 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 
-def dtest_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
+def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
     logging.info("Deploying MySQL cluster")
     juju.deploy(

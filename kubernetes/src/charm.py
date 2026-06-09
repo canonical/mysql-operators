@@ -859,10 +859,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     logger.warning("Attempting reboot from complete outage")
                     self._mysql.reboot_from_complete_outage()
                     return False
-                else:
-                    # set offline state and delegate reboot from outage to leader
-                    logger.warning("Set instance to offline")
-                    self.unit_peer_data["member-state"] = InstanceState.OFFLINE.lower()
             except MySQLRebootFromCompleteOutageError:
                 logger.error("Failed to reboot cluster from complete outage")
                 self.unit.status = BlockedStatus("failed to recover cluster")
