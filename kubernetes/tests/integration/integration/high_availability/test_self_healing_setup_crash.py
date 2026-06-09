@@ -10,7 +10,6 @@ from ...helpers_ha import (
     CHARM_METADATA,
     delete_k8s_pod,
     get_mysql_primary_unit,
-    update_interval,
     wait_for_apps_status,
     wait_for_unit_message,
 )
@@ -49,9 +48,8 @@ def test_deploy_and_crash_during_cluster_setup_and_recover(juju: Juju, charm: st
     logging.info("Deleting pod")
     delete_k8s_pod(juju, mysql_primary)
 
-    with update_interval(juju, "60s"):
-        logging.info("Waiting until cluster is fully active")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
-            timeout=20 * MINUTE_SECS,
-        )
+    logging.info("Waiting until cluster is fully active")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        timeout=20 * MINUTE_SECS,
+    )
