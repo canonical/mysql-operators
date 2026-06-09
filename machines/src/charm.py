@@ -442,11 +442,35 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         set_destination(f"{endpoint}/v1/traces", None)
 
-    def _handle_non_online_instance_status(self, state: str) -> bool:
+    def _handle_non_online_instance_status(self, state: str) -> bool:  # noqa: C901
         """Helper method to handle non-online instance statuses.
 
         Invoked from the update status event handler.
         """
+        # A surviving member can stay ONLINE in its local view while the
+        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
+        # complete-outage path below only fires on state == OFFLINE, so
+        # without this the leader stays stuck and the cluster never recovers.
+        if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
+            logger.warning("Cluster has lost quorum")
+            try:
+                # reboot_cluster_from_complete_outage rejects an instance whose
+                # GR is still running; drop it to OFFLINE first.
+                self._mysql.stop_group_replication()
+                if self.unit.is_leader():
+                    # run on leader only for coordinate recovery
+                    logger.warning("Attempting reboot from complete outage")
+                    self._mysql.reboot_from_complete_outage()
+                    return False
+                else:
+                    # set offline state and delegate reboot from outage to leader
+                    logger.warning("Set instance to offline")
+                    self.unit_peer_data["member-state"] = InstanceState.OFFLINE
+            except MySQLRebootFromCompleteOutageError:
+                logger.error("Failed to reboot cluster from complete outage")
+                self.set_unit_status(BlockedStatus("failed to recover cluster"))
+            return True
+
         if state == InstanceState.RECOVERING:
             # server is in the process of becoming an active member
             logger.info("Instance is being recovered")
@@ -867,7 +891,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
         self.database_relation._update_endpoints_all_relations(None)
-        self._on_update_status(None)
 
     def _can_start(self, event: StartEvent) -> bool:
         """Check if the unit can start.
