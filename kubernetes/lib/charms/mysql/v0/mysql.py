@@ -1905,14 +1905,29 @@ class MySQLBase(ABC):
             unit_status = unit_spec.get("status")
             return unit_status in (InstanceState.ONLINE, InstanceState.RECOVERING)
 
-    def instance_belongs_to_cluster(self, unit_label: str) -> bool:
+    def instance_belongs_to_cluster(
+        self, unit_label: str, from_instance: str | None = None
+    ) -> bool:
         """Check if instance belongs to cluster independently of current state.
+
+        Membership is queried from ``from_instance`` (typically the cluster
+        primary), since the local instance metadata can be stale.
 
         Args:
             unit_label: The label of the unit to check.
+            from_instance: Instance to query cluster metadata from. Defaults to
+                the local instance.
         """
+        if from_instance:
+            client = InstanceClient(
+                self._build_instance_tcp_executor(from_instance),
+                self._quoter,
+            )
+        else:
+            client = self._instance_client_tcp
+
         try:
-            labels = self._instance_client_tcp.get_cluster_instance_labels(self.cluster_name)
+            labels = client.get_cluster_instance_labels(self.cluster_name)
         except ExecutionError:
             return False
         else:
