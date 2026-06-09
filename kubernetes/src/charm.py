@@ -363,14 +363,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def get_unit_address(self, unit: Unit, relation_name: str = PEER) -> str:
         """Get fqdn/address for a unit.
 
-        Translate juju unit name to resolvable hostname.
+        Translate the Juju unit name to a resolvable hostname
+        and return the fully qualified domain name (with a trailing dot).
+        Raises ``RuntimeError`` if the FQDN still cannot be resolved.
         """
+        unit_hostname = self.get_unit_hostname(unit.name)
         try:
-            unit_hostname = self.get_unit_hostname(unit.name)
             unit_dns_domain = get_k8s_fqdn(unit_hostname)
         except RuntimeError:
             logger.warning("Unit DNS domain name is not propagated yet")
-            return ""
+            raise
 
         # When fully propagated, DNS domain name should contain unit hostname.
         # For example:

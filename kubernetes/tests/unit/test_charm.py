@@ -312,6 +312,24 @@ class TestCharm(unittest.TestCase):
         )
         mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints")
 
+    @patch(
+        "charm.get_k8s_fqdn",
+        side_effect=[
+            RuntimeError("Failed to resolve canonical name for mysql-k8s-0.mysql-k8s-endpoints"),
+            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
+        ],
+    )
+    def test_get_unit_address_retries_on_dns_not_propagated(self, mock_get_k8s_fqdn):
+        """When DNS resolution fails transiently, get_unit_address must retry.
+
+        Regression test for https://github.com/canonical/mysql-operators/issues/350.
+        """
+        self.assertEqual(
+            self.charm.get_unit_address(self.charm.unit),
+            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local.",
+        )
+        self.assertEqual(mock_get_k8s_fqdn.call_count, 2)
+
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.is_data_dir_initialised", return_value=False)
     def test_mysql_property(self, _, mock_get_unit_address):
