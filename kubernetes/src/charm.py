@@ -896,11 +896,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
             return True
 
-        if state == "UNKNOWN":
-            # instance with unknown state that has cluster metadata
+        if state in ("UNKNOWN", InstanceState.ERROR):
+            # instance in unknown/error state that has cluster metadata
             # got expelled from the group (e.g. when being unreachable for too long)
             # try manual rejoin
-            logger.info("Unit is expelled from the group. Attemping manual rejoin")
+            logger.info("Unit is expelled from the group. Attempting manual rejoin")
             self._execute_manual_rejoin()
             return True
 

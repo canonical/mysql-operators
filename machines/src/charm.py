@@ -436,7 +436,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         set_destination(f"{endpoint}/v1/traces", None)
 
-    def _handle_non_online_instance_status(self, state: str) -> bool:
+    def _handle_non_online_instance_status(self, state: str) -> bool:  # noqa: C901
         """Helper method to handle non-online instance statuses.
 
         Invoked from the update status event handler.
@@ -487,11 +487,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
                 self._execute_manual_rejoin()
 
-        if state == "UNKNOWN":
-            # instance with unknown state that has cluster metadata
+        if state in ("UNKNOWN", InstanceState.ERROR):
+            # instance in unknown/error state that has cluster metadata
             # got expelled from the group (e.g. when being unreachable for too long)
             # try manual rejoin
-            logger.info("Unit is expelled from the group. Attemping manual rejoin")
+            logger.info("Unit is expelled from the group. Attempting manual rejoin")
             self._execute_manual_rejoin()
             return True
 
