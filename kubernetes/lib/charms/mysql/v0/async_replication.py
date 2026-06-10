@@ -360,7 +360,11 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             replica_status = self._charm._mysql.get_replica_cluster_status(
                 remote_data["cluster-name"]
             )
-            if replica_status in (ClusterGlobalStatus.OK, ClusterGlobalStatus.INVALIDATED):
+            if replica_status in (
+                ClusterGlobalStatus.OK,
+                ClusterGlobalStatus.OK_NOT_CONSISTENT,
+                ClusterGlobalStatus.INVALIDATED,
+            ):
                 return States.READY
             elif replica_status == ClusterGlobalStatus.UNKNOWN:
                 return States.INITIALIZING

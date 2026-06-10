@@ -185,6 +185,7 @@ class MySQLAsyncReplication(Object):
     def on_async_relation_broken(self, event: RelationBrokenEvent):  # noqa: C901
         """Handle the async relation being broken from either side."""
         # Remove the replica cluster, if this is the primary
+
         if (
             self.role.cluster_role in (ClusterRole.REPLICA.lower(), "unset")
             and not self._charm.removing_unit
@@ -359,7 +360,11 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             replica_status = self._charm._mysql.get_replica_cluster_status(
                 remote_data["cluster-name"]
             )
-            if replica_status in (ClusterGlobalStatus.OK, ClusterGlobalStatus.INVALIDATED):
+            if replica_status in (
+                ClusterGlobalStatus.OK,
+                ClusterGlobalStatus.OK_NOT_CONSISTENT,
+                ClusterGlobalStatus.INVALIDATED,
+            ):
                 return States.READY
             elif replica_status == ClusterGlobalStatus.UNKNOWN:
                 return States.INITIALIZING

@@ -577,11 +577,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.debug("skip status update while upgrading")
             return
 
-        if not (self.replication_offer.idle and self.replication_consumer.idle):
-            # avoid changing status while in async replication
-            logger.debug("skip status update while setting up async replication")
-            return
-
         # unset restart control flag
         del self.restart_peers.data[self.unit]["state"]
 
@@ -596,6 +591,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLUnableToGetMemberStateError:
             role = "UNKNOWN"
             state = "UNREACHABLE"
+
+        # only assert for async replication state when online
+        if state == InstanceState.ONLINE and not (
+            self.replication_offer.idle and self.replication_consumer.idle
+        ):
+            logger.info("Skip status update when setting async replication")
+            return
 
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role.lower()
