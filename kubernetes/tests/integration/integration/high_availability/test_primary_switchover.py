@@ -16,7 +16,6 @@ from ...helpers_ha import (
     get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
     wait_for_unit_message,
     wait_for_unit_status,
@@ -118,17 +117,16 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     units_to_kill = [non_primary_units.pop(), primary_unit]
     kill_pods(juju, units_to_kill)
 
-    with update_interval(juju, "45s"):
-        logging.info("Waiting to settle in error state")
-        juju.wait(
-            ready=lambda status: all((
-                wait_for_unit_status(app_name, unit_to_promote, "active")(status),
-                wait_for_unit_message(app_name, units_to_kill[0], "OFFLINE")(status),
-                wait_for_unit_message(app_name, units_to_kill[1], "OFFLINE")(status),
-            )),
-            timeout=15 * MINUTE_SECS,
-            delay=15,
-        )
+    logging.info("Waiting to settle in error state")
+    juju.wait(
+        ready=lambda status: all((
+            wait_for_unit_status(app_name, unit_to_promote, "active")(status),
+            wait_for_unit_message(app_name, units_to_kill[0], "OFFLINE")(status),
+            wait_for_unit_message(app_name, units_to_kill[1], "OFFLINE")(status),
+        )),
+        timeout=15 * MINUTE_SECS,
+        delay=15,
+    )
 
     logging.info("Attempting to promote a unit to primary after quorum loss...")
     juju.run(
@@ -138,13 +136,12 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
         wait=600,
     )
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant_backports.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
+    logging.info("Waiting for all units to become active after switchover...")
+    juju.wait(
+        ready=jubilant_backports.all_active,
+        timeout=10 * MINUTE_SECS,
+        delay=5,
+    )
 
     assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"
 

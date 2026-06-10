@@ -115,8 +115,8 @@ from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
 from relations.shared_db import SharedDBRelation
 from services.events import CharmServicesEvents
-from services.managers import IPAddressManager
-from services.observers import IPAddressObserver, RotateMySQLLogsObserver
+from services.managers import IPAddressManager, SelfHealingManager
+from services.observers import IPAddressObserver, RotateMySQLLogsObserver, SelfHealingMySQLObserver
 from upgrade import MySQLVMUpgrade, get_mysql_dependencies_model
 from utils import compare_dictionaries, generate_random_password
 
@@ -190,6 +190,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.hostname_observer = IPAddressObserver(self)
         self.hostname_manager = IPAddressManager(self)
         self.hostname_manager.start_observer()
+
+        self.self_healing_observer = SelfHealingMySQLObserver(self)
+        self.self_healing_manager = SelfHealingManager(self)
+        self.self_healing_manager.start_observer()
 
         self.log_rotation_setup = LogRotationSetup(self)
         self.log_rotate_observer = RotateMySQLLogsObserver(self)

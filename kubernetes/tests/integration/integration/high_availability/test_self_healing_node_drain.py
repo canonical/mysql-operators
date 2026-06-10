@@ -19,7 +19,6 @@ from ...helpers_ha import (
     get_k8s_pod_pvs,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -85,13 +84,12 @@ def test_pod_eviction_and_pvc_deletion(juju: Juju, continuous_writes) -> None:
     delete_pvcs(primary_pod_pvcs)
     delete_pvs(primary_pod_pvs)
 
-    with update_interval(juju, "90s"):
-        logging.info("Waiting for evicted primary pod to be rescheduled")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
-            error=jubilant_backports.any_blocked,
-            timeout=20 * MINUTE_SECS,
-        )
+    logging.info("Waiting for evicted primary pod to be rescheduled")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        error=jubilant_backports.any_blocked,
+        timeout=20 * MINUTE_SECS,
+    )
 
     logging.info("Ensuring that all instances have incrementing continuous writes")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
