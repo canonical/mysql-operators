@@ -1040,7 +1040,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if member_state == "UNKNOWN" or member_state == InstanceState.RECOVERING:
             # avoid changing status while tls is being set up or charm is being initialized
             logger.info(f"Unit {member_state=}")
-            self.unit.status = MaintenanceStatus(member_state)
+            self.set_unit_status(MaintenanceStatus(member_state))
             return True
 
         # avoid changing status while async replication is setting up
