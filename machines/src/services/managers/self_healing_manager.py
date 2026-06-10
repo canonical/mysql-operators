@@ -1,7 +1,7 @@
-# Copyright 2023 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Set up IP address changes manager."""
+"""Set up self-healing manager."""
 
 import logging
 import os
@@ -14,39 +14,33 @@ from ops.model import ActiveStatus
 
 logger = logging.getLogger(__name__)
 
-# File path for the spawned IP address manager process to write logs.
-LOG_FILE_PATH = "/var/log/ip_address_manager.log"
+# File path for the spawned self-healing manager process to write logs.
+LOG_FILE_PATH = "/var/log/self_healing_manager.log"
 
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
 
 
-class IPAddressManager(Object):
-    """Manages changes in the unit's IP address.
+class SelfHealingManager(Object):
+    """Manages self-healing for the charm.
 
-    Dispatches a custom event every 30s to update hostnames in the charm container.
+    Dispatches a custom event every 120s to self-heal the mysql cluster.
     """
 
     def __init__(self, charm: "MySQLOperatorCharm"):
-        super().__init__(charm, "ip-address-manager")
-
+        super().__init__(charm, "self-healing-manager")
         self.charm = charm
 
     def start_manager(self):
-        """Start the IP address manager running in a new process."""
+        """Start the self-healing running in a new process."""
         if not isinstance(self.charm.unit.status, ActiveStatus) or self.charm.peers is None:
             return
 
-        if "ip-address-manager-pid" in self.charm.unit_peer_data:
-            pid = int(self.charm.unit_peer_data["ip-address-manager-pid"])
-            try:
-                os.kill(pid, 0)
-                return
-            except OSError:
-                pass
+        if (pid := self.charm.unit_peer_data.get("self-heal-manager-pid")) and check_pid(int(pid)):
+            return
 
-        logger.info("Starting IP address manager process")
+        logger.info("Starting self-healing process")
 
         # We need to trick Juju into thinking that we are not running
         # in a hook context, as Juju will disallow use of juju-run.
@@ -58,7 +52,7 @@ class IPAddressManager(Object):
         process = subprocess.Popen(  # noqa:S603
             [
                 "/usr/bin/python3",
-                "scripts/ip_address_dispatcher.py",
+                "scripts/self_healing_dispatcher.py",
                 "/usr/bin/juju-exec",
                 self.charm.unit.name,
                 self.charm.charm_dir,
@@ -69,19 +63,29 @@ class IPAddressManager(Object):
             env=new_env,
         )
 
-        self.charm.unit_peer_data.update({"ip-address-manager-pid": f"{process.pid}"})
-        logging.info(f"Started IP address manager process with PID {process.pid}")
+        self.charm.unit_peer_data.update({"self-heal-manager-pid": f"{process.pid}"})
+        logging.info(f"Started self-healing manager process with PID {process.pid}")
 
     def stop_manager(self):
         """Stop running the manager if it is indeed running."""
-        if self.charm.peers is None or "ip-address-manager-pid" not in self.charm.unit_peer_data:
+        if self.charm.peers is None or "self-heal-manager-pid" not in self.charm.unit_peer_data:
             return
 
-        manager_pid = int(self.charm.unit_peer_data["ip-address-manager-pid"])
+        manager_pid = int(self.charm.unit_peer_data["self-heal-manager-pid"])
 
         try:
             os.kill(manager_pid, signal.SIGTERM)
-            logger.info(f"Stopped running IP address manager process with PID {manager_pid}")
-            del self.charm.unit_peer_data["ip-address-manager-pid"]
+            logger.info(f"Stopped self-healing manager process with PID {manager_pid}")
+            del self.charm.unit_peer_data["self-heal-manager-pid"]
         except OSError:
             pass
+
+
+def check_pid(pid: int) -> bool:
+    """Check if pid exists."""
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True

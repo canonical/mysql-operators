@@ -99,8 +99,8 @@ from refresh import KubernetesMySQLRefresh
 from relations.mysql_provider import MySQLProvider
 from relations.tls import TLS
 from services.events import CharmServicesEvents
-from services.managers import LogRotateManager
-from services.observers import RotateMySQLLogsObserver
+from services.managers import LogRotateManager, SelfHealingManager
+from services.observers import RotateMySQLLogsObserver, SelfHealingMySQLObserver
 from utils import compare_dictionaries, dotappend, generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
@@ -198,9 +198,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.log_rotate_manager = LogRotateManager(self)
         self.log_rotate_manager.start_log_rotate_manager()
+        self.self_healing_manager = SelfHealingManager(self)
+        self.self_healing_manager.start_self_healing_manager()
 
         self.log_rotate_setup = LogRotationSetup(self)
         self.log_rotate_observer = RotateMySQLLogsObserver(self)
+        self.self_healing_observer = SelfHealingMySQLObserver(self)
 
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
