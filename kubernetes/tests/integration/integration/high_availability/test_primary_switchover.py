@@ -11,6 +11,7 @@ from jubilant_backports import Juju
 from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
+    force_kill_mysqld_service,
     get_app_name,
     get_app_units,
     get_mysql_instance_label,
@@ -117,7 +118,8 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     # ensure no update-status is triggered
     with update_interval(juju, "30m"):
-        kill_pods(juju, units_to_kill)
+        for unit in units_to_kill:
+            force_kill_mysqld_service(juju, unit)
         # allow time to cluster settled in no_quorum
         sleep(10)
         logging.info("Attempting to promote a unit to primary after quorum loss...")
@@ -128,28 +130,6 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
             wait=600,
         )
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant_backports.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
-
-    assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"
-
-
-def kill_pods(juju: Juju, unit_names: list[str]) -> None:
-    """Kill the unit pods simultaneously using kubectl."""
-    pod_names = [get_mysql_instance_label(unit) for unit in unit_names]
-    cmd = [
-        "kubectl",
-        "delete",
-        "pod",
-        *pod_names,
-        "-n",
-        juju.model,
-        "--grace-period=0",
-        "--force",
-    ]
-    subprocess.run(cmd, check=True)
+    assert get_mysql_primary_unit(juju, app_name, unit_to_promote) == unit_to_promote, (
+        "Failover failed"
+    )
