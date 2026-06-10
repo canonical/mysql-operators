@@ -487,6 +487,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
                 self._execute_manual_rejoin()
 
+        if state == "UNKNOWN":
+            # instance with unknown state that has cluster metadata
+            # got expelled from the group (e.g. when being unreachable for too long)
+            # try manual rejoin
+            logger.info("Unit is expelled from the group. Attemping manual rejoin")
+            self._execute_manual_rejoin()
+            return True
+
         if state == InstanceState.UNREACHABLE:
             try:
                 if not snap_service_operation(
