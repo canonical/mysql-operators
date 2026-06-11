@@ -569,7 +569,7 @@ class MySQL(MySQLBase):
 
         get_label_users_selector = f'%"{label_name}": "{label_value}"%'
         get_label_users_query = (
-            "SELECT user.user, user.host"
+            "SELECT user.user, user.host "  # noqa: S608
             "FROM mysql.user AS user "
             "JOIN information_schema.user_attributes AS attributes "
             "   ON (user.user = attributes.user AND user.host = attributes.host) "

@@ -93,12 +93,13 @@ from constants import (
     SERVER_CONFIG_USERNAME,
 )
 from k8s_helpers import KubernetesHelpers
-from log_rotate_manager import LogRotateManager
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
 from relations.mysql_root import MySQLRootRelation
-from rotate_mysql_logs import RotateMySQLLogs, RotateMySQLLogsCharmEvents
+from services.events import CharmServicesEvents
+from services.managers import LogRotateManager, SelfHealingManager
+from services.observers import RotateMySQLLogsObserver, SelfHealingMySQLObserver
 from upgrade import MySQLK8sUpgrade, get_mysql_k8s_dependencies_model
 from utils import compare_dictionaries, generate_random_password, get_k8s_fqdn
 
@@ -109,10 +110,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     """Operator framework charm for MySQL."""
 
     config_type = CharmConfig
-    # RotateMySQLLogsCharmEvents needs to be defined on the charm object for
-    # the log rotate manager process (which runs juju-run/juju-exec to dispatch
-    # a custom event)
-    on = RotateMySQLLogsCharmEvents()  # type: ignore
+    on = CharmServicesEvents()
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -168,9 +166,13 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.log_rotate_manager = LogRotateManager(self)
         self.log_rotate_manager.start_log_rotate_manager()
+        self.self_healing_manager = SelfHealingManager(self)
+        self.self_healing_manager.start_self_healing_manager()
 
         self.log_rotate_setup = LogRotationSetup(self)
-        self.rotate_mysql_logs = RotateMySQLLogs(self)
+        self.log_rotate_observer = RotateMySQLLogsObserver(self)
+        self.self_healing_observer = SelfHealingMySQLObserver(self)
+
         self.replication_offer = MySQLAsyncReplicationOffer(self)
         self.replication_consumer = MySQLAsyncReplicationConsumer(self)
 
@@ -922,13 +924,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         It is supposed to be called when the MySQL 8.0.21+ auto-rejoin attempts have been exhausted,
         on an OFFLINE replica that still belongs to the cluster
         """
-        if not self._mysql.instance_belongs_to_cluster(self.unit_label):
-            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
-            return
-
         cluster_primary = self._get_primary_from_online_peer()
         if not cluster_primary:
             logger.warning("Instance does not have ONLINE peers. Cannot perform manual rejoin")
+            return
+
+        if not self._mysql.instance_belongs_to_cluster(
+            unit_label=self.unit_label,
+            from_instance=cluster_primary,
+        ):
+            logger.warning("Instance does not belong to the cluster. Cannot perform manual rejoin")
             return
 
         # add random delay to mitigate collisions when multiple units are rejoining
@@ -984,10 +989,17 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if member_state == "UNKNOWN" or member_state == InstanceState.RECOVERING:
             # avoid changing status while tls is being set up or charm is being initialized
             logger.info(f"Unit {member_state=}")
+            self.unit.status = MaintenanceStatus(member_state)
             return True
 
-        # avoid changing status while async replication is setting up
-        return not (self.replication_consumer.idle and self.replication_offer.idle)
+        # only assert for async replication state when online
+        if member_state == InstanceState.ONLINE and not (
+            self.replication_consumer.idle and self.replication_offer.idle
+        ):
+            logger.info("Skip status update when setting async replication")
+            return True
+
+        return False
 
     def _on_update_status(self, _: UpdateStatusEvent | None) -> None:
         """Handle the update status event."""

@@ -8,12 +8,11 @@ import logging
 import socket
 import typing
 
-from ops.framework import Object
+from ops.framework import EventBase, Object
 from ops.model import Unit
 from python_hosts import Hosts, HostsEntry
 
 from constants import HOSTNAME_DETAILS, PEER
-from ip_address_observer import IPAddressChangeCharmEvents, IPAddressObserver
 from mysql_vm_helpers import MySQLFlushHostCacheError
 
 logger = logging.getLogger(__name__)
@@ -24,27 +23,23 @@ if typing.TYPE_CHECKING:
 COMMENT = "Managed by mysql charm"
 
 
-class MySQLMachineHostnameResolution(Object):
-    """Encapsulation of the the machine hostname resolution."""
+class IPAddressChangeEvent(EventBase):
+    """A custom event for IP address change."""
 
-    on = (  # pyright: ignore [reportIncompatibleMethodOverride, reportAssignmentType
-        IPAddressChangeCharmEvents()
-    )
+
+class IPAddressObserver(Object):
+    """Encapsulation of the IP address resolution observer."""
 
     def __init__(self, charm: "MySQLOperatorCharm"):
-        super().__init__(charm, "hostname-resolution")
+        super().__init__(charm, "ip-address-observer")
 
         self.charm = charm
-
-        self.ip_address_observer = IPAddressObserver(charm)
 
         self.framework.observe(self.charm.on.config_changed, self._update_host_details_in_databag)
         self.framework.observe(self.charm.on.ip_address_change, self._on_ip_address_change)
 
         self.framework.observe(self.charm.on[PEER].relation_changed, self.update_etc_hosts)
         self.framework.observe(self.charm.on[PEER].relation_departed, self.update_etc_hosts)
-
-        self.ip_address_observer.start_observer()
 
     def _update_host_details_in_databag(self, _) -> None:
         hostname = socket.gethostname()

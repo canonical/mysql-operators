@@ -247,9 +247,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     @patch("python_hosts.Hosts.write")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
-    @patch(
-        "hostname_resolution.MySQLMachineHostnameResolution.update_etc_hosts", return_value=True
-    )
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
     def test_on_update(
         self,
         _,
