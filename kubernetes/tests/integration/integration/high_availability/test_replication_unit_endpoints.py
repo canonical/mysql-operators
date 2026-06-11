@@ -67,10 +67,6 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
             timeout=20 * MINUTE_SECS,
         )
 
-    if path := os.getenv("DATA_SOURCE_PATH"):
-        logging.info("Loading test database")
-        load_mysql_test_data(juju, MYSQL_APP_NAME_1, path)
-
 
 def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL and application charms get deployed."""
@@ -107,10 +103,6 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
             ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_2),
             timeout=20 * MINUTE_SECS,
         )
-
-    if path := os.getenv("DATA_SOURCE_PATH"):
-        logging.info("Loading test database")
-        load_mysql_test_data(juju, MYSQL_APP_NAME_2, path)
 
 
 def test_labeling_of_k8s_endpoints(juju: Juju) -> None:
