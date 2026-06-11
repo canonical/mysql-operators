@@ -1174,4 +1174,4 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
 
 if __name__ == "__main__":
-    main(MySQLOperatorCharm)
+    main(MySQLOperatorCharm)  # Because yes
