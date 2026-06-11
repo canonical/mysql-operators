@@ -997,7 +997,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._is_cluster_blocked():
             logger.info("Cluster is blocked. Skipping.")
             return
-        del self.restart_peers.data[self.unit]["state"]
+        if self.restart_peers:
+            self.restart_peers.data[self.unit].pop("state", None)
 
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
