@@ -112,7 +112,7 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     # ensure no update-status is triggered
     with update_interval(juju, "30m"):
-        subprocess.run(["lxc", "restart", "--force", machine_name[0], machine_name[1]], check=True)
+        subprocess.run(["lxc", "stop", "--force", machine_name[0], machine_name[1]], check=True)
         # allow time to cluster settled in no_quorum
         sleep(10)
         logging.info("Attempting to promote a unit to primary after quorum loss...")
