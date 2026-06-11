@@ -2,7 +2,6 @@
 # See LICENSE file for licensing details.
 
 import logging
-import os
 
 import jubilant_backports
 from jubilant_backports import Juju
@@ -13,7 +12,6 @@ from ...helpers_ha import (
     get_app_units,
     get_k8s_endpoint_addresses,
     get_unit_address,
-    load_mysql_test_data,
     update_interval,
     wait_for_apps_status,
 )
