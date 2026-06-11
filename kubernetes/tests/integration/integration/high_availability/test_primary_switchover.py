@@ -2,7 +2,6 @@
 # See LICENSE file for licensing details.
 import logging
 import os
-import subprocess
 from time import sleep
 
 import jubilant_backports
@@ -14,9 +13,9 @@ from ...helpers_ha import (
     force_kill_mysqld_service,
     get_app_name,
     get_app_units,
-    get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
+    update_interval,
     wait_for_apps_status,
 )
 
