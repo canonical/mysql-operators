@@ -702,3 +702,37 @@ def wait_for_unit_message(app_name: str, unit_name: str, unit_message: str) -> J
     return lambda status: (
         status.apps[app_name].units[unit_name].workload_status.message == unit_message
     )
+
+
+def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
+    """SIGKILL mysqld and suppress Pebble's auto-restart.
+
+    Args:
+        juju: The Juju model.
+        unit_name: The name of the unit.
+
+    """
+    # `pkill -x` (exact process-name match), NOT `-f` (full cmdline match):
+    # `juju.ssh` wraps the command in a shell whose cmdline
+    # literally contains the string "mysqld" (from our pkill arguments),
+    # so `-f` would match - and SIGKILL - the shell itself, returning exit 137
+    # before pkill finishes signalling mysqld
+    juju.ssh(
+        command=f"pkill -x {MYSQLD_SERVICE} --signal SIGKILL",
+        target=unit_name,
+        container=CONTAINER_NAME,
+    )
+    juju.ssh(
+        command=f"pebble stop {MYSQLD_SERVICE}",
+        target=unit_name,
+        container=CONTAINER_NAME,
+    )
+
+    # Single verification: by the time `pebble stop` returns,
+    # the service is in `stopped` state
+    # If mysqld is still alive after a brief settle window,
+    # Pebble lost the race, so fail fast rather than masking with retries
+    for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(2), reraise=True):
+        with attempt:
+            if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is not None:
+                raise Exception(f"mysqld still alive on {unit_name} after SIGKILL + pebble stop")
