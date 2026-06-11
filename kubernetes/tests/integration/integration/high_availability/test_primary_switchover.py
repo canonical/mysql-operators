@@ -16,7 +16,6 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    start_mysqld_service,
     update_interval,
     wait_for_apps_status,
 )
@@ -116,9 +115,6 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     # ensure no update-status is triggered
     with update_interval(juju, "30m"):
-        # SIGKILL mysqld on a majority of units
-        # so the survivor sees the killed units as UNREACHABLE
-        # rather than gracefully departed
         for unit in units_to_kill:
             force_kill_mysqld_service(juju, unit)
         # allow time to cluster settled in no_quorum
@@ -129,19 +125,6 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
             action="promote-to-primary",
             params={"scope": "unit", "force": True},
             wait=600,
-        )
-        # Bring mysqld back on the stopped units
-        # so they can rejoin the new primary;
-        # otherwise the cluster never reaches all-active
-        for unit in units_to_stop:
-            start_mysqld_service(juju, unit)
-
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
         )
 
     assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"

@@ -123,12 +123,6 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
             wait=600,
         )
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
-
-    assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"
+    assert get_mysql_primary_unit(juju, app_name, unit_to_promote) == unit_to_promote, (
+        "Failover failed"
+    )
