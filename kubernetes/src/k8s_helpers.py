@@ -86,9 +86,9 @@ class KubernetesHelpers:
             except ApiError as e:
                 if e.status.code == 403:
                     logger.error("Kubernetes service creation failed: `juju trust` needed")
-                if e.status.code == 409:
+                elif e.status.code == 409:
                     logger.warning("Kubernetes service already exists")
-                    return
+                    continue
                 else:
                     logger.exception("Kubernetes service creation failed: %s", e)
                 raise KubernetesClientError from e
