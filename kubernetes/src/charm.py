@@ -916,6 +916,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
             return True
 
+        if state in ("UNKNOWN", InstanceState.ERROR):
+            # instance in unknown/error state that has cluster metadata
+            # got expelled from the group (e.g. when being unreachable for too long)
+            # try manual rejoin
+            logger.info("Unit is expelled from the group. Attempting manual rejoin")
+            self._execute_manual_rejoin()
+            return True
+
         return False
 
     def _execute_manual_rejoin(self) -> None:
@@ -986,8 +994,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.unit.status = MaintenanceStatus("Unable to get member state")
             return True
 
-        if member_state == "UNKNOWN" or member_state == InstanceState.RECOVERING:
-            # avoid changing status while tls is being set up or charm is being initialized
+        if member_state == InstanceState.RECOVERING:
+            # Block operations while unit is recovering
             logger.info(f"Unit {member_state=}")
             self.unit.status = MaintenanceStatus(member_state)
             return True
