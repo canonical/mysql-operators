@@ -62,7 +62,15 @@ from ops.model import (
 )
 from ops.pebble import ChangeError, Layer
 from ops_tracing import Tracing
-from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from config import CharmConfig, MySQLConfig
 from constants import (
@@ -359,7 +367,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         unit_name = unit_name or self.unit.name
         return f"{unit_name.replace('/', '-')}.{self.app.name}-endpoints"
 
-    @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(2))
+    @retry(
+        reraise=True,
+        retry=retry_if_exception_type(RuntimeError),
+        stop=stop_after_delay(120),
+        wait=wait_fixed(2),
+    )
     def get_unit_address(self, unit: Unit, relation_name: str = PEER) -> str:
         """Get fqdn/address for a unit.
 
