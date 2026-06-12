@@ -14,7 +14,6 @@ from ...helpers_ha import (
     get_mysql_primary_unit,
     get_unit_machine,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
