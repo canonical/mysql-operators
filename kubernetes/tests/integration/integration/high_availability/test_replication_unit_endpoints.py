@@ -44,7 +44,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         app=MYSQL_TEST_APP_NAME_1,
         base="ubuntu@24.04",
         channel="latest/edge",
-        config={"sleep_interval": 300},
+        config={"sleep_interval": 1000},
         num_units=1,
         constraints=constraints,
     )
@@ -54,7 +54,7 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         f"{MYSQL_TEST_APP_NAME_1}:database",
     )
 
-    with update_interval(juju, "10s"):
+    with update_interval(juju, "45s"):
         logging.info("Wait for applications to become active")
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME_1),
@@ -83,7 +83,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         app=MYSQL_TEST_APP_NAME_2,
         base="ubuntu@24.04",
         channel="latest/edge",
-        config={"sleep_interval": 300},
+        config={"sleep_interval": 1000},
         num_units=1,
     )
 
@@ -92,7 +92,7 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         f"{MYSQL_TEST_APP_NAME_2}:database",
     )
 
-    with update_interval(juju, "10s"):
+    with update_interval(juju, "45s"):
         logging.info("Wait for applications to become active")
         juju.wait(
             ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME_2),
