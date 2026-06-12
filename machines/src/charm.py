@@ -458,7 +458,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # complete-outage path below only fires on state == OFFLINE, so
         # without this the leader stays stuck and the cluster never recovers.
         if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
-            logger.warning("Cluster has lost quorum")
+            logger.warning("Cluster has no quorum")
+            if self.peers.units and not self._all_peers_reachable():
+                logger.warning("Skipping quorum recovery: not all peers reachable")
+                return True
             try:
                 # reboot_cluster_from_complete_outage rejects an instance whose
                 # GR is still running; drop it to OFFLINE first.
@@ -887,6 +890,23 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             status = refresh_status
 
         self.unit.status = status
+
+    def _all_peers_reachable(self) -> bool:
+        """Return True if all peer units respond on MySQL port 3306.
+
+        Quorum recovery must not run when peers are unreachable — that scenario
+        indicates a network partition where the remote side may still be healthy.
+        """
+        for unit in self.peers.units:
+            address = self.get_unit_address(unit, PEER)
+            if not address:
+                return False
+            try:
+                with socket.create_connection((address, 3306), timeout=2):
+                    pass
+            except OSError:
+                return False
+        return True
 
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
