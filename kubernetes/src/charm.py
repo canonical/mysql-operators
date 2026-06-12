@@ -943,8 +943,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         Returns:
             bool
-                True if the handling worked correctly and the caller can continue,
-                False otherwise.
+                False if the handling worked correctly and the caller can continue,
+                True otherwise.
 
         """
         single_node_cluster = self.only_one_cluster_node_thats_uninitialized
@@ -1121,7 +1121,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-state"] = state
         self.set_unit_status(self.build_unit_workload_status())
 
-        if self._handle_potential_cluster_crash_scenario(state):
+        # TODO: Logic here is almost the opposite as the machines charm, but not quite
+        # We should review and fix it
+        if not self._handle_potential_cluster_crash_scenario(state):
             self._set_app_status(state)
 
     def _set_app_status(self, state: str) -> None:
