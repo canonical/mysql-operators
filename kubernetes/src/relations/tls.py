@@ -128,7 +128,7 @@ class TLS(Object):
     def _try_get_unit_address(self, relation_name: str) -> str:
         """Get fqdn/address for a unit, or "" if DNS not propagated yet."""
         try:
-            return self.charm.get_unit_address(self.charm.unit, relation_name)
+            return self.charm.get_unit_address_raw(self.charm.unit, relation_name)
         except RuntimeError:
             return ""
 
