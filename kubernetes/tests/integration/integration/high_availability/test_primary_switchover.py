@@ -15,7 +15,6 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -114,19 +113,17 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     logging.info("Simulate quorum loss")
     units_to_kill = [non_primary_units.pop(), primary_unit]
 
-    # ensure no update-status is triggered
-    with update_interval(juju, "30m"):
-        for unit in units_to_kill:
-            force_kill_mysqld_service(juju, unit)
-        # allow time to cluster settled in no_quorum
-        sleep(10)
-        logging.info("Attempting to promote a unit to primary after quorum loss...")
-        juju.run(
-            unit=unit_to_promote,
-            action="promote-to-primary",
-            params={"scope": "unit", "force": True},
-            wait=600,
-        )
+    for unit in units_to_kill:
+        force_kill_mysqld_service(juju, unit)
+    # allow time to cluster settled in no_quorum
+    sleep(10)
+    logging.info("Attempting to promote a unit to primary after quorum loss...")
+    juju.run(
+        unit=unit_to_promote,
+        action="promote-to-primary",
+        params={"scope": "unit", "force": True},
+        wait=600,
+    )
 
     assert get_mysql_primary_unit(juju, app_name, unit_to_promote) == unit_to_promote, (
         "Failover failed"
