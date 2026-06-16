@@ -131,6 +131,10 @@ def test_charmed_read_role(juju: Juju):
 
     juju.remove_relation(f"{DATABASE_APP_NAME}:database", f"{INTEGRATOR_APP_NAME}1:mysql")
     juju.wait(
+        ready=lambda status: "database" not in status.apps[DATABASE_APP_NAME].relations,
+        timeout=15 * MINUTE_SECS,
+    )
+    juju.wait(
         ready=wait_for_apps_status(jubilant.all_blocked, f"{INTEGRATOR_APP_NAME}1"),
         timeout=15 * MINUTE_SECS,
     )
