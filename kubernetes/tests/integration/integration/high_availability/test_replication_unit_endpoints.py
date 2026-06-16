@@ -12,103 +12,62 @@ from ...helpers_ha import (
     get_app_units,
     get_k8s_endpoint_addresses,
     get_unit_address,
-    update_interval,
     wait_for_apps_status,
 )
 
-MYSQL_APP_NAME_1 = "mysql-k8s1"
-MYSQL_APP_NAME_2 = "mysql-k8s2"
+MYSQL_APP_NAME = "mysql-k8s"
 MYSQL_APP_CLUSTER = "test-cluster"
-
-MYSQL_TEST_APP_NAME_1 = "mysql-test-app1"
-MYSQL_TEST_APP_NAME_2 = "mysql-test-app2"
+MYSQL_TEST_APP_NAME = "mysql-test-app"
 
 MINUTE_SECS = 60
 
 
-def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
-    """Simple test to ensure that the MySQL and application charms get deployed."""
-    logging.info("Deploying MySQL cluster")
-    juju.deploy(
-        charm=charm,
-        app=MYSQL_APP_NAME_1,
-        base="ubuntu@22.04",
-        config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        num_units=3,
-        trust=True,
-    )
+def test_deploy_highly_available_clusters(juju: Juju, charm: str) -> None:
+    """Deploy two mysql clusters with companion test apps with same cluster name."""
+    logging.info("Deploying two MySQL cluster")
     constraints = {"arch": architecture.architecture}
-    juju.deploy(
-        charm="mysql-test-app",
-        app=MYSQL_TEST_APP_NAME_1,
-        base="ubuntu@22.04",
-        channel="latest/edge",
-        config={"sleep_interval": 300},
-        num_units=1,
-        constraints=constraints,
-    )
-
-    juju.integrate(
-        f"{MYSQL_APP_NAME_1}:database",
-        f"{MYSQL_TEST_APP_NAME_1}:database",
-    )
-
-    with update_interval(juju, "10s"):
-        logging.info("Wait for applications to become active")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_1),
-            timeout=20 * MINUTE_SECS,
+    apps = []
+    for i in ("1", "2"):
+        mysql_app = f"{MYSQL_APP_NAME}{i}"
+        test_app = f"{MYSQL_TEST_APP_NAME}{i}"
+        apps.append(mysql_app)
+        apps.append(test_app)
+        juju.deploy(
+            charm=charm,
+            app=mysql_app,
+            base="ubuntu@22.04",
+            config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
+            resources={
+                "mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]
+            },
+            num_units=3,
+            trust=True,
         )
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_1),
-            timeout=20 * MINUTE_SECS,
+        juju.deploy(
+            charm=MYSQL_TEST_APP_NAME,
+            app=test_app,
+            base="ubuntu@22.04",
+            channel="latest/edge",
+            config={"sleep_interval": 1000},
+            num_units=1,
+            constraints=constraints,
         )
 
+        juju.integrate(f"{mysql_app}:database", f"{test_app}:database")
 
-def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
-    """Simple test to ensure that the MySQL and application charms get deployed."""
-    logging.info("Deploying MySQL cluster")
-    juju.deploy(
-        charm=charm,
-        app=MYSQL_APP_NAME_2,
-        base="ubuntu@22.04",
-        config={"cluster-name": MYSQL_APP_CLUSTER, "profile": "testing"},
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        num_units=3,
-        trust=True,
+    logging.info("Wait for applications to become active")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, *apps),
+        timeout=20 * MINUTE_SECS,
     )
-    juju.deploy(
-        charm="mysql-test-app",
-        app=MYSQL_TEST_APP_NAME_2,
-        base="ubuntu@22.04",
-        channel="latest/edge",
-        config={"sleep_interval": 300},
-        num_units=1,
-    )
-
-    juju.integrate(
-        f"{MYSQL_APP_NAME_2}:database",
-        f"{MYSQL_TEST_APP_NAME_2}:database",
-    )
-
-    with update_interval(juju, "10s"):
-        logging.info("Wait for applications to become active")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_2),
-            timeout=20 * MINUTE_SECS,
-        )
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_2),
-            timeout=20 * MINUTE_SECS,
-        )
 
 
 def test_labeling_of_k8s_endpoints(juju: Juju) -> None:
     """Test the labeling of k8s endpoints when apps with same cluster-name deployed."""
     logging.info("Ensuring that the created k8s endpoints have correct addresses")
-    check_endpoint_addresses(juju, MYSQL_APP_NAME_1)
-    check_endpoint_addresses(juju, MYSQL_APP_NAME_2)
+    for i in ("1", "2"):
+        mysql_app = f"{MYSQL_APP_NAME}{i}"
+        check_endpoint_addresses(juju, mysql_app)
 
 
 def check_endpoint_addresses(juju: Juju, mysql_app_name: str) -> None:
