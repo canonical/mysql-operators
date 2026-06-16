@@ -376,14 +376,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def get_unit_address(self, unit: Unit, relation_name: str = PEER) -> str:
         """Get fqdn/address for a unit.
 
-        Wraps get_unit_address_raw to make it more robust.
-        See that method for full documentation.
-        """
-        return self.get_unit_address_raw(unit, relation_name)
-
-    def get_unit_address_raw(self, unit: Unit, relation_name: str = PEER) -> str:
-        """Get fqdn/address for a unit.
-
         Translate the Juju unit name to a resolvable hostname
         and return the fully qualified domain name (with a trailing dot).
         Raises ``RuntimeError`` if the FQDN still cannot be resolved.

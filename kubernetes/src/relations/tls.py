@@ -125,17 +125,10 @@ class TLS(Object):
         """Get a common name for the peer certificate attributes."""
         return self._get_common_name()
 
-    def _try_get_unit_address(self, relation_name: str) -> str:
-        """Get fqdn/address for a unit, or "" if DNS not propagated yet."""
-        try:
-            return self.charm.get_unit_address_raw(self.charm.unit, relation_name)
-        except RuntimeError:
-            return ""
-
     def _get_client_addresses(self) -> set[str]:
         """Get a set of client connection addresses for the certificate attributes."""
         client_addresses = set()
-        if addr := self._try_get_unit_address(DB_RELATION_NAME):
+        if addr := self.charm.get_unit_address(self.charm.unit, DB_RELATION_NAME):
             client_addresses.add(addr)
 
         return client_addresses
@@ -144,7 +137,7 @@ class TLS(Object):
         """Get a set of peer connection addresses for the certificate attributes."""
         peer_addresses = set()
         for relation_name in (RELATION_CONSUMER, RELATION_OFFER, PEER):
-            if addr := self._try_get_unit_address(relation_name):
+            if addr := self.charm.get_unit_address(self.charm.unit, relation_name):
                 peer_addresses.add(addr)
 
         return peer_addresses
