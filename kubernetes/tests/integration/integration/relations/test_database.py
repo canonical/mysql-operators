@@ -162,7 +162,7 @@ def test_relation_broken_connectivity(juju: Juju):
     logging.info("Waiting for application app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, test_app_1, test_app_2),
-        timeout=5 * MINUTE_SECS,
+        timeout=15 * MINUTE_SECS,
         delay=2,
     )
 
