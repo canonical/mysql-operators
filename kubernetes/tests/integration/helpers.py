@@ -1,7 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import itertools
 import secrets
 import string
 
@@ -27,43 +26,6 @@ def generate_random_string(length: int) -> str:
     """
     choices = string.ascii_letters + string.digits
     return "".join([secrets.choice(choices) for i in range(length)])
-
-
-def execute_queries_on_unit(
-    unit_address: str,
-    username: str,
-    password: str,
-    queries: list[str],
-    commit: bool = False,
-    raw: bool = False,
-) -> list:
-    """Execute given MySQL queries on a unit.
-
-    Args:
-        unit_address: The public IP address of the unit to execute the queries on
-        username: The MySQL username
-        password: The MySQL password
-        queries: A list of queries to execute
-        commit: A keyword arg indicating whether there are any writes queries
-        raw: Whether MySQL results are returned as is, rather than converted to Python types.
-
-    Returns:
-        A list of rows that were potentially queried
-    """
-    config = {
-        "user": username,
-        "password": password,
-        "host": unit_address,
-        "raise_on_warnings": False,
-        "raw": raw,
-    }
-
-    with MySQLConnector(config, commit) as cursor:
-        for query in queries:
-            cursor.execute(query)
-        output = list(itertools.chain(*cursor.fetchall()))
-
-    return output
 
 
 @retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)

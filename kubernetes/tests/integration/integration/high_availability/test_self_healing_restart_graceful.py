@@ -8,13 +8,12 @@ import jubilant
 from jubilant import Juju
 
 from ... import architecture
-from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
+    execute_queries_on_unit,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
-    get_unit_address,
     load_mysql_test_data,
     start_mysqld_service,
     stop_mysqld_service,
@@ -81,17 +80,12 @@ def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
 
     credentials = get_mysql_server_credentials(juju, mysql_primary_unit)
 
-    config = {
-        "username": credentials["username"],
-        "password": credentials["password"],
-        "host": get_unit_address(juju, MYSQL_APP_NAME, mysql_primary_unit),
-    }
-
     execute_queries_on_unit(
-        unit_address=config["host"],
-        username=config["username"],
-        password=config["password"],
-        queries=["SET PERSIST group_replication_autorejoin_tries=0"],
+        juju,
+        mysql_primary_unit,
+        credentials["username"],
+        credentials["password"],
+        ["SET PERSIST group_replication_autorejoin_tries=0"],
         commit=True,
     )
 

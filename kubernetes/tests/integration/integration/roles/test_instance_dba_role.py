@@ -13,7 +13,6 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
-    get_unit_address,
     wait_for_apps_status,
 )
 
@@ -60,11 +59,11 @@ def test_charmed_dba_role(juju: Juju):
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
-    primary_unit_address = get_unit_address(juju, DATABASE_APP_NAME, primary_unit_name)
     server_config_credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
     execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         server_config_credentials["username"],
         server_config_credentials["password"],
         ["CREATE DATABASE IF NOT EXISTS test"],
@@ -75,10 +74,11 @@ def test_charmed_dba_role(juju: Juju):
     results = juju.run(data_integrator_unit_name, "get-credentials").results
 
     rows = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         results["mysql"]["username"],
         results["mysql"]["password"],
-        ["SHOW DATABASES"],
+        ["SET ROLE ALL", "SHOW DATABASES"],
         commit=True,
     )
 

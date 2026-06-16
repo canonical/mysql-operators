@@ -13,14 +13,14 @@ from jubilant import Juju, TaskError
 
 from constants import OPERATOR_USERNAME
 
-from ..helpers import execute_queries_on_unit, generate_random_string
+from ..helpers import generate_random_string
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
     create_app_secret,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_address,
     insert_mysql_test_data,
     rotate_mysql_server_credentials,
     scale_app_units,
@@ -137,11 +137,9 @@ def pitr_operations(
 ) -> None:
     app_units = get_app_units(juju, MYSQL_APPLICATION_NAME)
     first_mysql_unit_name = app_units[0]
-    first_mysql_ip = get_unit_address(juju, MYSQL_APPLICATION_NAME, first_mysql_unit_name)
 
     primary_unit_name = get_mysql_primary_unit(juju, MYSQL_APPLICATION_NAME)
     non_primary_unit_names = [unit for unit in app_units if unit != primary_unit_name]
-    primary_ip = get_unit_address(juju, MYSQL_APPLICATION_NAME, primary_unit_name)
 
     logger.info("Creating backup")
     results = juju.run(
@@ -157,7 +155,8 @@ def pitr_operations(
     verify_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td1)
 
     ts = execute_queries_on_unit(
-        primary_ip,
+        juju,
+        primary_unit_name,
         OPERATOR_USERNAME,
         OPERATOR_PASSWORD,
         ["SELECT CURRENT_TIMESTAMP"],
@@ -174,7 +173,8 @@ def pitr_operations(
     verify_mysql_test_data(juju, MYSQL_APPLICATION_NAME, TABLE_NAME, td2)
 
     execute_queries_on_unit(
-        primary_ip,
+        juju,
+        primary_unit_name,
         OPERATOR_USERNAME,
         OPERATOR_PASSWORD,
         ["FLUSH BINARY LOGS"],
@@ -203,7 +203,7 @@ def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert check_test_data_existence(first_mysql_ip, should_not_exist=[td1, td2]), (
+    assert check_test_data_existence(juju, first_mysql_unit_name, should_not_exist=[td1, td2]), (
         "test data should not exist"
     )
 
@@ -219,7 +219,7 @@ def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
+    assert check_test_data_existence(juju, first_mysql_unit_name, should_exist=[td1, td2]), (
         "both test data should exist"
     )
 
@@ -235,9 +235,9 @@ def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert check_test_data_existence(first_mysql_ip, should_exist=[td1], should_not_exist=[td2]), (
-        "only first test data should exist"
-    )
+    assert check_test_data_existence(
+        juju, first_mysql_unit_name, should_exist=[td1], should_not_exist=[td2]
+    ), "only first test data should exist"
 
     logger.info(f"Restoring backup {backup_id} with restore-to-time=latest parameter")
     juju.run(
@@ -251,14 +251,15 @@ def pitr_operations(
         )),
         timeout=TIMEOUT,
     )
-    assert check_test_data_existence(first_mysql_ip, should_exist=[td1, td2]), (
+    assert check_test_data_existence(juju, first_mysql_unit_name, should_exist=[td1, td2]), (
         "both test data should exist"
     )
     clean_backups_from_buckets(cloud_configs, cloud_credentials)
 
 
 def check_test_data_existence(
-    unit_address: str,
+    juju: Juju,
+    unit_name: str,
     should_exist: list[str] | None = None,
     should_not_exist: list[str] | None = None,
 ) -> bool:
@@ -267,7 +268,8 @@ def check_test_data_existence(
     if should_not_exist is None:
         should_not_exist = []
     res = execute_queries_on_unit(
-        unit_address,
+        juju,
+        unit_name,
         OPERATOR_USERNAME,
         OPERATOR_PASSWORD,
         [

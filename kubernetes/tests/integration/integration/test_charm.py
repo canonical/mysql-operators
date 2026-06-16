@@ -11,10 +11,10 @@ from jubilant import Juju
 from constants import BACKUPS_USERNAME, DEFAULT_PASSWORD_LENGTH, REPLICATION_USERNAME
 from utils import generate_random_password
 
-from ..helpers import execute_queries_on_unit
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_cluster_status,
     get_mysql_primary_unit,
@@ -59,9 +59,9 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     ]
 
     for unit_name in app_units:
-        unit_address = get_unit_address(juju, APP_NAME, unit_name)
         output = execute_queries_on_unit(
-            unit_address,
+            juju,
+            unit_name,
             server_config_credentials["username"],
             server_config_credentials["password"],
             count_group_replication_members_sql,

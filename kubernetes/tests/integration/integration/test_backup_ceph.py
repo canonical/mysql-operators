@@ -23,15 +23,15 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 
-from ..helpers import execute_queries_on_unit, generate_random_string
+from ..helpers import generate_random_string
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
     create_app_secret,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
-    get_unit_address,
     insert_mysql_test_data,
     load_mysql_test_data,
     rotate_mysql_server_credentials,
@@ -382,7 +382,6 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     scale_app_units(juju, DATABASE_APP_NAME, 1)
 
     mysql_unit_name = get_app_units(juju, DATABASE_APP_NAME)[0]
-    mysql_unit_address = get_unit_address(juju, DATABASE_APP_NAME, mysql_unit_name)
 
     # set the s3 config and credentials
     logger.info("Syncing credentials")
@@ -409,7 +408,8 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
     credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
     values = execute_queries_on_unit(
-        mysql_unit_address,
+        juju,
+        mysql_unit_name,
         credentials["username"],
         credentials["password"],
         select_values_sql,
@@ -424,7 +424,8 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
     values = execute_queries_on_unit(
-        mysql_unit_address,
+        juju,
+        mysql_unit_name,
         credentials["username"],
         credentials["password"],
         select_values_sql,
@@ -448,10 +449,9 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_ceph) -> None:
 
     logger.info("Ensuring inserted values before backup and after restore exist on all units")
     for unit_name in get_app_units(juju, DATABASE_APP_NAME):
-        unit_address = get_unit_address(juju, DATABASE_APP_NAME, unit_name)
-
         values = execute_queries_on_unit(
-            unit_address,
+            juju,
+            unit_name,
             credentials["username"],
             credentials["password"],
             select_values_sql,
@@ -499,7 +499,6 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     logger.info("Rotating all mysql credentials")
 
     primary_unit_name = get_mysql_primary_unit(juju, new_mysql_application_name)
-    primary_unit_address = get_unit_address(juju, new_mysql_application_name, primary_unit_name)
 
     rotate_mysql_server_credentials(
         juju, primary_unit_name, REPLICATION_USERNAME, REPLICATION_PASSWORD
@@ -538,7 +537,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
     select_values_sql = [f"SELECT id FROM `{DATABASE_NAME}`.`{TABLE_NAME}`"]
 
     values = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         server_config_credentials["username"],
         server_config_credentials["password"],
         select_values_sql,
@@ -553,7 +553,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
 
     logger.info("Ensuring that pre-backup and post-restore values exist in the database")
     values = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         server_config_credentials["username"],
         server_config_credentials["password"],
         select_values_sql,
@@ -576,10 +577,9 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_ceph) -> None:
 
     logger.info("Ensuring inserted values before backup and after restore exist on all units")
     for unit_name in get_app_units(juju, new_mysql_application_name):
-        unit_address = get_unit_address(juju, new_mysql_application_name, unit_name)
-
         values = execute_queries_on_unit(
-            unit_address,
+            juju,
+            unit_name,
             server_config_credentials["username"],
             server_config_credentials["password"],
             select_values_sql,

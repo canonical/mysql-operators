@@ -4,6 +4,7 @@
 
 import json
 import logging
+import shlex
 import subprocess
 import uuid
 from collections.abc import Callable, Generator
@@ -31,8 +32,6 @@ from constants import (
     MYSQLD_SERVICE,
     OPERATOR_USERNAME,
 )
-
-from .helpers import execute_queries_on_unit
 
 CHARM_METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 
@@ -455,7 +454,8 @@ def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str) -> in
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     output = execute_queries_on_unit(
-        get_unit_address(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         ["SELECT MAX(number) FROM `continuous_writes`.`data`;"],
@@ -475,7 +475,8 @@ def get_mysql_variable_value(juju: Juju, app_name: str, unit_name: str, variable
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     output = execute_queries_on_unit(
-        get_unit_address(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         [f"SELECT @@{variable_name};"],
@@ -517,7 +518,8 @@ def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
     ]
 
     execute_queries_on_unit(
-        get_unit_address(juju, app_name, mysql_primary),
+        juju,
+        mysql_primary,
         credentials["username"],
         credentials["password"],
         insert_queries,
@@ -544,7 +546,8 @@ def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> None:
     ]
 
     execute_queries_on_unit(
-        get_unit_address(juju, app_name, mysql_primary),
+        juju,
+        mysql_primary,
         credentials["username"],
         credentials["password"],
         remove_queries,
@@ -579,7 +582,8 @@ def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
         ):
             with attempt:
                 output = execute_queries_on_unit(
-                    get_unit_address(juju, app_name, unit_name),
+                    juju,
+                    unit_name,
                     credentials["username"],
                     credentials["password"],
                     select_queries,
@@ -701,3 +705,48 @@ def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
         with attempt:
             if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is not None:
                 raise Exception(f"mysqld still alive on {unit_name} after SIGKILL + pebble stop")
+
+
+def execute_queries_on_unit(
+    juju: Juju,
+    unit_name: str,
+    username: str,
+    password: str,
+    queries: list[str],
+    *,
+    commit: bool = False,
+    raw: bool = False,
+) -> list:
+    """Execute given MySQL queries on a unit.
+
+    Args:
+        juju: The Juju model
+        unit_name: The name of the unit
+        username: The MySQL username
+        password: The MySQL password
+        queries: A list of queries to execute
+        commit: A keyword arg indicating whether there are any writes queries
+        raw: Whether MySQL results are returned as is, rather than converted to Python types.
+
+    Returns:
+        A list of rows that were potentially queried
+    """
+    query_string = ";".join(queries)
+    command = [
+        "mysqlsh",
+        "-h",
+        "127.0.0.1",
+        "-u",
+        username,
+        f"-p{password}",
+        "--sql",
+        "--json=raw",
+        "--execute",
+        shlex.quote(query_string),
+        "2>/dev/null",
+    ]
+
+    result = juju.ssh(command=" ".join(command), target=unit_name, container="mysql")
+    lines = [json.loads(line) for line in result.splitlines()]
+    # We only return the output of the last line, corresponding to the last command
+    return [val for row in lines[-1]["rows"] for val in row.values()]
