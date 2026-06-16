@@ -24,6 +24,20 @@ def mock_refresh():
         yield
 
 
+@pytest.fixture(autouse=True)
+def mock_get_k8s_fqdn():
+    """Stub k8s DNS resolution so charm init does not hit the real resolver.
+
+    Tests that need to verify the DNS resolution path itself
+    can override this by patching `charm.get_k8s_fqdn`.
+    """
+    with patch(
+        "charm.get_k8s_fqdn",
+        return_value="mysql-k8s-0.mysql-k8s-endpoints.dev.svc.cluster.local",
+    ):
+        yield
+
+
 @pytest.fixture
 def with_juju_secrets(monkeypatch):
     monkeypatch.setattr("ops.JujuVersion.has_secrets", True)

@@ -136,12 +136,9 @@ class TLS(Object):
     def _get_peer_addresses(self) -> set[str]:
         """Get a set of peer connection addresses for the certificate attributes."""
         peer_addresses = set()
-        if addr := self.charm.get_unit_address(self.charm.unit, RELATION_CONSUMER):
-            peer_addresses.add(addr)
-        if addr := self.charm.get_unit_address(self.charm.unit, RELATION_OFFER):
-            peer_addresses.add(addr)
-        if addr := self.charm.get_unit_address(self.charm.unit, PEER):
-            peer_addresses.add(addr)
+        for relation_name in (RELATION_CONSUMER, RELATION_OFFER, PEER):
+            if addr := self.charm.get_unit_address(self.charm.unit, relation_name):
+                peer_addresses.add(addr)
 
         return peer_addresses
 

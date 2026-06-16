@@ -62,7 +62,15 @@ from ops.model import (
 )
 from ops.pebble import ChangeError, Layer
 from ops_tracing import Tracing
-from tenacity import RetryError, Retrying, retry, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import (
+    RetryError,
+    Retrying,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from config import CharmConfig, MySQLConfig
 from constants import (
@@ -359,18 +367,25 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         unit_name = unit_name or self.unit.name
         return f"{unit_name.replace('/', '-')}.{self.app.name}-endpoints"
 
-    @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(2))
+    @retry(
+        reraise=True,
+        retry=retry_if_exception_type(RuntimeError),
+        stop=stop_after_delay(120),
+        wait=wait_fixed(2),
+    )
     def get_unit_address(self, unit: Unit, relation_name: str = PEER) -> str:
         """Get fqdn/address for a unit.
 
-        Translate juju unit name to resolvable hostname.
+        Translate the Juju unit name to a resolvable hostname
+        and return the fully qualified domain name (with a trailing dot).
+        Raises ``RuntimeError`` if the FQDN still cannot be resolved.
         """
+        unit_hostname = self.get_unit_hostname(unit.name)
         try:
-            unit_hostname = self.get_unit_hostname(unit.name)
             unit_dns_domain = get_k8s_fqdn(unit_hostname)
         except RuntimeError:
             logger.warning("Unit DNS domain name is not propagated yet")
-            return ""
+            raise
 
         # When fully propagated, DNS domain name should contain unit hostname.
         # For example:
