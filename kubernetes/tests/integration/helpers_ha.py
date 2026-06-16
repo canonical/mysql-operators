@@ -709,6 +709,7 @@ def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
         unit_name: The name of the unit.
 
     """
+    # TODO: Merge with exec_k8s_container_command
     # `pkill -x` (exact process-name match), NOT `-f` (full cmdline match):
     # `juju.ssh` wraps the command in a shell whose cmdline
     # literally contains the string "mysqld" (from our pkill arguments),
