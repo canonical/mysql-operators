@@ -13,6 +13,7 @@ if is_wrong_architecture() and __name__ == "__main__":
 import logging
 import random
 import socket
+from pathlib import Path
 from time import sleep
 
 import charm_refresh
@@ -235,6 +236,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _on_install(self, _: InstallEvent) -> None:
         """Handle the install event."""
         self.set_unit_status(MaintenanceStatus("Installing MySQL"))
+
+        # Create /sbin symlinks for fuse mount helpers, missing on
+        # resolute where /sbin and /usr/sbin are not merged,
+        # causing snapd's syscheck to fail.
+        for helper in ["mount.fuse", "mount.fuse3"]:
+            src = Path(f"/usr/sbin/{helper}")
+            dst = Path(f"/sbin/{helper}")
+            if src.exists() and not dst.exists():
+                dst.symlink_to(src)
 
         if not is_volume_mounted():
             # https://github.com/juju/juju/issues/21135
