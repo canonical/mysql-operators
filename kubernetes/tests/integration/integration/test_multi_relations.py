@@ -2,6 +2,8 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import logging
+
 import jubilant_backports
 from jubilant_backports import Juju
 
@@ -49,6 +51,7 @@ def test_build_and_deploy(juju: Juju, charm):
         )
 
     # Wait until deployment is complete in attempt to reduce CPU stress
+    logging.info("Wait for mysql")
     juju.wait(
         wait_for_apps_status(
             jubilant_backports.all_active,
@@ -58,15 +61,20 @@ def test_build_and_deploy(juju: Juju, charm):
         timeout=25 * MINUTE_SECS,
     )
 
+    logging.info("Wait for app")
     juju.wait(
-        wait_for_apps_status(
-            jubilant_backports.all_blocked,
-            *(f"app{idx}" for idx in range(SCALE_APPS)),
-        ),
+        ready=lambda status: all((
+            *(
+                wait_for_unit_status(f"app{idx}", unit_name, "blocked")(status)
+                for idx in range(SCALE_APPS)
+                for unit_name in status.get_units(f"app{idx}")
+            ),
+        )),
         delay=5.0,
         timeout=25 * MINUTE_SECS,
     )
 
+    logging.info("Wait for mysql-router")
     juju.wait(
         ready=lambda status: all((
             *(
@@ -82,6 +90,7 @@ def test_build_and_deploy(juju: Juju, charm):
 
 def test_relate_all(juju: Juju):
     """Relate all the applications to the database."""
+    logging.info("Relating all")
     for idx in range(SCALE_APPS):
         juju.integrate(f"{MYSQL_APP_NAME}:database", f"router{idx}:backend-database")
         juju.integrate(f"app{idx}:database", f"router{idx}:database")
