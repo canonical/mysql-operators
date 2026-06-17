@@ -151,3 +151,6 @@ def test_relation_broken_connectivity(juju: Juju):
 
     juju.run(f"{test_app_1}/0", "clear-continuous-writes")
     juju.run(f"{test_app_1}/0", "start-continuous-writes")
+
+
+# Trigger CI, maybe?
