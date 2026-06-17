@@ -166,65 +166,34 @@ jobs:
           # ──────────────────────────────────────────────────────────────────
           # PURGE DOCKER — packages, kernel-resident nft tables, interfaces.
           #
-          # Why this matters:
-          #   GitHub-hosted Azure runners ship Docker pre-installed and active.
-          #   On boot the docker daemon registers an `iptables-nft` ruleset
-          #   that includes `table ip filter` with `chain FORWARD { policy
-          #   drop; }` and Docker-specific accept rules gated on docker0.
+          # GitHub-hosted Azure runners ship Docker pre-installed and active.
+          # On boot the docker daemon registers an `iptables-nft` ruleset
+          # that includes `table ip filter` with `chain FORWARD { policy
+          # drop; }` and Docker-specific accept rules gated on docker0.
           #
-          #   Canonical K8s + Cilium native routing forwards pod-egress
-          #   traffic via the host stack: pod packet enters lxcXXX veth →
-          #   Cilium BPF returns TC_ACT_OK (to-stack) → kernel routing →
-          #   FORWARD chain → POSTROUTING (CILIUM_POST_nat MASQUERADE) → eth0.
+          # Canonical K8s + Cilium native routing forwards pod-egress
+          # traffic via the host stack: pod packet enters lxcXXX veth →
+          # Cilium BPF returns TC_ACT_OK (to-stack) → kernel routing →
+          # FORWARD chain → POSTROUTING (CILIUM_POST_nat MASQUERADE) → eth0.
           #
-          #   Both nft and iptables-legacy register handlers at the FORWARD
-          #   hook with priority `filter` (= 0). Linux runs ALL registered
-          #   nf_hook_ops at the same priority sequentially; ANY DROP verdict
-          #   stops processing. Docker's nft FORWARD policy=drop fires
-          #   because pod traffic doesn't match any DOCKER-* accept rule
-          #   (which are all gated on iif/oif=docker0). Cilium's ACCEPT
-          #   rules in iptables-legacy filter FORWARD never get a chance.
+          # Both nft and iptables-legacy register handlers at the FORWARD
+          # hook with priority `filter` (= 0). Linux runs ALL registered
+          # nf_hook_ops at the same priority sequentially; ANY DROP verdict
+          # stops processing. Docker's nft FORWARD policy=drop fires
+          # because pod traffic doesn't match any DOCKER-* accept rule
+          # (which are all gated on iif/oif=docker0). Cilium's ACCEPT
+          # rules in iptables-legacy filter FORWARD never get a chance.
           #
-          #   Diagnostic evidence (run 26986030874):
-          #     nft Docker FORWARD: 80→207→275 packets, all dropped
-          #     legacy mangle FORWARD: 330 packets (priority -150, runs first)
-          #     legacy filter CILIUM_FORWARD: never reached
-          #     conntrack: zero entries for src=10.244.0.0/16 dst=168.63.129.16
-          #     eth0 TX delta during smoke: only host traffic (316 packets)
-          #     CoreDNS upstream queries: lookup api.charmhub.io → SERVFAIL
-          #
-          #   `apt-get remove` (without --purge) stops the daemon but does
-          #   NOT flush the kernel-resident nft tables — they survive in
-          #   the kernel until explicitly deleted or the host reboots.
-          #
-          # The four-step purge below is what's actually required:
-          #   1. Stop the docker.service unit (graceful daemon shutdown).
-          #   2. apt-get purge the packages and remove config files.
-          #   3. Delete the Docker-managed nft tables (filter, nat, ip6).
-          #      `# Warning: ... managed by iptables-nft, do not touch!`
-          #      headers in `nft list ruleset` confirm these tables are
-          #      Docker-only and safe to delete. We leave `table ip
-          #      security` (Azure WAAgent OUTPUT-chain firewall for
-          #      168.63.129.16) untouched.
-          #   4. Delete the docker0 bridge if still present, plus any
-          #      stale veth interfaces.
+          # apt-get remove --purge does NOT flush Docker's kernel-resident
+          # nft tables — they survive in the kernel until explicitly deleted
+          # or the host reboots.  `nft flush ruleset` restores the
+          # pre-Docker baseline (empty ruleset on a fresh Ubuntu 24.04
+          # instance).
           # ──────────────────────────────────────────────────────────────────
-          sudo systemctl stop docker.service docker.socket containerd.service 2>/dev/null || true
-          sudo apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 2>/dev/null || true
-          sudo apt-get autoremove -y 2>/dev/null || true
-          # Wipe Docker's nft tables. `delete table` is idempotent-ish: the
-          # `|| true` covers the case where Docker was never installed.
-          for tbl in 'ip filter' 'ip nat' 'ip mangle' 'ip6 filter' 'ip6 nat' 'ip6 mangle'; do
-              sudo nft delete table $tbl 2>/dev/null || true
-          done
-          # Bring down and remove leftover Docker network interfaces.
-          sudo ip link set docker0 down 2>/dev/null || true
-          sudo ip link delete docker0 type bridge 2>/dev/null || true
-          # Remove docker state directories so a stray `dockerd` start can't
-          # repopulate the iptables rules from cached state.
+          sudo apt-get remove --purge -y docker-ce docker-ce-cli containerd.io docker.io containerd 2>/dev/null || true
+          sudo nft flush ruleset
+          sudo ip link delete docker0 2>/dev/null || true
           sudo rm -rf /var/lib/docker /var/lib/containerd /etc/docker /run/docker 2>/dev/null || true
-          # Verify the purge: nft list ruleset should no longer show any
-          # `chain FORWARD ... policy drop` entries from Docker.
           echo "=== nft ruleset AFTER Docker purge (should have no Docker chains) ==="
           sudo nft list ruleset || true
           echo "=== ip link AFTER Docker purge (no docker0) ==="
