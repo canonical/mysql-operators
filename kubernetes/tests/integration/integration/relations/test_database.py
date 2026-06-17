@@ -111,7 +111,7 @@ def test_relation_broken(juju: Juju):
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
         timeout=5 * MINUTE_SECS,
     )
-    # mysql-test-app has inconsistent app and unit status
+    # juju-2.9 has inconsistent app and unit status
     # use unit status
     juju.wait(
         ready=wait_for_unit_status(

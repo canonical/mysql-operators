@@ -20,7 +20,7 @@ APPLICATION_APP_NAME = "mysql-test-app"
 APPLICATION_ENDPOINT = "mysql"
 
 
-def test_deploy(juju: Juju, charm):
+def test_build_and_deploy(juju: Juju, charm):
     """Deploy 3 units cluster to ensure and 2 unit mysql-test-app."""
     juju.deploy(
         charm,
