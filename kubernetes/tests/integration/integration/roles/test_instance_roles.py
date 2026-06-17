@@ -145,7 +145,12 @@ def test_charmed_read_role(juju: Juju):
         timeout=15 * MINUTE_SECS,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, f"{INTEGRATOR_APP_NAME}1"),
+        ready=lambda status: all((
+            *(
+                wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")(status)
+                for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
+            ),
+        )),
         timeout=15 * MINUTE_SECS,
     )
 
