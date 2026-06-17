@@ -34,6 +34,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         base="ubuntu@22.04",
         config={"profile": "testing"},
+        trust=True,
     )
     juju.deploy(
         INTEGRATOR_APP_NAME,
@@ -139,10 +140,13 @@ def test_charmed_read_role(juju: Juju):
         )
 
     juju.remove_relation(f"{DATABASE_APP_NAME}:database", f"{INTEGRATOR_APP_NAME}1:mysql")
+    # wait for relation to be fully removed before adding it again in the following test
+    juju.wait(
+        ready=lambda status: "database" not in status.apps[DATABASE_APP_NAME].relations,
+        timeout=15 * MINUTE_SECS,
+    )
     juju.wait(
         ready=lambda status: all((
-            # wait for relation to be fully removed before adding it again in the following test
-            jubilant_backports.all_agents_idle(status, f"{INTEGRATOR_APP_NAME}1"),
             *(
                 wait_for_unit_status(f"{INTEGRATOR_APP_NAME}1", unit_name, "blocked")(status)
                 for unit_name in status.get_units(f"{INTEGRATOR_APP_NAME}1")
