@@ -724,11 +724,17 @@ def execute_queries_on_unit(
         username: The MySQL username
         password: The MySQL password
         queries: A list of queries to execute
-        commit: A keyword arg indicating whether there are any writes queries
+        commit: Whether to commit a transaction.
 
     Returns:
         A list of rows that were potentially queried
     """
+    if commit:
+        queries = ["START TRANSACTION", *queries, "COMMIT"]
+        last_query = -2
+    else:
+        last_query = -1
+
     query_string = ";".join(queries)
     command = [
         "mysqlsh",
@@ -746,5 +752,5 @@ def execute_queries_on_unit(
 
     result = juju.ssh(command=" ".join(command), target=unit_name, container="mysql")
     lines = [json.loads(line) for line in result.splitlines()]
-    # We only return the output of the last line, corresponding to the last command
-    return [val for row in lines[-1]["rows"] for val in row.values()]
+    # We only return the output of the last query
+    return [val for row in lines[last_query]["rows"] for val in row.values()]
