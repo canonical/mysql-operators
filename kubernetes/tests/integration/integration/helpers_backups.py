@@ -160,10 +160,7 @@ def pitr_operations(
         OPERATOR_USERNAME,
         OPERATOR_PASSWORD,
         ["SELECT CURRENT_TIMESTAMP"],
-        raw=True,
-    )
-    # This is a raw bytes, so we need to decode it to the utf-8 string
-    ts = ts[0].decode("utf-8")
+    )[0]
     ts_year_before = ts.replace(ts[:4], str(int(ts[:4]) - 1), 1)
     ts_year_after = ts.replace(ts[:4], str(int(ts[:4]) + 1), 1)
 

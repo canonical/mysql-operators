@@ -715,7 +715,6 @@ def execute_queries_on_unit(
     queries: list[str],
     *,
     commit: bool = False,
-    raw: bool = False,
 ) -> list:
     """Execute given MySQL queries on a unit.
 
@@ -726,7 +725,6 @@ def execute_queries_on_unit(
         password: The MySQL password
         queries: A list of queries to execute
         commit: A keyword arg indicating whether there are any writes queries
-        raw: Whether MySQL results are returned as is, rather than converted to Python types.
 
     Returns:
         A list of rows that were potentially queried
