@@ -8,7 +8,7 @@ on:
       artifact-prefix:
         description: |
           Prefix for charm package GitHub artifact(s)
-          
+
           Use canonical/data-platform-workflows build_charm.yaml to build the charm(s)
         required: true
         type: string
@@ -113,50 +113,19 @@ jobs:
           df --human-readable
       - name: Purge Docker
         # GitHub-hosted Azure runners ship Docker pre-installed and active.
-        # On boot the docker daemon registers an `iptables-nft` ruleset
-        # that includes `table ip filter` with `chain FORWARD { policy
-        # drop; }` and Docker-specific accept rules gated on docker0.
-        #
-        # Canonical K8s + Cilium native routing forwards pod-egress
-        # traffic via the host stack: pod packet enters lxcXXX veth →
-        # Cilium BPF returns TC_ACT_OK (to-stack) → kernel routing →
-        # FORWARD chain → POSTROUTING (CILIUM_POST_nat MASQUERADE) → eth0.
-        #
-        # Both nft and iptables-legacy register handlers at the FORWARD
-        # hook with priority `filter` (= 0). Linux runs ALL registered
-        # nf_hook_ops at the same priority sequentially; ANY DROP verdict
-        # stops processing. Docker's nft FORWARD policy=drop fires
-        # because pod traffic doesn't match any DOCKER-* accept rule
-        # (which are all gated on iif/oif=docker0). Cilium's ACCEPT
-        # rules in iptables-legacy filter FORWARD never get a chance.
+        # Canonical K8s requires "A system with no previous installations
+        # of containerd/docker as this may cause conflicts"
+        # (see https://documentation.ubuntu.com/canonical-kubernetes
+        # /release-1.32/snap/tutorial/getting-started/).
+        # Completely purging Docker requires also
+        # deleting the Docker-specific `iptables-nft` rulesets
+        # created on installation.
         if: ${{ inputs.path-to-charm-directory == 'kubernetes' }}
         timeout-minutes: 5
         run: |
-          sudo apt-get remove --purge -y docker-ce docker-ce-cli containerd.io 2>/dev/null || true
-
-          # Reset FORWARD policy to ACCEPT.
-          # Uses iptables-nft compatibility shim: well-defined semantics,
-          # modifies only the default policy of the existing chain,
-          # and does not flush rules belonging to other tenants of `table ip filter`.
-          sudo iptables-nft -P FORWARD ACCEPT 2>/dev/null || true
-
-          # Flush FORWARD so jumps to DOCKER-* chains disappear, then delete
-          # the chains themselves (chain deletion fails if jumps still
-          # reference them).
-          sudo nft flush chain ip filter FORWARD 2>/dev/null || true
-          for chain in DOCKER DOCKER-USER DOCKER-FORWARD \
-                       DOCKER-ISOLATION-STAGE-1 DOCKER-ISOLATION-STAGE-2 DOCKER-INGRESS; do
-              sudo nft delete chain ip filter "$chain" 2>/dev/null || true
-              sudo nft delete chain ip nat    "$chain" 2>/dev/null || true
-          done
-
-          # Bring down and remove leftover Docker network interfaces.
-          sudo ip link set docker0 down 2>/dev/null || true
-          sudo ip link delete docker0 type bridge 2>/dev/null || true
-
-          # Remove docker state directories so a stray `dockerd` start can't
-          # repopulate the iptables rules from cached state.
-          sudo rm -rf /var/lib/docker /var/lib/containerd /etc/docker /run/docker 2>/dev/null || true
+          sudo apt-get remove --purge -y docker-ce docker-ce-cli containerd.io docker.io containerd 2>/dev/null || true
+          sudo nft flush ruleset
+          sudo ip link delete docker0 2>/dev/null || true
       - name: Remove podman CNI bridge config
         # Ubuntu 24.04 runners ship podman with a CNI bridge config
         # (/etc/cni/net.d/87-podman-bridge.conflist) that sorts
