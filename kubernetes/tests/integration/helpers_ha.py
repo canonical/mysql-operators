@@ -756,10 +756,12 @@ def execute_queries_on_unit(
         "2>/dev/null",
     ])
 
-    result = juju.ssh(command=" ".join(command), target=unit_name, container="mysql")
+    result = juju.ssh(command=" ".join(command), target=unit_name, container=CONTAINER_NAME)
     lines = [json.loads(line) for line in result.splitlines()]
-    # We only return the output of the last query
-    return [val for row in lines[last_query]["rows"] for val in row.values()]
+    # We only return the output of the last query (statements may not include rows)
+    last = lines[last_query]
+    rows = last.get("rows") or []
+    return [val for row in rows for val in row.values()]
 
 
 @retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)
