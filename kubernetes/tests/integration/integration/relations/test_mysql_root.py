@@ -21,7 +21,7 @@ APPLICATION_ENDPOINT = "mysql"
 
 
 def test_build_and_deploy(juju: Juju, charm):
-    """Build the charm and deploy 3 units to ensure a cluster is formed."""
+    """Deploy 3 units cluster to ensure and 2 unit mysql-test-app."""
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
@@ -55,13 +55,12 @@ def test_relation_creation_eager(juju: Juju):
         f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
     )
 
-    logging.info("Waiting for application app to be blocked...")
+    logging.info("Waiting for all active...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, APPLICATION_APP_NAME),
-        timeout=15 * MINUTE_SECS,
-    )
-    logging.info("Waiting for database app to be active...")
-    juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(
+            jubilant_backports.all_active,
+            DATABASE_APP_NAME,
+            APPLICATION_APP_NAME,
+        ),
         timeout=15 * MINUTE_SECS,
     )

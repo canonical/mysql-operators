@@ -15,6 +15,7 @@ from ...helpers_ha import (
     get_app_leader,
     get_unit_relation_data,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 DATABASE_APP_NAME = CHARM_METADATA["name"]
@@ -58,14 +59,13 @@ def test_relation_creation_eager(juju: Juju):
         f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
     )
 
-    logging.info("Waiting for application app to be blocked...")
+    logging.info("Waiting for apps to be active...")
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, APPLICATION_APP_NAME),
-        timeout=15 * MINUTE_SECS,
-    )
-    logging.info("Waiting for database app to be active...")
-    juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        ready=wait_for_apps_status(
+            jubilant_backports.all_active,
+            DATABASE_APP_NAME,
+            APPLICATION_APP_NAME,
+        ),
         timeout=15 * MINUTE_SECS,
     )
 
@@ -106,13 +106,20 @@ def test_relation_broken(juju: Juju):
         f"{DATABASE_APP_NAME}:{DATABASE_ENDPOINT}",
     )
 
+    logging.info("Wait for change in application statuses")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        timeout=15 * MINUTE_SECS,
+        timeout=5 * MINUTE_SECS,
     )
+    # juju-2.9 has inconsistent app and unit status
+    # use unit status
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, APPLICATION_APP_NAME),
-        timeout=15 * MINUTE_SECS,
+        ready=wait_for_unit_status(
+            APPLICATION_APP_NAME,
+            f"{APPLICATION_APP_NAME}/0",
+            "blocked",
+        ),
+        timeout=5 * MINUTE_SECS,
     )
 
     juju.remove_application(APPLICATION_APP_NAME, destroy_storage=True, force=True)
@@ -155,7 +162,7 @@ def test_relation_broken_connectivity(juju: Juju):
     logging.info("Waiting for application app to be active...")
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, test_app_1, test_app_2),
-        timeout=5 * MINUTE_SECS,
+        timeout=15 * MINUTE_SECS,
         delay=2,
     )
 

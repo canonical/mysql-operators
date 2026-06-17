@@ -1,10 +1,9 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import importlib.metadata
+import jubilant_backports
 
-# libjuju version != juju agent version, but the major version should be identical—which is good
-# enough to check for secrets
-_libjuju_version = importlib.metadata.version("juju")
-has_secrets = int(_libjuju_version.split(".")[0]) >= 3
-juju_major_version = int(_libjuju_version.split(".")[0])
+juju = jubilant_backports.Juju()
+
+has_secrets = not juju._is_juju_2
+juju_major_version = 2 if juju._is_juju_2 else 3

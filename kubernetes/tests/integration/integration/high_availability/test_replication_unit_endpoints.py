@@ -12,7 +12,6 @@ from ...helpers_ha import (
     get_app_units,
     get_k8s_endpoint_addresses,
     get_unit_address,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -54,16 +53,15 @@ def test_deploy_highly_available_cluster_1(juju: Juju, charm: str) -> None:
         f"{MYSQL_TEST_APP_NAME_1}:database",
     )
 
-    with update_interval(juju, "10s"):
-        logging.info("Wait for applications to become active")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_1),
-            timeout=20 * MINUTE_SECS,
-        )
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_1),
-            timeout=20 * MINUTE_SECS,
-        )
+    logging.info("Wait for applications to become active")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_1),
+        timeout=20 * MINUTE_SECS,
+    )
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_1),
+        timeout=20 * MINUTE_SECS,
+    )
 
 
 def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
@@ -92,16 +90,15 @@ def test_deploy_highly_available_cluster_2(juju: Juju, charm: str) -> None:
         f"{MYSQL_TEST_APP_NAME_2}:database",
     )
 
-    with update_interval(juju, "10s"):
-        logging.info("Wait for applications to become active")
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_2),
-            timeout=20 * MINUTE_SECS,
-        )
-        juju.wait(
-            ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_2),
-            timeout=20 * MINUTE_SECS,
-        )
+    logging.info("Wait for applications to become active")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME_2),
+        timeout=20 * MINUTE_SECS,
+    )
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_TEST_APP_NAME_2),
+        timeout=20 * MINUTE_SECS,
+    )
 
 
 def test_labeling_of_k8s_endpoints(juju: Juju) -> None:
