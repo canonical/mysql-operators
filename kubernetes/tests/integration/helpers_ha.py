@@ -766,13 +766,21 @@ def execute_queries_on_unit(
 
 @retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)
 def is_connection_possible(
-    juju, unit_name, username, password, *, ssl_enabled: bool | None = None
+    juju: Juju,
+    unit_name: str,
+    username: str,
+    password: str,
+    *,
+    ssl_enabled: bool | None = None,
 ) -> bool:
-    """Test a connection to a MySQL server.
+    """Test whether a MySQL connection can be established from inside the unit.
 
     Args:
-        credentials: A dictionary with the credentials to test
-        extra_opts: extra options for mysql connection
+        juju: The Juju model.
+        unit_name: The unit name.
+        username: The MySQL username.
+        password: The MySQL password.
+        ssl_enabled: Whether to force SSL on/off (None means prefer SSL).
     """
     if ssl_enabled is None:
         ssl_mode = "PREFERRED"
