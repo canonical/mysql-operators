@@ -4,12 +4,14 @@
 import logging
 
 import jubilant
+import mysql.connector
 import pytest
 from jubilant import Juju
+from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.errors import OperationalError
+from mysql.connector.pooling import PooledMySQLConnection
 
 from .. import architecture
-from ..connector import create_db_connections
 from ..helpers_ha import CHARM_METADATA, MINUTE_SECS, get_app_units, get_unit_address
 
 logger = logging.getLogger(__name__)
@@ -84,3 +86,29 @@ def test_saturate_max_connections(juju: Juju) -> None:
 
     logger.info("Get cluster status while connections are saturated")
     juju.run(mysql_unit_name, "get-cluster-status")
+
+
+def create_db_connections(
+    num_connections: int, host: str, username: str, password: str, database: str
+) -> list[MySQLConnectionAbstract | PooledMySQLConnection]:
+    """Create a list of database connections.
+
+    Args:
+        num_connections: Number of connections to create.
+        host: Hostname of the database.
+        username: Username to connect to the database.
+        password: Password to connect to the database.
+        database: Database to connect to.
+    """
+    connections = []
+    for _ in range(num_connections):
+        conn = mysql.connector.connect(
+            host=host,
+            user=username,
+            password=password,
+            database=database,
+            use_pure=True,
+        )
+        if conn.is_connected():
+            connections.append(conn)
+    return connections
