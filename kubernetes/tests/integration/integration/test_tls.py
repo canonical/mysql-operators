@@ -9,14 +9,13 @@ from jubilant import Juju
 
 from constants import REPLICATION_USERNAME
 
-from ..helpers import is_connection_possible
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
     get_app_units,
     get_mysql_server_credentials,
-    get_unit_address,
     get_unit_relation_data,
+    is_connection_possible,
     wait_for_apps_status,
 )
 
@@ -26,9 +25,6 @@ APP_NAME = CHARM_METADATA["name"]
 TLS_APP_NAME = "self-signed-certificates"
 CLUSTER_NAME = "test_cluster"
 TIMEOUT = 15 * MINUTE_SECS
-
-# Global config dictionary for connection testing
-config = {}
 
 
 def test_build_and_deploy(juju: Juju, charm) -> None:
@@ -53,28 +49,26 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
 def test_connection_before_tls(juju: Juju) -> None:
     """Ensure connections (with and without ssl) are possible before relating with TLS operator."""
     app_units = get_app_units(juju, APP_NAME)
-
-    password_result = get_mysql_server_credentials(juju, app_units[0], REPLICATION_USERNAME)
-    # set global config dict once
-    global config
-    config = {
-        "username": REPLICATION_USERNAME,
-        "password": password_result["password"],
-    }
+    password = get_mysql_server_credentials(juju, app_units[0], REPLICATION_USERNAME)["password"]
 
     # Before relating to TLS charm both encrypted and unencrypted connection should be possible
     logger.info("Asserting connections before relation")
     for unit_name in app_units:
-        unit_ip = get_unit_address(juju, APP_NAME, unit_name)
-        config["host"] = unit_ip
+        assert is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=True,
+        ), f"❌ Encrypted connection not possible to unit {unit_name} with disabled TLS"
 
-        assert is_connection_possible(config, **{"ssl_disabled": False}), (
-            f"❌ Encrypted connection not possible to unit {unit_name} with disabled TLS"
-        )
-
-        assert is_connection_possible(config, **{"ssl_disabled": True}), (
-            f"❌ Unencrypted connection not possible to unit {unit_name} with disabled TLS"
-        )
+        assert is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=False,
+        ), f"❌ Unencrypted connection not possible to unit {unit_name} with disabled TLS"
 
 
 def test_enable_tls(juju: Juju) -> None:
@@ -110,18 +104,25 @@ def test_enable_tls(juju: Juju) -> None:
         delay=5,
     )
 
+    password = get_mysql_server_credentials(juju, app_units[0], REPLICATION_USERNAME)["password"]
+
     # After relating to only encrypted connection should be possible
     logger.info("Asserting connections after relation")
     for unit_name in app_units:
-        unit_ip = get_unit_address(juju, APP_NAME, unit_name)
-        config["host"] = unit_ip
-        assert is_connection_possible(config, **{"ssl_disabled": False}), (
-            f"❌ Encrypted connection not possible to unit {unit_name} with enabled TLS"
-        )
-
-        assert not is_connection_possible(config, **{"ssl_disabled": True}), (
-            f"❌ Unencrypted connection possible to unit {unit_name} with enabled TLS"
-        )
+        assert is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=True,
+        ), f"❌ Encrypted connection not possible to unit {unit_name} with enabled TLS"
+        assert not is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=False,
+        ), f"❌ Unencrypted connection possible to unit {unit_name} with enabled TLS"
 
     # test for ca presence in a given unit
     logger.info("Assert TLS files exists")
@@ -148,17 +149,24 @@ def test_disable_tls(juju: Juju) -> None:
         delay=5,
     )
 
+    password = get_mysql_server_credentials(juju, app_units[0], REPLICATION_USERNAME)["password"]
+
     # After relation removal both encrypted and unencrypted connection should be possible
     for unit_name in app_units:
-        unit_ip = get_unit_address(juju, APP_NAME, unit_name)
-        config["host"] = unit_ip
-        assert is_connection_possible(config, **{"ssl_disabled": False}), (
-            f"❌ Encrypted connection not possible to unit {unit_name} after relation removal"
-        )
-
-        assert is_connection_possible(config, **{"ssl_disabled": True}), (
-            f"❌ Unencrypted connection not possible to unit {unit_name} after relation removal"
-        )
+        assert is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=True,
+        ), f"❌ Encrypted connection not possible to unit {unit_name} after relation removal"
+        assert is_connection_possible(
+            juju,
+            unit_name,
+            REPLICATION_USERNAME,
+            password,
+            ssl_enabled=False,
+        ), f"❌ Unencrypted connection not possible to unit {unit_name} after relation removal"
 
 
 def get_unit_certificates_ca(juju: Juju, unit_name: str, relation_name: str) -> str:

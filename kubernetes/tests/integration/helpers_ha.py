@@ -715,6 +715,7 @@ def execute_queries_on_unit(
     queries: list[str],
     *,
     commit: bool = False,
+    ssl_mode: str | None = None,
 ) -> list:
     """Execute given MySQL queries on a unit.
 
@@ -745,12 +746,45 @@ def execute_queries_on_unit(
         "--quiet-start=2",
         "--sql",
         "--json=raw",
+    ]
+    if ssl_mode is not None:
+        command.append(f"--ssl-mode={ssl_mode}")
+
+    command.extend([
         "--execute",
         shlex.quote(query_string),
         "2>/dev/null",
-    ]
+    ])
 
     result = juju.ssh(command=" ".join(command), target=unit_name, container="mysql")
     lines = [json.loads(line) for line in result.splitlines()]
     # We only return the output of the last query
     return [val for row in lines[last_query]["rows"] for val in row.values()]
+
+
+@retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)
+def is_connection_possible(
+    juju, unit_name, username, password, *, ssl_enabled: bool | None = None
+) -> bool:
+    """Test a connection to a MySQL server.
+
+    Args:
+        credentials: A dictionary with the credentials to test
+        extra_opts: extra options for mysql connection
+    """
+    if ssl_enabled is None:
+        ssl_mode = "PREFERRED"
+    elif ssl_enabled:
+        ssl_mode = "REQUIRED"
+    else:
+        ssl_mode = "DISABLED"
+
+    try:
+        execute_queries_on_unit(
+            juju, unit_name, username, password, ["SELECT 1"], ssl_mode=ssl_mode
+        )
+    except jubilant.CLIError as exc:
+        logger.warning(f"Failed to execute query: {exc}")
+        return False
+    else:
+        return True
