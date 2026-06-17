@@ -12,6 +12,7 @@ if is_wrong_architecture() and __name__ == "__main__":
 
 import logging
 import random
+import socket
 from time import sleep
 
 import charm_refresh
@@ -400,6 +401,21 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             raise RuntimeError("Can't get fully qualified domain name for unit")
 
         return dotappend(unit_dns_domain)
+
+    def _all_peers_reachable(self) -> bool:
+        """Return True if all peer units respond on MySQL port 3306.
+
+        Quorum recovery must not run when peers are unreachable — that scenario
+        indicates a network partition where the remote side may still be healthy.
+        """
+        for unit in self.peers.units:
+            address = self.get_unit_address(unit)
+            try:
+                with socket.create_connection((address, 3306), timeout=2):
+                    pass
+            except OSError:
+                return False
+        return True
 
     def is_unit_busy(self) -> bool:
         """Returns whether the unit is busy."""
@@ -938,14 +954,40 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self._create_cluster()
         self._mysql.reconcile_binlogs_collection(force_restart=True)
 
-    def _handle_potential_cluster_crash_scenario(self, state: str) -> bool:
+    def _handle_potential_cluster_crash_scenario(self, state: str) -> bool:  # noqa: C901
         """Handle potential full cluster crash scenarios.
 
         Returns:
-            bool indicating whether the caller should return
+            bool
+                False if the handling worked correctly and the caller can continue,
+                True otherwise.
+
         """
         single_node_cluster = self.only_one_cluster_node_thats_uninitialized
         if not single_node_cluster and not self.cluster_initialized:
+            return True
+
+        # A surviving member can stay ONLINE in its local view while the
+        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
+        # complete-outage path below only fires on state == OFFLINE, so
+        # without this the leader stays stuck and the cluster never recovers.
+        if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
+            logger.warning("Cluster has no quorum")
+            if self.peers.units and not self._all_peers_reachable():
+                logger.warning("Skipping quorum recovery: not all peers reachable")
+                return True
+            try:
+                # reboot_cluster_from_complete_outage rejects an instance whose
+                # GR is still running; drop it to OFFLINE first.
+                self._mysql.stop_group_replication()
+                if self.unit.is_leader():
+                    # run on leader only for coordinate recovery
+                    logger.warning("Attempting reboot from complete outage")
+                    self._mysql.reboot_from_complete_outage()
+                    return False
+            except MySQLRebootFromCompleteOutageError:
+                logger.error("Failed to reboot cluster from complete outage")
+                self.set_unit_status(BlockedStatus("failed to recover cluster"))
             return True
 
         if state == InstanceState.RECOVERING:
@@ -1098,10 +1140,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-state"] = state
         self.set_unit_status(self.build_unit_workload_status())
 
-        if self._handle_potential_cluster_crash_scenario(state):
-            return
-
-        self._set_app_status(state)
+        # TODO: Logic here is almost the opposite as the machines charm, but not quite
+        # We should review and fix it
+        if not self._handle_potential_cluster_crash_scenario(state):
+            self._set_app_status(state)
 
     def _set_app_status(self, state: str) -> None:
         """Set the application status based on the cluster state."""

@@ -4,6 +4,7 @@
 import logging
 import os
 import subprocess
+from time import sleep
 
 import jubilant
 from jubilant import Juju
@@ -15,7 +16,6 @@ from ...helpers_ha import (
     get_unit_machine,
     load_mysql_test_data,
     wait_for_apps_status,
-    wait_for_unit_status,
 )
 
 MYSQL_APP_NAME = "mysql"
@@ -110,19 +110,10 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     for unit in units_to_kill:
         machine_name.append(get_unit_machine(juju, app_name, unit))
 
-    subprocess.run(["lxc", "restart", "--force", machine_name[0], machine_name[1]], check=True)
-
-    logging.info("Waiting to settle in error state")
-    juju.wait(
-        ready=lambda status: all((
-            wait_for_unit_status(app_name, unit_to_promote, "active")(status),
-            wait_for_unit_status(app_name, units_to_kill[0], "maintenance")(status),
-            wait_for_unit_status(app_name, units_to_kill[1], "maintenance")(status),
-        )),
-        timeout=15 * MINUTE_SECS,
-        delay=15,
-    )
-
+    subprocess.run(["lxc", "stop", "--force", machine_name[0], machine_name[1]], check=True)
+    # allow time to cluster settled in no_quorum
+    sleep(10)
+    logging.info("Attempting to promote a unit to primary after quorum loss...")
     juju.run(
         unit=unit_to_promote,
         action="promote-to-primary",
@@ -130,11 +121,6 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
         wait=600,
     )
 
-    logging.info("Waiting for all units to become active after switchover...")
-    juju.wait(
-        ready=jubilant.all_active,
-        timeout=10 * MINUTE_SECS,
-        delay=5,
+    assert get_mysql_primary_unit(juju, app_name, unit_to_promote) == unit_to_promote, (
+        "Failover failed"
     )
-
-    assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"

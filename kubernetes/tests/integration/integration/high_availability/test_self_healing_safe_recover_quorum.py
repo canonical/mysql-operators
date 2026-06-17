@@ -1,9 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-
 import logging
 import os
-from time import sleep
+import subprocess
 
 import jubilant
 from jubilant import Juju
@@ -11,11 +10,13 @@ from jubilant import Juju
 from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
-    force_kill_mysqld_service,
+    check_mysql_units_writes_increment,
     get_app_name,
     get_app_units,
+    get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
+    update_interval,
     wait_for_apps_status,
 )
 
@@ -64,40 +65,12 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         load_mysql_test_data(juju, MYSQL_APP_NAME, path)
 
 
-def test_cluster_switchover(juju: Juju) -> None:
-    """Test that the primary node can be switched over."""
-    logging.info("Testing cluster switchover...")
+def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
+    """Test safe auto-recover after quorum loss."""
     app_name = get_app_name(juju, MYSQL_APP_NAME)
     assert app_name, "MySQL application not found in the cluster"
 
     app_units = set(get_app_units(juju, app_name))
-    assert len(app_units) > 1, "Not enough units to perform a switchover"
-
-    primary_unit = get_mysql_primary_unit(juju, app_name)
-    assert primary_unit, "No primary unit found in the cluster"
-    logging.info(f"Current primary unit: {primary_unit}")
-
-    logging.info("Selecting a new primary unit for switchover...")
-    app_units.discard(primary_unit)
-    new_primary_unit = app_units.pop()
-    logging.info(f"New primary unit selected: {new_primary_unit}")
-
-    juju.run(
-        unit=new_primary_unit,
-        action="promote-to-primary",
-        params={"scope": "unit"},
-    )
-
-    assert get_mysql_primary_unit(juju, app_name) == new_primary_unit, "Switchover failed"
-
-
-def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
-    """Test the promote-to-primary command after losing the majority of nodes, with force flag."""
-    app_name = get_app_name(juju, MYSQL_APP_NAME)
-    assert app_name, "MySQL application not found in the cluster"
-
-    app_units = set(get_app_units(juju, app_name))
-    assert len(app_units) > 1, "Not enough units to perform a switchover"
 
     primary_unit = get_mysql_primary_unit(juju, app_name)
     assert primary_unit, "No primary unit found in the cluster"
@@ -105,23 +78,36 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
 
     non_primary_units = app_units - {primary_unit}
 
-    unit_to_promote = non_primary_units.pop()
-
-    logging.info(f"Unit selected for promotion: {unit_to_promote}")
+    unit_to_survive = non_primary_units.pop()
 
     logging.info("Simulate quorum loss")
+    logging.info(f"Unit selected for survival: {unit_to_survive}")
+
     units_to_kill = [non_primary_units.pop(), primary_unit]
+    kill_pods(juju, units_to_kill)
 
-    for unit in units_to_kill:
-        force_kill_mysqld_service(juju, unit)
-    # allow time to cluster settled in no_quorum
-    sleep(10)
-    logging.info("Attempting to promote a unit to primary after quorum loss...")
-    juju.run(
-        unit=unit_to_promote,
-        action="promote-to-primary",
-        params={"scope": "unit", "force": True},
-        wait=600,
-    )
+    with update_interval(juju, "15s"):
+        logging.info("Waiting for all units to become active after switchover...")
+        juju.wait(
+            ready=jubilant.all_active,
+            timeout=10 * MINUTE_SECS,
+            delay=5,
+        )
 
-    assert get_mysql_primary_unit(juju, app_name) == unit_to_promote, "Failover failed"
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+
+
+def kill_pods(juju: Juju, unit_names: list[str]) -> None:
+    """Kill the unit pods simultaneously using kubectl."""
+    pod_names = [get_mysql_instance_label(unit) for unit in unit_names]
+    cmd = [
+        "kubectl",
+        "delete",
+        "pod",
+        *pod_names,
+        "-n",
+        juju.model,
+        "--grace-period=0",
+        "--force",
+    ]
+    subprocess.run(cmd, check=True)

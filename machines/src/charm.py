@@ -442,11 +442,40 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         set_destination(f"{endpoint}/v1/traces", None)
 
-    def _handle_non_online_instance_status(self, state: str) -> bool:
+    def _handle_non_online_instance_status(self, state: str) -> bool:  # noqa: C901
         """Helper method to handle non-online instance statuses.
 
         Invoked from the update status event handler.
+
+        Returns:
+            bool
+                True if the handling worked correctly and the caller can continue,
+                False otherwise.
+
         """
+        # A surviving member can stay ONLINE in its local view while the
+        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
+        # complete-outage path below only fires on state == OFFLINE, so
+        # without this the leader stays stuck and the cluster never recovers.
+        if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
+            logger.warning("Cluster has no quorum")
+            if self.peers.units and not self._all_peers_reachable():
+                logger.warning("Skipping quorum recovery: not all peers reachable")
+                return True
+            try:
+                # reboot_cluster_from_complete_outage rejects an instance whose
+                # GR is still running; drop it to OFFLINE first.
+                self._mysql.stop_group_replication()
+                if self.unit.is_leader():
+                    # run on leader only for coordinate recovery
+                    logger.warning("Attempting reboot from complete outage")
+                    self._mysql.reboot_from_complete_outage()
+                    return False
+            except MySQLRebootFromCompleteOutageError:
+                logger.error("Failed to reboot cluster from complete outage")
+                self.set_unit_status(BlockedStatus("failed to recover cluster"))
+            return True
+
         if state == InstanceState.RECOVERING:
             # server is in the process of becoming an active member
             logger.info("Instance is being recovered")
@@ -611,10 +640,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-state"] = state
         self.set_unit_status(self.build_unit_workload_status())
 
-        if not self._handle_non_online_instance_status(state):
-            return
-
-        self._set_app_status(state)
+        if self._handle_non_online_instance_status(state):
+            self._set_app_status(state)
 
     def _on_cos_agent_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the cos_agent relation created event.
@@ -864,10 +891,26 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.unit.status = status
 
+    def _all_peers_reachable(self) -> bool:
+        """Return True if all peer units respond on MySQL port 3306.
+
+        Quorum recovery must not run when peers are unreachable — that scenario
+        indicates a network partition where the remote side may still be healthy.
+        """
+        for unit in self.peers.units:
+            address = self.get_unit_address(unit, PEER)
+            if not address:
+                return False
+            try:
+                with socket.create_connection((address, 3306), timeout=2):
+                    pass
+            except OSError:
+                return False
+        return True
+
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
         self.database_relation._update_endpoints_all_relations(None)
-        self._on_update_status(None)
 
     def _can_start(self, event: StartEvent) -> bool:
         """Check if the unit can start.
