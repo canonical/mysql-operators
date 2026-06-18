@@ -9,16 +9,13 @@ from jubilant import Juju
 
 from constants import REPLICATION_USERNAME
 
-from ...helpers import (
-    generate_random_string,
-    is_connection_possible,
-)
+from ...helpers import generate_random_string
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_mysql_primary_unit,
-    get_unit_ip,
     get_unit_process_id,
     insert_mysql_test_data,
+    is_connection_possible,
     load_mysql_test_data,
     remove_mysql_test_data,
     update_interval,
@@ -74,7 +71,6 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
-    mysql_primary_unit_ip = get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit)
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
 
     logging.info("Get cluster admin password")
@@ -84,25 +80,29 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
         params={"username": REPLICATION_USERNAME},
     )
 
-    config = {
-        "username": credentials_task.results["username"],
-        "password": credentials_task.results["password"],
-        "host": mysql_primary_unit_ip,
-    }
-
     logging.info(f"Freezing process id {mysql_primary_unit_pid}")
     juju.exec(f"sudo kill --signal SIGSTOP {mysql_primary_unit_pid}", unit=mysql_primary_unit)
 
     # Verify that connection is not possible
-    logging.info(f"Verifying that connection to host {mysql_primary_unit_ip} is not possible")
-    assert not is_connection_possible(config)
+    logging.info(f"Verifying that connection to host {mysql_primary_unit} is not possible")
+    assert not is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     logging.info(f"Unfreezing process id {mysql_primary_unit_pid}")
     juju.exec(f"sudo kill --signal SIGCONT {mysql_primary_unit_pid}", unit=mysql_primary_unit)
 
     # Verify that connection is possible
-    logging.info(f"Verifying that connection to host {mysql_primary_unit_ip} is possible")
-    assert is_connection_possible(config)
+    logging.info(f"Verifying that connection to host {mysql_primary_unit} is possible")
+    assert is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     # Ensure continuous writes still incrementing for all units
     with update_interval(juju, "10s"):

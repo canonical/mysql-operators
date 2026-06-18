@@ -9,15 +9,12 @@ from jubilant import Juju
 
 from constants import REPLICATION_USERNAME
 
-from ...helpers import (
-    generate_random_string,
-    is_connection_possible,
-)
+from ...helpers import generate_random_string
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_units,
-    get_unit_ip,
     insert_mysql_test_data,
+    is_connection_possible,
     load_mysql_test_data,
     remove_mysql_test_data,
     start_mysql_process_gracefully,
@@ -94,13 +91,13 @@ def test_cluster_pause(juju: Juju, continuous_writes) -> None:
             action="get-password",
             params={"username": REPLICATION_USERNAME},
         )
-        config = {
-            "username": credentials_task.results["username"],
-            "password": credentials_task.results["password"],
-            "host": get_unit_ip(juju, MYSQL_APP_NAME, unit_name),
-        }
 
-        assert not is_connection_possible(config)
+        assert not is_connection_possible(
+            juju,
+            unit_name,
+            credentials_task.results["username"],
+            credentials_task.results["password"],
+        )
 
     logging.info("Starting all instances")
     for unit_name in mysql_units:

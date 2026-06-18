@@ -9,12 +9,11 @@ from jubilant import Juju
 
 from constants import OPERATOR_USERNAME
 
-from ...helpers import is_connection_possible
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
     execute_queries_on_unit,
     get_mysql_primary_unit,
-    get_unit_ip,
+    is_connection_possible,
     load_mysql_test_data,
     start_mysql_process_gracefully,
     stop_mysql_process_gracefully,
@@ -80,17 +79,12 @@ def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
         params={"username": OPERATOR_USERNAME},
     )
 
-    config = {
-        "username": credentials_task.results["username"],
-        "password": credentials_task.results["password"],
-        "host": get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit),
-    }
-
     execute_queries_on_unit(
-        unit_address=config["host"],
-        username=config["username"],
-        password=config["password"],
-        queries=["SET PERSIST group_replication_autorejoin_tries=0"],
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+        ["SET PERSIST group_replication_autorejoin_tries=0"],
         commit=True,
     )
 
@@ -98,7 +92,12 @@ def test_cluster_manual_rejoin(juju: Juju, continuous_writes) -> None:
     stop_mysql_process_gracefully(juju, mysql_primary_unit)
 
     # Verify connection is not possible
-    assert not is_connection_possible(config)
+    assert not is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     logging.info(f"Starting server on unit {mysql_primary_unit}")
     start_mysql_process_gracefully(juju, mysql_primary_unit)

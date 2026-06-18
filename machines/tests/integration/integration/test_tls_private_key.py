@@ -15,15 +15,14 @@ from constants import (
     TLS_PEER_RELATION,
 )
 
-from ..helpers import is_connection_possible
 from ..helpers_ha import (
     MINUTE_SECS,
     create_app_secret,
     get_app_leader,
     get_app_units,
     get_mysql_server_credentials,
-    get_unit_ip,
     get_unit_relation_data,
+    is_connection_possible,
     wait_for_apps_status,
 )
 
@@ -84,15 +83,12 @@ def test_tls_enabled(juju: Juju) -> None:
     )
 
     credentials = get_mysql_server_credentials(juju, app_units[0])
-    config = {
-        "username": credentials["username"],
-        "password": credentials["password"],
-    }
 
     logger.info("Asserting connections after relation")
     for unit_name in app_units:
-        config["host"] = get_unit_ip(juju, APP_NAME, unit_name)
-        assert is_connection_possible(config, **{"ssl_disabled": False})
+        assert is_connection_possible(
+            juju, unit_name, credentials["username"], credentials["password"], ssl_enabled=True
+        )
 
     logger.info("Asserting TLS relation data exists")
     assert get_unit_relation_data(juju, app_units[0], TLS_CLIENT_RELATION)
@@ -103,11 +99,6 @@ def test_set_private_key(juju: Juju) -> None:
     """Set a new private key and verify the cluster remains accessible."""
     leader_unit = get_app_leader(juju, APP_NAME)
     credentials = get_mysql_server_credentials(juju, leader_unit)
-
-    config = {
-        "username": credentials["username"],
-        "password": credentials["password"],
-    }
 
     first_client_certs = get_unit_certificates_cert(juju, leader_unit, TLS_CLIENT_RELATION)
     first_peer_certs = get_unit_certificates_cert(juju, leader_unit, TLS_PEER_RELATION)
@@ -144,19 +135,15 @@ def test_set_private_key(juju: Juju) -> None:
 
     logger.info("Verifying cluster accessibility after client key rotation")
     for unit_name in get_app_units(juju, APP_NAME):
-        config["host"] = get_unit_ip(juju, APP_NAME, unit_name)
-        assert is_connection_possible(config, **{"ssl_disabled": False})
+        assert is_connection_possible(
+            juju, unit_name, credentials["username"], credentials["password"], ssl_enabled=True
+        )
 
 
 def test_disable_tls(juju: Juju) -> None:
     """Verify TLS is disabled and the cluster is accessible."""
     leader_unit = get_app_leader(juju, APP_NAME)
     credentials = get_mysql_server_credentials(juju, leader_unit)
-
-    config = {
-        "username": credentials["username"],
-        "password": credentials["password"],
-    }
 
     logger.info("Removing relation")
     juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
@@ -174,9 +161,12 @@ def test_disable_tls(juju: Juju) -> None:
     )
 
     for unit_name in get_app_units(juju, APP_NAME):
-        config["host"] = get_unit_ip(juju, APP_NAME, unit_name)
-        assert is_connection_possible(config, **{"ssl_disabled": False})
-        assert is_connection_possible(config, **{"ssl_disabled": True})
+        assert is_connection_possible(
+            juju, unit_name, credentials["username"], credentials["password"], ssl_enabled=True
+        )
+        assert is_connection_possible(
+            juju, unit_name, credentials["username"], credentials["password"], ssl_enabled=False
+        )
 
 
 def create_private_key() -> str:

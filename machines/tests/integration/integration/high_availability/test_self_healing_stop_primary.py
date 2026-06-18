@@ -10,17 +10,14 @@ from jubilant import Juju
 
 from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 
-from ...helpers import (
-    execute_queries_on_unit,
-    generate_random_string,
-    is_connection_possible,
-)
+from ...helpers import generate_random_string
 from ...helpers_ha import (
     TEST_DATABASE_NAME,
     check_mysql_units_writes_increment,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_ip,
+    is_connection_possible,
     load_mysql_test_data,
     remove_mysql_test_data,
     start_mysql_process_gracefully,
@@ -78,7 +75,6 @@ def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
 
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
-    mysql_primary_unit_ip = get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit)
 
     credentials_task = juju.run(
         unit=mysql_primary_unit,
@@ -86,14 +82,13 @@ def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
         params={"username": REPLICATION_USERNAME},
     )
 
-    config = {
-        "username": credentials_task.results["username"],
-        "password": credentials_task.results["password"],
-        "host": mysql_primary_unit_ip,
-    }
-
     # Verify that connection is possible
-    assert is_connection_possible(config)
+    assert is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     # It is necessary to inhibit update-status-hook to stop the service
     # since the charm will restart the service on the hook
@@ -102,7 +97,12 @@ def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
         stop_mysql_process_gracefully(juju, mysql_primary_unit)
 
         # Verify that connection is gone
-        assert not is_connection_possible(config)
+        assert not is_connection_possible(
+            juju,
+            mysql_primary_unit,
+            credentials_task.results["username"],
+            credentials_task.results["password"],
+        )
 
         online_units = set(mysql_units) - {mysql_primary_unit}
         online_units = list(online_units)
@@ -121,7 +121,13 @@ def test_replicate_data_on_restart(juju: Juju, continuous_writes) -> None:
         start_mysql_process_gracefully(juju, mysql_primary_unit)
 
     # Verify that connection is possible
-    assert is_connection_possible(config, retry_if_not_possible=True)
+    assert is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+        retry_if_not_possible=True,
+    )
 
     verify_mysql_test_data(juju, MYSQL_APP_NAME, table_name, table_value)
     remove_mysql_test_data(juju, MYSQL_APP_NAME, table_name)
@@ -156,7 +162,8 @@ def insert_mysql_test_data(
     ]
 
     execute_queries_on_unit(
-        get_unit_ip(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials_task.results["username"],
         credentials_task.results["password"],
         insert_queries,

@@ -7,12 +7,11 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_ip,
     wait_for_apps_status,
 )
 
@@ -63,14 +62,14 @@ def test_charmed_dba_role(juju: Juju):
 
     mysql_unit = get_app_units(juju, DATABASE_APP_NAME)[0]
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME, mysql_unit)
-    primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
 
     data_integrator_unit = get_app_units(juju, INTEGRATOR_APP_NAME)[0]
     task = juju.run(unit=data_integrator_unit, action="get-credentials")
 
     logger.info("Checking that the instance-level DBA role can create new databases")
     execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
         ["CREATE DATABASE IF NOT EXISTS test"],
@@ -82,10 +81,11 @@ def test_charmed_dba_role(juju: Juju):
 
     logger.info("Checking that the instance-level DBA role can see all databases")
     rows = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit,
         task.results["mysql"]["username"],
         task.results["mysql"]["password"],
-        ["SHOW DATABASES"],
+        ["SET ROLE ALL", "SHOW DATABASES"],
         commit=True,
     )
 
