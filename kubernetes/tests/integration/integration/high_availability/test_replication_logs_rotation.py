@@ -192,7 +192,9 @@ def read_unit_file(juju: Juju, unit_name: str, container: str, file_path: str) -
     with tempfile.NamedTemporaryFile(mode="r+", dir=Path.home()) as temp_file:
         subprocess.run(
             [
-                "microk8s.kubectl",
+                "sudo",
+                "k8s",
+                "kubectl",
                 "cp",
                 f"--namespace={juju.model}",
                 f"--container={container}",
@@ -223,7 +225,9 @@ def write_unit_file(juju: Juju, unit_name: str, container: str, file_path: str, 
 
         subprocess.check_call(
             [
-                "microk8s.kubectl",
+                "sudo",
+                "k8s",
+                "kubectl",
                 "cp",
                 f"--namespace={juju.model}",
                 f"--container={container}",

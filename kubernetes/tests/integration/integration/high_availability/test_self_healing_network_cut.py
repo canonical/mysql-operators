@@ -126,11 +126,8 @@ def create_instance_isolation_config(juju: Juju, unit_name: str) -> None:
             temp_file.write(str.encode(template))
             temp_file.flush()
 
-        env = os.environ
-        env["KUBECONFIG"] = os.path.expanduser("~/.kube/config")
-
         try:
-            subprocess.check_output(["microk8s.kubectl", "apply", "-f", temp_file.name], env=env)
+            subprocess.check_output(["sudo", "k8s", "kubectl", "apply", "-f", temp_file.name])
         except subprocess.CalledProcessError as e:
             logging.error(e.output)
             logging.error(e.stderr)
@@ -139,16 +136,14 @@ def create_instance_isolation_config(juju: Juju, unit_name: str) -> None:
 
 def remove_instance_isolation_config(juju: Juju) -> None:
     """Delete the NetworkChaos that is isolating the primary unit of the cluster."""
-    env = os.environ
-    env["KUBECONFIG"] = os.path.expanduser("~/.kube/config")
-
     subprocess.check_output(
         [
-            "microk8s.kubectl",
+            "sudo",
+            "k8s",
+            "kubectl",
             f"--namespace={juju.model}",
             "delete",
             "networkchaos",
             "network-loss-primary",
         ],
-        env=env,
     )
