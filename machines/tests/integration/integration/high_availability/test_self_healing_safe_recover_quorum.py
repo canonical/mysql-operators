@@ -1,8 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 import logging
 import os
-import subprocess
 
 import jubilant_backports
 from jubilant_backports import Juju
@@ -12,8 +12,8 @@ from ...helpers_ha import (
     get_app_name,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_machine,
     load_mysql_test_data,
+    restart_unit_machine,
     update_interval,
     wait_for_apps_status,
 )
@@ -79,8 +79,8 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     logging.info("Simulate quorum loss")
     logging.info(f"Unit selected for survival: {unit_to_survive}")
 
-    units_to_kill = [non_primary_units.pop(), primary_unit]
-    kill_units(juju, app_name, units_to_kill)
+    for unit_name in [non_primary_units.pop(), primary_unit]:
+        restart_unit_machine(juju, app_name, unit_name)
 
     with update_interval(juju, "15s"):
         logging.info("Waiting for all units to become active after switchover...")
@@ -91,9 +91,3 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
         )
 
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-
-
-def kill_units(juju: Juju, app_name: str, unit_names: list[str]) -> None:
-    """Kill the units simultaneously using lxc."""
-    machine_names = [get_unit_machine(juju, app_name, unit) for unit in unit_names]
-    subprocess.run(["lxc", "restart", "--force", *machine_names], check=True)
