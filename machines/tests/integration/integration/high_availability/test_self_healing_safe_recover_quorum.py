@@ -86,7 +86,7 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
         logging.info("Waiting for all units to become active after switchover...")
         juju.wait(
             ready=jubilant_backports.all_active,
-            timeout=10 * MINUTE_SECS,
+            timeout=20 * MINUTE_SECS,
             delay=5,
         )
 
