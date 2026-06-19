@@ -19,7 +19,6 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
-    exec_k8s_container_command,
     get_app_units,
     get_mysql_primary_unit,
     get_unit_process_id,
@@ -85,11 +84,10 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
 
     logging.info(f"Stopping process id {mysql_primary_unit_pid}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=mysql_primary_unit,
-        container_name=CONTAINER_NAME,
-        command=f"pkill -f {MYSQL_PROCESS_NAME} --signal SIGSTOP",
+    juju.ssh(
+        target=mysql_primary_unit,
+        container=CONTAINER_NAME,
+        command=f"pkill -x {MYSQL_PROCESS_NAME} --signal SIGSTOP",
     )
 
     # Ensure that the mysqld process is stopped after receiving the sigstop
@@ -112,11 +110,10 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
             assert new_mysql_primary_unit != mysql_primary_unit
 
     logging.info(f"Continuing process id {mysql_primary_unit_pid}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=mysql_primary_unit,
-        container_name=CONTAINER_NAME,
-        command=f"pkill -f {MYSQL_PROCESS_NAME} --signal SIGCONT",
+    juju.ssh(
+        target=mysql_primary_unit,
+        container=CONTAINER_NAME,
+        command=f"pkill -x {MYSQL_PROCESS_NAME} --signal SIGCONT",
     )
 
     # Ensure that the mysqld process has started after receiving the sigstop
