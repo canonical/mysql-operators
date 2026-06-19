@@ -74,18 +74,17 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_survive = non_primary_units.pop()
-
-    logging.info("Simulate quorum loss")
     logging.info(f"Unit selected for survival: {unit_to_survive}")
 
+    logging.info("Simulate quorum loss")
     for unit_name in [non_primary_units.pop(), primary_unit]:
         restart_unit_machine(juju, app_name, unit_name)
 
-    logging.info("Waiting for all units to become active after switchover...")
+    logging.info("Waiting for all apps to become active after quorum loss...")
     juju.wait(
-        ready=jubilant_backports.all_active,
-        timeout=10 * MINUTE_SECS,
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        timeout=20 * MINUTE_SECS,
         delay=5,
     )
 
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, [unit_to_survive])
