@@ -15,7 +15,6 @@ from ...helpers import generate_random_string
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
-    exec_k8s_container_command,
     get_mysql_primary_unit,
     get_unit_process_id,
     insert_mysql_test_data,
@@ -83,11 +82,10 @@ def test_kill_db_process(juju: Juju, continuous_writes) -> None:
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
 
     logging.info(f"Killing process id {mysql_primary_unit_pid}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=mysql_primary_unit,
-        container_name=CONTAINER_NAME,
-        command="pkill -f mysqld --signal SIGKILL",
+    juju.ssh(
+        target=mysql_primary_unit,
+        container=CONTAINER_NAME,
+        command="pkill -x mysqld --signal SIGKILL",
     )
 
     time.sleep(10)

@@ -15,7 +15,6 @@ from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
-    exec_k8s_container_command,
     get_mysql_primary_unit,
     get_mysql_server_credentials,
     get_unit_address,
@@ -95,22 +94,20 @@ def test_expelled_member_rejoin(juju: Juju, continuous_writes) -> None:
 
     target_pid = get_unit_process_id(juju, target_unit, MYSQL_PROCESS_NAME)
     logging.info(f"Sending SIGSTOP to mysqld (pid={target_pid}) on {target_unit}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=target_unit,
-        container_name=CONTAINER_NAME,
-        command=f"pkill -f {MYSQL_PROCESS_NAME} --signal SIGSTOP",
+    juju.ssh(
+        target=target_unit,
+        container=CONTAINER_NAME,
+        command=f"pkill -x {MYSQL_PROCESS_NAME} --signal SIGSTOP",
     )
 
     logging.info("Waiting 30 seconds for unit to be expelled from group")
     time.sleep(30)
 
     logging.info(f"Sending SIGCONT to mysqld on {target_unit}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=target_unit,
-        container_name=CONTAINER_NAME,
-        command=f"pkill -f {MYSQL_PROCESS_NAME} --signal SIGCONT",
+    juju.ssh(
+        target=target_unit,
+        container=CONTAINER_NAME,
+        command=f"pkill -x {MYSQL_PROCESS_NAME} --signal SIGCONT",
     )
 
     logging.info(f"Waiting for {target_unit} to enter maintenance")

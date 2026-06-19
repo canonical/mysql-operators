@@ -16,7 +16,6 @@ from constants import CONTAINER_NAME
 from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
-    exec_k8s_container_command,
     get_app_leader,
     get_app_units,
     get_mysql_cluster_status,
@@ -259,11 +258,10 @@ def test_failover(first_model: str, second_model: str) -> None:
 
     # Simulating a failure on the primary cluster
     for unit_name in model_2_mysql_units:
-        exec_k8s_container_command(
-            juju=model_2,
-            unit_name=unit_name,
-            container_name=CONTAINER_NAME,
-            command="pkill -f mysqld --signal SIGSTOP",
+        model_2.ssh(
+            target=unit_name,
+            container=CONTAINER_NAME,
+            command="pkill -x mysqld --signal SIGSTOP",
         )
 
     logging.info("Promoting standby cluster to primary with force flag")
@@ -294,11 +292,10 @@ def test_failover(first_model: str, second_model: str) -> None:
     # Restore mysqld process
     logging.info("Unfreezing mysqld on primary cluster units")
     for unit_name in model_2_mysql_units:
-        exec_k8s_container_command(
-            juju=model_2,
-            unit_name=unit_name,
-            container_name=CONTAINER_NAME,
-            command="pkill -f mysqld --signal SIGCONT",
+        model_2.ssh(
+            target=unit_name,
+            container=CONTAINER_NAME,
+            command="pkill -x mysqld --signal SIGCONT",
         )
 
 
