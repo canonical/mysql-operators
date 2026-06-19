@@ -16,7 +16,6 @@ from ...helpers_ha import (
     get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -88,13 +87,12 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     units_to_kill = [non_primary_units.pop(), primary_unit]
     kill_pods(juju, units_to_kill)
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant_backports.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
+    logging.info("Waiting for all units to become active after quorum loss...")
+    juju.wait(
+        ready=jubilant_backports.all_active,
+        timeout=10 * MINUTE_SECS,
+        delay=5,
+    )
 
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
