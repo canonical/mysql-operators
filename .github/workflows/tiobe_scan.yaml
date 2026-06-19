@@ -40,7 +40,6 @@ jobs:
           python3 -m venv .venv
           . .venv/bin/activate
           pip install flake8 poetry pylint pytest tox
-          poetry install --project ${{ inputs.operator }}
           echo PATH="$PATH" >> "$GITHUB_ENV"
 
       - name: Run coverage tests
@@ -49,8 +48,8 @@ jobs:
 
       - name: Coverage reports for TICS
         run: |
-          mkdir -p .cover
-          cp ${{ inputs.operator }}/coverage.xml .cover/cobertura.xml
+          mkdir -p ${{ inputs.operator }}/.cover
+          cp ${{ inputs.operator }}/coverage.xml ${{ inputs.operator }}/.cover/cobertura.xml
 
       - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v3
