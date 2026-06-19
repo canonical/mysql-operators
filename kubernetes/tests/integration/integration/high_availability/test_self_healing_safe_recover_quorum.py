@@ -16,7 +16,6 @@ from ...helpers_ha import (
     get_app_units,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -81,19 +80,17 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_survive = non_primary_units.pop()
-
-    logging.info("Simulate quorum loss")
     logging.info(f"Unit selected for survival: {unit_to_survive}")
 
+    logging.info("Simulate quorum loss")
     for unit_name in [non_primary_units.pop(), primary_unit]:
         delete_k8s_pod(juju, unit_name, grace_period=0)
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant_backports.all_active,
-            timeout=20 * MINUTE_SECS,
-            delay=5,
-        )
+    logging.info("Waiting for all apps to become active after quorum loss...")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        timeout=20 * MINUTE_SECS,
+        delay=5,
+    )
 
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, [unit_to_survive])
