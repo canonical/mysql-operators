@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import jubilant
-import kubernetes
 import yaml
 from jubilant import CLIError, Juju
 from jubilant.statustypes import Status
@@ -108,39 +107,6 @@ def delete_k8s_pod(juju: Juju, unit_name: str) -> None:
         name=get_mysql_instance_label(unit_name),
         namespace=juju.model,
     )
-
-
-def exec_k8s_container_command(
-    juju: Juju, unit_name: str, container_name: str, command: str
-) -> None:
-    """Send the specified signal to a pod container process.
-
-    Args:
-        juju: The juju instance to use.
-        unit_name: The name of the unit to send signal to
-        container_name: The name of the container to send signal to
-        command: The command to execute
-    """
-    kubernetes.config.load_kube_config()
-
-    response = kubernetes.stream.stream(
-        kubernetes.client.api.core_v1_api.CoreV1Api().connect_get_namespaced_pod_exec,
-        get_mysql_instance_label(unit_name),
-        juju.model,
-        container=container_name,
-        command=command.split(),
-        stdin=False,
-        stdout=True,
-        stderr=True,
-        tty=False,
-        _preload_content=False,
-    )
-    response.run_forever(
-        timeout=5,
-    )
-
-    if response.returncode != 0:
-        raise RuntimeError("Failed to execute command")
 
 
 def get_k8s_endpoint_addresses(juju: Juju, endpoint_name: str) -> list[str]:

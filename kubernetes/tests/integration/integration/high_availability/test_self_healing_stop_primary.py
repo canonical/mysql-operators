@@ -13,7 +13,6 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
-    exec_k8s_container_command,
     get_mysql_primary_unit,
     get_unit_process_id,
     load_mysql_test_data,
@@ -75,11 +74,10 @@ def test_graceful_crash_of_primary(juju: Juju, continuous_writes) -> None:
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
 
     logging.info(f"Terminating process id {mysql_primary_unit_pid}")
-    exec_k8s_container_command(
-        juju=juju,
-        unit_name=mysql_primary_unit,
-        container_name=CONTAINER_NAME,
-        command=f"pkill -f {MYSQL_PROCESS_NAME} --signal SIGTERM",
+    juju.ssh(
+        target=mysql_primary_unit,
+        container=CONTAINER_NAME,
+        command=f"pkill -x {MYSQL_PROCESS_NAME} --signal SIGTERM",
     )
 
     new_mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
