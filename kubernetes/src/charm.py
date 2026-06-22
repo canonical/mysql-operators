@@ -1103,8 +1103,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.set_unit_status(MaintenanceStatus(member_state))
             return True
 
-        # avoid changing status while async replication is setting up
-        return not (self.replication_consumer.idle and self.replication_offer.idle)
+        # only assert for async replication state when online
+        if member_state == InstanceState.ONLINE and not (
+            self.replication_consumer.idle and self.replication_offer.idle
+        ):
+            logger.info("Skip status update when setting async replication")
+            return True
+
+        return False
 
     def _on_update_status(self, _: UpdateStatusEvent | None) -> None:
         """Handle the update status event."""
