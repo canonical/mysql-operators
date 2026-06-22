@@ -186,7 +186,7 @@ slug = 'data/mysql/docs'
 
 # Use RTD canonical URL to ensure duplicate pages have a specific canonical URL
 
-html_baseurl = f"https://canonical.com/data/mongodb/docs/{version_slug}/"
+html_baseurl = f"https://canonical.com/data/mysq/docs/{version_slug}/"
 
 # sphinx-sitemap uses html_baseurl to generate the full URL for each page:
 
