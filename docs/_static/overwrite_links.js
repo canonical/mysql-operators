@@ -1,4 +1,4 @@
-const rtd_address = 'canonical-mysql-migration.readthedocs-hosted.com';
+const rtd_address = 'canonical-charmed-mysql-migration.readthedocs-hosted.com';
 const new_address = 'canonical.com/data/mysql/docs';
 
 function escapeRegExp(value) {
