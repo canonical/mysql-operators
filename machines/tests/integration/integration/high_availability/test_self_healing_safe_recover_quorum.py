@@ -87,4 +87,4 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
         delay=5,
     )
 
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, [unit_to_survive])
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, list(app_units))
