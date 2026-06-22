@@ -1,5 +1,5 @@
  // Replaces oldDomain with newDomain in relevant anchor tags
- const RtDHostedDomain = 'canonical-mysql-migration.readthedocs-hosted.com';
+ const RtDHostedDomain = 'canonical-charmed-mysql-migration.readthedocs-hosted.com';
  const newDomain = 'canonical.com/data/mysql/docs';
 
  function escapeRegExp(value) {
