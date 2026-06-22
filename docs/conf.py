@@ -53,7 +53,7 @@ version_slug = f"{os.environ.get('READTHEDOCS_VERSION', 'local')}"
 # NOTE: The Open Graph Protocol (OGP) enhances page display in a social graph
 #       and is used by social media platforms; see https://ogp.me/
 
-ogp_site_url = f"https://canonical.com/data/mongodb/docs/{version_slug}/"
+ogp_site_url = f"https://canonical.com/data/mysql/docs/{version_slug}/"
 
 
 # Preview name of the documentation website
@@ -131,7 +131,7 @@ html_context = {
     # TODO: To enable listing contributors on individual pages, set to True
     "display_contributors": True,
 
-    # Required for feedback button    
+    # Required for feedback button
     'github_issues': 'enabled',
 
     # Inherit the author value
@@ -299,7 +299,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",
     "sphinx_new_tab_link",
-    "sphinxcontrib.mermaid"    
+    "sphinxcontrib.mermaid"
 ]
 
 new_tab_link_show_external_link_icon = True
@@ -321,6 +321,7 @@ html_css_files = [
 
 html_js_files = [
     "https://assets.ubuntu.com/v1/287a5e8f-bundle.js",
+    "overwrite_links.js"
 ]
 
 
