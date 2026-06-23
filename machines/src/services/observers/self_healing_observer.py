@@ -28,20 +28,5 @@ class SelfHealingMySQLObserver(Object):
 
     def _heal_mysql_cluster(self, _) -> None:
         """Self-heal the mysql cluster."""
-        if (
-            self.charm.peers is None
-            or not self.charm._mysql.is_mysqld_running()
-            or not self.charm.unit_initialized()
-        ):
-            # skip when not initialized, during an upgrade, or when mysqld is not running
-            return
-
-        if self.charm.refresh is None:
-            logger.warning("Refresh could be in progress")
-            return
-        if self.charm.refresh and self.charm.refresh.in_progress:
-            logger.debug("Refresh in progress")
-            return
-
         self.charm._on_update_status(None)
         self.charm.update_endpoints()

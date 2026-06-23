@@ -878,6 +878,9 @@ class MySQLCharmBase(CharmBase, ABC):
 
     def unit_initialized(self, raise_exceptions: bool = False) -> bool:
         """Check if the unit is added to the cluster."""
+        if not self.app_peer_data.get("cluster-name"):
+            # early calls - cluster name not set, avoid KeyError
+            return False
         try:
             return self._mysql.cluster_metadata_exists()
         except MySQLClusterMetadataExistsError:

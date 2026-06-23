@@ -248,6 +248,22 @@ def get_unit_relation_data(juju: Juju, unit_name: str, relation_name: str) -> di
     return relation_data[0]
 
 
+def restart_unit_machine(juju: Juju, app_name: str, unit_name: str) -> None:
+    """Restart the unit machine."""
+    subprocess.run(
+        ["lxc", "restart", "--force", get_unit_machine(juju, app_name, unit_name)],
+        check=True,
+    )
+
+
+def stop_unit_machine(juju: Juju, app_name: str, unit_name: str) -> None:
+    """Stop the unit machine."""
+    subprocess.run(
+        ["lxc", "stop", "--force", get_unit_machine(juju, app_name, unit_name)],
+        check=True,
+    )
+
+
 @retry(stop=stop_after_attempt(30), wait=wait_fixed(5), reraise=True)
 def get_mysql_cluster_status(juju: Juju, unit: str, cluster_set: bool = False) -> dict:
     """Get the cluster status by running the get-cluster-status action.

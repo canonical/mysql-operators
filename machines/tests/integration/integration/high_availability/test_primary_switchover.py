@@ -3,7 +3,6 @@
 
 import logging
 import os
-import subprocess
 from time import sleep
 
 import jubilant
@@ -13,8 +12,8 @@ from ...helpers_ha import (
     get_app_name,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_machine,
     load_mysql_test_data,
+    stop_unit_machine,
     wait_for_apps_status,
 )
 
@@ -101,16 +100,12 @@ def test_cluster_failover_after_majority_loss(juju: Juju) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_promote = non_primary_units.pop()
-
     logging.info(f"Unit selected for promotion: {unit_to_promote}")
 
     logging.info("Kill all but one unit to simulate majority loss...")
-    units_to_kill = [non_primary_units.pop(), primary_unit]
-    machine_name = []
-    for unit in units_to_kill:
-        machine_name.append(get_unit_machine(juju, app_name, unit))
+    for unit_name in [non_primary_units.pop(), primary_unit]:
+        stop_unit_machine(juju, app_name, unit_name)
 
-    subprocess.run(["lxc", "stop", "--force", machine_name[0], machine_name[1]], check=True)
     # allow time to cluster settled in no_quorum
     sleep(10)
     logging.info("Attempting to promote a unit to primary after quorum loss...")

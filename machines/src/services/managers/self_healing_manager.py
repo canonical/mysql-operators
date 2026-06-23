@@ -10,7 +10,6 @@ import subprocess
 import typing
 
 from ops.framework import Object
-from ops.model import ActiveStatus
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class SelfHealingManager(Object):
 
     def start_manager(self):
         """Start the self-healing running in a new process."""
-        if not isinstance(self.charm.unit.status, ActiveStatus) or self.charm.peers is None:
+        if self.charm.peers is None or not self.charm.unit_initialized():
             return
 
         if (pid := self.charm.unit_peer_data.get("self-heal-manager-pid")) and check_pid(int(pid)):
