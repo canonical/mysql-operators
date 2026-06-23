@@ -95,13 +95,14 @@ def check_mysql_units_writes_increment(
                 app_max_value = unit_max_value
 
 
-def delete_k8s_pod(juju: Juju, unit_name: str) -> None:
+def delete_k8s_pod(juju: Juju, unit_name: str, grace_period: int | None = None) -> None:
     """Delete the K8s pod associated with the unit name."""
     client = Client()
     client.delete(
         res=Pod,
         name=get_mysql_instance_label(unit_name),
         namespace=juju.model,
+        grace_period=grace_period,
     )
 
 
