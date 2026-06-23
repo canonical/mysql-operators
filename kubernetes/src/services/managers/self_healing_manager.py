@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SelfHealingManager(Object):
     """Manages self-healing for the charm.
 
-    Dispatches a custom event every 60s to self-heal the mysql cluster.
+    Dispatches a custom event every 120s to self-heal the mysql cluster.
     """
 
     def __init__(self, charm: "MySQLOperatorCharm"):
