@@ -77,9 +77,6 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
     mysql_primary_unit_ip = get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit)
     mysql_primary_unit_pid = get_unit_process_id(juju, mysql_primary_unit, MYSQL_PROCESS_NAME)
 
-    logging.info(f"Freezing process id {mysql_primary_unit_pid}")
-    juju.exec(f"sudo kill --signal SIGSTOP {mysql_primary_unit_pid}", unit=mysql_primary_unit)
-
     logging.info("Get cluster admin password")
     credentials_task = juju.run(
         unit=mysql_primary_unit,
@@ -92,6 +89,9 @@ def test_freeze_db_process(juju: Juju, continuous_writes) -> None:
         "password": credentials_task.results["password"],
         "host": mysql_primary_unit_ip,
     }
+
+    logging.info(f"Freezing process id {mysql_primary_unit_pid}")
+    juju.exec(f"sudo kill --signal SIGSTOP {mysql_primary_unit_pid}", unit=mysql_primary_unit)
 
     # Verify that connection is not possible
     logging.info(f"Verifying that connection to host {mysql_primary_unit_ip} is not possible")
