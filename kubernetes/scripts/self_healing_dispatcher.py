@@ -27,7 +27,7 @@ def dispatch(unit: str, charm_directory: str):
 def main():
     """Main watch and dispatch loop.
 
-    Roughly every 120s, dispatch the custom self_heal_mysql event.
+    Roughly every 60s, dispatch the custom self_heal_mysql event.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("unit", help="name of unit")
@@ -36,7 +36,7 @@ def main():
 
     while True:
         dispatch(arguments.unit, arguments.charm_directory)
-        time.sleep(120)
+        time.sleep(60)
 
 
 if __name__ == "__main__":
