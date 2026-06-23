@@ -19,13 +19,13 @@ def dispatch(run_command, unit, charm_directory):
 def main():
     """Main watch and dispatch loop.
 
-    Dispatch a self-healing event every 60 seconds.
+    Dispatch a self-healing event every 120 seconds.
     """
     run_command, unit, charm_directory = sys.argv[1:]
 
     while True:
         dispatch(run_command, unit, charm_directory)
-        time.sleep(60)
+        time.sleep(120)
 
 
 if __name__ == "__main__":
