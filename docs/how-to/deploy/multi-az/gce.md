@@ -58,9 +58,9 @@ mysql/1*  active    idle   1        34.148.44.51    3306,33060/tcp  Primary
 mysql/2   active    idle   2        34.23.252.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
-1        started  34.148.44.51   juju-5fe1b7-1  ubuntu@24.04  us-east1-d  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@26.04  us-east1-c  RUNNING
+1        started  34.148.44.51   juju-5fe1b7-1  ubuntu@26.04  us-east1-d  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@26.04  us-east1-b  RUNNING
 ```
 
 and each unit/vm will sit in the separate AZ out of the box:
@@ -104,9 +104,9 @@ mysql/1   unknown   lost   1        34.148.44.51    3306,33060/tcp  agent lost, 
 mysql/2   active    idle   2        34.23.252.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
-1        down     34.148.44.51   juju-5fe1b7-1  ubuntu@24.04  us-east1-d  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@26.04  us-east1-c  RUNNING
+1        down     34.148.44.51   juju-5fe1b7-1  ubuntu@26.04  us-east1-d  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@26.04  us-east1-b  RUNNING
 ```
 
 Here we should remove the no longer available `server/vm/GCE` node and add a new one. Juju will create it in the same AZ `us-east4-c`:
@@ -131,8 +131,8 @@ mysql/0*  active    idle   0        34.23.202.220   3306,33060/tcp  Primary
 mysql/2   active    idle   2        34.23.252.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@26.04  us-east1-c  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@26.04  us-east1-b  RUNNING
 ```
 
 Request Juju to add a new unit in the proper AZ:
@@ -156,9 +156,9 @@ mysql/2   active    idle        2        34.23.252.144   3306,33060/tcp
 mysql/3   waiting   allocating  3                                        waiting for machine
 
 Machine  State    Address        Inst id        Base          AZ          Message
-0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@24.04  us-east1-c  RUNNING
-2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@24.04  us-east1-b  RUNNING
-3        pending                 juju-5fe1b7-3  ubuntu@24.04  us-east1-d  starting
+0        started  34.23.202.220  juju-5fe1b7-0  ubuntu@26.04  us-east1-c  RUNNING
+2        started  34.23.252.144  juju-5fe1b7-2  ubuntu@26.04  us-east1-b  RUNNING
+3        pending                 juju-5fe1b7-3  ubuntu@26.04  us-east1-d  starting
 ```
 
 ## Remove GCE setup
@@ -188,4 +188,3 @@ Re-check that there are no running GCE instances left (it should be empty):
 ```shell
 gcloud compute instances list
 ```
-

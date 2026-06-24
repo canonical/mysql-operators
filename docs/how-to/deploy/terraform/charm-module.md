@@ -89,7 +89,7 @@ Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        10.101.248.220  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-0        started  10.101.248.220  juju-c4a403-0  ubuntu@24.04      Running
+0        started  10.101.248.220  juju-c4a403-0  ubuntu@26.04      Running
 ```
 
 Continue to operate the charm as usual from here or apply further Terraform changes.

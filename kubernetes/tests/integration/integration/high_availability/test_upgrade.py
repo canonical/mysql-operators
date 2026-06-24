@@ -37,7 +37,7 @@ def test_deploy_latest(juju: Juju) -> None:
     juju.deploy(
         charm=MYSQL_APP_NAME,
         app=MYSQL_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         channel="8.4/edge",
         config={"profile": "testing"},
         num_units=3,
@@ -47,7 +47,7 @@ def test_deploy_latest(juju: Juju) -> None:
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         channel="latest/edge",
         num_units=1,
         trust=False,

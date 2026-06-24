@@ -15,7 +15,7 @@ variable "app_name" {
 variable "base" {
   description = "Application base"
   type        = string
-  default     = "ubuntu@24.04"
+  default     = "ubuntu@26.04"
 }
 
 variable "config" {

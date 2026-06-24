@@ -81,6 +81,8 @@ backends:
 
       sudo passwd --delete "$USER"
 
+      sudo systemctl reload ssh || sudo systemctl restart ssh
+
       ADDRESS localhost
     # HACK: spread does not pass environment variables set on runner
     # Manually pass specific environment variables
@@ -92,9 +94,9 @@ backends:
       GCP_ACCESS_KEY: '$(HOST: echo $GCP_ACCESS_KEY)'
       GCP_SECRET_KEY: '$(HOST: echo $GCP_SECRET_KEY)'
     systems:
-      - ubuntu-24.04:
+      - ubuntu-26.04:
           username: runner
-      - ubuntu-24.04-arm:
+      - ubuntu-26.04-arm:
           username: runner
 
 suites:

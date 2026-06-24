@@ -92,9 +92,9 @@ mysql/1   active    idle   1        10.217.68.118   3306,33060/tcp
 mysql/2   active    idle   2        10.217.68.144   3306,33060/tcp  
 
 Machine  State    Address        Inst id        Base          AZ  Message
-0        started  10.217.68.104  juju-a4598a-0  ubuntu@24.04      Running
-1        started  10.217.68.118  juju-a4598a-1  ubuntu@24.04      Running
-2        started  10.217.68.144  juju-a4598a-2  ubuntu@24.04      Running
+0        started  10.217.68.104  juju-a4598a-0  ubuntu@26.04      Running
+1        started  10.217.68.118  juju-a4598a-1  ubuntu@26.04      Running
+2        started  10.217.68.144  juju-a4598a-2  ubuntu@26.04      Running
 ```
 </details>
 
@@ -224,4 +224,3 @@ Further documentation about Juju upgrades:
 <!-- LINKS -->
 
 [bootstrap]: https://juju.is/docs/juju/juju-bootstrap
-

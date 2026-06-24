@@ -16,7 +16,7 @@ Charmed MySQL is developed for deployment on machine clouds or Kubernetes. Altho
 (machine-charm)=
 ### Machine charm
 
-[Charmed MySQL VM](https://charmhub.io/mysql) leverages the [charmed-mysql snap](https://snapcraft.io/charmed-mysql) which is deployed by Juju on the specified VM/MAAS/bare-metal machine based on Ubuntu Noble/24.04. snap allows to run MySQL service(s) in a secure and isolated environment ([strict confinement](https://snapcraft.io/blog/demystifying-snap-confinement)). 
+[Charmed MySQL VM](https://charmhub.io/mysql) leverages the [charmed-mysql snap](https://snapcraft.io/charmed-mysql) which is deployed by Juju on the specified VM/MAAS/bare-metal machine based on Ubuntu Resolute/26.04 snap allows to run MySQL service(s) in a secure and isolated environment ([strict confinement](https://snapcraft.io/blog/demystifying-snap-confinement)). 
 
 The installed snap:
 

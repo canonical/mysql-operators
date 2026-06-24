@@ -42,7 +42,7 @@ multipass list
 </br>
 
 ```{note}
-Make sure you are downloading 24.04 images as well.
+Make sure you are downloading 26.04 images as well.
 ```
 
 The LXD machine will be up and running after the images downloading and sync is completed.
@@ -134,7 +134,7 @@ Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/1*  active    idle   1        10.10.10.7      3306,33060/tcp  Primary
 
 Machine  State    Address     Inst id       Base          AZ       Message
-1        started  10.10.10.7  pumped-racer  ubuntu@24.04  default  Deployed
+1        started  10.10.10.7  pumped-racer  ubuntu@26.04  default  Deployed
 ```
 
 ## Test your Charmed MySQL deployment
@@ -158,4 +158,3 @@ To completely delete your VM and all its data, run:
 ```shell
 multipass delete --purge maas
 ```
-

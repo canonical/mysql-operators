@@ -11,7 +11,7 @@ This guide goes through the steps for setting up Sunbeam and deploying Charmed M
 
 ## Prerequisites
 
-* A physical or virtual machine running Ubuntu 24.04 LTS (Noble) or newer
+* A physical or virtual machine running Ubuntu 26.04 LTS (Noble) or newer
   * If you'd like to follow this guide in an isolated test environment, you can [launch a Multipass](create-multipass-vm) instance.
 * Hardware requirements depend on planned deployment size.
   * Recommended: 8 CPU cores, 32GB RAM, 100GB of storage
@@ -28,7 +28,7 @@ Pay attention to the `Caution` and `Note` sections - the `/etc/hosts` will requi
 
 ## Enable OpenStack Images Auto-sync
 
-Follow the official [Images Sync] guide to enable auto-sync and wait for the image `24.04` to be downloaded.
+Follow the official [Images Sync] guide to enable auto-sync and wait for the image `26.04` to be downloaded.
 
 ## Set up Juju inside an OpenStack bastion
 
@@ -45,7 +45,7 @@ Add a model if you don't have one already, and deploy a MySQL cluster. Use the `
 
 ```shell
 juju add-model mysql
-juju deploy mysql --base ubuntu@24.04 -n 3
+juju deploy mysql --base ubuntu@26.04 -n 3
 ```
 
 Sample output of `juju status --watch 1s`:
@@ -62,9 +62,9 @@ mysql/1   active    idle   1        192.168.122.226  3306,33060/tcp
 mysql/2   active    idle   2        192.168.122.14   3306,33060/tcp  
 
 Machine  State    Address          Inst id                               Base          AZ    Message
-0        started  192.168.122.211  3f0a331c-bc08-4bae-af22-44087a7b74d6  ubuntu@24.04  nova  ACTIVE
-1        started  192.168.122.226  e6e908f8-0da1-4440-9bbd-9f1c1bc780df  ubuntu@24.04  nova  ACTIVE
-2        started  192.168.122.14   6f9ad7cd-2a9d-435e-a6d8-3e39bf2218cd  ubuntu@24.04  nova  ACTIVE
+0        started  192.168.122.211  3f0a331c-bc08-4bae-af22-44087a7b74d6  ubuntu@26.04  nova  ACTIVE
+1        started  192.168.122.226  e6e908f8-0da1-4440-9bbd-9f1c1bc780df  ubuntu@26.04  nova  ACTIVE
+2        started  192.168.122.14   6f9ad7cd-2a9d-435e-a6d8-3e39bf2218cd  ubuntu@26.04  nova  ACTIVE
 ```
 
 ## (Optional) Access the OpenStack dashboard 
@@ -91,4 +91,3 @@ To learn more about deploying and operating MySQL, see the {ref}`tutorial`.
 [Accessing the OpenStack dashboard]: https://canonical-openstack.readthedocs-hosted.com/en/latest/how-to/misc/using-the-openstack-dashboard/
 [Images Sync]: https://canonical-openstack.readthedocs-hosted.com/en/latest/how-to/features/images-sync/
 [Manage workloads with Juju]: https://canonical-openstack.readthedocs-hosted.com/en/latest/how-to/misc/manage-workloads-with-juju/
-

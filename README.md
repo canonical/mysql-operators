@@ -61,8 +61,8 @@ juju relate mysql:database mysql-test-app:database
 To build the charms:
 
 ```shell
-(cd kubernetes && charmcraft pack)
-(cd machines && charmcraft pack)
+(cd kubernetes && charmcraftlocal pack)
+(cd machines && charmcraftlocal pack)
 ```
 
 Please see the [Juju SDK docs](https://juju.is/docs/sdk) for guidelines on

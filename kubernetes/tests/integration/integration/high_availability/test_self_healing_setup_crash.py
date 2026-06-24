@@ -24,7 +24,7 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,

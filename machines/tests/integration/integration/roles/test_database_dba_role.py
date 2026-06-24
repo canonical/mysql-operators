@@ -32,7 +32,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         charm,
         DATABASE_APP_NAME,
         num_units=3,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"profile": "testing"},
     )
     juju.deploy(

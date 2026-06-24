@@ -26,7 +26,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
         MYSQL_APP_NAME,
         config={"profile-limit-memory": "2000", "experimental-max-connections": CONNECTIONS},
         num_units=1,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         trust=True,
     )
@@ -40,7 +40,7 @@ def test_deploy_and_relate_test_app(juju: Juju) -> None:
         "mysql-test-app",
         TEST_APP_NAME,
         num_units=1,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config=config,
         channel="latest/edge",
         constraints=constraints,

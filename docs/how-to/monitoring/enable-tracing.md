@@ -139,7 +139,7 @@ Wait until the model settles. The following is an example of the `juju status --
       grafana-agent/0*  blocked   idle            10.205.193.32                   Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
 
     Machine  State    Address        Inst id        Base          AZ  Message
-    0        started  10.205.193.32  juju-4f3e50-0  ubuntu@24.04      Running
+    0        started  10.205.193.32  juju-4f3e50-0  ubuntu@26.04      Running
 
     Integration provider  Requirer                 Interface              Type         Message
     grafana-agent:peers   grafana-agent:peers      grafana_agent_replica  peer         

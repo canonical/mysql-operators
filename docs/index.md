@@ -1,17 +1,11 @@
 ---
-relatedlinks: "[Charmhub&#32;|&#32;MySQL&#32;VM](https://charmhub.io/mysql?channel=8.4/edge), [Charmhub&#32;|&#32;MySQL&#32;K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge)"
+relatedlinks: "https://charmhub.io/mysql?channel=8.4/edge, https://charmhub.io/mysql-k8s?channel=8.4/edge"
 myst:
   html_meta:
     description: "Official documentation for Charmed MySQL operator. Deploy and manage MySQL Community Edition on VMs and Kubernetes using Juju."
 ---
 
 # Charmed MySQL documentation
-
-```{caution}
-**Charmed MySQL 8.4 is currently under development**. Please wait for the upcoming stable release before deploying it in production, or use [Charmed MySQL 8.0](https://canonical-charmed-mysql.readthedocs-hosted.com/8.0/).
-
-Meanwhile, you're welcome to explore the `8.4/edge` track on [VM](https://charmhub.io/mysql?channel=8.4/edge) and [K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge) and share your feedback as we continue to improve.
-```
 
 Charmed MySQL is an open-source software operator that deploys and operates [MySQL Community Edition](https://www.mysql.com/products/community/) relational databases on machines or Kubernetes with [Juju](https://juju.is/). 
 
@@ -35,7 +29,7 @@ Learn about what's in the charm, how to set up your environment, and perform the
 
 Advanced deployments and operations focused on production scenarios and high availability.
 
-* **Advanced deployments**: {ref}`Terraform <terraform>` • {ref}`Airgapped <airgapped>` • {ref}`Multiple availability zones <multi-az>` • {ref}`Cluster-cluster replication <cluster-cluster-replication>` 
+* **Advanced deployments**: {ref}`Terraform <terraform>` • {ref}`Multiple availability zones <multi-az>` • {ref}`Cluster-cluster replication <cluster-cluster-replication>` 
 * **Networking**: {ref}`Juju spaces <juju-spaces>` • {ref}`TLS encryption <enable-tls>` • {ref}`External network access <external-network-access>`
 * **Upgrades and data migration**: {ref}`In-place upgrades <refresh>` • {ref}`Cluster and data migration <migrate-data-backup-restore>`
 * **Troubleshooting**: {ref}`Overview and tools <troubleshooting>` • {ref}`known-scenarios` • {ref}`Logs <logs>` 

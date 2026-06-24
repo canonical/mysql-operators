@@ -32,7 +32,7 @@ def test_build_and_deploy(juju: Juju, charm):
         config={"cluster-name": "test_cluster", "profile": "testing"},
         num_units=3,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         trust=True,
     )
 
@@ -41,7 +41,7 @@ def test_build_and_deploy(juju: Juju, charm):
         APPLICATION_APP_NAME,
         num_units=2,
         channel="latest/edge",
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         constraints=constraints,
     )
 
@@ -114,7 +114,7 @@ def test_relation_broken_connectivity(juju: Juju):
         num_units=1,
         channel="latest/edge",
         config={"database_name": "test_database_1"},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
 
     juju.deploy(
@@ -123,7 +123,7 @@ def test_relation_broken_connectivity(juju: Juju):
         num_units=1,
         channel="latest/edge",
         config={"database_name": "test_database_2"},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
 
     logging.info("Creating relations...")

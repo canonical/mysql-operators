@@ -81,7 +81,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )
@@ -277,7 +277,7 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     juju.deploy(
         charm,
         new_mysql_application_name,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=1,
     )
