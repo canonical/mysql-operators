@@ -1,0 +1,39 @@
+Jun 26 02:31:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jun 26 02:31:48 [32mINFO    [0m root:test_replication_logs_rotation.py:73 Removing the cron file
+Jun 26 02:31:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo find /etc/cron.d/flush_mysql_logs -maxdepth 1 -delete'
+Jun 26 02:31:48 [32mINFO    [0m root:test_replication_logs_rotation.py:76 Stopping any running logrotate jobs
+Jun 26 02:31:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing mysql/2 'sudo pkill -f '"'"'logrotate -f /etc/logrotate.d/flush_mysql_logs'"'"' --signal SIGTERM'
+Jun 26 02:31:49 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'pgrep -x logrotate'
+Jun 26 02:31:49 [32mINFO    [0m root:test_replication_logs_rotation.py:82 Removing existing archive directories
+Jun 26 02:31:49 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo find /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_audit -maxdepth 1 -delete'
+Jun 26 02:31:50 [32mINFO    [0m root:test_replication_logs_rotation.py:85 Writing some data to the text log files
+Jun 26 02:31:50 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- /root/tmp592896ig mysql/2:/tmp/file
+Jun 26 02:31:50 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo mv /tmp/file /var/snap/charmed-mysql/common/var/lib/mysql/logs/audit.log'
+Jun 26 02:31:50 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown snap_daemon:root /var/snap/charmed-mysql/common/var/lib/mysql/logs/audit.log'
+Jun 26 02:31:51 [32mINFO    [0m root:test_replication_logs_rotation.py:82 Removing existing archive directories
+Jun 26 02:31:51 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo find /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_error -maxdepth 1 -delete'
+Jun 26 02:31:51 [32mINFO    [0m root:test_replication_logs_rotation.py:85 Writing some data to the text log files
+Jun 26 02:31:51 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- /root/tmps_az1rh_ mysql/2:/tmp/file
+Jun 26 02:31:51 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo mv /tmp/file /var/snap/charmed-mysql/common/var/lib/mysql/logs/error.log'
+Jun 26 02:31:51 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown snap_daemon:root /var/snap/charmed-mysql/common/var/lib/mysql/logs/error.log'
+Jun 26 02:31:52 [32mINFO    [0m root:test_replication_logs_rotation.py:93 Executing logrotate
+Jun 26 02:31:52 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing mysql/2 'sudo logrotate -f /etc/logrotate.d/flush_mysql_logs'
+Jun 26 02:31:57 [32mINFO    [0m root:test_replication_logs_rotation.py:96 Ensuring log files were rotated
+Jun 26 02:31:57 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo cp /var/snap/charmed-mysql/common/var/lib/mysql/logs/audit.log /tmp/file'
+Jun 26 02:31:58 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown ubuntu:ubuntu /tmp/file'
+Jun 26 02:31:58 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- mysql/2:/tmp/file /root/tmpeaxhngyf
+Jun 26 02:31:58 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo rm /tmp/file'
+Jun 26 02:31:59 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo ls -la /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_audit'
+Jun 26 02:31:59 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo cp /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_audit/audit.log-20260626_0231 /tmp/file'
+Jun 26 02:31:59 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown ubuntu:ubuntu /tmp/file'
+Jun 26 02:31:59 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- mysql/2:/tmp/file /root/tmpbcccwusv
+Jun 26 02:32:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo rm /tmp/file'
+Jun 26 02:32:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo cp /var/snap/charmed-mysql/common/var/lib/mysql/logs/error.log /tmp/file'
+Jun 26 02:32:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown ubuntu:ubuntu /tmp/file'
+Jun 26 02:32:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- mysql/2:/tmp/file /root/tmpohupo1_3
+Jun 26 02:32:01 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo rm /tmp/file'
+Jun 26 02:32:01 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo ls -la /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_error'
+Jun 26 02:32:02 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo cp /var/snap/charmed-mysql/common/var/lib/mysql/archive/archive_error/error.log-20260626_0231 /tmp/file'
+Jun 26 02:32:02 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo chown ubuntu:ubuntu /tmp/file'
+Jun 26 02:32:03 [32mINFO    [0m jubilant:_juju.py:308 cli: juju scp --model testing -- mysql/2:/tmp/file /root/tmp06_uig4c
+Jun 26 02:32:04 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql/2 -- 'sudo rm /tmp/file'
