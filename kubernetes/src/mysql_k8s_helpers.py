@@ -293,11 +293,11 @@ class MySQL(MySQLBase):
             self.container.remove_path(file_path)
             self.container.remove_path(MYSQLD_INIT_CONFIG_FILE)
 
-    @retry(reraise=True, stop=stop_after_delay(120), wait=wait_fixed(2))
+    @retry(reraise=True, stop=stop_after_delay(600), wait=wait_fixed(2))
     def wait_until_mysql_connection(self, check_port: bool = True) -> None:
         """Wait until a connection to MySQL daemon is possible.
 
-        Retry every 2 seconds for 120 seconds if there is an issue obtaining a connection.
+        Retry every 2 seconds for 600 seconds if there is an issue obtaining a connection.
         """
         if not self.container.exists(MYSQLD_SOCK_FILE):
             raise MySQLServiceNotRunningError
