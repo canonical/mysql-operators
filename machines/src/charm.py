@@ -272,8 +272,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         # render the new config
         new_config_dict = self._mysql.write_mysqld_config()
+        # flatten new_config_dict to match previous_config format (all values as strings)
+        new_config_dict_flat = {k: str(v) for k, v in new_config_dict.items()}
 
-        changed_config = compare_dictionaries(previous_config, new_config_dict)
+        changed_config = compare_dictionaries(previous_config, new_config_dict_flat)
 
         # Override log rotation
         self.log_rotation_setup.setup()

@@ -626,7 +626,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         logger.info("Persisting configuration changes to file")
         new_config_dict = self._write_mysqld_configuration()
-        changed_config = compare_dictionaries(previous_config_dict, new_config_dict)
+        # flatten new_config_dict to match previous_config_dict format (all values as strings)
+        new_config_dict_flat = {k: str(v) for k, v in new_config_dict.items()}
+        changed_config = compare_dictionaries(previous_config_dict, new_config_dict_flat)
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)
