@@ -6,9 +6,10 @@
 
 ## Description
 
-The Charmed MySQL Server is a database operator build for the Juju framework. It can be deployed 
-on bare metal (using a [LXD](https://canonical.com/lxd) controller) or 
-on Kubernetes (using a [microk8s](https://canonical.com/microk8s) controller).
+The Charmed MySQL Server is a database operator built for the [Juju](https://canonical.com/juju) orchestrator. It can be deployed 
+
+* on bare metal (using a [machine cloud](https://canonical.com/juju/docs/juju-cli/3.6/reference/cloud/), for instance [LXD](https://canonical.com/juju/docs/juju-cli/3.6/reference/cloud/list-of-supported-clouds/lxd/#cloud-lxd)), or 
+* on Kubernetes (using a [K8s cloud](https://canonical.com/juju/docs/juju-cli/3.6/reference/cloud/), for instance [microk8s](https://canonical.com/juju/docs/juju-cli/3.6/reference/cloud/list-of-supported-clouds/microk8s/#cloud-kubernetes-microk8s) or [Canonical K8s](https://canonical.com/juju/docs/juju-cli/3.6/reference/cloud/list-of-supported-clouds/canonical-kubernetes/#cloud-canonical-k8s)).
 
 ## Usage
 
@@ -40,7 +41,7 @@ See the [official documentation](https://canonical-charmed-mysql.readthedocs-hos
 ## Relations
 
 Relations are the standard way to interconnect multiple Juju operators.
-There relations are defined over well-defined interfaces, that both _requirer_ and _provider_ operators must support.
+These relations are defined over well-defined interfaces, that both _requirer_ and _provider_ operators must support.
 
 Example:
 ```shell
