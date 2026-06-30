@@ -573,7 +573,7 @@ class MySQLCharmBase(CharmBase, ABC):
 
         self.set_secret("app", secret_key, new_password)
 
-        if username == MONITORING_USERNAME and self.has_cos_relation:
+        if username == MONITORING_USERNAME:
             self._mysql.restart_mysql_exporter()
 
     def _get_cluster_status(self, event: ActionEvent) -> None:
@@ -3102,7 +3102,7 @@ class MySQLBase(ABC):
     @abstractmethod
     def restart_mysql_exporter(self) -> None:
         """Restart the mysqld exporter."""
-        raise NotImplementedError
+        raise NotImplementedError # bookmark
 
     @abstractmethod
     def wait_until_mysql_connection(self, check_port: bool = True) -> None:
