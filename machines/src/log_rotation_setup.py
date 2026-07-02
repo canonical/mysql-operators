@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_POSITIONS_FILE = "/var/snap/grafana-agent/current/grafana-agent-positions/log_file_scraper.yml"
+_POSITIONS_FILE = "/opt/promtail/positions.yaml"
 _LOGS_SYNCED = "logs_synced"
 
 
