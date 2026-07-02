@@ -1,0 +1,20 @@
+bundle: kubernetes
+name: testing
+applications:
+  mysql-k8s:
+    charm: {{ mysql_charm_path }}
+    trust: true
+    scale: 1
+    constraints: mem=2G
+    resources:
+      mysql-image: {{ mysql_image_source }}
+  opentelemetry-collector-k8s:
+    charm: opentelemetry-collector-k8s
+    channel: 2/stable
+    trust: true
+    scale: 1
+relations:
+  - - mysql-k8s:logging
+    - opentelemetry-collector-k8s:receive-loki-logs
+  - - mysql-k8s:metrics-endpoint
+    - opentelemetry-collector-k8s:metrics-endpoint
