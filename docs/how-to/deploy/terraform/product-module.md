@@ -72,7 +72,7 @@ terraform apply -auto-approve \
 
 ### Extended charms
 
-The extended MySQL product module deploys [self-signed-certificates](https://charmhub.io/self-signed-certificates) and [grafana-agent](https://charmhub.io/grafana-agent) charms on top.
+The extended MySQL product module deploys [self-signed-certificates](https://charmhub.io/self-signed-certificates) and [opentelemetry-collector](https://charmhub.io/opentelemetry-collector) charms on top.
 In order to deploy all resources:
 
 ```shell
