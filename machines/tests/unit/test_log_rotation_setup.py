@@ -29,7 +29,7 @@ class TestLogRotationSetup(unittest.TestCase):
         "charm.MySQLOperatorCharm._is_peer_data_set", new_callable=PropertyMock, return_value=True
     )
     def test_cos_relation_created(self, mock_is_peer_data_set, mock_setup, mock_charm_on_created):
-        self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
+        self.harness.add_relation(COS_AGENT_RELATION_NAME, "opentelemetry-collector")
         mock_setup.assert_called_once_with(3, self.charm.text_logs, False)
         mock_is_peer_data_set.assert_called_once()
 
@@ -43,7 +43,7 @@ class TestLogRotationSetup(unittest.TestCase):
         self, mock_setup, mock_exist, mock_is_peer_data_set, mock_charm_on_created
     ):
         self.harness.update_config({"logs_retention_period": "auto"})
-        self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
+        self.harness.add_relation(COS_AGENT_RELATION_NAME, "opentelemetry-collector")
         positions = (
             "positions:\n  '/var/snap/charmed-mysql/common/var/log/mysql/error.log': '466'\n"
         )
