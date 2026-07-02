@@ -3102,7 +3102,7 @@ class MySQLBase(ABC):
     @abstractmethod
     def restart_mysql_exporter(self) -> None:
         """Restart the mysqld exporter."""
-        raise NotImplementedError # bookmark
+        raise NotImplementedError
 
     @abstractmethod
     def wait_until_mysql_connection(self, check_port: bool = True) -> None:

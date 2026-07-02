@@ -3,7 +3,7 @@
 
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import Mock, patch
 
 from charms.mysql.v0.mysql import MySQLCharmBase, MySQLSecretError
 from ops.model import RelationDataTypeError
@@ -129,7 +129,7 @@ class TestCharmBase(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             _ = self.harness.charm._mysql
 
-    @patch("charms.mysql.v0.mysql.MySQLCharmBase._mysql", new_callable=PropertyMock)
+    @patch("charm.MySQLCharmBase._mysql")
     def test_set_password_restarts_exporter_for_monitoring_user(self, _mysql):
         """Rotating the monitoring password always restarts the exporter."""
         self.charm.replication_offer = Mock(role=Mock(relation_side="replication-offer"))
@@ -144,12 +144,12 @@ class TestCharmBase(unittest.TestCase):
             "set-password", {"username": "charmed-stats", "password": "newpass123"}
         )
 
-        _mysql.return_value.update_user_password.assert_called_once_with(
+        _mysql.update_user_password.assert_called_once_with(
             "charmed-stats", "newpass123"
         )
-        _mysql.return_value.restart_mysql_exporter.assert_called_once()
+        _mysql.restart_mysql_exporter.assert_called_once()
 
-    @patch("charms.mysql.v0.mysql.MySQLCharmBase._mysql", new_callable=PropertyMock)
+    @patch("charm.MySQLCharmBase._mysql")
     def test_set_password_does_not_restart_exporter_for_other_users(self, _mysql):
         """Rotating a non-monitoring password does not restart the exporter."""
         self.charm.replication_offer = Mock(role=Mock(relation_side="replication-offer"))
@@ -164,7 +164,7 @@ class TestCharmBase(unittest.TestCase):
             "set-password", {"username": "charmed-operator", "password": "newpass123"}
         )
 
-        _mysql.return_value.update_user_password.assert_called_once_with(
+        _mysql.update_user_password.assert_called_once_with(
             "charmed-operator", "newpass123"
         )
-        _mysql.return_value.restart_mysql_exporter.assert_not_called()
+        _mysql.restart_mysql_exporter.assert_not_called()
