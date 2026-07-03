@@ -21,7 +21,6 @@ from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
 from constants import CONTAINER_NAME, CONTAINER_RESTARTS, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
-from k8s_helpers import KubernetesClientError
 from utils import dotappend, generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
@@ -115,9 +114,6 @@ class MySQLProvider(Object):
         db_user = self._get_username(relation_id)
         db_pass = self._get_or_set_password(event.relation)
 
-        # make sure pods are labeled before adding service
-        self.charm._mysql.update_endpoints(DB_RELATION_NAME)
-
         try:
             if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
@@ -140,25 +136,10 @@ class MySQLProvider(Object):
             self.charm.set_unit_status(BlockedStatus("Failed to create scoped user"))
             return
 
-        try:
-            # create k8s services for endpoints
-            self.charm.k8s_helpers.create_endpoint_services(["primary", "replicas"])
-
-            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
-            replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
-
-            # wait for endpoints to be ready
-            self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
-        except TimeoutError:
-            logger.exception("Timed out waiting for k8s service to be ready")
-            raise
-        except KubernetesClientError:
-            logger.exception("Failed to create k8s services for endpoints")
-            self.charm.set_unit_status(
-                BlockedStatus("Permission to create k8s services denied. `juju trust`")
-            )
-            event.defer()
-            return
+        # k8s endpoint services are created on mysql app startup;
+        # resolve their FQDNs to publish them in the relation databag.
+        primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
+        replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
 
         # Set relation data
         self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")
@@ -263,9 +244,6 @@ class MySQLProvider(Object):
             # a unit being torn down (instead of un-related). See:
             # https://bugs.launchpad.net/juju/+bug/1979811
             return
-
-        if len(self.model.relations[DB_RELATION_NAME]) == 0:
-            self.charm.k8s_helpers.delete_endpoint_services(["primary", "replicas"])
 
         relation_id = event.relation.id
         try:

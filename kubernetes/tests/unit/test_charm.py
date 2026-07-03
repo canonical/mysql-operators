@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import PropertyMock, patch
 
 import pytest
-from ops.model import ActiveStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
 from tenacity import wait_none
 
@@ -22,6 +22,7 @@ from constants import (
     OPERATOR_PASSWORD_KEY,
     REPLICATION_PASSWORD_KEY,
 )
+from k8s_helpers import KubernetesClientError
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 
 APP_NAME = "mysql-k8s"
@@ -134,6 +135,7 @@ class TestCharm(unittest.TestCase):
                 and len(secret_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     @patch("mysql_k8s_helpers.MySQL.drop_root_user")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.install_components")
@@ -189,6 +191,7 @@ class TestCharm(unittest.TestCase):
         _install_components,
         _get_unit_address,
         _drop_root_user,
+        _create_endpoint_services,
     ):
         _build_unit_workload_status.return_value = ActiveStatus()
 
@@ -221,6 +224,11 @@ class TestCharm(unittest.TestCase):
             self.layer_dict(with_mysqld_exporter=True)["services"],
         )
 
+        # k8s endpoint services are created on cluster creation (app startup),
+        # not on client relations
+        _create_endpoint_services.assert_called_once()
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     @patch("charm.MySQLOperatorCharm.unit_initialized")
     @patch("charm.MySQLOperatorCharm.cluster_initialized", new_callable=PropertyMock)
     @patch("charm.MySQLOperatorCharm.join_unit_to_cluster")
@@ -235,6 +243,7 @@ class TestCharm(unittest.TestCase):
         mock_join,
         _cluster_initialized,
         _unit_initialized,
+        _create_endpoint_services,
     ):
         mock_mysql.is_data_dir_initialised.return_value = False
         mock_mysql.get_member_role.return_value = "PRIMARY"
@@ -251,6 +260,8 @@ class TestCharm(unittest.TestCase):
         self.harness.container_pebble_ready("mysql")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "ONLINE")
         self.assertEqual(self.charm.unit_peer_data["member-role"], "PRIMARY")
+        # scale-from-zero recreates the cluster + endpoint services on the leader
+        _create_endpoint_services.assert_called_once()
 
         _cluster_initialized.return_value = True
 
@@ -383,3 +394,41 @@ class TestCharm(unittest.TestCase):
             ],
             "removing",
         )
+
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    @patch("charm.get_k8s_fqdn", return_value="mysql-k8s-primary.svc.cluster.local")
+    @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
+    @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")
+    def test_create_endpoint_services(
+        self,
+        _create_endpoint_services,
+        _wait_service_ready,
+        _get_k8s_fqdn,
+        mock_mysql,
+    ):
+        """_create_endpoint_services labels pods, creates services, and waits for ready."""
+        self.charm._create_endpoint_services()
+
+        mock_mysql.return_value.update_endpoints.assert_called_once_with("database-peers")
+        _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
+        _wait_service_ready.assert_called_once()
+        # primary endpoint FQDN is derived from the app name + role, then dotted
+        self.assertIn("mysql-k8s-primary", _wait_service_ready.call_args[0][0][0])
+
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    @patch("charm.get_k8s_fqdn", return_value="mysql-k8s-primary.svc.cluster.local")
+    @patch(
+        "k8s_helpers.KubernetesHelpers.create_endpoint_services",
+        side_effect=KubernetesClientError,
+    )
+    def test_create_endpoint_services_permission_denied(
+        self,
+        _create_endpoint_services,
+        _get_k8s_fqdn,
+        mock_mysql,
+    ):
+        """When k8s service creation is denied (juju trust), unit is Blocked."""
+        self.charm._create_endpoint_services()
+
+        _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
+        self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
