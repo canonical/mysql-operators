@@ -6,7 +6,6 @@
 import logging
 import typing
 
-import yaml
 from ops.framework import Object
 
 from constants import CONTAINER_NAME, COS_LOGGING_RELATION_NAME
@@ -16,7 +15,6 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_POSITIONS_FILE = "/opt/promtail/positions.yaml"
 _LOGS_SYNCED = "logs_synced"
 
 
@@ -67,25 +65,6 @@ class LogRotationSetup(Object):
 
         if self._logs_are_syncing:
             # reconfiguration done
-            return
-
-        not_started_msg = "Log syncing not yet started."
-        if not container.exists(_POSITIONS_FILE):
-            logger.debug(not_started_msg)
-            return
-
-        positions_file = container.pull(_POSITIONS_FILE, encoding="utf-8")
-        positions = yaml.safe_load(positions_file.read())
-
-        if sync_files := positions.get("positions"):
-            for log_file, line in sync_files.items():
-                if "mysql" in log_file and int(line) > 0:
-                    break
-            else:
-                logger.debug(not_started_msg)
-                return
-        else:
-            logger.debug(not_started_msg)
             return
 
         logger.info("Reconfigure log rotation after logs upload started")
