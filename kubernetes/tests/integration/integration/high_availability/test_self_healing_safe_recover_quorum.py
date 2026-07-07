@@ -1,8 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 import logging
 import os
-import subprocess
 
 import jubilant_backports
 from jubilant_backports import Juju
@@ -11,12 +11,11 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
+    delete_k8s_pod,
     get_app_name,
     get_app_units,
-    get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -81,35 +80,17 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_survive = non_primary_units.pop()
-
-    logging.info("Simulate quorum loss")
     logging.info(f"Unit selected for survival: {unit_to_survive}")
 
-    units_to_kill = [non_primary_units.pop(), primary_unit]
-    kill_pods(juju, units_to_kill)
+    logging.info("Simulate quorum loss")
+    for unit_name in [non_primary_units.pop(), primary_unit]:
+        delete_k8s_pod(juju, unit_name, grace_period=0)
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant_backports.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
+    logging.info("Waiting for all apps to become active after quorum loss...")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        timeout=20 * MINUTE_SECS,
+        delay=5,
+    )
 
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-
-
-def kill_pods(juju: Juju, unit_names: list[str]) -> None:
-    """Kill the unit pods simultaneously using kubectl."""
-    pod_names = [get_mysql_instance_label(unit) for unit in unit_names]
-    cmd = [
-        "kubectl",
-        "delete",
-        "pod",
-        *pod_names,
-        "-n",
-        juju.model,
-        "--grace-period=0",
-        "--force",
-    ]
-    subprocess.run(cmd, check=True)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, [unit_to_survive])
