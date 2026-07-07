@@ -38,6 +38,5 @@ Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-1        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04      Running
+1        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04      Running
 ```
-

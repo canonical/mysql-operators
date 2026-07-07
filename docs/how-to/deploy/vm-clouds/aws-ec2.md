@@ -119,10 +119,10 @@ mysql/1             active    idle   7        3.82.62.144     3306,33060/tcp
 mysql/2             active    idle   8        44.193.79.253   3306,33060/tcp  
 
 Machine  State    Address        Inst id              Base          AZ          Message
-6        started  107.21.70.243  i-0db4d16715a59f74d  ubuntu@24.04  us-east-1a  running
-7        started  3.82.62.144    i-038a7ca89b40f83bf  ubuntu@24.04  us-east-1b  running
-8        started  44.193.79.253  i-01dc0ad71d5607fdb  ubuntu@24.04  us-east-1c  running
-9        started  34.207.85.249  i-068d4d0d8b7ede754  ubuntu@24.04  us-east-1d  running
+6        started  107.21.70.243  i-0db4d16715a59f74d  ubuntu@26.04  us-east-1a  running
+7        started  3.82.62.144    i-038a7ca89b40f83bf  ubuntu@26.04  us-east-1b  running
+8        started  44.193.79.253  i-01dc0ad71d5607fdb  ubuntu@26.04  us-east-1c  running
+9        started  34.207.85.249  i-068d4d0d8b7ede754  ubuntu@26.04  us-east-1d  running
 
 Integration provider                   Requirer                               Interface              Type     Message
 data-integrator:data-integrator-peers  data-integrator:data-integrator-peers  data-integrator-peers  peer     

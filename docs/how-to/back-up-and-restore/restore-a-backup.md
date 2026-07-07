@@ -68,6 +68,10 @@ Your restore will then be in progress.
 (point-in-time-recovery)=
 ## Point-in-time recovery
 
+```{warning}
+The PITR restore procedure has been disabled in MySQL 8.4.
+```
+
 Point-in-time recovery (PITR) is a MySQL feature that enables restorations to the database state at specific points in time. The feature is enabled by default when there's a working relation with S3 storage.
 
 To restore to a specific point in time between different backups (e.g. to restore only specific transactions made between those backups), use the `restore-to-time` parameter to pass a timestamp:
@@ -103,4 +107,3 @@ It’s also possible to restore to the latest point from a specific timeline by 
     juju run mysql-k8s/leader restore restore-to-time=latest
 ```
 ````
-

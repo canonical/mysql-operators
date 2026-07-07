@@ -21,11 +21,13 @@ Deploy MySQL:
 ```shell
 juju deploy mysql-k8s --channel 8.4/edge --trust
 ```
-> :warning: The `--trust` flag is necessary to create some K8s resources.
 
-> See the [`juju deploy` documentation](https://juju.is/docs/juju/juju-deploy) for all available options at deploy time.
-> 
-> See the [Configurations tab](https://charmhub.io/mysql/configurations) for specific MySQL parameters.
+```{warning}
+The `--trust` flag is necessary to create some K8s resources.
+
+See the [`juju deploy` documentation](https://juju.is/docs/juju/juju-deploy) for all available options at deploy time.
+See the [Configurations tab](https://charmhub.io/mysql/configurations) for specific MySQL parameters.
+```
 
 Sample output of `juju status --watch 1s`:
 ```shell
@@ -38,4 +40,3 @@ mysql-k8s  8.4.7      active      1  mysql-k8s  8.4/edge         10.152.183.234 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74          Primary
 ```
-

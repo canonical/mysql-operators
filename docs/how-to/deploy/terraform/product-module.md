@@ -136,10 +136,10 @@ mysql/2           active    idle   2        10.101.248.222                  Prim
 s3-integrator/0*  active    idle   3        10.101.248.223
 
 Machine  State    Address         Inst id        Base          AZ  Message
-0        started  10.101.248.220  juju-c4a403-0  ubuntu@24.04      Running
-1        started  10.101.248.221  juju-c4a403-1  ubuntu@24.04      Running
-2        started  10.101.248.222  juju-c4a403-2  ubuntu@24.04      Running
-3        started  10.101.248.223  juju-c4a403-3  ubuntu@24.04      Running
+0        started  10.101.248.220  juju-c4a403-0  ubuntu@26.04      Running
+1        started  10.101.248.221  juju-c4a403-1  ubuntu@26.04      Running
+2        started  10.101.248.222  juju-c4a403-2  ubuntu@26.04      Running
+3        started  10.101.248.223  juju-c4a403-3  ubuntu@26.04      Running
 ```
 
 Continue to operate the charm as usual from here or apply further Terraform changes.
@@ -153,4 +153,3 @@ terraform destroy -var 'model=<model-uuid>'
 ```
 
 Feel free to {ref}`contact us <contacts>` if you have any question and collaborate with us on GitHub!
-

@@ -56,9 +56,9 @@ When refreshing a charm from **Charmhub**:
 
 When deploying from a **local charm file**, one must have the previous revision charm file and run the following command:
 
-    juju refresh mysql --path=./mysql_ubuntu-24.04-amd64.charm
+    juju refresh mysql --path=./mysql_ubuntu-26.04-amd64.charm
 
-where `mysql_ubuntu-24.04-amd64.charm` is the previous revision charm file.
+where `mysql_ubuntu-26.04-amd64.charm` is the previous revision charm file.
 ```
 
 ```{tab-item} K8s
@@ -74,10 +74,10 @@ When deploying from a **local charm file**, one must have the previous revision 
 
 For example:
 
-    juju refresh mysql-k8s --path=./mysql-k8s_ubuntu-24.04-amd64.charm \
+    juju refresh mysql-k8s --path=./mysql-k8s_ubuntu-26.04-amd64.charm \
         --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:753477ce39712221f008955b746fcf01a215785a215fe3de56f525380d14ad97
 
-where `mysql-k8s_ubuntu-24.04-amd64.charm` is the previous revision charm file.
+where `mysql-k8s_ubuntu-26.04-amd64.charm` is the previous revision charm file.
 
 The reference for the resource for a given revision can be found in the [`metadata.yaml`](https://github.com/canonical/mysql-operators/blob/218fc72c49156c0de979f55ff1928de41eb42708/kubernetes/metadata.yaml#L34) file in the charm's repository under the key `upstream-source`.
 ```

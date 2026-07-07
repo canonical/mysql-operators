@@ -36,7 +36,7 @@ def test_build_and_deploy(juju: Juju, charm) -> None:
     juju.deploy(
         charm,
         DATABASE_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"profile": "testing"},
         storage={"data": "1G", "logs": "1G"},  # Necessary to detach storage later
         num_units=1,

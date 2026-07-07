@@ -22,7 +22,7 @@ def test_build_and_deploy(juju: Juju, charm):
         config=config,
         num_units=1,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         trust=True,
     )
 
@@ -33,7 +33,7 @@ def test_build_and_deploy(juju: Juju, charm):
             num_units=1,
             channel="latest/edge",
             config={"database_name": f"database{idx}", "sleep_interval": "2000"},
-            base="ubuntu@24.04",
+            base="ubuntu@26.04",
         )
         juju.deploy(
             "mysql-router-k8s",
@@ -41,7 +41,7 @@ def test_build_and_deploy(juju: Juju, charm):
             num_units=1,
             channel="8.4/edge",
             trust=True,
-            base="ubuntu@24.04",
+            base="ubuntu@26.04",
         )
 
     # Wait until deployment is complete in attempt to reduce CPU stress

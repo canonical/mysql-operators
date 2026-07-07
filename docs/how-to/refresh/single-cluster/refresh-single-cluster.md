@@ -46,9 +46,9 @@ mysql/10*  active    idle   11       10.169.158.14   3306/tcp,33060/tcp  Primary
 mysql/11   active    idle   12       10.169.158.217  3306/tcp,33060/tcp  
 
 Machine  State    Address         Inst id         Series  AZ    Message
-11       started  10.169.158.14   juju-b72e25-11  ubuntu@24.04  Running
-12       started  10.169.158.217  juju-b72e25-12  ubuntu@24.04  Running
-13       started  10.169.158.70   juju-b72e25-13  ubuntu@24.04  Running
+11       started  10.169.158.14   juju-b72e25-11  ubuntu@26.04  Running
+12       started  10.169.158.217  juju-b72e25-12  ubuntu@26.04  Running
+13       started  10.169.158.70   juju-b72e25-13  ubuntu@26.04  Running
 ```
 
 For this example, the current revision is `XXX`. Store it safely to use in case of rollback!
@@ -178,7 +178,7 @@ Example with specific revision selection:
 
 Example with a local charm file:
 
-    juju refresh mysql --path ./mysql_ubuntu-24.04-amd64.charm
+    juju refresh mysql --path ./mysql_ubuntu-26.04-amd64.charm
 ```
 
 ```{tab-item} K8s

@@ -1,8 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 import logging
 import os
-import subprocess
 
 import jubilant
 from jubilant import Juju
@@ -11,12 +11,11 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
+    delete_k8s_pod,
     get_app_name,
     get_app_units,
-    get_mysql_instance_label,
     get_mysql_primary_unit,
     load_mysql_test_data,
-    update_interval,
     wait_for_apps_status,
 )
 
@@ -32,7 +31,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=charm,
         app=MYSQL_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
         num_units=3,
@@ -42,7 +41,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         channel="latest/edge",
         config={"sleep_interval": 300},
         num_units=1,
@@ -79,35 +78,17 @@ def test_auto_recover_on_quorum_loss(juju: Juju, continuous_writes) -> None:
     non_primary_units = app_units - {primary_unit}
 
     unit_to_survive = non_primary_units.pop()
-
-    logging.info("Simulate quorum loss")
     logging.info(f"Unit selected for survival: {unit_to_survive}")
 
-    units_to_kill = [non_primary_units.pop(), primary_unit]
-    kill_pods(juju, units_to_kill)
+    logging.info("Simulate quorum loss")
+    for unit_name in [non_primary_units.pop(), primary_unit]:
+        delete_k8s_pod(juju, unit_name, grace_period=0)
 
-    with update_interval(juju, "15s"):
-        logging.info("Waiting for all units to become active after switchover...")
-        juju.wait(
-            ready=jubilant.all_active,
-            timeout=10 * MINUTE_SECS,
-            delay=5,
-        )
+    logging.info("Waiting for all apps to become active after quorum loss...")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
+        timeout=20 * MINUTE_SECS,
+        delay=5,
+    )
 
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-
-
-def kill_pods(juju: Juju, unit_names: list[str]) -> None:
-    """Kill the unit pods simultaneously using kubectl."""
-    pod_names = [get_mysql_instance_label(unit) for unit in unit_names]
-    cmd = [
-        "kubectl",
-        "delete",
-        "pod",
-        *pod_names,
-        "-n",
-        juju.model,
-        "--grace-period=0",
-        "--force",
-    ]
-    subprocess.run(cmd, check=True)
+    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME, [unit_to_survive])

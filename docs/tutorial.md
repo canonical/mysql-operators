@@ -59,7 +59,7 @@ As soon as the new VM has started, access it:
 
 multipass shell my-vm
 
-Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-63-generic x86_64)
+Welcome to Ubuntu 26.04.2 LTS (GNU/Linux 7.0.0-63-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
  * Management:     https://landscape.canonical.com
@@ -206,7 +206,7 @@ Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
 
 Machine  State    Address         Inst id        Base          AZ  Message
-1        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04      Running
+1        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04      Running
 ```
 ````
 
@@ -340,7 +340,7 @@ mysql -h 127.0.0.1 -userverconfig -pyWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
-Server version: 8.4.7-0ubuntu0.24.04 (Ubuntu)
+Server version: 8.4.7-0ubuntu0.26.04 (Ubuntu)
 
 Copyright (c) 2000, 2023, Oracle and/or its affiliates.
 
@@ -365,7 +365,7 @@ SELECT VERSION(), CURRENT_DATE;
 +-------------------------+--------------+
 | VERSION()               | CURRENT_DATE |
 +-------------------------+--------------+
-| 8.4.7-0ubuntu0.24.04.1  | 2026-01-22   |
+| 8.4.7-0ubuntu0.26.04.1  | 2026-01-22   |
 +-------------------------+--------------+
 1 row in set (0.00 sec)
 ```
@@ -440,9 +440,9 @@ mysql/1   active    idle   1        10.234.188.214
 mysql/2   active    idle   2        10.234.188.6
 
 Machine  State    Address         Inst id        Series         AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
-1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
-2        started  10.234.188.6    juju-ff9064-2  ubuntu@24.04       Running
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@26.04       Running
+2        started  10.234.188.6    juju-ff9064-2  ubuntu@26.04       Running
 ```
 ````
 
@@ -522,8 +522,8 @@ mysql/0*  active    idle   0        10.234.188.135         Primary
 mysql/1   active    idle   1        10.234.188.214
 
 Machine  State    Address         Inst id        Series         AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
-1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@26.04       Running
 ```
 ````
 
@@ -652,9 +652,9 @@ mysql/0*            active    idle   0        10.234.188.135         Primary
 mysql/1             active    idle   1        10.234.188.214
 
 Machine  State    Address         Inst id        Series         AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
-1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
-4        started  10.234.188.85   juju-ff9064-4  ubuntu@24.04       Running
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@26.04       Running
+4        started  10.234.188.85   juju-ff9064-4  ubuntu@26.04       Running
 ```
 ````
 
@@ -691,7 +691,7 @@ mysql:
   password: NZWCNOyfSElJW0u6bnQDOWAA
   read-only-endpoints: 10.234.188.214:10.234.188.85:3306
   username: relation-5
-  version: 8.4.7-0ubuntu0.24.04
+  version: 8.4.7-0ubuntu0.26.04
 ok: "True"
 ```
 
@@ -838,9 +838,9 @@ mysql/1                      active    idle   1        10.234.188.214
 self-signed-certificates/0*  active    idle   5        10.234.188.19
 
 Machine  State    Address         Inst id        Series         AZ  Message
-0        started  10.234.188.135  juju-ff9064-0  ubuntu@24.04       Running
-1        started  10.234.188.214  juju-ff9064-1  ubuntu@24.04       Running
-5        started  10.234.188.19   juju-ff9064-5  ubuntu@24.04       Running
+0        started  10.234.188.135  juju-ff9064-0  ubuntu@26.04       Running
+1        started  10.234.188.214  juju-ff9064-1  ubuntu@26.04       Running
+5        started  10.234.188.19   juju-ff9064-5  ubuntu@26.04       Running
 ```
 ````
 

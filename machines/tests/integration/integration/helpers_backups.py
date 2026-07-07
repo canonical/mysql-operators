@@ -81,7 +81,7 @@ def build_and_deploy_operations(
     juju.deploy(
         charm,
         MYSQL_APPLICATION_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         config={"cluster-name": CLUSTER_NAME, "profile": "testing"},
         num_units=3,
     )

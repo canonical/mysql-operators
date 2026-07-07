@@ -83,7 +83,7 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
     juju.deploy(
         charm=MYSQL_APP_NAME,
         app=MYSQL_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         channel="8.4/stable",
         config={"profile": "testing"},
         resources={"mysql-image": image},
@@ -94,7 +94,7 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
     juju.deploy(
         charm=MYSQL_TEST_APP_NAME,
         app=MYSQL_TEST_APP_NAME,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
         channel="latest/edge",
         num_units=1,
         trust=False,

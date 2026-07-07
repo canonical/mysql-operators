@@ -31,7 +31,7 @@ def test_build_and_deploy(juju: Juju, lxd_spaces, charm) -> None:
         constraints={"spaces": "client,peers"},
         bind={"database-peers": "peers", "database": "client"},
         num_units=3,
-        base="ubuntu@24.04",
+        base="ubuntu@26.04",
     )
 
     juju.deploy(
