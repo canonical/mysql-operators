@@ -127,4 +127,7 @@ class TestDatabase(unittest.TestCase):
         _create_database.assert_called_once()
         _create_scoped_user.assert_called_once()
         _get_mysql_version.assert_called_once()
+        # pods are labeled and the primary service awaited here
+        _update_endpoints.assert_called_once()
+        _wait_service_ready.assert_called_once()
         self.assertEqual(mock_get_k8s_fqdn.call_count, 2)

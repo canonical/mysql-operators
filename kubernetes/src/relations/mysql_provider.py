@@ -114,6 +114,9 @@ class MySQLProvider(Object):
         db_user = self._get_username(relation_id)
         db_pass = self._get_or_set_password(event.relation)
 
+        # make sure pods are labeled before adding service
+        self.charm._mysql.update_endpoints(DB_RELATION_NAME)
+
         try:
             if ROLE_ROUTER not in extra_user_roles:
                 self.charm._mysql.create_database(db_name)
@@ -136,10 +139,15 @@ class MySQLProvider(Object):
             self.charm.set_unit_status(BlockedStatus("Failed to create scoped user"))
             return
 
-        # k8s endpoint services are created on mysql app startup;
-        # resolve their FQDNs to publish them in the relation databag.
-        primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
-        replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
+        try:
+            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
+            replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
+
+            # wait for the primary endpoint service to be ready
+            self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
+        except TimeoutError:
+            logger.exception("Timed out waiting for k8s service to be ready")
+            raise
 
         # Set relation data
         self.database.set_endpoints(relation_id, f"{primary_endpoint}:3306")

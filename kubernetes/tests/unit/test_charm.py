@@ -224,10 +224,6 @@ class TestCharm(unittest.TestCase):
             self.layer_dict(with_mysqld_exporter=True)["services"],
         )
 
-        # k8s endpoint services are created on cluster creation (app startup),
-        # not on client relations
-        _create_endpoint_services.assert_called_once()
-
     @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     @patch("charm.MySQLOperatorCharm.unit_initialized")
     @patch("charm.MySQLOperatorCharm.cluster_initialized", new_callable=PropertyMock)
@@ -260,8 +256,6 @@ class TestCharm(unittest.TestCase):
         self.harness.container_pebble_ready("mysql")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "ONLINE")
         self.assertEqual(self.charm.unit_peer_data["member-role"], "PRIMARY")
-        # scale-from-zero recreates the cluster + endpoint services on the leader
-        _create_endpoint_services.assert_called_once()
 
         _cluster_initialized.return_value = True
 
@@ -395,40 +389,39 @@ class TestCharm(unittest.TestCase):
             "removing",
         )
 
-    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
-    @patch("charm.get_k8s_fqdn", return_value="mysql-k8s-primary.svc.cluster.local")
-    @patch("k8s_helpers.KubernetesHelpers.wait_service_ready")
     @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")
-    def test_create_endpoint_services(
-        self,
-        _create_endpoint_services,
-        _wait_service_ready,
-        _get_k8s_fqdn,
-        mock_mysql,
-    ):
-        """_create_endpoint_services labels pods, creates services, and waits for ready."""
+    def test_create_endpoint_services(self, _create_endpoint_services):
+        """_create_endpoint_services creates the primary & replicas k8s services.
+
+        Pod labeling (update_endpoints) and readiness wait live in the relation
+        handler, not here — early creation only cares about surfacing k8s API errors.
+        """
         self.charm._create_endpoint_services()
 
-        mock_mysql.return_value.update_endpoints.assert_called_once_with("database-peers")
         _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
-        _wait_service_ready.assert_called_once()
-        # primary endpoint FQDN is derived from the app name + role, then dotted
-        self.assertIn("mysql-k8s-primary", _wait_service_ready.call_args[0][0][0])
 
-    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
-    @patch("charm.get_k8s_fqdn", return_value="mysql-k8s-primary.svc.cluster.local")
     @patch(
         "k8s_helpers.KubernetesHelpers.create_endpoint_services",
         side_effect=KubernetesClientError,
     )
-    def test_create_endpoint_services_permission_denied(
-        self,
-        _create_endpoint_services,
-        _get_k8s_fqdn,
-        mock_mysql,
-    ):
+    def test_create_endpoint_services_permission_denied(self, _create_endpoint_services):
         """When k8s service creation is denied (juju trust), unit is Blocked."""
         self.charm._create_endpoint_services()
 
         _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
         self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_creates_endpoint_services(self, _create_endpoint_services):
+        """On start, the leader creates k8s endpoint services early in the lifecycle."""
+        self.harness.set_leader()
+        self.charm.on.start.emit()
+
+        _create_endpoint_services.assert_called_once()
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_non_leader_skips(self, _create_endpoint_services):
+        """Non-leader units do not create endpoint services on start."""
+        self.charm.on.start.emit()
+
+        _create_endpoint_services.assert_not_called()

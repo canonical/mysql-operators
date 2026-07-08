@@ -135,6 +135,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Lifecycle events
         self.framework.observe(self.on.mysql_pebble_ready, self._on_mysql_pebble_ready)
         self.framework.observe(self.on.leader_elected, self._on_leader_elected)
+        self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
 
@@ -426,7 +427,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # Create the cluster when is the leader unit
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
-            self._create_endpoint_services()
             self.unit.set_ports(3306, 33060)
             self.set_unit_status(self.build_unit_workload_status())
         except (
@@ -438,24 +438,31 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.exception("Failed to initialize primary")
             raise
 
-    def _create_endpoint_services(self) -> None:
-        """Create the k8s endpoint services (primary & replicas) for the application."""
-        # label pods so the service selectors have targets
-        self._mysql.update_endpoints(PEER)
+    def _on_start(self, _) -> None:
+        """Handle the start event.
 
+        Create the k8s endpoint services as early as possible in the charm lifecycle
+        so that k8s API issues (e.g. a missing `juju trust`) surface before the
+        workload is initialized.
+        """
+        if not self.unit.is_leader():
+            return
+        self._create_endpoint_services()
+
+    def _create_endpoint_services(self) -> None:
+        """Create the k8s endpoint services (primary & replicas) for the application.
+
+        Only the k8s `create` call is performed here; pod labeling and readiness
+        checks live in the database-requested relation handler
+        """
         try:
             self.k8s_helpers.create_endpoint_services(["primary", "replicas"])
-
-            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.app.name}-primary"))
-
-            self.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
-        except TimeoutError:
-            logger.exception("Timed out waiting for k8s service to be ready")
-            raise
         except KubernetesClientError:
             logger.exception("Failed to create k8s services for endpoints")
             self.set_unit_status(
-                BlockedStatus("Permission to create k8s services denied. `juju trust`")
+                BlockedStatus(
+                    "Permission to create k8s services denied. App to be deployed with --trust"
+                )
             )
 
     def _get_primary_from_online_peer(self) -> str | None:
@@ -942,7 +949,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 if self.unit.is_leader():
                     # create the cluster due it being dissolved on scale-down
                     self.create_cluster()
-                    self._create_endpoint_services()
                     self._on_update_status(None)
                 else:
                     # Non-leader units try to join cluster
