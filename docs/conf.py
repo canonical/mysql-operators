@@ -44,6 +44,7 @@ copyright = f"2025-{datetime.date.today().year}"
 
 html_title = project +  " 8.4" + " documentation"
 
+version_slug = f"{os.environ.get('READTHEDOCS_VERSION', 'local')}"
 
 # Documentation website URL
 #
@@ -52,7 +53,7 @@ html_title = project +  " 8.4" + " documentation"
 # NOTE: The Open Graph Protocol (OGP) enhances page display in a social graph
 #       and is used by social media platforms; see https://ogp.me/
 
-ogp_site_url = "https://canonical-charmed-mysql.readthedocs-hosted.com/"
+ogp_site_url = f"https://canonical.com/data/mysql/docs/{version_slug}/"
 
 
 # Preview name of the documentation website
@@ -130,7 +131,7 @@ html_context = {
     # TODO: To enable listing contributors on individual pages, set to True
     "display_contributors": True,
 
-    # Required for feedback button    
+    # Required for feedback button
     'github_issues': 'enabled',
 
     # Inherit the author value
@@ -177,7 +178,7 @@ html_theme_options = {
 # TODO: If your documentation is hosted on https://docs.ubuntu.com/,
 #       uncomment and update as needed.
 
-# slug = ''
+slug = 'data/mysql/docs'
 
 #######################
 # Sitemap configuration: https://sphinx-sitemap.readthedocs.io/
@@ -185,7 +186,7 @@ html_theme_options = {
 
 # Use RTD canonical URL to ensure duplicate pages have a specific canonical URL
 
-html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
+html_baseurl = f"https://canonical.com/data/mysq/docs/{version_slug}/"
 
 # sphinx-sitemap uses html_baseurl to generate the full URL for each page:
 
@@ -210,7 +211,7 @@ sitemap_excludes = [
 # Template and asset locations #
 ################################
 
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
 templates_path = ["_templates"]
 
 
@@ -298,7 +299,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",
     "sphinx_new_tab_link",
-    "sphinxcontrib.mermaid"    
+    "sphinxcontrib.mermaid"
 ]
 
 new_tab_link_show_external_link_icon = True
@@ -320,6 +321,7 @@ html_css_files = [
 
 html_js_files = [
     "https://assets.ubuntu.com/v1/287a5e8f-bundle.js",
+    "overwrite_links.js"
 ]
 
 
