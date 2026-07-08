@@ -13,7 +13,10 @@ resource "juju_application" "mysql_server" {
   }
 
   storage_directives = {
-    database = var.storage_size
+    archive = var.storage_size
+    data    = var.storage_size
+    logs    = var.storage_size
+    temp    = var.storage_size
   }
 
   config            = var.config
