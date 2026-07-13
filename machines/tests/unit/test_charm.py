@@ -241,7 +241,6 @@ class TestCharm(unittest.TestCase):
     @patch("charm.is_volume_mounted", return_value=True)
     @patch("mysql_vm_helpers.MySQL.reboot_from_complete_outage")
     @patch("charm.snap_service_operation")
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     @patch("python_hosts.Hosts.write")
     @patch("mysql_vm_helpers.MySQL.wait_until_mysql_connection")
     @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
@@ -250,7 +249,6 @@ class TestCharm(unittest.TestCase):
         _,
         __,
         ___,
-        reconcile_binlogs_collection,
         _snap_service_operation,
         _reboot_from_complete_outage,
         _is_volume_mounted,

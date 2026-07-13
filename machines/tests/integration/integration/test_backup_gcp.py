@@ -45,10 +45,6 @@ CLUSTER_NAME = "test_cluster"
 REPLICATION_PASSWORD = "charmed-replicationpasswordAA01"
 OPERATOR_PASSWORD = "charmed-operatorpasswordAA01"
 TABLE_NAME = "backup-table"
-ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE = "S3 repository claimed by another cluster"
-MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
-    "Move restored cluster to another S3 repository"
-)
 
 backup_id, value_before_backup, value_after_backup = "", None, None
 
@@ -261,11 +257,6 @@ def test_restore_on_same_cluster(juju: Juju, cloud_configs_gcp) -> None:
 
         assert sorted(values) == sorted([value_before_backup, value_after_restore])
 
-    assert (
-        juju.status().apps[DATABASE_APP_NAME].app_status.message
-        == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
-    ), "cluster should migrate to blocked status after restore"
-
 
 def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     """Test to restore a backup on a new mysql cluster."""
@@ -317,18 +308,8 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
         timeout=TIMEOUT,
     )
 
-    logger.info("Waiting for blocked application status with another cluster S3 repository")
-    juju.wait(
-        ready=lambda status: (
-            status.apps[new_mysql_application_name].app_status.message
-            == ANOTHER_S3_CLUSTER_REPOSITORY_ERROR_MESSAGE
-        ),
-        timeout=TIMEOUT,
-    )
-
     # restore the backup
     logger.info(f"Restoring {backup_id=}")
-
     juju.run(primary_unit_name, "restore", params={"backup-id": backup_id})
 
     # ensure the correct inserted values exist
@@ -360,12 +341,3 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_gcp) -> None:
     )
     assert value_before_backup
     assert sorted(values) == sorted([value_before_backup, value_after_restore])
-
-    logger.info("Waiting for blocked application status after restore")
-    juju.wait(
-        ready=lambda status: (
-            status.apps[new_mysql_application_name].app_status.message
-            == MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR
-        ),
-        timeout=TIMEOUT,
-    )

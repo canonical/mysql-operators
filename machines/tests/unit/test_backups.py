@@ -376,12 +376,10 @@ Juju Version: 0.0.0
     @patch("mysql_vm_helpers.MySQL.offline_mode_and_hidden_instance_exists", return_value=False)
     @patch("mysql_vm_helpers.MySQL.get_member_state")
     @patch("mysql_vm_helpers.MySQL.get_member_role")
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     @patch("python_hosts.Hosts.write")
     def test_can_unit_perform_backup_failure(
         self,
         _,
-        __,
         _get_member_role,
         _get_member_state,
         _offline_mode_and_hidden_instance_exists,
@@ -432,15 +430,8 @@ Juju Version: 0.0.0
 
     @patch("mysql_vm_helpers.MySQL.set_instance_option")
     @patch("mysql_vm_helpers.MySQL.set_instance_offline_mode")
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     @patch("python_hosts.Hosts.write")
-    def test_pre_backup(
-        self,
-        _,
-        __,
-        _set_instance_offline_mode,
-        _set_instance_option,
-    ):
+    def test_pre_backup(self, _, _set_instance_offline_mode, _set_instance_option):
         """Test _pre_backup()."""
         # test with 2 planned units
         self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
@@ -585,34 +576,19 @@ Juju Version: 0.0.0
 
     @patch("mysql_vm_helpers.MySQL.is_server_connectable", return_value=True)
     @patch("charm.MySQLOperatorCharm.is_unit_busy", return_value=False)
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
-    def test_pre_restore_checks(
-        self,
-        _,
-        _is_unit_busy,
-        _is_server_connectable,
-    ):
+    def test_pre_restore_checks(self, _is_unit_busy, _is_server_connectable):
         """Test _pre_restore_checks()."""
         event_mock = MagicMock()
-        event_mock.params = {"restore-to-time": "2025-02-10 12:30:30", "backup-id": "test-id"}
         self.assertTrue(self.mysql_backups._pre_restore_checks(event_mock))
 
     @patch("mysql_vm_helpers.MySQL.is_server_connectable", return_value=True)
     @patch("charm.MySQLOperatorCharm.is_unit_busy", return_value=False)
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     @patch("python_hosts.Hosts.write")
-    def test_pre_restore_checks_failure(
-        self,
-        _,
-        __,
-        _is_unit_busy,
-        _is_server_connectable,
-    ):
+    def test_pre_restore_checks_failure(self, _, _is_unit_busy, _is_server_connectable):
         """Test failure of _pre_restore_checks()."""
         # test more than one planned units
         self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
         event = MagicMock()
-        event.params = {"restore-to-time": "2025-02-10 12:30:30", "backup-id": "test-id"}
         self.assertFalse(self.mysql_backups._pre_restore_checks(event))
 
         self.harness.remove_relation_unit(self.peer_relation_id, "mysql/1")
@@ -620,13 +596,11 @@ Juju Version: 0.0.0
         # test unit in blocked state
         _is_unit_busy.return_value = True
         event = MagicMock()
-        event.params = {"restore-to-time": "2025-02-10 12:30:30", "backup-id": "test-id"}
         self.assertFalse(self.mysql_backups._pre_restore_checks(event))
 
         # test mysqld not running
         _is_server_connectable.return_value = False
         event = MagicMock()
-        event.params = {"restore-to-time": "2025-02-10 12:30:30", "backup-id": "test-id"}
         self.assertFalse(self.mysql_backups._pre_restore_checks(event))
 
         # test missing backup-id
@@ -637,7 +611,6 @@ Juju Version: 0.0.0
         # test missing s3-integrator relation
         self.harness.remove_relation(self.s3_integrator_id)
         event = MagicMock()
-        event.params = {"restore-to-time": "2025-02-10 12:30:30", "backup-id": "test-id"}
         self.assertFalse(self.mysql_backups._pre_restore_checks(event))
 
     @patch("charm.MySQLOperatorCharm._on_update_status")
@@ -650,10 +623,8 @@ Juju Version: 0.0.0
     @patch("charms.mysql.v0.backups.MySQLBackups._pre_restore", return_value=(True, None))
     @patch("charms.mysql.v0.backups.MySQLBackups._restore", return_value=(True, True, None))
     @patch("charms.mysql.v0.backups.MySQLBackups._post_restore", return_value=(True, None))
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     def test_on_restore(
         self,
-        _,
         _post_restore,
         _restore,
         _pre_restore,
@@ -691,10 +662,8 @@ Juju Version: 0.0.0
     @patch("charms.mysql.v0.backups.MySQLBackups._restore", return_value=(True, True, None))
     @patch("charms.mysql.v0.backups.MySQLBackups._clean_data_dir_and_start_mysqld")
     @patch("charms.mysql.v0.backups.MySQLBackups._post_restore", return_value=(True, None))
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     def test_on_restore_failure(
         self,
-        _,
         _post_restore,
         _clean_data_dir_and_start_mysqld,
         _restore,
@@ -820,10 +789,8 @@ Juju Version: 0.0.0
     @patch("mysql_vm_helpers.MySQL.prepare_backup_for_restore", return_value=("", ""))
     @patch("mysql_vm_helpers.MySQL.empty_data_files")
     @patch("mysql_vm_helpers.MySQL.restore_backup", return_value=("", ""))
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     def test_restore(
         self,
-        _,
         _restore_backup,
         _empty_data_files,
         _prepare_backup_for_restore,
@@ -943,10 +910,8 @@ Juju Version: 0.0.0
     @patch("mysql_vm_helpers.MySQL.create_cluster")
     @patch("mysql_vm_helpers.MySQL.initialize_juju_units_operations_table")
     @patch("mysql_vm_helpers.MySQL.rescan_cluster")
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     def test_post_restore(
         self,
-        _,
         _rescan_cluster,
         _initialize_juju_units_operations_table,
         _create_cluster,
@@ -973,10 +938,8 @@ Juju Version: 0.0.0
     @patch("mysql_vm_helpers.MySQL.create_cluster")
     @patch("mysql_vm_helpers.MySQL.initialize_juju_units_operations_table")
     @patch("mysql_vm_helpers.MySQL.rescan_cluster")
-    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
     def test_post_restore_failure(
         self,
-        _,
         _rescan_cluster,
         _initialize_juju_units_operations_table,
         _create_cluster,
