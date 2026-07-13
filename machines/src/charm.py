@@ -58,9 +58,7 @@ from ops import (
     BlockedStatus,
     InstallEvent,
     MaintenanceStatus,
-    RelationBrokenEvent,
     RelationChangedEvent,
-    RelationCreatedEvent,
     RelationDepartedEvent,
     StartEvent,
     Unit,
@@ -83,7 +81,6 @@ from constants import (
     BACKUPS_USERNAME,
     CHARMED_MYSQL_SNAP_NAME,
     CHARMED_MYSQLD_SERVICE,
-    COS_AGENT_RELATION_NAME,
     DB_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
@@ -174,12 +171,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logs_rules_dir="./src/alert_rules/loki",
             log_slots=[f"{CHARMED_MYSQL_SNAP_NAME}:logs"],
             tracing_protocols=[TRACING_PROTOCOL],
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_created, self._on_cos_agent_relation_created
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_broken, self._on_cos_agent_relation_broken
         )
 
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
@@ -655,28 +646,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._handle_non_online_instance_status(state):
             self._set_app_status(state)
 
-    def _on_cos_agent_relation_created(self, event: RelationCreatedEvent) -> None:
-        """Handle the cos_agent relation created event.
-
-        Enable the mysqld-exporter snap service.
-        """
-        if not self._is_peer_data_set:
-            logger.debug("Charm not yet set up. Deferring")
-            event.defer()
-            return
-
-        self._mysql.connect_mysql_exporter()
-
-    def _on_cos_agent_relation_broken(self, _: RelationBrokenEvent) -> None:
-        """Handle the cos_agent relation broken event.
-
-        Disable the mysqld-exporter snap service.
-        """
-        if not self._is_peer_data_set:
-            return
-
-        self._mysql.stop_mysql_exporter()
-
     # =======================
     #  Helpers
     # =======================
@@ -820,6 +789,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._mysql.is_data_dir_initialised():
             logger.info("Data directory is already initialised, skipping configuration")
             self._mysql.start_mysqld()
+            self._mysql.connect_mysql_exporter()
             if not self.unit_initialized() and self.unit.is_leader():
                 # when unit is new and has data, it means the app is scaling out
                 # from zero units
@@ -867,6 +837,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     raise MySQLDNotRestartedError("mysqld not yet shutdown")
 
         self._mysql.wait_until_mysql_connection()
+        self._mysql.connect_mysql_exporter()
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
 
         if not self.unit.is_leader():

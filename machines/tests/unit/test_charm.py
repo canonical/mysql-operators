@@ -132,6 +132,47 @@ class TestCharm(unittest.TestCase):
 
         self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
 
+    @patch("charm.LogRotationSetup.setup")
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    def test_workload_initialise_connects_exporter_when_data_dir_initialised(
+        self,
+        _mysql,
+        _unit_initialized,
+        _log_rotation_setup,
+    ):
+        mysql = _mysql.return_value
+        mysql.is_data_dir_initialised.return_value = True
+
+        self.charm.workload_initialise()
+
+        mysql.start_mysqld.assert_called_once()
+        mysql.connect_mysql_exporter.assert_called_once()
+        mysql.initialise_mysqld.assert_not_called()
+
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
+    @patch("charm.instance_hostname", return_value="test-hostname")
+    @patch("charm.LogRotationSetup.setup")
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    def test_workload_initialise_connects_exporter_when_bootstrapping(
+        self,
+        _mysql,
+        _unit_initialized,
+        _log_rotation_setup,
+        _instance_hostname,
+        _update_etc_hosts,
+    ):
+        mysql = _mysql.return_value
+        mysql.is_data_dir_initialised.return_value = False
+        mysql.get_pid_of_port_3306.side_effect = [1111, 2222]
+
+        self.charm.workload_initialise()
+
+        mysql.initialise_mysqld.assert_called_once()
+        mysql.set_operator_user_and_start_mysqld.assert_called_once()
+        mysql.connect_mysql_exporter.assert_called_once()
+
     @patch("charm.MySQLOperatorCharm._can_start", return_value=True)
     @patch("charm.MySQLOperatorCharm.create_cluster")
     @patch("charm.MySQLOperatorCharm.workload_initialise")

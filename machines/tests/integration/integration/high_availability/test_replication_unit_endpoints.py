@@ -3,7 +3,6 @@
 
 import logging
 import os
-import time
 
 import jubilant
 import urllib3
@@ -17,7 +16,6 @@ from tenacity import (
 from constants import (
     CHARMED_MYSQL_SNAP_NAME,
     CHARMED_MYSQLD_EXPORTER_SERVICE,
-    MONITORING_USERNAME,
     MYSQL_EXPORTER_PORT,
 )
 
@@ -70,35 +68,16 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 
 def test_exporter_endpoints(juju: Juju) -> None:
-    """Test that endpoints are running."""
+    """Test that exporter endpoints are running."""
     http_client = urllib3.PoolManager()
     service_name = f"{CHARMED_MYSQL_SNAP_NAME}.{CHARMED_MYSQLD_EXPORTER_SERVICE}"
 
     for unit_name in get_app_units(juju, MYSQL_APP_NAME):
-        task = juju.exec(f"sudo snap services {service_name}", unit=unit_name)
-
-        assert task.stdout.split("\n")[1].split()[2] == "inactive"
-
-        credentials_task = juju.run(
-            unit=unit_name,
-            action="get-password",
-            params={"username": MONITORING_USERNAME},
-        )
-
-        username = credentials_task.results["username"]
-        password = credentials_task.results["password"]
-
-        juju.exec(f"sudo snap set charmed-mysql exporter.user={username}", unit=unit_name)
-        juju.exec(f"sudo snap set charmed-mysql exporter.password={password}", unit=unit_name)
-        juju.exec(f"sudo snap start {service_name}", unit=unit_name)
-
+        # Exporter is enabled by default, verify it is active
         for attempt in Retrying(stop=stop_after_attempt(45), wait=wait_fixed(2)):
             with attempt:
                 task = juju.exec(f"sudo snap services {service_name}", unit=unit_name)
-
-        assert task.stdout.split("\n")[1].split()[2] == "active"
-
-        time.sleep(30)
+                assert task.stdout.split("\n")[1].split()[2] == "active"
 
         mysql_unit_address = get_unit_ip(juju, MYSQL_APP_NAME, unit_name)
         mysql_unit_exporter_url = f"http://{mysql_unit_address}:{MYSQL_EXPORTER_PORT}/metrics"
