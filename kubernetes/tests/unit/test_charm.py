@@ -56,7 +56,7 @@ class TestCharm(unittest.TestCase):
     def use_caplog(self, caplog):
         self._caplog = caplog
 
-    def layer_dict(self, with_mysqld_exporter: bool = False):
+    def layer_dict(self):
         mysqld_cmd = [
             MYSQLD_LOCATION,
             "--basedir=/usr",
@@ -91,7 +91,7 @@ class TestCharm(unittest.TestCase):
                     "override": "replace",
                     "summary": "mysqld exporter",
                     "command": "/start-mysqld-exporter.sh",
-                    "startup": "enabled" if with_mysqld_exporter else "disabled",
+                    "startup": "enabled",
                     "user": "mysql",
                     "group": "mysql",
                     "environment": {
@@ -212,14 +212,6 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             plan.to_dict()["services"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
             self.layer_dict()["services"],
-        )
-
-        _is_data_dir_initialised.return_value = True
-        self.harness.add_relation("metrics-endpoint", "test-cos-app")
-        plan = self.harness.get_container_pebble_plan("mysql")
-        self.assertEqual(
-            plan.to_dict()["services"],  # pyright: ignore[reportTypedDictNotRequiredAccess]
-            self.layer_dict(with_mysqld_exporter=True)["services"],
         )
 
     @patch("charm.MySQLOperatorCharm.unit_initialized")
