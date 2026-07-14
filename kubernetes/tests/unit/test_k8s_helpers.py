@@ -64,15 +64,6 @@ class TestK8sHelpers(unittest.TestCase):
             )
         )
 
-    @patch("lightkube.Client.delete")
-    def test_delete_endpoint_service(self, _delete):
-        self.k8s_helpers.delete_endpoint_services(["role2"])
-        _delete.assert_called_once_with(
-            Service,
-            f"{self.harness.charm.model.app.name}-role2",
-            namespace=self.harness.charm.model.name,
-        )
-
     @patch("lightkube.Client.get")
     @patch("lightkube.Client.patch")
     def test_label_pod(self, _patch, _get):

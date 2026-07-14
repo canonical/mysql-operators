@@ -4,7 +4,7 @@
 # Learn more about testing at: https://juju.is/docs/sdk/testing
 
 import unittest
-from unittest.mock import PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
@@ -135,7 +135,6 @@ class TestCharm(unittest.TestCase):
                 and len(secret_data[password]) == DEFAULT_PASSWORD_LENGTH
             )
 
-    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     @patch("mysql_k8s_helpers.MySQL.drop_root_user")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.install_components")
@@ -191,7 +190,6 @@ class TestCharm(unittest.TestCase):
         _install_components,
         _get_unit_address,
         _drop_root_user,
-        _create_endpoint_services,
     ):
         _build_unit_workload_status.return_value = ActiveStatus()
 
@@ -224,7 +222,6 @@ class TestCharm(unittest.TestCase):
             self.layer_dict(with_mysqld_exporter=True)["services"],
         )
 
-    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     @patch("charm.MySQLOperatorCharm.unit_initialized")
     @patch("charm.MySQLOperatorCharm.cluster_initialized", new_callable=PropertyMock)
     @patch("charm.MySQLOperatorCharm.join_unit_to_cluster")
@@ -239,7 +236,6 @@ class TestCharm(unittest.TestCase):
         mock_join,
         _cluster_initialized,
         _unit_initialized,
-        _create_endpoint_services,
     ):
         mock_mysql.is_data_dir_initialised.return_value = False
         mock_mysql.get_member_role.return_value = "PRIMARY"
@@ -291,6 +287,26 @@ class TestCharm(unittest.TestCase):
         self.harness.container_pebble_ready("mysql")
 
         self.assertFalse(isinstance(self.charm.unit.status, ActiveStatus))
+
+    @patch("charm.MySQLOperatorCharm._mysql_pebble_ready_checks", return_value=False)
+    @patch("charm.MySQLOperatorCharm.refresh", new_callable=PropertyMock)
+    @patch("charm.MySQLOperatorCharm._write_mysqld_configuration")
+    def test_mysql_pebble_ready_k8s_api_denied(
+        self, _write_mysqld_configuration, _refresh, _checks
+    ):
+        """When k8s API access is denied (no trust), pebble-ready defers and blocks."""
+        from ops.charm import PebbleReadyEvent
+
+        _write_mysqld_configuration.side_effect = KubernetesClientError
+        _refresh.return_value = None
+
+        event = MagicMock(spec=PebbleReadyEvent)
+        event.workload = self.harness.charm.unit.get_container("mysql")
+
+        self.charm._on_mysql_pebble_ready(event)
+
+        event.defer.assert_called_once()
+        self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
 
     def test_on_config_changed(self):
         self.harness.update_relation_data(
@@ -396,8 +412,9 @@ class TestCharm(unittest.TestCase):
         Pod labeling (update_endpoints) and readiness wait live in the relation
         handler, not here — early creation only cares about surfacing k8s API errors.
         """
-        self.charm._create_endpoint_services()
+        result = self.charm._create_endpoint_services()
 
+        self.assertTrue(result)
         _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
 
     @patch(
@@ -405,15 +422,17 @@ class TestCharm(unittest.TestCase):
         side_effect=KubernetesClientError,
     )
     def test_create_endpoint_services_permission_denied(self, _create_endpoint_services):
-        """When k8s service creation is denied (juju trust), unit is Blocked."""
-        self.charm._create_endpoint_services()
+        """When k8s service creation is denied (juju trust), unit is Blocked and returns False."""
+        result = self.charm._create_endpoint_services()
 
+        self.assertFalse(result)
         _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
         self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
 
     @patch("charm.MySQLOperatorCharm._create_endpoint_services")
     def test_on_start_creates_endpoint_services(self, _create_endpoint_services):
         """On start, the leader creates k8s endpoint services early in the lifecycle."""
+        _create_endpoint_services.return_value = True
         self.harness.set_leader()
         self.charm.on.start.emit()
 
@@ -425,3 +444,13 @@ class TestCharm(unittest.TestCase):
         self.charm.on.start.emit()
 
         _create_endpoint_services.assert_not_called()
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services):
+        """When service creation fails (no trust), start event is deferred for auto-retry."""
+        _create_endpoint_services.return_value = False
+        self.harness.set_leader()
+
+        with patch("ops.charm.StartEvent.defer") as _defer:
+            self.charm.on.start.emit()
+            _defer.assert_called_once()
