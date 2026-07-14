@@ -89,24 +89,6 @@ class KubernetesHelpers:
                     logger.exception("Kubernetes service creation failed: %s", e)
                 raise KubernetesClientError from e
 
-    def delete_endpoint_services(self, roles: list[str]) -> None:
-        """Delete kubernetes service for endpoints.
-
-        Args:
-            roles: List of roles to append on the service name
-        """
-        for role in roles:
-            service_name = f"{self.app_name}-{role}"
-
-            try:
-                self.client.delete(Service, service_name, namespace=self.namespace)
-                logger.info(f"Kubernetes service {service_name} deleted")
-            except ApiError as e:
-                if e.status.code == 403:
-                    logger.warning("Kubernetes service deletion failed: `juju trust` needed")
-                else:
-                    logger.warning("Kubernetes service deletion failed: %s", e)
-
     def label_pod(self, role: str, pod_name: str | None = None) -> None:
         """Create or update pod labels.
 
