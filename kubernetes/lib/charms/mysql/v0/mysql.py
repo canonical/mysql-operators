@@ -560,7 +560,7 @@ class MySQLCharmBase(CharmBase, ABC):
 
         self.set_secret("app", secret_key, new_password)
 
-        if username == MONITORING_USERNAME and self.has_cos_relation:
+        if username == MONITORING_USERNAME:
             self._mysql.restart_mysql_exporter()
 
     def _get_cluster_status(self, event: ActionEvent) -> None:

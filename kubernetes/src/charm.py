@@ -51,7 +51,7 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
-from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
+from ops import EventBase, ModelError
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
     ActiveStatus,
@@ -72,7 +72,6 @@ from constants import (
     CLUSTER_ADMIN_PASSWORD_KEY,
     CLUSTER_ADMIN_USERNAME,
     CONTAINER_NAME,
-    COS_AGENT_RELATION_NAME,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
@@ -128,13 +127,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on[PEER].relation_joined, self._on_peer_relation_joined)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
         self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
-
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_created, self._reconcile_mysqld_exporter
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_broken, self._reconcile_mysqld_exporter
-        )
 
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
@@ -240,7 +232,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     "override": "replace",
                     "summary": "mysqld exporter",
                     "command": "/start-mysqld-exporter.sh",
-                    "startup": "enabled" if self.has_cos_relation else "disabled",
+                    "startup": "enabled",
                     "user": MYSQL_SYSTEM_USER,
                     "group": MYSQL_SYSTEM_GROUP,
                     "environment": {
@@ -500,14 +492,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             container._pebble.replan_services(timeout=0)
             self._mysql.wait_until_mysql_connection()
 
-            if (
-                not self.has_cos_relation
-                and container.get_services(MYSQLD_EXPORTER_SERVICE)[
-                    MYSQLD_EXPORTER_SERVICE
-                ].is_running()
-            ):
-                container.stop(MYSQLD_EXPORTER_SERVICE)
-
     def recover_unit_after_restart(self) -> None:
         """Wait for unit recovery/rejoin after restart."""
         recovery_attempts = 30
@@ -561,36 +545,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     # =========================================================================
     # Charm event handlers
     # =========================================================================
-
-    def _reconcile_mysqld_exporter(
-        self, event: RelationCreatedEvent | RelationBrokenEvent
-    ) -> None:
-        """Handle a COS relation created or broken event."""
-        if not self._is_peer_data_set:
-            logger.debug("Unit not yet ready to reconcile mysqld exporter. Waiting...")
-            return
-
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not container.can_connect():
-            # reconciliation is done on pebble ready
-            logger.debug("Skip reconcile mysqld exporter: container not ready")
-            return
-
-        if not container.pebble.get_plan():
-            # reconciliation is done on pebble ready
-            logger.debug("Skip reconcile mysqld exporter: empty pebble layer")
-            return
-
-        if not self._mysql.is_data_dir_initialised():
-            logger.debug("Skip reconcile mysqld exporter: mysql not initialised")
-            return
-
-        if self.is_new_unit:
-            # scaling up from zero, treatment done on pebble-ready
-            return
-
-        self.current_event = event
-        self._reconcile_pebble_layer(container)
 
     def _on_peer_relation_joined(self, _) -> None:
         """Handle the peer relation joined event."""
@@ -746,14 +700,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self._mysql.reset_data_dir()
             raise
 
-        if self.has_cos_relation:
-            if container.get_services(MYSQLD_EXPORTER_SERVICE)[
-                MYSQLD_EXPORTER_SERVICE
-            ].is_running():
-                # Restart exporter service after configuration
-                container.restart(MYSQLD_EXPORTER_SERVICE)
-            else:
-                container.start(MYSQLD_EXPORTER_SERVICE)
+        if container.get_services(MYSQLD_EXPORTER_SERVICE)[MYSQLD_EXPORTER_SERVICE].is_running():
+            # Restart exporter service after configuration
+            container.restart(MYSQLD_EXPORTER_SERVICE)
+        else:
+            container.start(MYSQLD_EXPORTER_SERVICE)
 
         # Set workload version
         if workload_version := self._mysql.get_mysql_version():

@@ -191,18 +191,12 @@ def test_password_rotation_root_user_implicit(juju: Juju):
 
 
 def test_exporter_endpoints(juju: Juju) -> None:
-    """Test that endpoints are running."""
+    """Test that exporter endpoints are running by default."""
     app_units = get_app_units(juju, APP_NAME)
     http = urllib3.PoolManager()
 
     for unit_name in app_units:
-        # Start mysqld exporter pebble service
-        juju.ssh(
-            command="pebble start mysqld_exporter",
-            target=unit_name,
-            container="mysql",
-        )
-
+        # Exporter is enabled by default, no need to start it manually
         unit_address = get_unit_address(juju, APP_NAME, unit_name)
         mysql_exporter_url = f"http://{unit_address}:9104/metrics"
 
