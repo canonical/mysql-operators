@@ -26,7 +26,7 @@ groups:
             LABELS = {{ $labels }}.
 
       - alert: MySQLClusterTooManyPrimaries
-        expr: count(mysql_perf_schema_replication_group_member_info{member_role="PRIMARY"}) > 1
+        expr: max(count by (member_host) (mysql_perf_schema_replication_group_member_info{member_role="PRIMARY",member_state="ONLINE"})) > 1
         for: 5m
         labels:
           severity: critical
