@@ -37,9 +37,7 @@ class TestLogRotationSetup(unittest.TestCase):
     )
     @patch("pathlib.Path.exists", return_value=True)
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
-    def test_log_syncing(
-        self, mock_setup, mock_exist, mock_is_peer_data_set
-    ):
+    def test_log_syncing(self, mock_setup, mock_exist, mock_is_peer_data_set):
         self.harness.update_config({"logs_retention_period": "auto"})
         self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
         positions = (

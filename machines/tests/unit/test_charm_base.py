@@ -241,10 +241,10 @@ class TestCharmBase(unittest.TestCase):
         )
 
         self.harness.run_action(
-            "set-password", {"username": "charmed-stats", "password": "newpass123"}
+            "set-password", {"username": "monitoring", "password": "newpass123"}
         )
 
-        _mysql.update_user_password.assert_called_once_with("charmed-stats", "newpass123")
+        _mysql.update_user_password.assert_called_once_with("monitoring", "newpass123", host="%")
         _mysql.restart_mysql_exporter.assert_called_once()
 
     @patch("charm.MySQLCharmBase._mysql")
@@ -259,8 +259,8 @@ class TestCharmBase(unittest.TestCase):
         )
 
         self.harness.run_action(
-            "set-password", {"username": "charmed-operator", "password": "newpass123"}
+            "set-password", {"username": "clusteradmin", "password": "newpass123"}
         )
 
-        _mysql.update_user_password.assert_called_once_with("charmed-operator", "newpass123")
+        _mysql.update_user_password.assert_called_once_with("clusteradmin", "newpass123", host="%")
         _mysql.restart_mysql_exporter.assert_not_called()

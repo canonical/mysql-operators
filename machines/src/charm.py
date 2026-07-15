@@ -821,6 +821,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     raise MySQLDNotRestartedError("mysqld not yet shutdown")
 
         self._mysql.wait_until_mysql_connection()
+        self._mysql.connect_mysql_exporter()
 
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
         if workload_version := self._mysql.get_mysql_version():
