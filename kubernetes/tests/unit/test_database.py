@@ -124,6 +124,6 @@ class TestDatabase(unittest.TestCase):
         _create_database.assert_called_once()
         _create_scoped_user.assert_called_once()
         _get_mysql_version.assert_called_once()
-        _create_endpoint_services.assert_called_once()
-        _update_endpoints.assert_called()
+        # pods are labeled and the primary service awaited here
+        _update_endpoints.assert_called_once()
         _wait_service_ready.assert_called_once()
