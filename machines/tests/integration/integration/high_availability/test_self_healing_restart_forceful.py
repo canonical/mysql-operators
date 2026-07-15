@@ -16,7 +16,6 @@ from ...helpers_ha import (
     execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_ip,
     insert_mysql_test_data,
     load_mysql_test_data,
     remove_mysql_test_data,
@@ -142,9 +141,10 @@ def purge_mysql_binary_logs(juju: Juju, app_name: str, unit_name: str) -> None:
     )
 
     execute_queries_on_unit(
-        unit_address=get_unit_ip(juju, app_name, unit_name),
-        username=credentials_task.results["username"],
-        password=credentials_task.results["password"],
-        queries=["FLUSH LOGS", "PURGE BINARY LOGS BEFORE NOW()"],
+        juju,
+        unit_name,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+        ["FLUSH LOGS", "PURGE BINARY LOGS BEFORE NOW()"],
         commit=True,
     )

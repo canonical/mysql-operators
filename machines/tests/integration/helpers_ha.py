@@ -4,6 +4,7 @@
 
 import json
 import logging
+import shlex
 import subprocess
 import uuid
 from collections.abc import Callable, Generator
@@ -25,8 +26,6 @@ from tenacity import (
 )
 
 from constants import OPERATOR_USERNAME
-
-from .helpers import execute_queries_on_unit
 
 CHARM_METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 
@@ -403,7 +402,8 @@ def get_mysql_max_written_value(juju: Juju, app_name: str, unit_name: str) -> in
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     output = execute_queries_on_unit(
-        get_unit_ip(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         ["SELECT MAX(number) FROM `continuous_writes`.`data`;"],
@@ -423,7 +423,8 @@ def get_mysql_tables(juju: Juju, app_name: str, unit_name: str, db_name: str) ->
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     return execute_queries_on_unit(
-        get_unit_ip(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         [f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{db_name}'"],
@@ -441,7 +442,8 @@ def get_mysql_users(juju: Juju, app_name: str, unit_name: str) -> list:
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     return execute_queries_on_unit(
-        get_unit_ip(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         ["SELECT CONCAT(user, '@', host) FROM mysql.user"],
@@ -460,7 +462,8 @@ def get_mysql_variable_value(juju: Juju, app_name: str, unit_name: str, variable
     credentials = get_mysql_server_credentials(juju, unit_name)
 
     output = execute_queries_on_unit(
-        get_unit_ip(juju, app_name, unit_name),
+        juju,
+        unit_name,
         credentials["username"],
         credentials["password"],
         [f"SELECT @@{variable_name};"],
@@ -534,7 +537,8 @@ def insert_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
     ]
 
     execute_queries_on_unit(
-        get_unit_ip(juju, app_name, mysql_primary),
+        juju,
+        mysql_primary,
         credentials["username"],
         credentials["password"],
         insert_queries,
@@ -561,7 +565,8 @@ def remove_mysql_test_data(juju: Juju, app_name: str, table_name: str) -> None:
     ]
 
     execute_queries_on_unit(
-        get_unit_ip(juju, app_name, mysql_primary),
+        juju,
+        mysql_primary,
         credentials["username"],
         credentials["password"],
         remove_queries,
@@ -596,7 +601,8 @@ def verify_mysql_test_data(juju: Juju, app_name: str, table_name: str, value: st
         ):
             with attempt:
                 output = execute_queries_on_unit(
-                    get_unit_ip(juju, app_name, unit_name),
+                    juju,
+                    unit_name,
                     credentials["username"],
                     credentials["password"],
                     select_queries,
@@ -648,3 +654,97 @@ def create_app_secret(
     secret_uri = juju.add_secret(secret_name, content=contents)
     juju.grant_secret(secret_uri, app_name)
     return secret_uri
+
+
+def execute_queries_on_unit(
+    juju: Juju,
+    unit_name: str,
+    username: str,
+    password: str,
+    queries: list[str],
+    *,
+    commit: bool = False,
+    ssl_mode: str | None = None,
+) -> list:
+    """Execute given MySQL queries on a unit.
+
+    Args:
+        juju: The Juju model
+        unit_name: The name of the unit
+        username: The MySQL username
+        password: The MySQL password
+        queries: A list of queries to execute
+        commit: Whether to commit a transaction.
+
+    Returns:
+        A list of rows that were potentially queried
+    """
+    if commit:
+        queries = ["START TRANSACTION", *queries, "COMMIT"]
+        last_query = -2
+    else:
+        last_query = -1
+
+    query_string = ";".join(queries)
+    command = [
+        "sudo",
+        "charmed-mysql.mysqlsh",
+        "-h",
+        "127.0.0.1",
+        f"-u {shlex.quote(username)} ",
+        f"-p{shlex.quote(password)} ",
+        "--quiet-start=2",
+        "--sql",
+        "--json=raw",
+    ]
+    if ssl_mode is not None:
+        command.append(f"--ssl-mode={ssl_mode}")
+
+    command.extend([
+        "--execute",
+        shlex.quote(query_string),
+        "2>/dev/null",
+    ])
+
+    result = juju.ssh(command=" ".join(command), target=unit_name)
+    lines = [json.loads(line) for line in result.splitlines()]
+    # We only return the output of the last query (statements may not include rows)
+    last = lines[last_query]
+    rows = last.get("rows") or []
+    return [val for row in rows for val in row.values()]
+
+
+@retry(stop=stop_after_attempt(8), wait=wait_fixed(15), reraise=True)
+def is_connection_possible(
+    juju: Juju,
+    unit_name: str,
+    username: str,
+    password: str,
+    *,
+    ssl_enabled: bool | None = None,
+) -> bool:
+    """Test whether a MySQL connection can be established from inside the unit.
+
+    Args:
+        juju: The Juju model.
+        unit_name: The unit name.
+        username: The MySQL username.
+        password: The MySQL password.
+        ssl_enabled: Whether to force SSL on/off (None means prefer SSL).
+    """
+    if ssl_enabled is None:
+        ssl_mode = "PREFERRED"
+    elif ssl_enabled:
+        ssl_mode = "REQUIRED"
+    else:
+        ssl_mode = "DISABLED"
+
+    try:
+        execute_queries_on_unit(
+            juju, unit_name, username, password, ["SELECT 1"], ssl_mode=ssl_mode
+        )
+    except jubilant.CLIError as exc:
+        logger.warning(f"Failed to execute query: {exc}")
+        return False
+    else:
+        return True

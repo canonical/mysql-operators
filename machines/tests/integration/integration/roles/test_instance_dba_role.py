@@ -7,12 +7,12 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_ip,
+    get_mysql_server_credentials,
     wait_for_apps_status,
 )
 
@@ -61,31 +61,29 @@ def test_charmed_dba_role(juju: Juju):
         timeout=TIMEOUT,
     )
 
-    mysql_unit = get_app_units(juju, DATABASE_APP_NAME)[0]
-    primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME, mysql_unit)
-    primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
-
-    data_integrator_unit = get_app_units(juju, INTEGRATOR_APP_NAME)[0]
-    task = juju.run(unit=data_integrator_unit, action="get-credentials")
+    primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
+    server_config_credentials = get_mysql_server_credentials(juju, primary_unit_name)
 
     logger.info("Checking that the instance-level DBA role can create new databases")
     execute_queries_on_unit(
-        primary_unit_address,
-        task.results["mysql"]["username"],
-        task.results["mysql"]["password"],
-        ["CREATE DATABASE IF NOT EXISTS test"],
+        juju,
+        primary_unit_name,
+        server_config_credentials["username"],
+        server_config_credentials["password"],
+        ["SET ROLE ALL", "CREATE DATABASE IF NOT EXISTS test"],
         commit=True,
     )
 
     data_integrator_unit = get_app_units(juju, INTEGRATOR_APP_NAME)[0]
-    task = juju.run(unit=data_integrator_unit, action="get-credentials")
+    results = juju.run(unit=data_integrator_unit, action="get-credentials").results
 
     logger.info("Checking that the instance-level DBA role can see all databases")
     rows = execute_queries_on_unit(
-        primary_unit_address,
-        task.results["mysql"]["username"],
-        task.results["mysql"]["password"],
-        ["SHOW DATABASES"],
+        juju,
+        primary_unit_name,
+        results["mysql"]["username"],
+        results["mysql"]["password"],
+        ["SET ROLE ALL", "SHOW DATABASES"],
         commit=True,
     )
 

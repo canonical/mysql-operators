@@ -17,16 +17,14 @@ from tenacity import (
 
 from constants import REPLICATION_USERNAME
 
-from ...helpers import (
-    generate_random_string,
-    is_connection_possible,
-)
+from ...helpers import generate_random_string
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
     get_app_units,
     get_mysql_primary_unit,
     get_unit_ip,
     insert_mysql_test_data,
+    is_connection_possible,
     load_mysql_test_data,
     remove_mysql_test_data,
     verify_mysql_test_data,
@@ -84,7 +82,6 @@ def test_network_cut(juju: Juju, continuous_writes) -> None:
 
     mysql_primary_unit = get_mysql_primary_unit(juju, MYSQL_APP_NAME)
     mysql_primary_hostname = get_unit_hostname(juju, MYSQL_APP_NAME, mysql_primary_unit)
-    mysql_primary_unit_ip = get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit)
 
     logging.info(f"Unit {mysql_primary_unit} is on machine {mysql_primary_hostname}")
 
@@ -94,14 +91,13 @@ def test_network_cut(juju: Juju, continuous_writes) -> None:
         params={"username": REPLICATION_USERNAME},
     )
 
-    config = {
-        "username": credentials_task.results["username"],
-        "password": credentials_task.results["password"],
-        "host": mysql_primary_unit_ip,
-    }
-
     # Verify that connection is possible
-    assert is_connection_possible(config)
+    assert is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     logging.info(f"Cutting network for {mysql_primary_hostname}")
     cut_unit_network(mysql_primary_hostname)
@@ -115,7 +111,12 @@ def test_network_cut(juju: Juju, continuous_writes) -> None:
         assert not check_machine_connection(hostname, mysql_primary_hostname)
 
     # Verify that connection is not possible
-    assert not is_connection_possible(config)
+    assert not is_connection_possible(
+        juju,
+        mysql_primary_unit,
+        credentials_task.results["username"],
+        credentials_task.results["password"],
+    )
 
     logging.info(f"Restoring network for {mysql_primary_hostname}")
     set_unit_network(mysql_primary_hostname)
@@ -126,15 +127,13 @@ def test_network_cut(juju: Juju, continuous_writes) -> None:
     # Wait for the unit to be ready
     for attempt in Retrying(stop=stop_after_attempt(60), wait=wait_fixed(10)):
         with attempt:
-            new_primary_unit_ip = get_unit_ip(juju, MYSQL_APP_NAME, mysql_primary_unit)
-            new_primary_unit_config = {
-                "username": credentials_task.results["username"],
-                "password": credentials_task.results["password"],
-                "host": new_primary_unit_ip,
-            }
-
-            logging.debug(f"Waiting until connection possible on {new_primary_unit_ip}")
-            assert is_connection_possible(new_primary_unit_config)
+            logging.debug(f"Waiting until connection possible on {mysql_primary_unit}")
+            assert is_connection_possible(
+                juju,
+                mysql_primary_unit,
+                credentials_task.results["username"],
+                credentials_task.results["password"],
+            )
 
     logging.info(f"Waiting for {mysql_primary_unit} to enter active")
     juju.wait(

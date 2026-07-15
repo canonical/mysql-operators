@@ -11,9 +11,9 @@ from jubilant import Juju
 from constants import BACKUPS_USERNAME, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
 from utils import generate_random_password
 
-from ...helpers import execute_queries_on_unit
 from ...helpers_ha import (
     MINUTE_SECS,
+    execute_queries_on_unit,
     get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
@@ -67,8 +67,7 @@ def test_password_rotation(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
-    primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit_name)
-    logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
+    logger.debug("Primary unit detected before password rotation is %s", primary_unit_name)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name)
     new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
@@ -82,7 +81,8 @@ def test_password_rotation(juju: Juju):
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
     output = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         updated_credentials["username"],
         updated_credentials["password"],
         show_tables_sql,
@@ -94,8 +94,7 @@ def test_password_rotation_silent(juju: Juju):
     """Rotate password and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
-    primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
-    logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
+    logger.debug("Primary unit detected before password rotation is %s", primary_unit)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit)
     rotate_mysql_server_credentials(juju, primary_unit)
@@ -106,7 +105,8 @@ def test_password_rotation_silent(juju: Juju):
     # verify that the new password actually works by querying the db
     show_tables_sql = ["SHOW DATABASES"]
     output = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit,
         updated_credentials["username"],
         updated_credentials["password"],
         show_tables_sql,
@@ -118,8 +118,7 @@ def test_password_rotation_backup_user(juju: Juju):
     """Rotate password for backup user and confirm changes."""
     # get primary unit first, need that to invoke set-password action
     primary_unit = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
-    primary_unit_address = get_unit_ip(juju, DATABASE_APP_NAME, primary_unit)
-    logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
+    logger.debug("Primary unit detected before password rotation is %s", primary_unit)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit, BACKUPS_USERNAME)
     rotate_mysql_server_credentials(juju, primary_unit, BACKUPS_USERNAME)

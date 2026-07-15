@@ -7,7 +7,6 @@ import logging
 import jubilant
 import pytest
 from jubilant import Juju
-from mysql.connector.errors import ProgrammingError
 
 from ...helpers_ha import (
     CHARM_METADATA,
@@ -15,7 +14,6 @@ from ...helpers_ha import (
     execute_queries_on_unit,
     get_app_units,
     get_mysql_primary_unit,
-    get_unit_address,
     wait_for_apps_status,
 )
 
@@ -84,35 +82,38 @@ def test_charmed_dba_role(juju: Juju):
     )
 
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
-    primary_unit_address = get_unit_address(juju, DATABASE_APP_NAME, primary_unit_name)
     data_integrator_2_unit_name = get_app_units(juju, f"{INTEGRATOR_APP_NAME}2")[0]
     results = juju.run(data_integrator_2_unit_name, "get-credentials").results
 
     logging.info("Checking that the database-level DBA role cannot create new databases")
-    with pytest.raises(ProgrammingError):
+    with pytest.raises(jubilant.CLIError):
         execute_queries_on_unit(
-            primary_unit_address,
+            juju,
+            primary_unit_name,
             results["mysql"]["username"],
             results["mysql"]["password"],
-            ["CREATE DATABASE IF NOT EXISTS test"],
+            ["SET ROLE ALL", "CREATE DATABASE IF NOT EXISTS test"],
             commit=True,
         )
 
     logging.info("Checking that the database-level DBA role can see all databases")
     execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         results["mysql"]["username"],
         results["mysql"]["password"],
-        ["SHOW DATABASES"],
+        ["SET ROLE ALL", "SHOW DATABASES"],
         commit=True,
     )
 
     logging.info("Checking that the database-level DBA role can create a new table")
     execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         results["mysql"]["username"],
         results["mysql"]["password"],
         [
+            "SET ROLE ALL",
             "CREATE TABLE preserved.test_table (`id` SERIAL PRIMARY KEY, `data` TEXT)",
         ],
         commit=True,
@@ -120,10 +121,12 @@ def test_charmed_dba_role(juju: Juju):
 
     logging.info("Checking that the database-level DBA role can write into an existing table")
     execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         results["mysql"]["username"],
         results["mysql"]["password"],
         [
+            "SET ROLE ALL",
             "INSERT INTO preserved.test_table (`data`) VALUES ('test_data_1'), ('test_data_2')",
         ],
         commit=True,
@@ -131,10 +134,12 @@ def test_charmed_dba_role(juju: Juju):
 
     logging.info("Checking that the database-level DBA role can read from an existing table")
     rows = execute_queries_on_unit(
-        primary_unit_address,
+        juju,
+        primary_unit_name,
         results["mysql"]["username"],
         results["mysql"]["password"],
         [
+            "SET ROLE ALL",
             "SELECT `data` FROM preserved.test_table",
         ],
         commit=True,
