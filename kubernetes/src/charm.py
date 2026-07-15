@@ -893,7 +893,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 event.defer()
                 return
 
-        container = event.workload
         try:
             self._write_mysqld_configuration()
         except KubernetesClientError as e:
@@ -907,6 +906,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             )
             event.defer()
             return
+
+        container = event.workload
 
         self.log_rotate_setup.setup()
 
