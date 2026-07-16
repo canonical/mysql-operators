@@ -26,7 +26,7 @@ def test_deploy_bundle_with_cos_integrations(juju: Juju, charm) -> None:
             "integration",
             "integration",
             "bundle_templates",
-            "otel_collector_integration.j2",
+            "otel_collector_integration.yaml.j2",
         ).read_text()
     )
     rendered_bundle = bundle_template.render(
