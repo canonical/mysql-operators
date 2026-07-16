@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import PropertyMock, call, patch
 
 from charms.data_platform_libs.v1.upgrade import ClusterNotReadyError
 from charms.mysql.v0.mysql import (
@@ -244,3 +244,28 @@ class TestUpgrade(unittest.TestCase):
             self.harness.get_relation_data(self.upgrade_relation_id, "mysql")["upgrade-stack"],
             "[0, 1]",
         )
+
+    @patch("upgrade.set_cron_daemon")
+    @patch("upgrade.MySQLVMUpgrade._ensure_for_installed_by_file")
+    @patch("charm.MySQLOperatorCharm.recover_unit_after_restart")
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    @patch("charm.MySQLOperatorCharm.install_workload", return_value=True)
+    def test_upgrade_granted_connects_exporter(
+        self,
+        _install_workload,
+        _mysql,
+        _recover_unit_after_restart,
+        _ensure_for_installed_by_file,
+        _set_cron_daemon,
+    ):
+        """Test that the metrics exporter is connected during upgrade."""
+        mysql = _mysql.return_value
+        mysql.get_mysql_version.return_value = "8.0.36"
+
+        self.charm.on.config_changed.emit()
+        self.harness.update_relation_data(
+            self.upgrade_relation_id, "mysql/0", {"state": "upgrading"}
+        )
+        self.charm.upgrade._on_upgrade_granted(None)
+
+        mysql.connect_mysql_exporter.assert_called_once()
