@@ -4,10 +4,10 @@
 # Learn more about testing at: https://juju.is/docs/sdk/testing
 
 import unittest
-from unittest.mock import PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
-from ops.model import ActiveStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
 
 from charm import MySQLOperatorCharm
@@ -20,6 +20,7 @@ from constants import (
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
 )
+from k8s_helpers import KubernetesClientError
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 
 APP_NAME = "mysql-k8s"
@@ -290,6 +291,25 @@ class TestCharm(unittest.TestCase):
 
         self.assertFalse(isinstance(self.charm.unit.status, ActiveStatus))
 
+    @patch("charm.MySQLOperatorCharm._mysql_pebble_ready_checks", return_value=False)
+    @patch("upgrade.MySQLK8sUpgrade.idle", return_value=True)
+    @patch("charm.MySQLOperatorCharm._write_mysqld_configuration")
+    def test_mysql_pebble_ready_k8s_api_denied(
+        self, _write_mysqld_configuration, _upgrade_idle, _checks
+    ):
+        """When k8s API access is denied (no trust), pebble-ready defers and blocks."""
+        from ops.charm import PebbleReadyEvent
+
+        _write_mysqld_configuration.side_effect = KubernetesClientError
+
+        event = MagicMock(spec=PebbleReadyEvent)
+        event.workload = self.harness.charm.unit.get_container("mysql")
+
+        self.charm._on_mysql_pebble_ready(event)
+
+        event.defer.assert_called_once()
+        self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
+
     def test_on_config_changed(self):
         self.harness.update_relation_data(
             self.peer_relation_id,
@@ -410,3 +430,53 @@ class TestCharm(unittest.TestCase):
             ],
             "removing",
         )
+
+    @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")
+    def test_create_endpoint_services(self, _create_endpoint_services):
+        """_create_endpoint_services creates the primary & replicas k8s services.
+
+        Pod labeling (update_endpoints) and readiness wait live in the relation
+        handler, not here — early creation only cares about surfacing k8s API errors.
+        """
+        result = self.charm._create_endpoint_services()
+
+        self.assertTrue(result)
+        _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
+
+    @patch(
+        "k8s_helpers.KubernetesHelpers.create_endpoint_services",
+        side_effect=KubernetesClientError,
+    )
+    def test_create_endpoint_services_permission_denied(self, _create_endpoint_services):
+        """When k8s service creation is denied (juju trust), unit is Blocked and returns False."""
+        result = self.charm._create_endpoint_services()
+
+        self.assertFalse(result)
+        _create_endpoint_services.assert_called_once_with(["primary", "replicas"])
+        self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_creates_endpoint_services(self, _create_endpoint_services):
+        """On start, the leader creates k8s endpoint services early in the lifecycle."""
+        _create_endpoint_services.return_value = True
+        self.harness.set_leader()
+        self.charm.on.start.emit()
+
+        _create_endpoint_services.assert_called_once()
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_non_leader_skips(self, _create_endpoint_services):
+        """Non-leader units do not create endpoint services on start."""
+        self.charm.on.start.emit()
+
+        _create_endpoint_services.assert_not_called()
+
+    @patch("charm.MySQLOperatorCharm._create_endpoint_services")
+    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services):
+        """When service creation fails (no trust), start event is deferred for auto-retry."""
+        _create_endpoint_services.return_value = False
+        self.harness.set_leader()
+
+        with patch("ops.charm.StartEvent.defer") as _defer:
+            self.charm.on.start.emit()
+            _defer.assert_called_once()

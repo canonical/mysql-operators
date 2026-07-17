@@ -92,7 +92,7 @@ from constants import (
     SERVER_CONFIG_PASSWORD_KEY,
     SERVER_CONFIG_USERNAME,
 )
-from k8s_helpers import KubernetesHelpers
+from k8s_helpers import KubernetesClientError, KubernetesHelpers
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
@@ -118,6 +118,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Lifecycle events
         self.framework.observe(self.on.mysql_pebble_ready, self._on_mysql_pebble_ready)
         self.framework.observe(self.on.leader_elected, self._on_leader_elected)
+        self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
         self.framework.observe(
@@ -364,6 +365,41 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         ):
             logger.exception("Failed to initialize primary")
             raise
+
+    def _on_start(self, event: EventBase) -> None:
+        """Handle the start event.
+
+        Create the k8s endpoint services as early as possible in the charm lifecycle
+        so that k8s API issues (e.g. a missing `juju trust`) surface before the
+        workload is initialized.
+
+        If the app is not trusted, it enters blocked state with appropriate message
+        and the event is deferred so that Juju retries the event later
+        """
+        if not self.unit.is_leader():
+            return
+        if not self._create_endpoint_services():
+            event.defer()
+
+    def _create_endpoint_services(self) -> bool:
+        """Create the k8s endpoint services (primary & replicas) for the application.
+
+        Only the k8s `create` call is performed here; pod labeling and readiness
+        checks live in the database-requested relation handler.
+
+        Returns:
+            True if the services were created (or already exist), False if k8s API
+            access was denied (e.g. missing `juju trust`).
+        """
+        try:
+            self.k8s_helpers.create_endpoint_services(["primary", "replicas"])
+            return True
+        except KubernetesClientError:
+            logger.exception("Failed to create k8s services for endpoints")
+            self.unit.status = BlockedStatus(
+                "Permission to create k8s services denied. Run `juju trust mysql-k8s --scope=cluster`"
+            )
+            return False
 
     def _get_primary_from_online_peer(self) -> str | None:
         """Get the primary address from an online peer."""
@@ -738,8 +774,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # task delegated to upgrade code
             return
 
+        try:
+            self._write_mysqld_configuration()
+        except KubernetesClientError as e:
+            # KubernetesClientError: without `juju trust` the k8s API denies reads
+            # Catch + defer so Juju can re-emit them after `juju trust` is applied
+            logger.exception("Failed to write mysqld configuration: %s", e)
+            self.unit.status = BlockedStatus(
+                "Permission to access k8s API denied. Run `juju trust mysql-k8s --scope=cluster`"
+            )
+            event.defer()
+            return
+
         container = event.workload
-        self._write_mysqld_configuration()
 
         self.log_rotate_setup.setup()
 
