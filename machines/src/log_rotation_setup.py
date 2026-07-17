@@ -5,9 +5,7 @@
 
 import logging
 import typing
-from pathlib import Path
 
-import yaml
 from ops.framework import Object
 
 from constants import COS_AGENT_RELATION_NAME
@@ -17,7 +15,6 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_POSITIONS_FILE = "/var/snap/grafana-agent/current/grafana-agent-positions/log_file_scraper.yml"
 _LOGS_SYNCED = "logs_synced"
 
 
@@ -66,27 +63,6 @@ class LogRotationSetup(Object):
 
         if self._logs_are_syncing:
             # reconfiguration done
-            return
-
-        positions_file = Path(_POSITIONS_FILE)
-
-        not_started_msg = "Log syncing not yet started."
-        if not positions_file.exists():
-            logger.debug(not_started_msg)
-            return
-
-        with open(positions_file) as pos_fd:
-            positions = yaml.safe_load(pos_fd.read())
-
-        if sync_files := positions.get("positions"):
-            for log_file, line in sync_files.items():
-                if "mysql" in log_file and int(line) > 0:
-                    break
-            else:
-                logger.debug(not_started_msg)
-                return
-        else:
-            logger.debug(not_started_msg)
             return
 
         logger.info("Reconfigure log rotation after logs upload started")

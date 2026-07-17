@@ -68,21 +68,21 @@ juju consume k8s:admin/cos.loki
 juju consume k8s:admin/cos.prometheus
 ```
 
-## Deploy and integrate Grafana
+## Deploy and integrate OpenTelemetry Collector
 
-First, deploy the [grafana-agent](https://charmhub.io/grafana-agent) / [grafana-agent-k8s](https://charmhub.io/grafana-agent-k8s) subordinate charm:
+First, deploy the [opentelemetry-collector](https://charmhub.io/opentelemetry-collector) / [opentelemetry-collector-k8s](https://charmhub.io/opentelemetry-collector-k8s) charm:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy grafana-agent
+    juju deploy opentelemetry-collector --channel=2/stable
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju deploy grafana-agent-k8s --trust
+    juju deploy opentelemetry-collector-k8s --channel=2/stable --trust
 ```
 ````
 
@@ -92,35 +92,35 @@ Then, integrate it with Charmed MySQL
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate grafana-agent mysql:cos-agent
+    juju integrate opentelemetry-collector mysql:cos-agent
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate grafana-agent-k8s mysql-k8s:grafana-dashboard
-    juju integrate grafana-agent-k8s mysql-k8s:logging
-    juju integrate grafana-agent-k8s mysql-k8s:metrics-endpoint
+    juju integrate opentelemetry-collector-k8s mysql-k8s:grafana-dashboard
+    juju integrate opentelemetry-collector-k8s mysql-k8s:logging
+    juju integrate opentelemetry-collector-k8s mysql-k8s:metrics-endpoint
 ```
 ````
 
-Finally, integrate Grafana Agent with consumed COS offers:
+Finally, integrate OpenTelemetry Collector with consumed COS offers:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate grafana-agent grafana
-    juju integrate grafana-agent loki
-    juju integrate grafana-agent prometheus
+    juju integrate opentelemetry-collector grafana
+    juju integrate opentelemetry-collector loki
+    juju integrate opentelemetry-collector prometheus
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate grafana-agent-k8s grafana
-    juju integrate grafana-agent-k8s loki
-    juju integrate grafana-agent-k8s prometheus
+    juju integrate opentelemetry-collector-k8s grafana
+    juju integrate opentelemetry-collector-k8s loki
+    juju integrate opentelemetry-collector-k8s prometheus
 ```
 ````
 
@@ -142,13 +142,13 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     loki         active  k8s      admin/cos.loki
     prometheus   active  k8s      admin/cos.prometheus
 
-    App                   Version      Status  Scale  Charm               Channel   Rev  Exposed  Message
-    grafana-agent                      active      1  grafana-agent       edge        5  no
-    mysql                 8.4.7        active      1  mysql               8.4/edge       no       Primary
+    App                      Version  Status  Scale  Charm                    Channel   Rev  Exposed  Message
+    mysql                    8.4.7    active      1  mysql                    8.4/edge       no       Primary
+    opentelemetry-collector           active      1  opentelemetry-collector  2/stable  316  no
 
     Unit                          Workload  Agent  Machine  Public address  Ports               Message
-    mysql/3*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
-      grafana-agent/0*            active    idle            10.85.186.140
+    mysql/0*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
+      opentelemetry-collector/0*  active    idle            10.85.186.140
 
     Machine  State    Address        Inst id        Series  AZ    Message
     4        started  10.85.186.140  juju-fcde9e-4  ubuntu@26.04  Running
@@ -163,11 +163,13 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     loki        active  charmed-dev  admin/cos.loki
     prometheus  active  charmed-dev  admin/cos.prometheus
 
-    App        Version       Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-    mysql-k8s  8.4.7         active      1  mysql-k8s  8.4/edge         10.152.183.115  no       Primary
+    App                          Version  Status  Scale  Charm                        Channel   Rev  Address         Exposed  Message
+    mysql-k8s                    8.4.7    active      1  mysql-k8s                    8.4/edge       10.152.183.115  no       Primary
+    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable  207  10.152.183.116
 
-    Unit          Workload  Agent  Address      Ports  Message
-    mysql-k8s/0*  active    idle   10.1.84.116         Primary
+    Unit                            Workload  Agent  Address      Ports  Message
+    mysql-k8s/0*                    active    idle   10.1.84.117         Primary
+    opentelemetry-collector-k8s/0*  active    idle   10.1.84.118         Primary
 ```
 ````
 `````

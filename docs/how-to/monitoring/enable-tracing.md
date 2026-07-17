@@ -7,11 +7,7 @@ myst:
 (enable-tracing)=
 # Enable tracing
 
-This guide contains the steps to enable tracing with [Grafana Tempo](https://grafana.com/docs/tempo/latest/) for your MySQL application. 
-
-```{caution}
-This is feature is in development. It is **not recommended** for production environments. 
-```
+This guide contains the steps to enable tracing with [Grafana Tempo](https://grafana.com/docs/tempo/latest/) for your MySQL application.
 
 ## Prerequisites
 
@@ -72,49 +68,49 @@ juju consume k8s:admin/cos.tempo
 
 ## Consume interfaces
 
-First, deploy [grafana-agent](https://charmhub.io/grafana-agent) / [grafana-agent-k8s](https://charmhub.io/grafana-agent-k8s) from the `1/stable` channel:
+First, deploy [opentelemetry-collector](https://charmhub.io/opentelemetry-collector) / [opentelemetry-collector-k8s](https://charmhub.io/opentelemetry-collector-k8s) charm:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy grafana-agent --channel 1/stable
+    juju deploy opentelemetry-collector --channel 2/stable
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju deploy grafana-agent-k8s --channel 1/stable --trust
+    juju deploy opentelemetry-collector-k8s --channel 2/stable --trust
 ```
 ````
 
-Then, integrate Grafana Agent with Charmed MySQL:
+Then, integrate OpenTelemetry Collector with Charmed MySQL:
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate mysql:cos-agent grafana-agent:cos-agent
+    juju integrate opentelemetry-collector:cos-agent mysql:cos-agent
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate mysql-k8s:tracing grafana-agent-k8s:tracing-provider
+    juju integrate opentelemetry-collector-k8s:receive-traces mysql-k8s:tracing 
 ```
 ````
 
-Finally, integrate Grafana Agent with the consumed interface from the previous section:
+Finally, integrate OpenTelemetry Collector with the consumed interface from the previous section:
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju integrate grafana-agent:tracing tempo:tracing
+    juju integrate opentelemetry-collector:send-traces tempo:tracing
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju integrate grafana-agent-k8s:tracing tempo:tracing
+    juju integrate opentelemetry-collector-k8s:send-traces tempo:tracing
 ```
 ````
 
@@ -130,24 +126,24 @@ Wait until the model settles. The following is an example of the `juju status --
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
 
-    App            Version          Status   Scale  Charm          Channel      Rev  Exposed  Message
-    grafana-agent                   blocked      1  grafana-agent  1/stable     452  no       Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
-    mysql          8.4.7            active       1  mysql                            no       
+    App                      Version  Status   Scale  Charm                    Channel      Rev  Exposed  Message
+    mysql                    8.4.7    active       1  mysql                    8.4/edge          no
+    opentelemetry-collector           blocked      1  opentelemetry-collector  2/stable     316  no
 
-    Unit                Workload  Agent  Machine  Public address  Ports           Message
-    mysql/0*            active    idle   0        10.205.193.32   3306,33060/tcp  Primary
-      grafana-agent/0*  blocked   idle            10.205.193.32                   Missing ['grafana-cloud-config']|['grafana-dashboards-provider']|['logging-consumer']|['send-remote-write'] for cos-a...
+    Unit                          Workload  Agent  Machine  Public address  Ports           Message
+    mysql/0*                      active    idle   0        10.205.193.32   3306,33060/tcp  Primary
+      opentelemetry-collector/0*  blocked   idle            10.205.193.32
 
     Machine  State    Address        Inst id        Base          AZ  Message
     0        started  10.205.193.32  juju-4f3e50-0  ubuntu@26.04      Running
 
-    Integration provider  Requirer                 Interface              Type         Message
-    grafana-agent:peers   grafana-agent:peers      grafana_agent_replica  peer         
-    mysql:cos-agent       grafana-agent:cos-agent  cos_agent              subordinate  
-    mysql:database-peers  mysql:database-peers     mysql_peers            peer         
-    mysql:rolling-ops     mysql:rolling-ops        rolling_op             peer         
-    mysql:upgrade         mysql:upgrade            upgrade                peer         
-    tempo:tracing         grafana-agent:tracing    tracing                regular  
+    Integration provider           Requirer                             Interface        Type         Message
+    opentelemetry-collector:peers  opentelemetry-collector:peers        otelcol_replica  peer
+    mysql:cos-agent                opentelemetry-collector:cos-agent    tracing          subordinate
+    mysql:database-peers           mysql:database-peers                 mysql_peers      peer
+    mysql:refresh-v-three          mysql:refresh-v-three                refresh          peer
+    mysql:rolling-ops              mysql:rolling-ops                    rolling_op       peer
+    tempo:tracing                  opentelemetry-collector:send-traces  tracing          regular
 ```
 ```{tab-item} K8s
 :sync: k8s
@@ -158,21 +154,21 @@ Wait until the model settles. The following is an example of the `juju status --
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
 
-    App                Version    Status  Scale  Charm              Channel      Rev  Address         Exposed  Message
-    grafana-agent-k8s  0.40.4     active      1  grafana-agent-k8s  1/stable     115  10.152.183.63   no       grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
-    mysql-k8s          8.4.7      active      1  mysql-k8s                            10.152.183.135  no       Primary
+    App                          Version  Status  Scale  Charm                        Channel   Rev  Address         Exposed  Message
+    mysql-k8s                    8.4.7    active      1  mysql-k8s                    8.4/edge       10.152.183.135  no       Primary
+    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable  207  10.152.183.136
 
-    Unit                  Workload  Agent      Address       Ports  Message
-    grafana-agent-k8s/0*  active    idle       10.1.241.255         grafana-dashboards-provider: off, logging-consumer: off, send-remote-write: off
-    mysql-k8s/0*          active    executing  10.1.241.253         Primary
+    Unit                            Workload  Agent      Address       Ports  Message
+    mysql-k8s/0*                    active    executing  10.1.241.253         Primary
+    opentelemetry-collector-k8s/0*  active    idle       10.1.241.254
 
-    Integration provider                Requirer                   Interface              Type     Message
-    grafana-agent-k8s:peers             grafana-agent-k8s:peers    grafana_agent_replica  peer     
-    grafana-agent-k8s:tracing-provider  mysql-k8s:tracing          tracing                regular  
-    mysql-k8s:database-peers            mysql-k8s:database-peers   mysql_peers            peer     
-    mysql-k8s:rolling-ops               mysql-k8s:rolling-ops      rolling_op             peer     
-    mysql-k8s:upgrade                   mysql-k8s:upgrade          upgrade                peer     
-    tempo:tracing                       grafana-agent-k8s:tracing  tracing                regular  
+    Integration provider               Requirer                                    Interface        Type     Message
+    opentelemetry-collector-k8s:peers  opentelemetry-collector-k8s:peers           otelcol_replica  peer
+    mysql-k8s:tracing                  opentelemetry-collector-k8s:receive-traces  tracing          regular
+    mysql-k8s:database-peers           mysql-k8s:database-peers                    mysql_peers      peer
+    mysql-k8s:refresh-v-three          mysql-k8s:refresh-v-three                   refresh          peer
+    mysql-k8s:rolling-ops              mysql-k8s:rolling-ops                       rolling_op       peer
+    tempo:tracing                      opentelemetry-collector-k8s:send-traces     tracing          regular
 ```
 ````
 

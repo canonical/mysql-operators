@@ -429,7 +429,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except ProtocolNotFoundError:
             logger.warning(
                 "Endpoint for tracing wasn't provided as tracing backend isn't ready yet."
-                "If grafana-agent isn't connected to a tracing backend, integrate it."
+                "If opentelemetry-collector isn't connected to a tracing backend, integrate it."
                 "Otherwise this issue should resolve itself in a few events."
             )
             return

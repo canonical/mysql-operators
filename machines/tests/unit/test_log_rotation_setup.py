@@ -2,12 +2,12 @@
 # See LICENSE file for licensing details.
 
 import unittest
-from unittest.mock import MagicMock, PropertyMock, mock_open, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from ops.testing import Harness
 
 from charm import MySQLOperatorCharm
-from constants import COS_AGENT_RELATION_NAME, MYSQL_LOGS_DIR, PEER
+from constants import COS_AGENT_RELATION_NAME, PEER
 
 
 class TestLogRotationSetup(unittest.TestCase):
@@ -25,29 +25,29 @@ class TestLogRotationSetup(unittest.TestCase):
 
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
     @patch(
-        "charm.MySQLOperatorCharm._is_peer_data_set", new_callable=PropertyMock, return_value=True
+        "charm.MySQLOperatorCharm._is_peer_data_set",
+        new_callable=PropertyMock,
+        return_value=True,
     )
     def test_cos_relation_created(self, mock_is_peer_data_set, mock_setup):
-        self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
+        self.harness.add_relation(COS_AGENT_RELATION_NAME, "opentelemetry-collector")
         mock_setup.assert_called_once_with(3, self.charm.text_logs, False)
         mock_is_peer_data_set.assert_called_once()
 
     @patch(
-        "charm.MySQLOperatorCharm._is_peer_data_set", new_callable=PropertyMock, return_value=True
+        "charm.MySQLOperatorCharm._is_peer_data_set",
+        new_callable=PropertyMock,
+        return_value=True,
     )
-    @patch("pathlib.Path.exists", return_value=True)
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
-    def test_log_syncing(self, mock_setup, mock_exist, mock_is_peer_data_set):
+    def test_log_syncing(self, mock_setup, mock_is_peer_data_set):
         self.harness.update_config({"logs-retention-period": "auto"})
-        self.harness.add_relation(COS_AGENT_RELATION_NAME, "grafana-agent")
-        positions = f"positions:\n  '{MYSQL_LOGS_DIR}/error.log': '466'\n"
+        self.harness.add_relation(COS_AGENT_RELATION_NAME, "opentelemetry-collector")
         event = MagicMock()
         mock_setup.assert_called_once()
         mock_setup.reset_mock()
-        with patch("builtins.open", mock_open(read_data=positions)):
-            self.charm.log_rotation_setup._update_logs_rotation(event)
+        self.charm.log_rotation_setup._update_logs_rotation(event)
         self.assertEqual(self.harness.charm.unit_peer_data["logs_synced"], "true")
-        mock_exist.assert_called_once()
         mock_setup.assert_called_once()
 
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
