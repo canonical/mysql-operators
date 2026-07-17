@@ -292,16 +292,15 @@ class TestCharm(unittest.TestCase):
         self.assertFalse(isinstance(self.charm.unit.status, ActiveStatus))
 
     @patch("charm.MySQLOperatorCharm._mysql_pebble_ready_checks", return_value=False)
-    @patch("charm.MySQLOperatorCharm.refresh", new_callable=PropertyMock)
+    @patch("upgrade.MySQLK8sUpgrade.idle", return_value=True)
     @patch("charm.MySQLOperatorCharm._write_mysqld_configuration")
     def test_mysql_pebble_ready_k8s_api_denied(
-        self, _write_mysqld_configuration, _refresh, _checks
+        self, _write_mysqld_configuration, _upgrade_idle, _checks
     ):
         """When k8s API access is denied (no trust), pebble-ready defers and blocks."""
         from ops.charm import PebbleReadyEvent
 
         _write_mysqld_configuration.side_effect = KubernetesClientError
-        _refresh.return_value = None
 
         event = MagicMock(spec=PebbleReadyEvent)
         event.workload = self.harness.charm.unit.get_container("mysql")
