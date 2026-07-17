@@ -80,7 +80,6 @@ from charms.data_platform_libs.v0.data_interfaces import DataPeerData, DataPeerU
 from constants import (
     BACKUPS_PASSWORD_KEY,
     BACKUPS_USERNAME,
-    CHARMED_MYSQL_PITR_HELPER,
     COS_AGENT_RELATION_NAME,
     DEFAULT_PASSWORD_LENGTH,
     GR_MAX_MEMBERS,
@@ -351,10 +350,6 @@ class MySQLRestoreBackupError(Error):
     """Exception raised when there is an error restoring a backup."""
 
 
-class MySQLRestorePitrError(Error):
-    """Exception raised when there is an error during point-in-time-recovery restore."""
-
-
 class MySQLDeleteTempRestoreDirectoryError(Error):
     """Exception raised when there is an error deleting the temp restore directory."""
 
@@ -421,10 +416,6 @@ class MySQLRejoinClusterError(Error):
 
 class MySQLComponentInstallError(Error):
     """Exception raised when there is an issue installing a MySQL component."""
-
-
-class MySQLGetGroupReplicationIDError(Error):
-    """Exception raised when there is an issue acquiring current current group replication id."""
 
 
 class MySQLClusterMetadataExistsError(Error):
@@ -2840,59 +2831,6 @@ class MySQLBase(ABC):
             logger.error("Failed to restore backup")
             raise MySQLRestoreBackupError from e
 
-    def restore_pitr(
-        self,
-        host: str,
-        mysql_user: str,
-        password: str,
-        s3_parameters: dict[str, str],
-        restore_to_time: str,
-        user: str | None = None,
-        group: str | None = None,
-    ) -> tuple[str, str]:
-        """Run point-in-time-recovery using binary logs from the S3 repository.
-
-        Args:
-            host: the MySQL host to connect to.
-            mysql_user: the MySQL user to connect to.
-            password: the password of the provided MySQL user.
-            s3_parameters: S3 relation parameters.
-            restore_to_time: the MySQL timestamp to restore to or keyword `latest`.
-            user: the user with which to execute the commands.
-            group: the group with which to execute the commands.
-        """
-        binlogs_path = s3_parameters["path"].rstrip("/")
-        bucket_url = f"{s3_parameters['bucket']}/{binlogs_path}/binlogs"
-
-        try:
-            return self._execute_commands(
-                [
-                    CHARMED_MYSQL_PITR_HELPER,
-                    "recover",
-                ],
-                user=user,
-                group=group,
-                env_extra={
-                    "BINLOG_S3_ENDPOINT": s3_parameters["endpoint"],
-                    "HOST": host,
-                    "USER": mysql_user,
-                    "PASS": password,
-                    "PITR_DATE": restore_to_time if restore_to_time != "latest" else "",
-                    "PITR_RECOVERY_TYPE": "latest" if restore_to_time == "latest" else "date",
-                    "STORAGE_TYPE": "s3",
-                    "BINLOG_ACCESS_KEY_ID": s3_parameters["access-key"],
-                    "BINLOG_SECRET_ACCESS_KEY": s3_parameters["secret-key"],
-                    "BINLOG_S3_REGION": s3_parameters["region"],
-                    "BINLOG_S3_BUCKET_URL": bucket_url,
-                },
-            )
-        except MySQLExecError as e:
-            logger.exception("Failed to restore pitr")
-            raise MySQLRestorePitrError(e.message) from e
-        except Exception as e:
-            logger.exception("Failed to restore pitr")
-            raise MySQLRestorePitrError from e
-
     def delete_temp_restore_directory(
         self,
         temp_restore_directory: str,
@@ -3062,18 +3000,6 @@ class MySQLBase(ABC):
             stripped_input = re.sub(pattern, hidden_pass, stripped_input)
         return stripped_input
 
-    def get_current_group_replication_id(self) -> str:
-        """Get the current group replication id."""
-        try:
-            group_id = self._instance_client_tcp.get_instance_variable(
-                scope=Scope.GLOBAL,
-                name="group_replication_group_name",
-            )
-        except ExecutionError as e:
-            raise MySQLGetGroupReplicationIDError() from e
-        else:
-            return group_id
-
     @abstractmethod
     def is_mysqld_running(self) -> bool:
         """Returns whether mysqld is running."""
@@ -3127,28 +3053,4 @@ class MySQLBase(ABC):
     @abstractmethod
     def reset_data_dir(self) -> None:
         """Reset the data directory."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def reconcile_binlogs_collection(
-        self, force_restart: bool = False, ignore_inactive_error: bool = False
-    ) -> bool:
-        """Start or stop binlogs collecting service.
-
-        Based on the `binlogs-collecting` app peer data value and unit leadership.
-
-        Args:
-            force_restart: whether to restart service even if it's already running.
-            ignore_inactive_error: whether to not log an error when the service should be enabled but not active right now.
-
-        Returns: whether the operation was successful.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_cluster_members(self) -> list[str]:
-        """Get cluster members in MySQL MEMBER_HOST format.
-
-        Returns: list of the cluster members in the MySQL MEMBER_HOST format.
-        """
         raise NotImplementedError

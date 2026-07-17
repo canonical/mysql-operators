@@ -59,7 +59,6 @@ from ops import (
     InstallEvent,
     MaintenanceStatus,
     RelationChangedEvent,
-    RelationDepartedEvent,
     StartEvent,
     Unit,
     WaitingStatus,
@@ -157,7 +156,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on.temp_storage_detaching, self._on_storage_detaching)
 
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
-        self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
         self.mysql_config = MySQLConfig()
         self.database_relation = MySQLProvider(self)
@@ -370,13 +368,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.join_unit_to_cluster()
             self.unit.set_ports(3306, 33060)
 
-        if not self._mysql.reconcile_binlogs_collection(force_restart=True):
-            logger.error("Failed to reconcile binlogs collection during peer relation event")
-
-    def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
-        if not self._mysql.reconcile_binlogs_collection(force_restart=True):
-            logger.error("Failed to reconcile binlogs collection during peer departed event")
-
     def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
         # Only executes if the unit was initialised
@@ -580,11 +571,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _set_app_status(self, state: str) -> None:
         """Set the application status based on the cluster state."""
         if not self.unit.is_leader() or state != InstanceState.ONLINE:
-            return
-
-        block_message = self.app_peer_data.get("s3-block-message")
-        if block_message:
-            self.app.status = BlockedStatus(block_message)
             return
 
         self.app.status = self.build_app_workload_status()

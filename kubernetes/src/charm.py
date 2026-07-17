@@ -52,7 +52,7 @@ from charms.mysql.v0.mysql import (
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from object_storage import S3Requirer
 from ops import EventBase, ModelError
-from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
+from ops.charm import RelationChangedEvent, UpdateStatusEvent
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
@@ -82,7 +82,6 @@ from constants import (
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
-    MYSQL_BINLOGS_COLLECTOR_SERVICE,
     MYSQL_DATA_DIR,
     MYSQL_LOG_ERROR,
     MYSQL_LOG_FILES,
@@ -145,7 +144,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.framework.observe(self.on[PEER].relation_joined, self._on_peer_relation_joined)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
-        self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
@@ -284,19 +282,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                         "EXPORTER_USER": MONITORING_USERNAME,
                         "EXPORTER_PASS": self.get_secret("app", MONITORING_PASSWORD_KEY),
                     },
-                },
-                MYSQL_BINLOGS_COLLECTOR_SERVICE: {
-                    "override": "replace",
-                    "summary": "mysql-pitr-helper binlogs collector",
-                    "command": "/start-mysql-pitr-helper-collector.sh",
-                    "startup": "enabled"
-                    if ("binlogs-collecting" in self.app_peer_data and self.unit.is_leader())
-                    else "disabled",
-                    "user": MYSQL_SYSTEM_USER,
-                    "group": MYSQL_SYSTEM_GROUP,
-                    "environment": self.backups.get_binlogs_collector_config()
-                    if ("binlogs-collecting" in self.app_peer_data and self.unit.is_leader())
-                    else {},
                 },
             },
         }
@@ -954,7 +939,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         self._create_cluster()
-        self._mysql.reconcile_binlogs_collection(force_restart=True)
 
     def _handle_potential_cluster_crash_scenario(self, state: str) -> bool:  # noqa: C901
         """Handle potential full cluster crash scenarios.
@@ -1162,11 +1146,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not self.unit.is_leader() or state != InstanceState.ONLINE:
             return
 
-        block_message = self.app_peer_data.get("s3-block-message")
-        if block_message:
-            self.app.status = BlockedStatus(block_message)
-            return
-
         self.app.status = self.build_app_workload_status()
 
     def set_unit_status(self, status: ops.StatusBase):
@@ -1195,13 +1174,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-
-        if not self._mysql.reconcile_binlogs_collection(force_restart=True):
-            logger.error("Failed to reconcile binlogs collection during peer relation event")
-
-    def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
-        if not self._mysql.reconcile_binlogs_collection(force_restart=True):
-            logger.error("Failed to reconcile binlogs collection during peer departed event")
 
     def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
