@@ -1,0 +1,36 @@
+Jul 17 01:59:56 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:472 Deploying a new mysql cluster
+Jul 17 01:59:56 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql-k8s_ubuntu@26.04-amd64.charm another-mysql-k8s --base ubuntu@26.04 --config cluster-name=test_cluster --config profile=testing --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:8562333ec3933935bf7742ecf11306ef6fbf6265767ce24538b05475b9ca0853 --trust
+Jul 17 02:01:54 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing another-mysql-k8s s3-integrator
+Jul 17 02:02:22 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:499 Rotating all mysql credentials
+Jul 17 02:02:22 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:02:22 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpykboo7pk
+Jul 17 02:02:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:02:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmpye0i3ve3
+Jul 17 02:02:29 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmpv74dwpvk
+Jul 17 02:02:36 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-password --params /root/snap/juju/common/tmpc9unkxar
+Jul 17 02:02:42 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:512 Syncing credentials
+Jul 17 02:02:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-secret --model testing c311596b --file /root/snap/juju/common/tmpnma5r02s
+Jul 17 02:02:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju grant-secret --model testing secret:oqtq4u27nch9slrcvi1g s3-integrator
+Jul 17 02:02:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju config --model testing s3-integrator credentials=secret:oqtq4u27nch9slrcvi1g endpoint=https://10.1.0.174 bucket=testbucket path=mysql-k8s region=default tls-ca-chain=LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURqekNDQW5lZ0F3SUJBZ0lVYjRUSzdJbXkvblNZRFhjMXpOUUN4VENUN2Rzd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1Z6RUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQWdNQmtSbGJtbGhiREVVTUJJR0ExVUVCd3dMVTNCeQphVzVuWm1sbGJHUXhEREFLQmdOVkJBb01BMFJwY3pFVE1CRUdBMVVFQXd3S01UQXVNUzR3TGpFM05EQWVGdzB5Ck5qQTNNVGN3TVRVd016WmFGdzB5T1RBMU1EWXdNVFV3TXpaYU1GY3hDekFKQmdOVkJBWVRBbFZUTVE4d0RRWUQKVlFRSURBWkVaVzVwWVd3eEZEQVNCZ05WQkFjTUMxTndjbWx1WjJacFpXeGtNUXd3Q2dZRFZRUUtEQU5FYVhNeApFekFSQmdOVkJBTU1DakV3TGpFdU1DNHhOelF3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUNwQ01na2dld1FZVGVsUGFhL09BTEFlZnFGaERVcHRhbEMwbmxOWWpGaENBZEs4dE5rc2laUU9zRmIKSFZmUE5PNmpzQWRoY20vc2dkTVhmL25tMm5iRDRkN2VoUkNwbUt2WGI5Y3FRVDUvMmN4SHRZckdmK1FPenJmMgo5eWdKYjI2ZmpDaFB3bDZJKzd0ME9aaU5sVmRKY3BhQlE2UWd6b0thMmtzMVFCdm1VeTFxa0gzbG9SRUNaUWNBCndMNkFkR1NQeWt4YUZyM21aOHlSUjNRc1U5Y1pqYUVaOUtDVkRiK0RZM2R4SFFkSzd2cU5sdXNibzJwRnVmOW8KYnNpRVVHZ0hEbGtFNENJRmcwSE9tM0daeWRnOGZEQ1ZlY3dtL0RMZE91cmNidWNRMElXRkM3cm0rM2xvSUNaZApKZ1htMjlydnJSUXU4Rzh3NldSS2JaUWhJUEM1QWdNQkFBR2pVekJSTUIwR0ExVWREZ1FXQkJSdkdZYmd1Z2RSCkJyZ3VhcFJLOFNvMzBzZEdzekFmQmdOVkhTTUVHREFXZ0JSdkdZYmd1Z2RSQnJndWFwUks4U28zMHNkR3N6QVAKQmdOVkhSTUJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJPZlIzNFdseEp2NGpjb3J6YwoveXhWOXBMcnYvVUI1ck1kdGlTaFNETlI5VzBIempQNkhYNUk4ZVdGU1NERUEwQjBsVFFsL0xCZ1BoakVMc0VKCjVFd2VYeGU5dzgwQkhqWHB2WDE3WlVBM0x6clJaWlVaUHJoL1VrWWNUMjZlWUhmY2h2cU82SU5weUpjMkpuOE4KSExlTGtNaGMyeEhPMmtUN2kwTFNvSGJDWFhxaTlGV3VMVThZY09QRHhyZ0t6dS83WHlZS3duRGxhWTJ1aGw0UQpSelhhUDNYL1NHUDJFaXE2a3BJQlNRc2I1K0xvT2ZUY1U3cG1kZ2czSjQwQVF1WnBzeC9nejV6cVNReG1oYlAzCkZodUJIVXhhcFVpVFZUTnFQWGo4ZFpNVFpvTW4zUVdGOWtQUWNHVEtETG96UGUrSkNyRWo3UVk3clZaaGFVSFAKTWxkdAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+Jul 17 02:02:48 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:520 Waiting for blocked application status with another cluster S3 repository
+Jul 17 02:03:41 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:530 Restoring backup_id='2026-07-17T01:57:20Z'
+Jul 17 02:03:41 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 restore --params /root/snap/juju/common/tmp741hk9ma
+Jul 17 02:04:16 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:535 Ensuring that the pre-backup inserted value exists in database, while post-backup inserted value does not
+Jul 17 02:04:16 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:549 Inserting value after restore
+Jul 17 02:04:16 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:17 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:17 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpp0nt3zkc
+Jul 17 02:04:21 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-password --params /root/snap/juju/common/tmpfo_4o48b
+Jul 17 02:04:24 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-password --params /root/snap/juju/common/tmpc3xks4y9
+Jul 17 02:04:27 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:28 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:554 Ensuring that pre-backup and post-restore values exist in the database
+Jul 17 02:04:28 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:564 Scaling mysql application to 3 units
+Jul 17 02:04:28 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-unit --model testing another-mysql-k8s --num-units 2
+Jul 17 02:04:31 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:577 Ensuring inserted values before backup and after restore exist on all units
+Jul 17 02:04:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 17 02:04:32 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:590 Waiting for blocked application status after restore
+Jul 17 02:04:34 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:255 Cleaning backups from cloud buckets
