@@ -1,0 +1,29 @@
+Jul 20 03:39:57 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:265 Deploying a new mysql cluster
+Jul 20 03:39:57 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql_ubuntu@26.04-amd64.charm another-mysql --base ubuntu@26.04 --config cluster-name=test_cluster --config profile=testing
+Jul 20 03:42:28 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing another-mysql s3-integrator
+Jul 20 03:42:39 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:290 Rotating all mysql credentials
+Jul 20 03:42:39 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:42:40 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpf6e1nweg
+Jul 20 03:42:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:42:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpiyd1h7h7
+Jul 20 03:42:46 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpmutjo1ki
+Jul 20 03:42:49 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmp_2ndfqrq
+Jul 20 03:42:55 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:303 Syncing S3 config and credentials
+Jul 20 03:42:55 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-secret --model testing 22603bf4 --file /root/snap/juju/common/tmporwle8nm
+Jul 20 03:42:55 [32mINFO    [0m jubilant:_juju.py:308 cli: juju grant-secret --model testing secret:6217mht4h48adoav5qng s3-integrator
+Jul 20 03:42:55 [32mINFO    [0m jubilant:_juju.py:308 cli: juju config --model testing s3-integrator credentials=secret:6217mht4h48adoav5qng endpoint=https://storage.googleapis.com bucket=data-charms-testing path=mysql/6e8a0620-5983-4010-8e6e-a28b308adf7b region=us-east-1
+Jul 20 03:43:00 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:312 Restoring backup_id='2026-07-20T03:32:15Z'
+Jul 20 03:43:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 restore --params /root/snap/juju/common/tmpgeuxduog
+Jul 20 03:43:45 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:316 Ensuring that the pre-backup inserted value exists in database, while post-backup inserted value does not
+Jul 20 03:43:45 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:330 Inserting value after restore
+Jul 20 03:43:45 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:46 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:46 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp_ck4zwsx
+Jul 20 03:43:50 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmp6l8225d7
+Jul 20 03:43:51 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:52 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:52 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:52 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmp7nh9z3sm
+Jul 20 03:43:54 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Jul 20 03:43:55 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:335 Ensuring that pre-backup and post-restore values exist in the database
+Jul 20 03:43:55 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:59 Cleaning backups from cloud buckets
