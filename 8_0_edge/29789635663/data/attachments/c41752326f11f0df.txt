@@ -1,0 +1,16 @@
+Jul 21 00:49:32 [32mINFO    [0m root:test_async_replication.py:255 Freezing mysqld on primary cluster units
+Jul 21 00:49:32 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Jul 21 00:49:33 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing-other --format json
+Jul 21 00:49:33 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/0 'pkill -x mysqld --signal SIGSTOP'
+Jul 21 00:49:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/1 'pkill -x mysqld --signal SIGSTOP'
+Jul 21 00:49:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/2 'pkill -x mysqld --signal SIGSTOP'
+Jul 21 00:49:34 [32mINFO    [0m root:test_async_replication.py:267 Promoting standby cluster to primary with force flag
+Jul 21 00:49:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Jul 21 00:49:35 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Jul 21 00:49:35 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json db1/2 promote-to-primary --wait 300s --params /root/snap/juju/common/tmptncsc8zt
+Jul 21 00:53:56 [32mINFO    [0m root:test_async_replication.py:278 Checking clusters statuses
+Jul 21 00:53:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json db1/2 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpg805icjt
+Jul 21 00:54:30 [32mINFO    [0m root:test_async_replication.py:293 Unfreezing mysqld on primary cluster units
+Jul 21 00:54:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/0 'pkill -x mysqld --signal SIGCONT'
+Jul 21 00:54:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/1 'pkill -x mysqld --signal SIGCONT'
+Jul 21 00:54:31 [32mINFO    [0m jubilant:_juju.py:316 cli: juju ssh --model testing-other --container mysql db2/2 'pkill -x mysqld --signal SIGCONT'
