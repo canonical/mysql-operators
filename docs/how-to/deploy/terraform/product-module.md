@@ -28,19 +28,19 @@ juju add-model my-model
 juju show-model my-model | yq '."my-model"."model-uuid"'
 ```
 
-Clone the MySQL bundle repository and navigate to the terraform module:
+Clone the [mysql-plans](https://github.com/canonical/mysql-plans) repository and navigate to the terraform module:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
-    git clone https://github.com/canonical/mysql-bundle.git
-    cd terraform
+    git clone https://github.com/canonical/mysql-plans.git
+    cd machines/terraform
 ```
 
 ```{tab-item} K8s
 :sync: k8s
-    git clone https://github.com/canonical/mysql-k8s-bundle.git
-    cd terraform
+    git clone https://github.com/canonical/mysql-plans.git
+    cd kubernetes/terraform
 ```
 ````
 
@@ -62,7 +62,8 @@ terraform plan -var 'model=<model-uuid>'
 
 ### Default charms
 
-The default MySQL product module deploys MySQL Server, MySQL Router and S3 Integrator charms.
+The default MySQL product module deploys MySQL Server, MySQL Router and S3 Integrator charms. 
+Optionally, the MySQL Router charm deployment can be omitted, by setting `-var 'router_enabled=false'`.
 In order to deploy those resources:
 
 ```shell
