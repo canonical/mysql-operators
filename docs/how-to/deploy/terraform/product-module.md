@@ -62,8 +62,7 @@ terraform plan -var 'model=<model-uuid>'
 
 ### Default charms
 
-The default MySQL product module deploys MySQL Server, MySQL Router and S3 Integrator charms. 
-Optionally, the MySQL Router charm deployment can be omitted, by setting `-var 'router_enabled=false'`.
+The default MySQL product module deploys MySQL Server, MySQL Router and S3 Integrator charms.
 In order to deploy those resources:
 
 ```shell
