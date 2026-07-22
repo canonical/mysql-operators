@@ -34,19 +34,21 @@ juju add-model my-model
 juju show-model my-model | yq '."my-model"."model-uuid"'
 ```
 
-Clone the MySQL bundle repository and navigate to the terraform module:
+Clone the [mysql-plans](https://github.com/canonical/mysql-plans) repository and navigate to the terraform module:
 
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
-    git clone https://github.com/canonical/mysql-bundle.git
-    cd terraform
+    git clone https://github.com/canonical/mysql-plans.git
+    git checkout 8.0/edge
+    cd machines/terraform
 ```
 
 ```{tab-item} K8s
 :sync: k8s
-    git clone https://github.com/canonical/mysql-k8s-bundle.git
-    cd terraform
+    git clone https://github.com/canonical/mysql-plans.git
+    git checkout 8.0/edge
+    cd kubernetes/terraform
 ```
 ````
 
