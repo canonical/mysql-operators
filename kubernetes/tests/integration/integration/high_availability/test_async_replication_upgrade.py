@@ -19,6 +19,7 @@ from ...helpers_ha import (
     get_mysql_variable_value,
     load_mysql_test_data,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 MYSQL_APP_1 = "db1"
@@ -32,26 +33,25 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
     """Simple test to ensure that the MySQL application charms get deployed."""
     configuration = {"profile": "testing"}
     constraints = {"arch": architecture.architecture}
-    resources = {"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]}
 
     logging.info("Deploying mysql clusters")
     juju.deploy(
-        charm=charm,
+        charm="mysql-k8s",
         app=MYSQL_APP_1,
         base="ubuntu@26.04",
+        channel="8.4/edge",
         config={**configuration, "cluster-name": "lima"},
         constraints=constraints,
-        resources=resources,
         num_units=1,
         trust=True,
     )
     juju.deploy(
-        charm=charm,
+        charm="mysql-k8s",
         app=MYSQL_APP_2,
         base="ubuntu@26.04",
+        channel="8.4/edge",
         config={**configuration, "cluster-name": "cuzco"},
         constraints=constraints,
-        resources=resources,
         num_units=1,
         trust=True,
     )
@@ -190,10 +190,6 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, app_name)
 
-    app_leader = get_app_leader(juju, app_name)
-    app_units = get_app_units(juju, app_name)
-    app_units.sort()
-
     logging.info("Refresh the charm")
     juju.refresh(
         app=app_name,
@@ -201,37 +197,25 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
     )
 
+    unit = f"{app_name}/0"
     logging.info("Wait for refresh to start")
     juju.wait(
-        ready=wait_for_apps_status(jubilant.any_maintenance, app_name),
+        ready=wait_for_unit_status(app_name, unit, "maintenance"),
         timeout=10 * MINUTE_SECS,
     )
 
     app_status = juju.status().apps[app_name]
-    upgrade_unit_status = app_status.units[app_units[-1]]
+    upgrade_unit_status = app_status.units[unit]
     upgrade_unit_message = upgrade_unit_status.workload_status.message
 
     if "Refresh incompatible" in upgrade_unit_message:
         logging.info("Application refresh is blocked due to incompatibility")
         juju.run(
-            unit=app_units[-1],
+            unit=unit,
             action="force-refresh-start",
             params={"check-compatibility": False},
             wait=5 * MINUTE_SECS,
         )
-
-    logging.info("Wait for refresh to finish on first unit")
-    juju.wait(
-        ready=jubilant.all_agents_idle,
-        timeout=5 * MINUTE_SECS,
-    )
-
-    logging.info("Resume refresh")
-    juju.run(
-        unit=app_leader,
-        action="resume-refresh",
-        wait=5 * MINUTE_SECS,
-    )
 
     logging.info("Wait for refresh to complete")
     juju.wait(
