@@ -203,7 +203,7 @@ def run_refresh_from_edge(juju: Juju, app_name: str, charm: str) -> None:
 
     logging.info("Wait for refresh to start")
     juju.wait(
-        ready=wait_for_apps_status(jubilant.any_blocked, app_name),
+        ready=wait_for_apps_status(jubilant.any_maintenance, app_name),
         timeout=10 * MINUTE_SECS,
     )
 
