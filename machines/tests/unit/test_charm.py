@@ -176,6 +176,29 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
 
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
+    @patch("charm.instance_hostname", return_value="test-hostname")
+    @patch("charm.LogRotationSetup.setup")
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    def test_workload_initialise_connects_exporter_when_bootstrapping(
+        self,
+        _mysql,
+        _unit_initialized,
+        _log_rotation_setup,
+        _instance_hostname,
+        _update_etc_hosts,
+    ):
+        mysql = _mysql.return_value
+        mysql.get_pid_of_port_3306.side_effect = [1111, 2222]
+        mysql.get_mysql_version.return_value = "8.0.36"
+
+        self.charm.workload_initialise()
+
+        mysql.initialise_mysqld.assert_called_once()
+        mysql.set_operator_user_and_start_mysqld.assert_called_once()
+        mysql.connect_mysql_exporter.assert_called_once()
+
     @patch("charm.MySQLOperatorCharm._can_start", return_value=True)
     @patch("charm.MySQLOperatorCharm.create_cluster")
     @patch("charm.MySQLOperatorCharm.workload_initialise")
