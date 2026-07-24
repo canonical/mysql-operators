@@ -22,6 +22,30 @@ on:
       TICSAUTHTOKEN:
         required: true
 
+  #TODO remove before merge
+  workflow_dispatch:
+    inputs:
+      operator:
+        description: Operator directory to scan (kubernetes or machines)
+        required: true
+        type: choice
+        options:
+          - kubernetes
+          - machines
+      ref:
+        description: Branch ref to checkout (e.g. 8.0/edge)
+        required: true
+        type: string
+      project:
+        description: TICS project name (e.g. mysql-k8s-8.0)
+        required: true
+        type: choice
+        options:
+          - mysql-k8s-8.0
+          - mysql-vm-8.0
+          - mysql-k8s-8.4
+          - mysql-vm-8.4
+
 jobs:
   TICS:
     runs-on: [self-hosted, linux, amd64, tiobe, noble]
