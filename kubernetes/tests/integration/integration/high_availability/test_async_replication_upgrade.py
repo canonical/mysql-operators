@@ -83,6 +83,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
         config={**configuration, "cluster-name": "lima"},
         constraints=constraints,
         resources=resources,
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=3,
         trust=True,
     )
@@ -94,6 +95,7 @@ def test_build_and_deploy(first_model: str, second_model: str, charm: str) -> No
         config={**configuration, "cluster-name": "cuzco"},
         constraints=constraints,
         resources=resources,
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=3,
         trust=True,
     )
