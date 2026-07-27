@@ -13,10 +13,10 @@ if is_wrong_architecture() and __name__ == "__main__":
 import logging
 import random
 import socket
-import subprocess
 from time import sleep
 
-import ops
+from charmlibs.pathops import LocalPath
+from charmlibs.rollingops import OperationResult, RollingOpsManager
 from charms.data_platform_libs.v0.s3 import S3Requirer
 from charms.data_platform_libs.v1.data_models import TypedCharmBase
 from charms.grafana_agent.v0.cos_agent import COSAgentProvider, ProtocolNotFoundError
@@ -49,11 +49,9 @@ from charms.mysql.v0.mysql import (
     MySQLUnableToGetMemberStateError,
 )
 from charms.mysql.v0.tls import MySQLTLS
-from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops import (
     ActiveStatus,
     BlockedStatus,
-    EventBase,
     InstallEvent,
     MaintenanceStatus,
     RelationChangedEvent,
@@ -176,7 +174,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             substrate="vm",
         )
 
-        self.restart = RollingOpsManager(self, relation="restart", callback=self._restart)
+        self.restart = RollingOpsManager(
+            charm=self,
+            base_dir=LocalPath("/var/lib/juju/rollingops"),
+            peer_relation_name="restart",
+            callback_targets={"restart": self._restart},
+        )
 
         self.hostname_observer = IPAddressObserver(self)
         self.hostname_manager = IPAddressManager(self)
@@ -283,7 +286,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 else:
                     self._mysql.uninstall_plugins(["audit_log"])
 
-            self.on[f"{self.restart.name}"].acquire_lock.emit()
+            self.restart.request_async_lock(callback_id="restart")
 
         elif dynamic_config := self.mysql_config.filter_static_keys(changed_config):
             # if only dynamic config changed, apply it
@@ -352,12 +355,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-            for port in ["3306", "33060"]:
-                try:
-                    # TODO use set_ports instead
-                    subprocess.check_call(["open-port", f"{port}/tcp"])  # noqa: S603 S607
-                except subprocess.CalledProcessError:
-                    logger.exception(f"failed to open port {port}")
+            self.unit.set_ports(3306, 33060)
 
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer relation event")
@@ -578,10 +576,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.debug("skip status update while upgrading")
             return
 
-        # unset restart control flag
-        if self.restart_peers:
-            self.restart_peers.data[self.unit].pop("state", None)
-
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
             return
@@ -688,11 +682,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def unit_fqdn(self) -> str:
         """Returns the unit's FQDN."""
         return socket.getfqdn()
-
-    @property
-    def restart_peers(self) -> ops.Relation | None:
-        """Retrieve the peer relation."""
-        return self.model.get_relation("restart")
 
     def is_unit_busy(self) -> bool:
         """Returns whether the unit is in blocked state and should not run any operations."""
@@ -1036,12 +1025,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
-    def _restart(self, _: EventBase) -> None:
+    def _restart(self) -> OperationResult:
         """Restart the service."""
         if not self.unit_initialized():
             logger.debug("Restarting standalone mysqld")
             self._mysql.restart_mysqld()
-            return
+            return OperationResult.RELEASE
 
         if self.app.planned_units() > 1 and self.is_unit_primary():
             try:
@@ -1059,6 +1048,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.recover_unit_after_restart()
 
         self._on_update_status(None)
+        return OperationResult.RELEASE
 
 
 if __name__ == "__main__":
