@@ -29,12 +29,12 @@ class TestCharm(unittest.TestCase):
         self.harness.begin()
         self.charm = self.harness.charm
         self.peer_relation_id = self.harness.add_relation("database-peers", "database-peers")
-        upgrade_relation_id = self.harness.add_relation("upgrade", "upgrade")
+        self.restart_relation_id = self.harness.add_relation("restart", "restart")
+        self.upgrade_relation_id = self.harness.add_relation("upgrade", "upgrade")
         self.harness.update_relation_data(
-            upgrade_relation_id, self.charm.unit.name, {"state": "idle"}
+            self.upgrade_relation_id, self.charm.unit.name, {"state": "idle"}
         )
         self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
-        self.harness.add_relation("restart", "restart")
 
     @patch("upgrade.MySQLVMUpgrade.cluster_state", return_value="idle")
     @patch("socket.getfqdn", return_value="test-hostname")

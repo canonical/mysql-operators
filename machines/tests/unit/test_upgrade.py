@@ -59,7 +59,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertTrue(len(us) == 3)
         self.assertEqual(us, [0, 1, 2])
 
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="10.0.1.1")
     @patch("upgrade.MySQLVMUpgrade._pre_upgrade_prepare")
     @patch("mysql_vm_helpers.MySQL.get_cluster_status")
@@ -117,7 +117,7 @@ class TestUpgrade(unittest.TestCase):
         ]
         mock_logging.assert_has_calls(calls)
 
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="10.0.1.1")
     @patch("mysql_vm_helpers.MySQL.set_dynamic_variable")
     @patch("mysql_vm_helpers.MySQL.get_primary_label", return_value="mysql-1")
@@ -210,7 +210,7 @@ class TestUpgrade(unittest.TestCase):
             self.upgrade_relation_id, "mysql/0", {"state": "upgrading"}
         )
 
-    @patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+    @patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
     @patch("upgrade.MySQLVMUpgrade._prepare_upgrade_from_legacy")
     def test_upgrade_charm_legacy(self, mock_prepare_upgrade_from_legacy, _):
         self.harness.update_relation_data(self.upgrade_relation_id, "mysql/0", {"state": ""})
