@@ -58,7 +58,10 @@ def test_get_cluster_status_action_success(harness):
         harness.charm._get_cluster_status(event)
 
         # Expect set_results called once with {'success': True, 'status': sample}
-        event.set_results.assert_called_once_with({"success": True, "status": json.dumps(sample)})
+        event.set_results.assert_called_once_with({
+            "success": True,
+            "status": json.dumps(sample, indent=2),
+        })
         event.fail.assert_not_called()
 
 

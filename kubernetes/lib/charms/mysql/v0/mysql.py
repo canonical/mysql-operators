@@ -583,7 +583,7 @@ class MySQLCharmBase(CharmBase, ABC):
 
             event.set_results({
                 "success": True,
-                "status": json.dumps(status),
+                "status": json.dumps(status, indent=2),
             })
         except Exception:
             logger.exception("Error while reading cluster status")

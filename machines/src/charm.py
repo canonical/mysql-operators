@@ -13,7 +13,6 @@ if is_wrong_architecture() and __name__ == "__main__":
 import logging
 import random
 import socket
-import subprocess
 from time import sleep
 
 import charm_refresh
@@ -225,12 +224,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def _on_install(self, _: InstallEvent) -> None:
         """Handle the install event."""
         self.set_unit_status(MaintenanceStatus("Installing MySQL"))
-
-        # Create /sbin symlink for a range of binaries.
-        # This symlink used to be present in Ubuntu 24.04,
-        # but it is missing on Ubuntu 26.04.
-        subprocess.run(["/usr/bin/sudo", "rm", "-rf", "/sbin"], check=True)
-        subprocess.run(["/usr/bin/sudo", "ln", "-s", "/usr/sbin", "/sbin"], check=True)
 
         if not is_volume_mounted():
             # https://github.com/juju/juju/issues/21135
