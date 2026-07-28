@@ -220,6 +220,7 @@ class MySQLVMUpgrade(DataUpgrade):
             self.charm._mysql.configure_mysql_router_roles()
             self.charm._mysql.configure_mysql_system_roles()
             self.charm._mysql.configure_mysql_system_users()
+            self.charm._mysql.connect_mysql_exporter()
 
             logger.debug("Upgraded unit is healthy. Set upgrade state to `completed`")
             self.set_unit_completed()

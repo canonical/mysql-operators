@@ -51,7 +51,7 @@ from charms.mysql.v0.mysql import (
 from charms.mysql.v0.tls import MySQLTLS
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
-from ops import EventBase, ModelError, RelationBrokenEvent, RelationCreatedEvent
+from ops import EventBase, ModelError
 from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
 from ops.model import (
     ActiveStatus,
@@ -72,7 +72,6 @@ from constants import (
     CLUSTER_ADMIN_PASSWORD_KEY,
     CLUSTER_ADMIN_USERNAME,
     CONTAINER_NAME,
-    COS_AGENT_RELATION_NAME,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
@@ -93,7 +92,7 @@ from constants import (
     SERVER_CONFIG_PASSWORD_KEY,
     SERVER_CONFIG_USERNAME,
 )
-from k8s_helpers import KubernetesHelpers
+from k8s_helpers import KubernetesClientError, KubernetesHelpers
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 from relations.mysql import MySQLRelation
 from relations.mysql_provider import MySQLProvider
@@ -119,6 +118,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Lifecycle events
         self.framework.observe(self.on.mysql_pebble_ready, self._on_mysql_pebble_ready)
         self.framework.observe(self.on.leader_elected, self._on_leader_elected)
+        self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
         self.framework.observe(
@@ -128,13 +128,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on[PEER].relation_joined, self._on_peer_relation_joined)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
         self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
-
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_created, self._reconcile_mysqld_exporter
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_broken, self._reconcile_mysqld_exporter
-        )
 
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
@@ -240,7 +233,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     "override": "replace",
                     "summary": "mysqld exporter",
                     "command": "/start-mysqld-exporter.sh",
-                    "startup": "enabled" if self.has_cos_relation else "disabled",
+                    "startup": "enabled",
                     "user": MYSQL_SYSTEM_USER,
                     "group": MYSQL_SYSTEM_GROUP,
                     "environment": {
@@ -373,6 +366,41 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.exception("Failed to initialize primary")
             raise
 
+    def _on_start(self, event: EventBase) -> None:
+        """Handle the start event.
+
+        Create the k8s endpoint services as early as possible in the charm lifecycle
+        so that k8s API issues (e.g. a missing `juju trust`) surface before the
+        workload is initialized.
+
+        If the app is not trusted, it enters blocked state with appropriate message
+        and the event is deferred so that Juju retries the event later
+        """
+        if not self.unit.is_leader():
+            return
+        if not self._create_endpoint_services():
+            event.defer()
+
+    def _create_endpoint_services(self) -> bool:
+        """Create the k8s endpoint services (primary & replicas) for the application.
+
+        Only the k8s `create` call is performed here; pod labeling and readiness
+        checks live in the database-requested relation handler.
+
+        Returns:
+            True if the services were created (or already exist), False if k8s API
+            access was denied (e.g. missing `juju trust`).
+        """
+        try:
+            self.k8s_helpers.create_endpoint_services(["primary", "replicas"])
+            return True
+        except KubernetesClientError:
+            logger.exception("Failed to create k8s services for endpoints")
+            self.unit.status = BlockedStatus(
+                "Permission to create k8s services denied. Run `juju trust mysql-k8s --scope=cluster`"
+            )
+            return False
+
     def _get_primary_from_online_peer(self) -> str | None:
         """Get the primary address from an online peer."""
         for unit in self.peers.units:
@@ -500,14 +528,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             container._pebble.replan_services(timeout=0)
             self._mysql.wait_until_mysql_connection()
 
-            if (
-                not self.has_cos_relation
-                and container.get_services(MYSQLD_EXPORTER_SERVICE)[
-                    MYSQLD_EXPORTER_SERVICE
-                ].is_running()
-            ):
-                container.stop(MYSQLD_EXPORTER_SERVICE)
-
     def recover_unit_after_restart(self) -> None:
         """Wait for unit recovery/rejoin after restart."""
         recovery_attempts = 30
@@ -561,36 +581,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     # =========================================================================
     # Charm event handlers
     # =========================================================================
-
-    def _reconcile_mysqld_exporter(
-        self, event: RelationCreatedEvent | RelationBrokenEvent
-    ) -> None:
-        """Handle a COS relation created or broken event."""
-        if not self._is_peer_data_set:
-            logger.debug("Unit not yet ready to reconcile mysqld exporter. Waiting...")
-            return
-
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not container.can_connect():
-            # reconciliation is done on pebble ready
-            logger.debug("Skip reconcile mysqld exporter: container not ready")
-            return
-
-        if not container.pebble.get_plan():
-            # reconciliation is done on pebble ready
-            logger.debug("Skip reconcile mysqld exporter: empty pebble layer")
-            return
-
-        if not self._mysql.is_data_dir_initialised():
-            logger.debug("Skip reconcile mysqld exporter: mysql not initialised")
-            return
-
-        if self.is_new_unit:
-            # scaling up from zero, treatment done on pebble-ready
-            return
-
-        self.current_event = event
-        self._reconcile_pebble_layer(container)
 
     def _on_peer_relation_joined(self, _) -> None:
         """Handle the peer relation joined event."""
@@ -748,14 +738,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self._mysql.reset_data_dir()
             raise
 
-        if self.has_cos_relation:
-            if container.get_services(MYSQLD_EXPORTER_SERVICE)[
-                MYSQLD_EXPORTER_SERVICE
-            ].is_running():
-                # Restart exporter service after configuration
-                container.restart(MYSQLD_EXPORTER_SERVICE)
-            else:
-                container.start(MYSQLD_EXPORTER_SERVICE)
+        if container.get_services(MYSQLD_EXPORTER_SERVICE)[MYSQLD_EXPORTER_SERVICE].is_running():
+            # Restart exporter service after configuration
+            container.restart(MYSQLD_EXPORTER_SERVICE)
+        else:
+            container.start(MYSQLD_EXPORTER_SERVICE)
 
         # Set workload version
         if workload_version := self._mysql.get_mysql_version():
@@ -789,8 +776,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # task delegated to upgrade code
             return
 
+        try:
+            self._write_mysqld_configuration()
+        except KubernetesClientError as e:
+            # KubernetesClientError: without `juju trust` the k8s API denies reads
+            # Catch + defer so Juju can re-emit them after `juju trust` is applied
+            logger.exception("Failed to write mysqld configuration: %s", e)
+            self.unit.status = BlockedStatus(
+                "Permission to access k8s API denied. Run `juju trust mysql-k8s --scope=cluster`"
+            )
+            event.defer()
+            return
+
         container = event.workload
-        self._write_mysqld_configuration()
 
         self.log_rotate_setup.setup()
 

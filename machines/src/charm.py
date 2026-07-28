@@ -56,9 +56,7 @@ from ops import (
     EventBase,
     InstallEvent,
     MaintenanceStatus,
-    RelationBrokenEvent,
     RelationChangedEvent,
-    RelationCreatedEvent,
     RelationDepartedEvent,
     StartEvent,
     Unit,
@@ -83,7 +81,6 @@ from constants import (
     CHARMED_MYSQLD_SERVICE,
     CLUSTER_ADMIN_PASSWORD_KEY,
     CLUSTER_ADMIN_USERNAME,
-    COS_AGENT_RELATION_NAME,
     DB_RELATION_NAME,
     GR_MAX_MEMBERS,
     MONITORING_PASSWORD_KEY,
@@ -168,12 +165,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logs_rules_dir="./src/alert_rules/loki",
             log_slots=[f"{CHARMED_MYSQL_SNAP_NAME}:logs"],
             tracing_protocols=[TRACING_PROTOCOL],
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_created, self._on_cos_agent_relation_created
-        )
-        self.framework.observe(
-            self.on[COS_AGENT_RELATION_NAME].relation_broken, self._on_cos_agent_relation_broken
         )
 
         self.s3_integrator = S3Requirer(self, S3_INTEGRATOR_RELATION_NAME)
@@ -664,28 +655,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # Set active status when primary is known
             self.app.status = ActiveStatus()
 
-    def _on_cos_agent_relation_created(self, event: RelationCreatedEvent) -> None:
-        """Handle the cos_agent relation created event.
-
-        Enable the mysqld-exporter snap service.
-        """
-        if not self._is_peer_data_set:
-            logger.debug("Charm not yet set up. Deferring")
-            event.defer()
-            return
-
-        self._mysql.connect_mysql_exporter()
-
-    def _on_cos_agent_relation_broken(self, _: RelationBrokenEvent) -> None:
-        """Handle the cos_agent relation broken event.
-
-        Disable the mysqld-exporter snap service.
-        """
-        if not self._is_peer_data_set:
-            return
-
-        self._mysql.stop_mysql_exporter()
-
     # =======================
     #  Helpers
     # =======================
@@ -854,6 +823,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     raise MySQLDNotRestartedError("mysqld not yet shutdown")
 
         self._mysql.wait_until_mysql_connection()
+        self._mysql.connect_mysql_exporter()
 
         self.unit_peer_data["instance-hostname"] = f"{instance_hostname()}:3306"
         if workload_version := self._mysql.get_mysql_version():

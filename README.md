@@ -66,7 +66,7 @@ juju relate mysql:database mysql-test-app:database
 
 ## Contributing
 
-To build the charms:
+To build the charms, use [charmcraftlocal](https://github.com/canonical/charmcraftlocal#charmcraftlocal):
 
 ```shell
 (cd kubernetes && charmcraft pack)

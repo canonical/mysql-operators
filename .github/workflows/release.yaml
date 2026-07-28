@@ -20,11 +20,10 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v49.0.1
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v50
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
-      actions: read
       contents: read
 
   integration-test:
@@ -42,8 +41,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
   release-test:
     name: Release tests
@@ -60,8 +58,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
   release:
     name: Release charm | ${{ matrix.path }}
@@ -75,7 +72,7 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v49.0.1
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v50
     with:
       track: '8.0'
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
@@ -83,5 +80,4 @@ jobs:
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
-      actions: read    # Needed for GitHub API call to get workflow version
       contents: write  # Needed to create git tags
