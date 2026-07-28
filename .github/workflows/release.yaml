@@ -24,7 +24,6 @@ jobs:
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
-      actions: read
       contents: read
 
   integration-test:
@@ -42,8 +41,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
   release-test:
     name: Release tests
@@ -60,8 +58,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
   release:
     name: Release charm | ${{ matrix.path }}
@@ -83,5 +80,4 @@ jobs:
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
-      actions: read    # Needed for GitHub API call to get workflow version
       contents: write  # Needed to create git tags
