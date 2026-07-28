@@ -18,7 +18,6 @@ jobs:
     with:
       track: '8.4'
     permissions:
-      actions: read
       contents: write  # Needed to create git tag
 
   build:
@@ -35,7 +34,6 @@ jobs:
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
-      actions: read
       contents: read
 
   integration-test:
@@ -53,8 +51,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
 # TODO: Uncomment when MySQL 8.4/stable channel has releases
 #  release-test:
@@ -94,5 +91,4 @@ jobs:
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
-      actions: read    # Needed for GitHub API call to get workflow version
       contents: write  # Needed to create git tags
