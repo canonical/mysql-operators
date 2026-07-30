@@ -3,10 +3,40 @@
 
 """A collection of utility functions that are used in the charm."""
 
+import os
 import re
 import secrets
 import socket
 import string
+
+
+def generate_pebble_layer_env() -> dict[str, str]:
+    """Generates the pebble layer environment.
+
+    When any HTTP or HTTPS proxy is configured, `.svc.cluster.local` is
+    always included in NO_PROXY so that internal Kubernetes pod-to-pod
+    traffic is never routed through a corporate proxy.
+    """
+    external_http_proxy = os.getenv("JUJU_CHARM_HTTP_PROXY", "")
+    external_https_proxy = os.getenv("JUJU_CHARM_HTTPS_PROXY", "")
+    internal_proxy = os.getenv("JUJU_CHARM_NO_PROXY", "")
+
+    internal_domain = ".svc.cluster.local"
+    environment = {}
+
+    if external_http_proxy:
+        environment["HTTP_PROXY"] = external_http_proxy
+    if external_https_proxy:
+        environment["HTTPS_PROXY"] = external_https_proxy
+    if internal_proxy:
+        environment["NO_PROXY"] = internal_proxy
+
+    if external_http_proxy or external_https_proxy:
+        internal_proxy_entries = {entry.strip() for entry in internal_proxy.split(",")}
+        internal_proxy_entries.add(internal_domain)
+        environment["NO_PROXY"] = ",".join(internal_proxy_entries)
+
+    return environment
 
 
 def generate_random_password(length: int) -> str:
