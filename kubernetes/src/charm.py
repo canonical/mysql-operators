@@ -605,6 +605,35 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             except RetryError:
                 raise
 
+    def _recover_unit_after_refresh(self) -> None:
+        """Rejoin the cluster and reconcile the unit status after a refresh restart.
+
+        `_on_update_status` returns early while a refresh is in progress, so the
+        refreshed unit has to reconcile its own status here. Without this it stays
+        in `MaintenanceStatus("Starting mysqld")` until the refresh completes — and
+        the refresh only completes once the unit reports healthy.
+        """
+        self.set_unit_status(MaintenanceStatus("Recovering unit after refresh"))
+        try:
+            self.recover_unit_after_restart()
+        except (RetryError, MySQLRebootFromCompleteOutageError):
+            logger.exception("Failed to rejoin the cluster after refresh")
+            self.set_unit_status(BlockedStatus("Failed to rejoin the cluster after refresh"))
+            return
+
+        try:
+            role = self._mysql.get_member_role()
+            state = self._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Failed to read member state after refresh")
+            self.set_unit_status(MaintenanceStatus("Unable to get member state"))
+            return
+
+        logger.info(f"Unit workload member-state is {state} with member-role {role}")
+        self.unit_peer_data["member-role"] = role
+        self.unit_peer_data["member-state"] = state
+        self.set_unit_status(self.build_unit_workload_status())
+
     def _restart_group_replication(self) -> OperationResult:
         """Restarts Group replication on the instance."""
         relation = self.model.get_relation("rolling-ops")
@@ -904,25 +933,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.log_rotate_setup.setup()
 
         if self._mysql.is_data_dir_initialised():
-            # Data directory is already initialised, skip configuration
-            self.set_unit_status(MaintenanceStatus("Starting mysqld"))
-            logger.info("Data directory is already initialised, skipping configuration")
-            self._reconcile_pebble_layer(container)
-            if self.is_new_unit:
-                # when unit is new and has data, it means the app is scaling out
-                # from zero units
-                logger.info("Scaling out from zero units")
-                if self.unit.is_leader():
-                    # create the cluster due it being dissolved on scale-down
-                    self.create_cluster()
-                    self._on_update_status(None)
-                else:
-                    # Non-leader units try to join cluster
-                    self.set_unit_status(WaitingStatus("Waiting for instance to join the cluster"))
-                    self.unit_peer_data.update({
-                        "member-role": InstanceRole.SECONDARY.value,
-                        "member-state": "waiting",
-                    })
+            self._start_initialised_mysqld(container)
             return
 
         self.set_unit_status(MaintenanceStatus("Initialising mysqld"))
@@ -946,6 +957,30 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         self._create_cluster()
+
+    def _start_initialised_mysqld(self, container: Container) -> None:
+        """Start mysqld on a unit whose data directory is already initialised."""
+        self.set_unit_status(MaintenanceStatus("Starting mysqld"))
+        logger.info("Data directory is already initialised, skipping configuration")
+        self._reconcile_pebble_layer(container)
+
+        if self.is_new_unit:
+            # when unit is new and has data, it means the app is scaling out
+            # from zero units
+            logger.info("Scaling out from zero units")
+            if self.unit.is_leader():
+                # create the cluster due it being dissolved on scale-down
+                self.create_cluster()
+                self._on_update_status(None)
+            else:
+                # Non-leader units try to join cluster
+                self.set_unit_status(WaitingStatus("Waiting for instance to join the cluster"))
+                self.unit_peer_data.update({
+                    "member-role": InstanceRole.SECONDARY.value,
+                    "member-state": "waiting",
+                })
+        elif self._refresh and self._refresh.in_progress:
+            self._recover_unit_after_refresh()
 
     def _handle_potential_cluster_crash_scenario(self, state: str) -> bool:  # noqa: C901
         """Handle potential full cluster crash scenarios.
