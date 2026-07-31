@@ -10,15 +10,21 @@ import typing
 import charm_refresh
 from charms.mysql.v0.mysql import (
     InstanceState,
+    MySQLRebootFromCompleteOutageError,
     MySQLRescanClusterError,
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
+    MySQLStartMySQLDError,
+    MySQLUnableToGetMemberStateError,
 )
 from ops import (
+    BlockedStatus,
     MaintenanceStatus,
 )
+from tenacity import RetryError
 
 from constants import PEER
+from mysql_vm_helpers import MySQL
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -116,5 +122,48 @@ class MachinesMySQLRefresh(charm_refresh.CharmSpecificMachines):
         # TODO: Future improvement
         # If snap refresh fails (i.e. same snap revision installed) after graceful shutdown, restart workload
 
-        self._charm.set_unit_status(MaintenanceStatus("refreshing the snap"))
-        self._charm.install_and_configure_mysql_dependencies(revision=snap_revision)
+        self._charm.set_unit_status(MaintenanceStatus("refreshing the snap"), refresh=refresh)
+        MySQL.install_and_configure_mysql_dependencies(revision=snap_revision)
+
+        self._post_snap_refresh(refresh)
+
+    def _post_snap_refresh(self, refresh: charm_refresh.Machines) -> None:
+        """Start mysqld, rejoin the cluster and reconcile the unit status.
+
+        Both `_on_update_status` and `_on_config_changed` bail out while a refresh is
+        in progress, so the refreshing unit has to bring its own workload back and
+        report its own status here. Without this, the unit stays in a maintenance
+        status forever: the refresh does not complete until the unit reports healthy.
+        """
+        charm = self._charm
+
+        charm.set_unit_status(MaintenanceStatus("starting mysqld"), refresh=refresh)
+        try:
+            charm._mysql.start_mysqld()
+        except MySQLStartMySQLDError:
+            logger.exception("Failed to start mysqld after refreshing the snap")
+            charm.set_unit_status(BlockedStatus("Failed to start mysqld"), refresh=refresh)
+            return
+
+        charm.set_unit_status(MaintenanceStatus("recovering unit after refresh"), refresh=refresh)
+        try:
+            charm.recover_unit_after_restart()
+        except (RetryError, MySQLRebootFromCompleteOutageError):
+            logger.exception("Failed to rejoin the cluster after refreshing the snap")
+            charm.set_unit_status(
+                BlockedStatus("Failed to rejoin the cluster after refresh"), refresh=refresh
+            )
+            return
+
+        try:
+            role = charm._mysql.get_member_role()
+            state = charm._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Failed to read member state after refreshing the snap")
+            charm.set_unit_status(MaintenanceStatus("Unable to get member state"), refresh=refresh)
+            return
+
+        logger.info(f"Unit workload member-state is {state} with member-role {role}")
+        charm.unit_peer_data["member-role"] = role
+        charm.unit_peer_data["member-state"] = state
+        charm.set_unit_status(charm.build_unit_workload_status(), refresh=refresh)

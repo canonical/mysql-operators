@@ -838,16 +838,27 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except KeyError:
             return ""
 
-    def set_unit_status(self, status: ops.StatusBase):
-        """Set unit status without overriding higher priority refresh status."""
-        if self._refresh is None:
+    def set_unit_status(
+        self, status: ops.StatusBase, /, *, refresh: charm_refresh.Machines | None = None
+    ):
+        """Set unit status without overriding higher priority refresh status.
+
+        `refresh` must be passed explicitly by callers that run while
+        `charm_refresh.Machines()` is still being constructed (e.g.
+        `MachinesMySQLRefresh.refresh_snap`), since `self._refresh` is not
+        assigned until that constructor returns.
+        """
+        if refresh is None:
+            refresh = getattr(self, "_refresh", None)
+
+        if refresh is None:
             self.unit.status = status
             return
 
-        if self._refresh.unit_status_higher_priority:
+        if refresh.unit_status_higher_priority:
             return
 
-        refresh_status = self._refresh.unit_status_lower_priority()
+        refresh_status = refresh.unit_status_lower_priority()
         if refresh_status and isinstance(status, ActiveStatus):
             status = refresh_status
 
