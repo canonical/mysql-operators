@@ -55,6 +55,7 @@ class RotateMySQLLogsObserver(Object):
             logger.warning("Failed to rotate MySQL logs")
             return
 
-        self.charm._mysql.flush_mysql_logs(list(LogType))
+        rotate_logs = [LogType.ERROR, LogType.SLOW, LogType.GENERAL]
+        self.charm._mysql.flush_mysql_logs(rotate_logs)
         if self.charm.config.plugin_audit_enabled:
             self.charm._mysql.flush_mysql_audit_log()

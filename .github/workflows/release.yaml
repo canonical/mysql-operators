@@ -14,11 +14,10 @@ on:
 jobs:
   tag:
     name: Create charm refresh tag
-    uses: canonical/data-platform-workflows/.github/workflows/tag_charm_edge.yaml@v49
+    uses: canonical/data-platform-workflows/.github/workflows/tag_charm_edge.yaml@v50
     with:
       track: '8.4'
     permissions:
-      actions: read
       contents: write  # Needed to create git tag
 
   build:
@@ -31,11 +30,10 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v49
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v50
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
-      actions: read
       contents: read
 
   integration-test:
@@ -53,8 +51,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
-    permissions:
-      actions: read
+    permissions: {}
 
 # TODO: Uncomment when MySQL 8.4/stable channel has releases
 #  release-test:
@@ -86,7 +83,7 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v49
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v50
     with:
       track: ${{ needs.tag.outputs.track }}
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
@@ -94,5 +91,4 @@ jobs:
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
-      actions: read    # Needed for GitHub API call to get workflow version
       contents: write  # Needed to create git tags
