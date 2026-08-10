@@ -20,8 +20,7 @@ def dispatch(run_command, unit, charm_directory):
 def main():
     """Main watch and dispatch loop.
 
-    Determine the host IP address every 30 seconds, and dispatch and event if it
-    changes.
+    Determine the host IP address every 30 seconds, and dispatch an event if it changes.
     """
     run_command, unit, charm_directory = sys.argv[1:]
 
