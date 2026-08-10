@@ -7,7 +7,13 @@ from unittest.mock import patch
 
 from parameterized import parameterized
 
-from utils import _password_meets_rules, any_memory_to_bytes, generate_random_password, get_k8s_fqdn, split_mem
+from utils import (
+    _password_meets_rules,
+    any_memory_to_bytes,
+    generate_random_password,
+    get_k8s_fqdn,
+    split_mem,
+)
 
 
 class TestUtils(unittest.TestCase):

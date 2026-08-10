@@ -9,6 +9,7 @@ import secrets
 import socket
 import string
 
+
 def generate_pebble_layer_env() -> dict[str, str]:
     """Generates the pebble layer environment.
 
@@ -36,6 +37,7 @@ def generate_pebble_layer_env() -> dict[str, str]:
         environment["NO_PROXY"] = ",".join(internal_proxy_entries)
 
     return environment
+
 
 def _password_meets_rules(password: str) -> bool:
     """Check that a password meets MySQL password validation rules.
