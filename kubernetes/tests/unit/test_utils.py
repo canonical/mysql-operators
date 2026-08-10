@@ -5,7 +5,9 @@ import socket
 import unittest
 from unittest.mock import patch
 
-from utils import any_memory_to_bytes, generate_random_password, get_k8s_fqdn, split_mem
+from parameterized import parameterized
+
+from utils import _password_meets_rules, any_memory_to_bytes, generate_random_password, get_k8s_fqdn, split_mem
 
 
 class TestUtils(unittest.TestCase):
@@ -13,6 +15,16 @@ class TestUtils(unittest.TestCase):
         password = generate_random_password(16)
         self.assertEqual(len(password), 16)
         self.assertTrue(password.isalnum())
+        self.assertTrue(_password_meets_rules(password))
+
+    @parameterized.expand([
+        ("valid", "Abc123", True),
+        ("no_uppercase", "abc123", False),
+        ("no_lowercase", "ABC123", False),
+        ("no_digit", "AbcDef", False),
+    ])
+    def test_password_meets_rules(self, name, password, expected):
+        self.assertEqual(_password_meets_rules(password), expected)
 
     def test_split_mem(self):
         self.assertEqual(split_mem("1Gi"), ("1", "Gi"))
