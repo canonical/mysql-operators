@@ -1,0 +1,20 @@
+Aug 11 00:21:52 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:83 Setting up microceph
+Aug 11 00:22:59 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:106 Creating microceph bucket
+Aug 11 00:23:02 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:123 Set up microceph
+Aug 11 00:23:02 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Aug 11 00:23:06 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:168 Deploying mysql
+Aug 11 00:23:06 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql_ubuntu@22.04-amd64.charm mysql --base ubuntu@22.04 --config cluster-name=test_cluster --config profile=testing --num-units 3
+Aug 11 00:23:14 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing s3-integrator --base ubuntu@22.04 --channel 1/stable
+Aug 11 00:28:50 [32mINFO    [0m root:test_backup_ceph.py:187 Loading test database
+Aug 11 00:28:50 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Aug 11 00:28:51 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpajtqmzoz
+Aug 11 00:28:52 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Aug 11 00:28:52 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 get-password --params /root/snap/juju/common/tmpd1avww5b
+Aug 11 00:29:46 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:190 Rotating all mysql credentials
+Aug 11 00:29:46 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Aug 11 00:29:46 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpryagpgl8
+Aug 11 00:29:48 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 set-password --params /root/snap/juju/common/tmpijp5iila
+Aug 11 00:29:52 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 set-password --params /root/snap/juju/common/tmpi1zhi15e
+Aug 11 00:29:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 set-password --params /root/snap/juju/common/tmpofnytij2
+Aug 11 00:30:02 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:200 Configuring s3 integrator and integrating it with mysql
+Aug 11 00:30:02 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql s3-integrator
