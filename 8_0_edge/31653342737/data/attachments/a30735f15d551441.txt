@@ -1,0 +1,14 @@
+Aug 13 00:42:13 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Aug 13 00:42:16 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:66 Deploying mysql
+Aug 13 00:42:16 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql_ubuntu@22.04-amd64.charm mysql --base ubuntu@22.04 --config cluster-name=test_cluster --config profile=testing --num-units 3
+Aug 13 00:42:26 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:74 Deploying s3 integrator
+Aug 13 00:42:26 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing s3-integrator s3-integrator --base ubuntu@22.04 --channel 1/stable
+Aug 13 00:48:53 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:90 Rotating mysql credentials
+Aug 13 00:48:53 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Aug 13 00:48:53 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/2 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpiuhbgc_g
+Aug 13 00:48:55 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/2 set-password --params /root/snap/juju/common/tmpelnwpoch
+Aug 13 00:48:59 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:97 Configuring s3 integrator and integrating it with mysql
+Aug 13 00:49:02 [32mINFO    [0m jubilant:_juju.py:316 cli: juju config --model testing s3-integrator endpoint=https://s3.amazonaws.com bucket=data-charms-testing path=mysql/397aeb95-4334-4886-9f9c-307cc98eeae9 region=us-east-1
+Aug 13 00:49:02 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Aug 13 00:49:03 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json s3-integrator/0 sync-s3-credentials --params /root/snap/juju/common/tmpv29be89r
+Aug 13 00:49:10 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql s3-integrator
