@@ -1,0 +1,17 @@
+Aug 15 02:19:50 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:265 Deploying a new mysql cluster
+Aug 15 02:19:50 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql-k8s_ubuntu@26.04-amd64.charm another-mysql-k8s --base ubuntu@26.04 --config cluster-name=test_cluster --config profile=testing --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:b2486bc20e074f199f12d8dbd68bc82dae9a65b72eb0e72dc7f0255ba74ad2cf --trust
+Aug 15 02:21:42 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing another-mysql-k8s s3-integrator
+Aug 15 02:23:08 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:292 Rotating all mysql credentials
+Aug 15 02:23:08 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Aug 15 02:23:09 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpe0w9cvp6
+Aug 15 02:23:17 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Aug 15 02:23:17 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmpdhrgu2a9
+Aug 15 02:23:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmpegucnnr0
+Aug 15 02:23:55 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-password --params /root/snap/juju/common/tmp7_1hl1gp
+Aug 15 02:24:10 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:305 Syncing S3 config and credentials
+Aug 15 02:24:10 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-secret --model testing 9cfba0d2 --file /root/snap/juju/common/tmp86xlx8_8
+Aug 15 02:24:11 [32mINFO    [0m jubilant:_juju.py:308 cli: juju grant-secret --model testing secret:dnflnv0lnrvba602o110 s3-integrator
+Aug 15 02:24:11 [32mINFO    [0m jubilant:_juju.py:308 cli: juju config --model testing s3-integrator credentials=secret:dnflnv0lnrvba602o110 endpoint=https://storage.googleapis.com bucket=data-charms-testing path=mysql-k8s/64e13e69-6f8a-4b47-9a19-47069b3701e6 region=us-east-1
+Aug 15 02:25:13 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:314 Restoring backup_id='2026-08-15T02:13:54Z'
+Aug 15 02:25:13 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 restore --params /root/snap/juju/common/tmpey46sjno
+Aug 15 02:26:13 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:63 Cleaning backups from buckets
