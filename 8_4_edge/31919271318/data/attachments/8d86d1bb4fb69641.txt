@@ -1,0 +1,16 @@
+Aug 16 02:12:33 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:264 Deploying a new mysql cluster
+Aug 16 02:12:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql-k8s_ubuntu@26.04-amd64.charm another-mysql-k8s --base ubuntu@26.04 --config cluster-name=test_cluster --config profile=testing --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:b2486bc20e074f199f12d8dbd68bc82dae9a65b72eb0e72dc7f0255ba74ad2cf --trust
+Aug 16 02:14:27 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing another-mysql-k8s s3-integrator
+Aug 16 02:16:14 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:291 Rotating all mysql credentials
+Aug 16 02:16:14 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Aug 16 02:16:15 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpbgl4rc2m
+Aug 16 02:16:26 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Aug 16 02:16:27 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmps0vlqwsr
+Aug 16 02:16:39 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 set-password --params /root/snap/juju/common/tmpof4g_057
+Aug 16 02:17:01 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 get-password --params /root/snap/juju/common/tmpw5k8srdq
+Aug 16 02:17:16 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-secret --model testing e9108200 --file /root/snap/juju/common/tmpzp00jzdr
+Aug 16 02:17:17 [32mINFO    [0m jubilant:_juju.py:308 cli: juju grant-secret --model testing secret:0ibov68vkoi6j38rgmtg s3-integrator
+Aug 16 02:17:18 [32mINFO    [0m jubilant:_juju.py:308 cli: juju config --model testing s3-integrator credentials=secret:0ibov68vkoi6j38rgmtg endpoint=https://s3.amazonaws.com bucket=data-charms-testing path=mysql-k8s/868dda43-82d2-4611-b774-ea394e28d974 region=us-east-1
+Aug 16 02:18:14 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:312 Restoring backup_id='2026-08-16T02:07:02Z'
+Aug 16 02:18:14 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql-k8s/0 restore --params /root/snap/juju/common/tmpaihrwzpt
+Aug 16 02:19:14 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:64 Cleaning backups from buckets
