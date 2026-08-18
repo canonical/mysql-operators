@@ -1,0 +1,80 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "single-kernel-mysql"
+description = "Reusable logic for the MySQL Server charms"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+version = "0.0.0"
+authors = [{ name = "Sinclert Perez", email = "sinclert.perez@canonical.com" }]
+maintainers = [{ name = "Canonical Data Platform", email = "data-platform@lists.launchpad.net" }]
+dependencies = []
+
+[project.optional-dependencies]
+kubernetes = []
+machines = []
+
+[project.urls]
+Homepage = "https://github.com/canonical/mysql-operators/common"
+Issues = "https://github.com/canonical/mysql-operators/issues"
+
+[dependency-groups]
+format = [
+    "ruff~=0.16",
+]
+lint = [
+    "codespell~=2.4",
+    "ruff~=0.16",
+]
+test = [
+    "coverage~=7.13",
+    "pytest~=9.1",
+]
+
+# Linting tools configuration
+[tool.ruff]
+preview = true
+line-length = 100
+target-version = "py312"
+src = ["single_kernel"]
+exclude = ["single_kernel/libs"]
+
+
+[tool.ruff.lint]
+explicit-preview-rules = true
+select = [
+    "A",      # Activate flake8-builtins
+    "C",      # Acticate mccabe
+    "D",      # Activate pydocstyle
+    "E",      # Activate pycodestyle errors
+    "W",      # Activate pycodestyle warnings
+    "F",      # Acticate pyflakes
+    "I",      # Activate isort
+    "N",      # Activate PEP8 naming
+    "S608",   # Acticate flake8-bandit query injection
+    "CPY001", # Activate copyright notice check
+]
+ignore = [
+    "D100",   # Ignore D100 Missing docstring in public module
+    "D104",   # Ignore D104 Missing docstring in __init__
+    "E731",   # Ignore E731 Do not assign a `lambda` expression
+    "F541",   # Ignore F541 F-strings without and placeholders
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401",   # Ignore F401 Imported but unused
+    "F403",   # Ignore F403 Unable to detect undefined names
+]
+
+[tool.ruff.lint.flake8-copyright]
+author = "Canonical Ltd."
+notice-rgx = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
