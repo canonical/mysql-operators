@@ -1,0 +1,56 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+from ops.model import Application, Model, Relation, Unit
+
+from ..secrets import JujuSecretStore
+
+
+class LogrotateState:
+    """Class to deal with the log-rotate state."""
+
+    manager_pid_key = "log-rotate-manager-pid"
+    synchronization_key = "logs-synced"
+
+    def __init__(self, model: Model, relation: Relation, component: Unit | Application):
+        """Initialize the class attributes."""
+        self._secrets = JujuSecretStore(model, relation)
+        self._relation = relation
+        self._relation_data = self._relation.data[component] if self._relation else {}
+
+    @property
+    def secrets(self) -> JujuSecretStore:
+        """Return the secret store."""
+        return self._secrets
+
+    def get_manager_pid(self) -> int | None:
+        """Get the log-rotation process ID."""
+        manager_pid = self._relation_data.get(self.manager_pid_key)
+        if not manager_pid:
+            return None
+
+        return int(manager_pid)
+
+    def get_sync_flag(self) -> bool | None:
+        """Get the log-rotation synchronization flag."""
+        flag = self._relation_data.get(self.synchronization_key)
+        if not flag:
+            return None
+
+        return flag == "true"
+
+    def set_manager_pid(self, manager_pid: int) -> None:
+        """Set the log-rotation process ID."""
+        self._relation_data.update({self.manager_pid_key: str(manager_pid)})
+
+    def set_sync_flag(self, flag: bool) -> None:
+        """Set the log-rotation synchronization flag."""
+        self._relation_data.update({self.synchronization_key: str(flag).lower()})
+
+    def delete_manager_pid(self) -> None:
+        """Delete the log-rotation process ID."""
+        self._relation_data.pop(self.manager_pid_key, None)
+
+    def delete_sync_flag(self) -> None:
+        """Delete the log-rotation synchronization flag."""
+        self._relation_data.pop(self.synchronization_key, None)

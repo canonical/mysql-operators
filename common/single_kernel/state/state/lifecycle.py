@@ -1,0 +1,134 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+from ops.model import Application, Model, Relation, Unit
+
+from ..secrets import JujuSecretStore
+
+
+class LifecycleState:
+    """Class to deal with the lifecycle state."""
+
+    cluster_name_key = "cluster-name"
+    cluster_set_name_key = "cluster-set-domain-name"
+    cluster_removed_key = "removed-from-cluster-set"
+    cluster_rejoin_key = "rejoin-secondaries"
+    instance_host_key = "instance-hostname"
+    instance_role_key = "member-role"
+    instance_state_key = "member-state"
+    unit_leader_key = "leader"
+
+    def __init__(self, model: Model, relation: Relation, component: Unit | Application):
+        """Initialize the class attributes."""
+        self._secrets = JujuSecretStore(model, relation)
+        self._relation = relation
+        self._relation_data = self._relation.data[component] if self._relation else {}
+
+    @property
+    def secrets(self) -> JujuSecretStore:
+        """Return the secret store."""
+        return self._secrets
+
+    def get_cluster_name(self) -> str | None:
+        """Get the MySQL cluster name."""
+        name = self._relation_data.get(self.cluster_name_key)
+        if not name:
+            return None
+
+        return name
+
+    def get_cluster_set_name(self) -> str | None:
+        """Get the MySQL cluster-set name."""
+        name = self._relation_data.get(self.cluster_set_name_key)
+        if not name:
+            return None
+
+        return name
+
+    def get_cluster_removed_flag(self) -> bool | None:
+        """Get the MySQL cluster removed flag."""
+        flag = self._relation_data.get(self.cluster_removed_key)
+        if not flag:
+            return None
+
+        return flag == "true"
+
+    def get_cluster_rejoin_flag(self) -> bool | None:
+        """Get the MySQL cluster rejoin flag."""
+        flag = self._relation_data.get(self.cluster_rejoin_key)
+        if not flag:
+            return None
+
+        return flag == "true"
+
+    def get_instance_host(self) -> str | None:
+        """Get the MySQL instance host."""
+        host = self._relation_data.get(self.instance_host_key)
+        if not host:
+            return None
+
+        return host
+
+    def get_instance_role(self) -> str | None:
+        """Get the MySQL instance role."""
+        role = self._relation_data.get(self.instance_role_key)
+        if not role:
+            return None
+
+        return role
+
+    def get_instance_state(self) -> str | None:
+        """Get the MySQL instance state."""
+        state = self._relation_data.get(self.instance_state_key)
+        if not state:
+            return None
+
+        return state
+
+    def get_unit_leader_flag(self) -> bool | None:
+        """Get the Juju unit leader flag."""
+        flag = self._relation_data.get(self.unit_leader_key)
+        if not flag:
+            return None
+
+        return flag == "true"
+
+    def set_cluster_name(self, name: str) -> None:
+        """Set the MySQL cluster name."""
+        self._relation_data.update({self.cluster_name_key: str(name)})
+
+    def set_cluster_set_name(self, name: str) -> None:
+        """Set the MySQL cluster-set name."""
+        self._relation_data.update({self.cluster_set_name_key: str(name)})
+
+    def set_cluster_removed_flag(self, flag: bool) -> None:
+        """Set the MySQL cluster removed flag."""
+        self._relation_data.update({self.cluster_removed_key: str(flag).lower()})
+
+    def set_cluster_rejoin_flag(self, flag: bool) -> None:
+        """Set the MySQL cluster rejoin flag."""
+        self._relation_data.update({self.cluster_rejoin_key: str(flag).lower()})
+
+    def set_instance_host(self, host: str) -> None:
+        """Set the MySQL instance host."""
+        self._relation_data.update({self.instance_host_key: str(host)})
+
+    def set_instance_role(self, role: str) -> None:
+        """Set the MySQL instance role."""
+        self._relation_data.update({self.instance_role_key: str(role)})
+
+    def set_instance_state(self, state: str) -> None:
+        """Set the MySQL instance state."""
+        self._relation_data.update({self.instance_state_key: str(state)})
+
+    def set_unit_leader_flag(self, flag: bool) -> None:
+        """Set the Juju unit leader flag."""
+        self._relation_data.update({self.unit_leader_key: str(flag).lower()})
+
+    def delete_cluster_removed_flag(self) -> None:
+        """Delete the MySQL cluster removed flag."""
+        self._relation_data.pop(self.cluster_removed_key, None)
+
+    def delete_cluster_rejoin_flag(self) -> None:
+        """Delete the MySQL cluster rejoin flag."""
+        self._relation_data.pop(self.cluster_rejoin_key, None)
