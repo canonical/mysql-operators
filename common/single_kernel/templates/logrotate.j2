@@ -1,0 +1,34 @@
+# Create dedicated subdirectory for rotated files
+createolddir 770 {{ system_user }} {{ system_group }}
+
+# Frequency of logs rotation
+hourly
+maxage {{ logs_retention_days }}
+rotate {{ logs_retention_files }}
+
+# Compression settings
+{% if logs_compression_enabled %}
+compress
+{% else %}
+nocompress
+{% endif %}
+
+# Naming of rotated files should be in the format:
+dateext
+dateformat -%Y%m%d_%H%M
+
+# Settings to prevent misconfigurations and unwanted behaviours
+ifempty
+missingok
+nomail
+nosharedscripts
+# Needed because rotated logs might be in a different filesystem,
+# `nocopytruncate` fails with `failed to rename ...: Invalid cross-device link`
+copy
+copytruncate
+
+{% for log in log_types %}
+{{ logs_dir }}/{{ log }}.log {
+    olddir {{ archive_dir }}/archive_{{ log }}
+}
+{% endfor %}
