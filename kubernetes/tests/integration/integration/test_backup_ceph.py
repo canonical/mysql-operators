@@ -12,7 +12,6 @@ import time
 from pathlib import Path
 
 import boto3
-import botocore.exceptions
 import jubilant_backports
 import pytest
 from jubilant_backports import Juju
@@ -58,7 +57,6 @@ MOVE_RESTORED_CLUSTER_TO_ANOTHER_S3_REPOSITORY_ERROR = (
 )
 
 backup_id, value_before_backup, value_after_backup = None, None, None
-MICROCEPH_BUCKET = "testbucket"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -77,7 +75,7 @@ def microceph():
             os.environ["CEPH_ENDPOINT_URL"],
             os.environ["CEPH_ACCESS_KEY"],
             os.environ["CEPH_SECRET_KEY"],
-            MICROCEPH_BUCKET,
+            os.environ["CEPH_BUCKET"],
         )
 
     logger.info("Setting up microceph")
@@ -100,29 +98,13 @@ def microceph():
         check=True,
         encoding="utf-8",
     ).stdout
+
     key = json.loads(output)["keys"][0]
-    key_id = key["access_key"]
-    secret_key = key["secret_key"]
-    logger.info("Creating microceph bucket")
-    for attempt in range(3):
-        try:
-            boto3.client(
-                "s3",
-                endpoint_url="http://localhost",
-                aws_access_key_id=key_id,
-                aws_secret_access_key=secret_key,
-            ).create_bucket(Bucket=MICROCEPH_BUCKET)
-        except botocore.exceptions.EndpointConnectionError:
-            if attempt == 2:
-                raise
-            # microceph is not ready yet
-            logger.info("Unable to connect to microceph via S3. Retrying")
-            time.sleep(1)
-        else:
-            break
-    logger.info("Set up microceph")
     return MicrocephConnectionInformation(
-        f"http://{host_ip}", key_id, secret_key, MICROCEPH_BUCKET
+        f"http://{host_ip}",
+        key["access_key"],
+        key["secret_key"],
+        "testbucket",
     )
 
 
