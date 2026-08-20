@@ -386,6 +386,10 @@ class MySQLLockAcquisitionError(Error):
     """Exception raised when a lock fails to be acquired."""
 
 
+class MySQLFetchLockError(Error):
+    """Exception raised when a lock state fails to be fetched."""
+
+
 class MySQLRescanClusterError(Error):
     """Exception raised when there is an issue rescanning the cluster."""
 
@@ -758,6 +762,31 @@ class MySQLCharmBase(CharmBase, ABC):
         return self._mysql.get_cluster_node_count(node_status=InstanceState.ONLINE) == min(
             GR_MAX_MEMBERS, self.app.planned_units()
         )
+
+    def get_blocking_lock_owner(self, lock_instance: str, task_name: str) -> str | None:
+        """Returns the unit label blocking the task, reclaiming the lock when stale.
+
+        A lock is stale when its owner can no longer release it: either this unit
+        acquired it and died before the release ran (Juju serializes hooks per unit,
+        so a lock owned by self is never in use by a live hook), or the owner is no
+        longer a peer. Stale locks are released and None returned, so callers proceed.
+
+        Raises:
+            MySQLFetchLockError: when the lock state can't be read.
+        """
+        owner = self._mysql.get_lock_owner(lock_instance, task_name)
+        if owner is None:
+            return None
+
+        if owner == self.unit_label:
+            logger.warning(f"Reclaiming {task_name} lock left behind by this unit")
+        elif owner not in {self.get_unit_label(unit) for unit in self.app_units}:
+            logger.warning(f"Reclaiming {task_name} lock left behind by departed {owner}")
+        else:
+            return owner
+
+        self._mysql.release_lock(lock_instance, owner, task_name)
+        return None
 
     @property
     def unit_configured(self) -> bool:
@@ -1884,19 +1913,30 @@ class MySQLBase(ABC):
         else:
             return result["status"] == "ok"
 
-    def are_locks_acquired(self, from_instance: str, task_name: str) -> bool:
-        """Report if any topology change is being executed."""
+    def get_lock_owner(self, from_instance: str, task_name: str) -> str | None:
+        """Report the unit label holding the lock, or None when it's free.
+
+        Raises:
+            MySQLFetchLockError: when the lock state can't be read.
+        """
         query = self._lock_query_builder.build_fetch_acquired_query(task_name)
         executor = self._build_instance_tcp_executor(from_instance)
 
         try:
             logger.debug(f"Fetching acquired lock {task_name}")
             locks = executor.execute_sql(query)
-        except ExecutionError:
+        except ExecutionError as e:
             logger.error(f"Failed to fetch acquired lock {task_name}")
-            return True
+            raise MySQLFetchLockError(f"Failed to fetch lock {task_name}") from e
         else:
-            return len(locks) == 1
+            return locks[0]["executor"] if locks else None
+
+    def are_locks_acquired(self, from_instance: str, task_name: str) -> bool:
+        """Report if any topology change is being executed."""
+        try:
+            return self.get_lock_owner(from_instance, task_name) is not None
+        except MySQLFetchLockError:
+            return True
 
     def rescan_cluster(
         self,
@@ -2162,6 +2202,14 @@ class MySQLBase(ABC):
             return False
         else:
             return unit_label in [row["executor"] for row in rows]
+
+    def release_lock(self, from_instance: str, unit_label: str, task_name: str) -> bool:
+        """Releases a lock held by the given unit label."""
+        return self._release_lock(
+            executor=self._build_instance_tcp_executor(from_instance),
+            unit_label=unit_label,
+            unit_task=task_name,
+        )
 
     def _release_lock(self, executor: BaseExecutor, unit_label: str, unit_task: str) -> bool:
         """Releases a lock in the mysql.juju_units_operations table."""

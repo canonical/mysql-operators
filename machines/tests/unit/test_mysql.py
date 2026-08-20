@@ -40,6 +40,7 @@ from charms.mysql.v0.mysql import (
     MySQLEmptyDataDirectoryError,
     MySQLExecError,
     MySQLExecuteBackupCommandsError,
+    MySQLFetchLockError,
     MySQLGetAutoTuningParametersError,
     MySQLGetClusterPrimaryAddressError,
     MySQLGetMySQLVersionError,
@@ -1590,6 +1591,45 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_sql.return_value = []
         assert self.mysql.are_locks_acquired("0.0.0.0", UNIT_ADD_LOCKNAME) is False
         self.mock_executor.execute_sql.assert_called_with(query)
+
+    def test_are_locks_acquired_fails_closed(self):
+        """Test are_locks_acquired reports a held lock when the state is unreadable."""
+        self.mock_executor.execute_sql.side_effect = ExecutionError
+
+        assert self.mysql.are_locks_acquired("0.0.0.0", UNIT_ADD_LOCKNAME) is True
+
+    def test_get_lock_owner(self):
+        """Test get_lock_owner."""
+        query = (
+            "SELECT executor "
+            "FROM `mysql`.`juju_units_operations` "
+            f"WHERE task = '{UNIT_ADD_LOCKNAME}' AND status = 'in-progress'"
+        )
+
+        self.mock_executor.execute_sql.return_value = [{"executor": "mysql-0"}]
+        assert self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME) == "mysql-0"
+        self.mock_executor.execute_sql.assert_called_with(query)
+
+        self.mock_executor.execute_sql.return_value = []
+        assert self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME) is None
+
+    def test_get_lock_owner_exception(self):
+        """Test an issue while executing get_lock_owner()."""
+        self.mock_executor.execute_sql.side_effect = ExecutionError
+
+        with self.assertRaises(MySQLFetchLockError):
+            self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME)
+
+    def test_release_lock_from_instance(self):
+        """Test release_lock() only clears the lock held by the given unit label."""
+        query = (
+            "UPDATE `mysql`.`juju_units_operations` "
+            "SET status = 'not-started', executor = '' "
+            f"WHERE task = '{UNIT_ADD_LOCKNAME}' AND executor = 'mysql-0'"
+        )
+
+        assert self.mysql.release_lock("0.0.0.0", "mysql-0", UNIT_ADD_LOCKNAME) is True
+        self.mock_executor.execute_sql.assert_called_once_with(query)
 
     def test_get_mysql_user_for_unit(self):
         """Test get_mysql_user_for_unit."""

@@ -38,6 +38,7 @@ from charms.mysql.v0.mysql import (
     MySQLConfigureMySQLUsersError,
     MySQLCreateClusterError,
     MySQLCreateClusterSetError,
+    MySQLFetchLockError,
     MySQLGetClusterPrimaryAddressError,
     MySQLGetMySQLVersionError,
     MySQLInitializeJujuOperationsTableError,
@@ -526,9 +527,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Not used for cryptographic purpose
         sleep(random.uniform(0, 1.5))  # noqa: S311
 
-        if self._mysql.are_locks_acquired(cluster_primary, UNIT_ADD_LOCKNAME):
-            logger.info("waiting: cluster lock is held")
+        try:
+            lock_owner = self.get_blocking_lock_owner(cluster_primary, UNIT_ADD_LOCKNAME)
+        except MySQLFetchLockError:
+            logger.info("waiting: unable to read the cluster lock state")
             return
+
+        if lock_owner:
+            logger.info(f"waiting: cluster lock is held by {lock_owner}")
+            return
+
         try:
             self._mysql.rejoin_instance_to_cluster(
                 unit_address=self.unit_fqdn,
@@ -983,9 +991,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 # Not used for cryptographic purpose
                 sleep(random.uniform(0, 1.5))  # noqa: S311
 
-                if self._mysql.are_locks_acquired(lock_instance, UNIT_ADD_LOCKNAME):
+                try:
+                    lock_owner = self.get_blocking_lock_owner(lock_instance, UNIT_ADD_LOCKNAME)
+                except MySQLFetchLockError:
                     self.unit.status = WaitingStatus("waiting to join the cluster.")
-                    logger.info("waiting: cluster lock is held")
+                    logger.info("waiting: unable to read the cluster lock state")
+                    return
+
+                if lock_owner:
+                    self.unit.status = WaitingStatus("waiting to join the cluster.")
+                    logger.info(f"waiting: cluster lock is held by {lock_owner}")
                     return
 
                 self.unit.status = MaintenanceStatus("joining the cluster")
