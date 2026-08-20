@@ -13,10 +13,10 @@ resource "juju_application" "mysql_server" {
   }
 
   storage_directives = {
-    archive = var.storage_size
-    data    = var.storage_size
-    logs    = var.storage_size
-    temp    = var.storage_size
+    archive = lookup(var.storage_sizes, "archive", "10G")
+    data    = lookup(var.storage_sizes, "data", "10G")
+    logs    = lookup(var.storage_sizes, "logs", "10G")
+    temp    = lookup(var.storage_sizes, "temp", "10G")
   }
 
   config            = var.config
@@ -25,7 +25,7 @@ resource "juju_application" "mysql_server" {
   units             = var.units
 
   dynamic "expose" {
-    for_each = var.expose != null ? [var.expose] : []
+    for_each = length(var.expose) > 0 ? [var.expose] : []
 
     content {
       endpoints = lookup(expose.value, "endpoints", null)
