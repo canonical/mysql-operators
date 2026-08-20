@@ -161,6 +161,7 @@ test stderr"""
         "charms.mysql.v0.backups.MySQLBackups._can_unit_perform_backup",
         return_value=(True, None),
     )
+    @patch("charms.mysql.v0.backups.create_bucket")
     @patch("charms.mysql.v0.backups.upload_content_to_s3")
     @patch("charms.mysql.v0.backups.MySQLBackups._pre_backup", return_value=(True, None))
     @patch("charms.mysql.v0.backups.MySQLBackups._backup", return_value=(True, None))
@@ -173,6 +174,7 @@ test stderr"""
         _backup,
         _pre_backup,
         _upload_content_to_s3,
+        _create_bucket,
         _can_unit_perform_backup,
         _can_cluster_perform_backup,
         _retrieve_s3_parameters,
@@ -198,6 +200,7 @@ Juju Version: 0.0.0
         _retrieve_s3_parameters.assert_called_once()
         _can_cluster_perform_backup.assert_called_once()
         _can_unit_perform_backup.assert_called_once()
+        _create_bucket.assert_called_once_with(expected_s3_params)
         _upload_content_to_s3.assert_called_once_with(
             expected_metadata, f"{expected_backup_path}.metadata", expected_s3_params
         )
@@ -221,6 +224,7 @@ Juju Version: 0.0.0
         "charms.mysql.v0.backups.MySQLBackups._can_unit_perform_backup",
         return_value=(True, None),
     )
+    @patch("charms.mysql.v0.backups.create_bucket")
     @patch("charms.mysql.v0.backups.upload_content_to_s3")
     @patch("charms.mysql.v0.backups.MySQLBackups._pre_backup", return_value=(True, None))
     @patch("charms.mysql.v0.backups.MySQLBackups._backup", return_value=(True, None))
@@ -233,6 +237,7 @@ Juju Version: 0.0.0
         _backup,
         _pre_backup,
         _upload_content_to_s3,
+        _create_bucket,
         _can_unit_perform_backup,
         _can_cluster_perform_backup,
         _retrieve_s3_parameters,
@@ -279,6 +284,16 @@ Juju Version: 0.0.0
         self.mysql_backups._on_create_backup(event)
         event.set_results.assert_not_called()
         event.fail.assert_called_once_with("Failed to upload metadata to provided S3")
+        self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
+
+        # test failure with create_bucket
+        _create_bucket.return_value = False
+        event = MagicMock()
+        self.charm.unit.status = ActiveStatus()
+
+        self.mysql_backups._on_create_backup(event)
+        event.set_results.assert_not_called()
+        event.fail.assert_called_once_with("Failed to create the S3 bucket")
         self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
 
         # test failure with _can_unit_perform_backup
