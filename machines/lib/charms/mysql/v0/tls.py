@@ -102,7 +102,13 @@ class MySQLTLS(Object):
         self._request_certificate(None)
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
-        """Enable TLS when TLS certificate available."""
+        """Enable TLS when TLS certificate available.
+
+        Also handles CA rotation: when TLS is already enabled but the incoming
+        cert or CA differs from the stored one (e.g. the certificate_invalidated
+        event was missed due to a race condition), update the cert files and
+        reconfigure TLS.
+        """
         if (
             event.certificate_signing_request.strip()
             != self.charm.get_secret(SCOPE, "csr").strip()
@@ -111,8 +117,12 @@ class MySQLTLS(Object):
             return
 
         if self.charm.unit_peer_data.get("tls") == "enabled":
-            logger.debug("TLS is already enabled.")
-            return
+            stored_cert = self.charm.get_secret(SCOPE, "certificate")
+            stored_ca = self.charm.get_secret(SCOPE, "certificate-authority")
+            if event.certificate == stored_cert and event.ca == stored_ca:
+                logger.debug("TLS is already enabled.")
+                return
+            logger.info("Updating TLS certificate (CA rotation detected).")
 
         state = self.charm._mysql.get_member_state()
         if state != InstanceState.ONLINE:
