@@ -30,6 +30,7 @@ from charms.mysql.v0.mysql import MySQLKillSessionError, MySQLTLSSetupError
 from charms.tls_certificates_interface.v2.tls_certificates import (
     CertificateAvailableEvent,
     CertificateExpiringEvent,
+    CertificateInvalidatedEvent,
     TLSCertificatesRequiresV2,
     generate_csr,
     generate_private_key,
@@ -50,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 LIBID = "eb73947deedd4380a3a90d527e0878eb"
 LIBAPI = 0
-LIBPATCH = 12
+LIBPATCH = 13
 
 PYDEPS = ["mysql-shell-client[contrib] ~= 1.0"]
 
@@ -82,6 +83,9 @@ class MySQLTLS(Object):
 
         self.framework.observe(self.certs.on.certificate_available, self._on_certificate_available)
         self.framework.observe(self.certs.on.certificate_expiring, self._on_certificate_expiring)
+        self.framework.observe(
+            self.certs.on.certificate_invalidated, self._on_certificate_invalidated
+        )
 
     # =======================
     #  Event Handlers
@@ -164,6 +168,38 @@ class MySQLTLS(Object):
             new_certificate_signing_request=new_csr,
         )
         self.charm.set_secret(SCOPE, "csr", new_csr.decode("utf-8"))
+
+    def _on_certificate_invalidated(self, event: CertificateInvalidatedEvent) -> None:
+        """Handle certificate invalidation by requesting a new certificate.
+
+        When a certificate is revoked or expired, invalidate the current
+        certificate and request a new one through the TLS interface.
+        """
+        if event.certificate != self.charm.get_secret(SCOPE, "certificate"):
+            logger.error("An unknown certificate invalidated.")
+            return
+
+        if event.reason == "expired":
+            # For expired certificates, reuse the renewal logic.
+            self._on_certificate_expiring(event)
+            return
+
+        # For revoked certificates, request a new certificate using the
+        # existing private key (the key is not compromised, only the CA rotated).
+        key = self.charm.get_secret(SCOPE, "key").encode("utf-8")
+        new_csr = generate_csr(
+            private_key=key,
+            subject=self.charm.get_unit_hostname(),
+            organization=self.charm.app.name,
+            sans=self._get_sans(),
+        )
+        self.certs.request_certificate_creation(certificate_signing_request=new_csr)
+        self.charm.set_secret(SCOPE, "csr", new_csr.decode("utf-8"))
+
+        # Invalidate the current certificate so _on_certificate_available
+        # will accept and install the new one when it arrives.
+        self.charm.set_secret(SCOPE, "certificate", None)
+        self.charm.unit_peer_data.update({"tls": "requested"})
 
     def _on_tls_relation_broken(self, _) -> None:
         """Disable TLS when TLS relation broken."""
