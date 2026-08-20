@@ -131,6 +131,19 @@ def build_and_deploy_operations(
     )
 
 
+def list_backups(juju: Juju, unit_name: str) -> list[str]:
+    """Lists backups in a safe manner (avoid raising if the action fails)."""
+    try:
+        logger.info("Listing existing backup ids")
+        task = juju.run(unit_name, "list-backups")
+    except TaskError:
+        return []
+
+    backups = task.results["backups"]
+    backups = [line.split("|")[0].strip() for line in backups.split("\n")[2:]]
+    return backups
+
+
 def pitr_operations(
     juju: Juju,
     cloud_configs: dict[str, str],

@@ -34,6 +34,7 @@ from ..helpers_ha import (
 from ..helpers_ha import (
     TEST_DATABASE_NAME as DATABASE_NAME,
 )
+from .helpers_backups import list_backups
 
 logger = logging.getLogger(__name__)
 
@@ -161,27 +162,15 @@ def test_backup(juju: Juju, cloud_configs_gcp) -> None:
         timeout=TIMEOUT,
     )
 
-    # list backups
-    logger.info("Listing existing backup ids")
+    old_backup_ids = list_backups(juju, zeroth_unit_name)
 
-    results = juju.run(zeroth_unit_name, "list-backups").results
-    output = results["backups"]
-    backup_ids = [line.split("|")[0].strip() for line in output.split("\n")[2:]]
-
-    # create backup
     logger.info("Creating backup")
-
     results = juju.run(non_primary_unit_names[0], "create-backup", wait=5 * MINUTE_SECS).results
     backup_id = results["backup-id"]
 
-    # list backups again and ensure new backup id exists
-    logger.info("Listing backup ids post backup")
+    new_backup_ids = list_backups(juju, zeroth_unit_name)
 
-    results = juju.run(zeroth_unit_name, "list-backups").results
-    output = results["backups"]
-    new_backup_ids = [line.split("|")[0].strip() for line in output.split("\n")[2:]]
-
-    assert sorted(new_backup_ids) == sorted([*backup_ids, backup_id])
+    assert sorted(new_backup_ids) == sorted([*old_backup_ids, backup_id])
 
     # insert data into cluster after backup
     logger.info("Inserting value after backup")
