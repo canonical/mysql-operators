@@ -73,6 +73,7 @@ from charms.mysql.v0.mysql import (
     MySQLUnableToGetMemberStateError,
 )
 from charms.mysql.v0.s3_helpers import (
+    create_bucket,
     fetch_and_check_existence_of_s3_path,
     list_backups_in_s3_path,
     upload_content_to_s3,
@@ -251,7 +252,7 @@ class MySQLBackups(Object):
 
         return True
 
-    def _on_create_backup(self, event: ActionEvent) -> None:
+    def _on_create_backup(self, event: ActionEvent) -> None:  # noqa: C901
         """Handle the create backup action."""
         logger.info("A backup has been requested on unit")
         force = event.params.get("force", False)
@@ -293,6 +294,11 @@ class MySQLBackups(Object):
             f"Unit Name: {self.charm.unit.name}\n"
             f"Juju Version: {juju_version!s}\n"
         )
+
+        if not create_bucket(s3_parameters):
+            logger.error("Backup failed: Failed to create the S3 bucket")
+            event.fail("Failed to create the S3 bucket")
+            return
 
         if not upload_content_to_s3(metadata, f"{backup_path}.metadata", s3_parameters):
             logger.error("Backup failed: Failed to upload metadata to provided S3")
