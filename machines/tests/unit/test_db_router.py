@@ -16,7 +16,7 @@ from ops.testing import Harness
 from charm import MySQLOperatorCharm
 
 
-@patch("charms.rolling_ops.v0.rollingops.RollingOpsManager._on_process_locks")
+@patch("charmlibs.rollingops._peer._backend._PeerRollingOpsBackend._process_locks")
 class TestDBRouter(unittest.TestCase):
     def setUp(self):
         self.harness = Harness(MySQLOperatorCharm)
