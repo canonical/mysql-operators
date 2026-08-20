@@ -31,7 +31,9 @@ class TestS3Helpers(unittest.TestCase):
 
         mock_bucket.upload_file.assert_called_once()
         mock_session.resource.assert_called_with(
-            "s3", endpoint_url="http://localhost:9000", verify=True
+            service_name="s3",
+            endpoint_url="http://localhost:9000",
+            verify=True,
         )
 
     @patch("lib.charms.mysql.v0.s3_helpers.boto3")
@@ -69,7 +71,9 @@ class TestS3Helpers(unittest.TestCase):
 
         mock_bucket.upload_file.assert_called_once()
         mock_session.resource.assert_called_with(
-            "s3", endpoint_url="https://s3.us-east-1.amazonaws.com", verify=True
+            service_name="s3",
+            endpoint_url="https://s3.us-east-1.amazonaws.com",
+            verify=True,
         )
 
     @patch("lib.charms.mysql.v0.s3_helpers.boto3")
@@ -89,5 +93,7 @@ class TestS3Helpers(unittest.TestCase):
 
         mock_bucket.upload_file.assert_called_once()
         mock_session.resource.assert_called_with(
-            "s3", endpoint_url="https://s3.us-east-1.amazonaws.com", verify=True
+            service_name="s3",
+            endpoint_url="https://s3.us-east-1.amazonaws.com",
+            verify=True,
         )
