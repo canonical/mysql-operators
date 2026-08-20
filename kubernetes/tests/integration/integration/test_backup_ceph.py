@@ -10,12 +10,10 @@ import os
 import socket
 import subprocess
 import tempfile
-import time
 from collections.abc import Iterable
 from pathlib import Path
 
 import boto3
-import botocore.exceptions
 import jubilant
 import pytest
 from jubilant import Juju
@@ -59,7 +57,6 @@ TABLE_NAME = "backup-table"
 CLOUD = "ceph"
 
 backup_id, value_before_backup, value_after_backup = None, None, None
-MICROCEPH_BUCKET = "testbucket"
 
 
 @retry(stop=stop_after_attempt(20), wait=wait_fixed(3), reraise=True)
@@ -106,7 +103,7 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
             os.environ["CEPH_ENDPOINT_URL"],
             os.environ["CEPH_ACCESS_KEY"],
             os.environ["CEPH_SECRET_KEY"],
-            MICROCEPH_BUCKET,
+            os.environ["CEPH_BUCKET"],
             os.environ.get("CEPH_CA_CERT"),  # Optional for HTTP-only local dev
             os.environ.get("CEPH_REGION", "default"),
         )
@@ -176,28 +173,8 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
         check=True,
         encoding="utf-8",
     ).stdout
+
     key = json.loads(output)["keys"][0]
-    key_id = key["access_key"]
-    secret_key = key["secret_key"]
-    logger.info("Creating microceph bucket")
-    for attempt in range(3):
-        try:
-            boto3.client(
-                "s3",
-                endpoint_url=f"https://{host_ip}",
-                aws_access_key_id=key_id,
-                aws_secret_access_key=secret_key,
-                verify=str(certs_path / "ca.crt"),
-            ).create_bucket(Bucket=MICROCEPH_BUCKET)
-        except botocore.exceptions.EndpointConnectionError:
-            if attempt == 2:
-                raise
-            # microceph is not ready yet
-            logger.info("Unable to connect to microceph via S3. Retrying")
-            time.sleep(1)
-        else:
-            break
-    logger.info("Set up microceph")
     ca_crt_base64 = subprocess.run(
         f"sudo base64 -w0 {ca_crt_path}".split(),
         check=True,
@@ -206,9 +183,9 @@ def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
     ).stdout.strip()
     return MicrocephConnectionInformation(
         endpoint_url=f"https://{host_ip}",
-        access_key_id=key_id,
-        secret_access_key=secret_key,
-        bucket=MICROCEPH_BUCKET,
+        access_key_id=key["access_key"],
+        secret_access_key=key["secret_key"],
+        bucket="testbucket",
         ca_cert_base64=ca_crt_base64,
         region="default",
     )
