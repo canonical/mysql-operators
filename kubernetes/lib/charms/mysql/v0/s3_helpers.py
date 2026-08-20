@@ -14,7 +14,6 @@
 
 """S3 helper functions for the MySQL charms."""
 
-import base64
 import logging
 import pathlib
 import tempfile
@@ -25,6 +24,7 @@ from io import BytesIO
 import boto3
 import botocore
 import botocore.exceptions
+import tenacity
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +92,57 @@ def _get_bucket(s3_parameters: dict) -> boto3.resources.base.ServiceResource:
             ca_file.write(ca.encode())
             ca_file.flush()
 
-        s3 = session.resource(
-            "s3",
+        resource = session.resource(
+            service_name="s3",
             endpoint_url=_construct_endpoint(s3_parameters),
             verify=ca_file.name if ca_file else True,
         )
 
-    return s3.Bucket(s3_parameters["bucket"])
+    return resource.Bucket(s3_parameters["bucket"])
+
+
+def create_bucket(s3_parameters: dict) -> bool:
+    """Creates a S3 bucket using the provided S3 parameters."""
+    session = boto3.session.Session(
+        aws_access_key_id=s3_parameters["access-key"],
+        aws_secret_access_key=s3_parameters["secret-key"],
+        region_name=s3_parameters["region"] or None,
+    )
+
+    ca_chain = s3_parameters.get("tls-ca-chain")
+
+    with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
+        if ca_file:
+            ca = "\n".join(ca_chain)
+            ca_file.write(ca.encode())
+            ca_file.flush()
+
+        client = session.client(
+            service_name="s3",
+            endpoint_url=_construct_endpoint(s3_parameters),
+            verify=ca_file.name if ca_file else True,
+        )
+
+        try:
+            client.head_bucket(Bucket=s3_parameters["bucket"])
+        except (botocore.exceptions.ConnectTimeoutError, botocore.exceptions.SSLError) as e:
+            logger.error(f"Failed to check whether the bucket is accessible: {e}")
+            return False
+        except botocore.exceptions.ClientError as e:
+            logger.warning(f"Bucket {s3_parameters['bucket']} is not accessible: {e}")
+        else:
+            logger.info(f"Bucket {s3_parameters['bucket']} exists.")
+            return True
+
+        for attempt in tenacity.Retrying(
+            stop=tenacity.stop_after_attempt(3),
+            wait=tenacity.wait_fixed(1),
+            reraise=True,
+        ):
+            with attempt:
+                client.create_bucket(Bucket=s3_parameters["bucket"])
+
+        return True
 
 
 def upload_content_to_s3(content: str, content_path: str, s3_parameters: dict) -> bool:
