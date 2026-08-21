@@ -92,14 +92,14 @@ class MySQLTLS(Object):
     # =======================
     def _on_set_tls_private_key(self, event: ActionEvent) -> None:
         """Action for setting a TLS private key."""
-        self._request_certificate(event.params.get("internal-key", None))
+        self._request_certificate(param=event.params.get("internal-key", None))
 
     def _on_tls_relation_joined(self, event) -> None:
         """Request certificate when TLS relation joined."""
         if not self.charm.unit_initialized():
             event.defer()
             return
-        self._request_certificate(None)
+        self._request_certificate()
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
         """Enable TLS when TLS certificate available.
@@ -193,22 +193,13 @@ class MySQLTLS(Object):
             self._on_certificate_expiring(event)
             return
 
-        # For revoked certificates, request a new certificate using the
-        # existing private key (the key is not compromised, only the CA rotated).
-        key = self.charm.get_secret(SCOPE, "key").encode("utf-8")
-        new_csr = generate_csr(
-            private_key=key,
-            subject=self.charm.get_unit_hostname(),
-            organization=self.charm.app.name,
-            sans=self._get_sans(),
-        )
-        self.certs.request_certificate_creation(certificate_signing_request=new_csr)
-        self.charm.set_secret(SCOPE, "csr", new_csr.decode("utf-8"))
-
         # Invalidate the current certificate so _on_certificate_available
         # will accept and install the new one when it arrives.
         self.charm.set_secret(SCOPE, "certificate", None)
-        self.charm.unit_peer_data.update({"tls": "requested"})
+
+        # For revoked certificates, request a new certificate using the
+        # existing private key (the key is not compromised, only the CA rotated)
+        self._request_certificate(key=self.charm.get_secret(SCOPE, "key").encode("utf-8"))
 
     def _on_tls_relation_broken(self, _) -> None:
         """Disable TLS when TLS relation broken."""
@@ -233,9 +224,16 @@ class MySQLTLS(Object):
     # =======================
     #  Helpers
     # =======================
-    def _request_certificate(self, param: str | None):
+    def _request_certificate(self, *, param: str | None = None, key: bytes | None = None):
         """Request a certificate to TLS Certificates Operator."""
-        key = generate_private_key() if param is None else self._parse_tls_file(param)
+        if param is None and key is None:
+            key = generate_private_key()
+        elif param is not None and key is None:
+            key = self._parse_tls_file(param)
+        elif key is not None and param is None:
+            pass
+        else:
+            raise ValueError("Cannot pass param and key at the same time")
 
         csr = generate_csr(
             private_key=key,
