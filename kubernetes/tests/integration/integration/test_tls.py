@@ -157,11 +157,10 @@ def test_rotate_tls_key(juju: Juju) -> None:
 
     # set key using auto-generated key for each unit
     for unit_name in app_units:
-        task = juju.run(
+        juju.run(
             unit=unit_name,
             action="set-tls-private-key",
         )
-        task.raise_on_failure()
 
     # allow time for reconfiguration
     sleep(TLS_SETUP_SLEEP_TIME)
@@ -211,12 +210,10 @@ def test_certificate_invalidated(juju: Juju) -> None:
     # revokes all issued certificates and triggers the certificate_invalidated
     # event on the requirer side.
     logger.info("Rotating CA private key on %s", tls_app_name)
-    tls_leader = get_app_leader(juju, tls_app_name)
-    task = juju.run(
-        unit=tls_leader,
+    juju.run(
+        unit=get_app_leader(juju, tls_app_name),
         action="rotate-private-key",
     )
-    task.raise_on_failure()
 
     # Wait for hooks to handle the invalidation and request/receive new certs.
     sleep(TLS_SETUP_SLEEP_TIME)
