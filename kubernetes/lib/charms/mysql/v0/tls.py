@@ -190,7 +190,6 @@ class MySQLTLS(Object):
             return
 
         if event.reason == "expired":
-            # For expired certificates, reuse the renewal logic.
             self._on_certificate_expiring(event)
             return
 
