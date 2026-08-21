@@ -202,7 +202,8 @@ def test_certificate_invalidated(juju: Juju) -> None:
     # Record the current certificate md5 for each unit before invalidation.
     original_tls = {}
     for unit_name in app_units:
-        original_tls[unit_name] = unit_file_md5(
+        original_tls[unit_name] = {}
+        original_tls[unit_name]["cert"] = unit_file_md5(
             juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}"
         )
 
@@ -226,7 +227,7 @@ def test_certificate_invalidated(juju: Juju) -> None:
     # certificates; the cert files should have been updated.
     for unit_name in app_units:
         new_cert_md5 = unit_file_md5(juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}")
-        assert new_cert_md5 != original_tls[unit_name], (
+        assert new_cert_md5 != original_tls[unit_name]["cert"], (
             f"cert for {unit_name} was not updated after certificate invalidation."
         )
 
