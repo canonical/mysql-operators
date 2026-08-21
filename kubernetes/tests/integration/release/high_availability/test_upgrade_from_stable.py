@@ -51,7 +51,7 @@ def continuous_writes(juju: Juju) -> Generator:
 @markers.amd64_only
 def test_upgrade_from_stable_amd(juju: Juju, charm: str):
     """Simple test to ensure that all MySQL stable revisions can be upgraded."""
-    image = os.getenv("MYSQL_IMAGE")
+    image = os.environ["MYSQL_IMAGE"]
     revision = os.getenv("CHARM_REVISION_AMD64")
     if revision is None:
         pytest.skip(f"No revision for {architecture.architecture} architecture")
@@ -68,7 +68,7 @@ def test_upgrade_from_stable_amd(juju: Juju, charm: str):
 @markers.arm64_only
 def test_upgrade_from_stable_arm(juju: Juju, charm: str):
     """Simple test to ensure that all MySQL stable revisions can be upgraded."""
-    image = os.getenv("MYSQL_IMAGE")
+    image = os.environ["MYSQL_IMAGE"]
     revision = os.getenv("CHARM_REVISION_ARM64")
     if revision is None:
         pytest.skip(f"No revision for {architecture.architecture} architecture")
