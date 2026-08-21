@@ -197,14 +197,6 @@ class MySQL(MySQLBase):
                 # hold the snap in charm determined revision
                 charmed_mysql.hold()
 
-            # ensure creation of mysql shell common directory by running 'mysqlsh --help'
-            common_path = pathlib.Path(CHARMED_MYSQL_COMMON_DIRECTORY)
-            if not common_path.exists():
-                logger.debug("Creating charmed-mysql common directory")
-                subprocess.check_call(
-                    ["/snap/bin/charmed-mysql.mysqlsh", "--help"], stderr=subprocess.PIPE
-                )
-
             for alias in [
                 "mysql",
                 "mysqlrouter",
