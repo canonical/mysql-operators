@@ -152,7 +152,10 @@ def test_relation_through_router(juju: Juju) -> None:
         timeout=10 * MINUTE_SECS,
     )
     juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_blocked, MYSQL_TEST_APP_NAME),
+        ready=lambda status: all(
+            wait_for_unit_status(MYSQL_TEST_APP_NAME, unit_name, "blocked")(status)
+            for unit_name in get_app_units(juju, MYSQL_TEST_APP_NAME)
+        ),
         timeout=10 * MINUTE_SECS,
     )
 
