@@ -1019,6 +1019,8 @@ class TestMySQLBase(unittest.TestCase):
         _execute_commands.side_effect = [
             ("16", None),
             ("/tmp/base/directory/xtra_backup_ABCD", None),
+            ("/tmp/base/directory/s3_ca_ABCD", None),
+            (None, None),
             ("stdout", "stderr"),
         ]
 
@@ -1033,6 +1035,7 @@ class TestMySQLBase(unittest.TestCase):
                 "endpoint": "s3_endpoint",
                 "s3-api-version": "s3_api_version",
                 "s3-uri-style": "s3_uri_style",
+                "tls-ca-chain": ["foobar_ca_chain"],
             },
             "/xtrabackup/location",
             "/xbcloud/location",
@@ -1047,13 +1050,27 @@ class TestMySQLBase(unittest.TestCase):
         self.assertEqual(stdout, "stdout")
         self.assertEqual(stderr, "stderr")
 
-        self.assertEqual(_execute_commands.call_count, 3)
+        self.assertEqual(_execute_commands.call_count, 5)
 
         _expected_nproc_commands = ["nproc"]
         _expected_tmp_dir_commands = [
             "mktemp",
             "--directory",
             "/tmp/base/directory/xtra_backup_XXXX",
+        ]
+        _expected_ca_dir_commands = [
+            "mktemp",
+            "--directory",
+            "/tmp/base/directory/s3_ca_XXXX",
+        ]
+        _exepected_ca_content_commands = [
+            "echo",
+            "Zm9vYmFyX2NhX2NoYWlu",
+            "|",
+            "base64",
+            "-d",
+            ">",
+            "/tmp/base/directory/s3_ca_ABCD/s3-ca.pem",
         ]
         _expected_xtrabackup_commands = [
             "/xtrabackup/location --defaults-file=/defaults/file.cnf",
@@ -1080,6 +1097,7 @@ class TestMySQLBase(unittest.TestCase):
             "--s3-endpoint=s3_endpoint",
             "--s3-api-version=s3_api_version",
             "--s3-bucket-lookup=s3_uri_style",
+            "--cacert=/tmp/base/directory/s3_ca_ABCD/s3-ca.pem",
             "s3_directory",
         ]
 
@@ -1088,6 +1106,10 @@ class TestMySQLBase(unittest.TestCase):
             sorted([
                 call(_expected_nproc_commands),
                 call(_expected_tmp_dir_commands, user="test_user", group="test_group"),
+                call(_expected_ca_dir_commands, user="test_user", group="test_group"),
+                call(
+                    _exepected_ca_content_commands, bash=True, user="test_user", group="test_group"
+                ),
                 call(
                     _expected_xtrabackup_commands,
                     bash=True,
@@ -1198,6 +1220,8 @@ class TestMySQLBase(unittest.TestCase):
         _execute_commands.side_effect = [
             ("16", None),
             ("mysql/data/directory/#mysql_sst_ABCD", None),
+            ("mysql/data/directory/s3_ca_ABCD", None),
+            (None, None),
             ("", None),
         ]
 
@@ -1212,6 +1236,7 @@ class TestMySQLBase(unittest.TestCase):
                 "endpoint": "s3_endpoint",
                 "s3-api-version": "s3_api_version",
                 "s3-uri-style": "s3_uri_style",
+                "tls-ca-chain": ["foobar_ca_chain"],
             },
             "mysql/data/directory",
             "xbcloud/location",
@@ -1226,6 +1251,20 @@ class TestMySQLBase(unittest.TestCase):
             "--directory",
             "mysql/data/directory/#mysql_sst_XXXX",
         ]
+        _expected_ca_dir_commands = [
+            "mktemp",
+            "--directory",
+            "mysql/data/directory/s3_ca_XXXX",
+        ]
+        _exepected_ca_content_commands = [
+            "echo",
+            "Zm9vYmFyX2NhX2NoYWlu",
+            "|",
+            "base64",
+            "-d",
+            ">",
+            "mysql/data/directory/s3_ca_ABCD/s3-ca.pem",
+        ]
         _expected_retrieve_backup_commands = [
             "xbcloud/location get",
             "--curl-retriable-errors=7",
@@ -1237,6 +1276,7 @@ class TestMySQLBase(unittest.TestCase):
             "--s3-bucket-lookup=s3_uri_style",
             "--s3-api-version=s3_api_version",
             "s3_path/backup-id",
+            "--cacert=mysql/data/directory/s3_ca_ABCD/s3-ca.pem",
             "| xbstream/location",
             "--decompress",
             "-x",
@@ -1249,6 +1289,10 @@ class TestMySQLBase(unittest.TestCase):
             sorted([
                 call(_expected_nproc_commands),
                 call(_expected_temp_dir_commands, user="test-user", group="test-group"),
+                call(_expected_ca_dir_commands, user="test-user", group="test-group"),
+                call(
+                    _exepected_ca_content_commands, bash=True, user="test-user", group="test-group"
+                ),
                 call(
                     _expected_retrieve_backup_commands,
                     bash=True,
