@@ -23,6 +23,7 @@ def test_arm_charm_on_amd_host(juju: Juju) -> None:
         num_units=1,
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         base="ubuntu@26.04",
     )
 
@@ -48,6 +49,7 @@ def test_amd_charm_on_arm_host(juju: Juju) -> None:
         num_units=1,
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         base="ubuntu@26.04",
     )
 

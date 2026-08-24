@@ -40,6 +40,7 @@ def test_deploy_latest(juju: Juju) -> None:
         base="ubuntu@26.04",
         channel="8.4/edge",
         config={"profile": "testing"},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=3,
         trust=True,
     )
