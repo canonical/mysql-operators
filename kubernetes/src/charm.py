@@ -108,7 +108,13 @@ from relations.tls import TLS
 from services.events import CharmServicesEvents
 from services.managers import LogRotateManager, SelfHealingManager
 from services.observers import RotateMySQLLogsObserver, SelfHealingMySQLObserver
-from utils import compare_dictionaries, dotappend, generate_random_password, get_k8s_fqdn
+from utils import (
+    compare_dictionaries,
+    dotappend,
+    generate_pebble_layer_env,
+    generate_random_password,
+    get_k8s_fqdn,
+)
 
 logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -261,6 +267,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     "kill-delay": "24h",
                     "environment": {
                         "MYSQLD_PARENT_PID": 1,
+                        **generate_pebble_layer_env(),
                     },
                     "requires": [MYSQL_LOG_SERVICE],
                     "after": [MYSQL_LOG_SERVICE],
