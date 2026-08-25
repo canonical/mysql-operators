@@ -1,0 +1,16 @@
+Aug 25 03:09:19 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Aug 25 03:09:20 [32mINFO    [0m root:test_replication_logs_rotation.py:83 Overwriting the log rotate dispatcher script
+Aug 25 03:09:21 [32mINFO    [0m root:test_replication_logs_rotation.py:92 Stopping the log rotate dispatcher
+Aug 25 03:09:21 [32mINFO    [0m jubilant:_juju.py:308 cli: juju exec --model testing --format json --unit mysql-k8s/0 -- 'pkill -f log_rotate_dispatcher.py --signal SIGKILL'
+Aug 25 03:09:21 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/0 'pgrep -x /usr/bin/python3 scripts/log_rotate_dispatcher.py'
+Aug 25 03:09:22 [32mINFO    [0m root:test_replication_logs_rotation.py:98 Removing existing archive directories
+Aug 25 03:09:22 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/0 'find /var/lib/mysql/archive/archive_audit -maxdepth 1 -delete'
+Aug 25 03:09:22 [32mINFO    [0m root:test_replication_logs_rotation.py:106 Writing some data to the text log files
+Aug 25 03:09:23 [32mINFO    [0m root:test_replication_logs_rotation.py:98 Removing existing archive directories
+Aug 25 03:09:23 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/0 'find /var/lib/mysql/archive/archive_error -maxdepth 1 -delete'
+Aug 25 03:09:24 [32mINFO    [0m root:test_replication_logs_rotation.py:106 Writing some data to the text log files
+Aug 25 03:09:25 [32mINFO    [0m root:test_replication_logs_rotation.py:115 Dispatching custom event to rotate logs
+Aug 25 03:09:25 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing mysql-k8s/0 'juju-exec JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs /var/lib/juju/agents/unit-mysql-k8s-0/charm/dispatch'
+Aug 25 03:09:30 [32mINFO    [0m root:test_replication_logs_rotation.py:118 Ensuring log files were rotated
+Aug 25 03:09:31 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/0 'ls -la /var/lib/mysql/archive/archive_audit'
+Aug 25 03:09:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju ssh --model testing --container mysql mysql-k8s/0 'ls -la /var/lib/mysql/archive/archive_error'
