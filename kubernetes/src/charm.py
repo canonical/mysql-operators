@@ -748,7 +748,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # if only dynamic config changed, apply it
             logger.info("Configuration does not requires restart")
             for config in dynamic_config:
-                self._mysql.set_dynamic_variable(config.removeprefix("loose-"), new_config_dict[config])
+                self._mysql.set_dynamic_variable(
+                    config.removeprefix("loose-"), new_config_dict[config]
+                )
 
     def _on_leader_elected(self, _) -> None:
         """Handle the leader elected event.
