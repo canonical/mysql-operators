@@ -42,6 +42,7 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
         channel="8.4/edge",
         config={**configuration, "cluster-name": "lima"},
         constraints=constraints,
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=1,
         trust=True,
     )
@@ -52,6 +53,7 @@ def test_build_and_deploy(juju: Juju, charm: str) -> None:
         channel="8.4/edge",
         config={**configuration, "cluster-name": "cuzco"},
         constraints=constraints,
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=1,
         trust=True,
     )

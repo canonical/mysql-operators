@@ -32,6 +32,7 @@ def test_build_and_deploy(juju: Juju, charm):
         config={"cluster-name": "test_cluster", "profile": "testing"},
         num_units=3,
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         base="ubuntu@26.04",
         trust=True,
     )

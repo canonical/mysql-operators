@@ -37,6 +37,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         base="ubuntu@26.04",
         config={"profile": "testing"},
         resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         num_units=3,
         trust=True,
     )

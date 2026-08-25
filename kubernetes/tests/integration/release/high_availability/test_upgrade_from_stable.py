@@ -87,6 +87,7 @@ def deploy_stable(juju: Juju, revision: int, image: str) -> None:
         channel="8.4/stable",
         config={"profile": "testing"},
         resources={"mysql-image": image},
+        storage={"data": "500M", "archive": "250M", "logs": "250M", "temp": "250M"},
         revision=revision,
         num_units=3,
         trust=True,

@@ -21,7 +21,7 @@ variable "base" {
 variable "config" {
   description = "Application configuration. Details at https://charmhub.io/mysql-k8s/configurations"
   type        = map(string)
-  default     = null
+  default     = {}
 }
 
 variable "constraints" {
@@ -48,14 +48,14 @@ variable "units" {
   default     = 3
 }
 
-variable "storage_size" {
+variable "storage_sizes" {
   description = "Storage size"
-  type        = string
-  default     = "10G"
+  type        = map(string)
+  default     = {}
 }
 
 variable "expose" {
   description = "Exposed network access"
   type        = map(string)
-  default     = null
+  default     = {}
 }
