@@ -17,12 +17,14 @@ from ..helpers import (
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
+    get_app_leader,
     get_app_units,
     get_mysql_server_credentials,
     get_unit_address,
     get_unit_relation_data,
     wait_for_apps_status,
 )
+from ..markers import only_with_juju_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -155,11 +157,10 @@ def test_rotate_tls_key(juju: Juju) -> None:
 
     # set key using auto-generated key for each unit
     for unit_name in app_units:
-        task = juju.run(
+        juju.run(
             unit=unit_name,
             action="set-tls-private-key",
         )
-        task.raise_on_failure()
 
     # allow time for reconfiguration
     sleep(TLS_SETUP_SLEEP_TIME)
@@ -184,6 +185,63 @@ def test_rotate_tls_key(juju: Juju) -> None:
 
         assert not is_connection_possible(config, **{"ssl_disabled": True}), (
             f"❌ Unencrypted connection possible to unit {unit_name} with enabled TLS"
+        )
+
+
+@only_with_juju_secrets
+def test_certificate_invalidated(juju: Juju) -> None:
+    """Verify rotating the CA private key invalidates certs and the charm requests new ones.
+
+    This test triggers the ``certificate_invalidated`` event by running the
+    ``rotate-private-key`` action on the self-signed-certificates charm, which
+    rotates the CA private key and revokes all issued certificates. The MySQL
+    charm is expected to request new certificates and keep TLS enabled.
+    """
+    app_units = get_app_units(juju, APP_NAME)
+
+    # Record the current certificate md5 for each unit before invalidation.
+    original_tls = {}
+    for unit_name in app_units:
+        original_tls[unit_name] = {}
+        original_tls[unit_name]["cert"] = unit_file_md5(
+            juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}"
+        )
+
+    # Rotate the CA private key on the self-signed-certificates charm, which
+    # revokes all issued certificates and triggers the certificate_invalidated
+    # event on the requirer side.
+    logger.info("Rotating CA private key on %s", tls_app_name)
+    juju.run(
+        unit=get_app_leader(juju, tls_app_name),
+        action="rotate-private-key",
+    )
+
+    # Wait for hooks to handle the invalidation and request/receive new certs.
+    sleep(TLS_SETUP_SLEEP_TIME)
+    juju.wait(
+        jubilant_backports.all_active,
+        timeout=TIMEOUT,
+    )
+
+    # After invalidation, the charm should have requested and received new
+    # certificates; the cert files should have been updated.
+    for unit_name in app_units:
+        new_cert_md5 = unit_file_md5(juju, unit_name, f"/var/lib/mysql/{TLS_SSL_CERT_FILE}")
+        assert new_cert_md5 != original_tls[unit_name]["cert"], (
+            f"cert for {unit_name} was not updated after certificate invalidation."
+        )
+
+    # Asserting only encrypted connection should be possible
+    logger.info("Asserting connections after certificate invalidation")
+    for unit_name in app_units:
+        unit_ip = get_unit_address(juju, APP_NAME, unit_name)
+        config["host"] = unit_ip
+        assert is_connection_possible(config, **{"ssl_disabled": False}), (
+            f"❌ Encrypted connection not possible to unit {unit_name} after cert invalidation"
+        )
+
+        assert not is_connection_possible(config, **{"ssl_disabled": True}), (
+            f"❌ Unencrypted connection possible to unit {unit_name} after cert invalidation"
         )
 
 

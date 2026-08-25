@@ -30,6 +30,7 @@ from charms.mysql.v0.mysql import MySQLKillSessionError, MySQLTLSSetupError
 from charms.tls_certificates_interface.v2.tls_certificates import (
     CertificateAvailableEvent,
     CertificateExpiringEvent,
+    CertificateInvalidatedEvent,
     TLSCertificatesRequiresV2,
     generate_csr,
     generate_private_key,
@@ -50,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 LIBID = "eb73947deedd4380a3a90d527e0878eb"
 LIBAPI = 0
-LIBPATCH = 12
+LIBPATCH = 13
 
 PYDEPS = ["mysql-shell-client[contrib] ~= 1.0"]
 
@@ -82,23 +83,32 @@ class MySQLTLS(Object):
 
         self.framework.observe(self.certs.on.certificate_available, self._on_certificate_available)
         self.framework.observe(self.certs.on.certificate_expiring, self._on_certificate_expiring)
+        self.framework.observe(
+            self.certs.on.certificate_invalidated, self._on_certificate_invalidated
+        )
 
     # =======================
     #  Event Handlers
     # =======================
     def _on_set_tls_private_key(self, event: ActionEvent) -> None:
         """Action for setting a TLS private key."""
-        self._request_certificate(event.params.get("internal-key", None))
+        self._request_certificate(param=event.params.get("internal-key", None))
 
     def _on_tls_relation_joined(self, event) -> None:
         """Request certificate when TLS relation joined."""
         if not self.charm.unit_initialized():
             event.defer()
             return
-        self._request_certificate(None)
+        self._request_certificate()
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
-        """Enable TLS when TLS certificate available."""
+        """Enable TLS when TLS certificate available.
+
+        Also handles CA rotation: when TLS is already enabled but the incoming
+        cert or CA differs from the stored one (e.g. the certificate_invalidated
+        event was missed due to a race condition), update the cert files and
+        reconfigure TLS.
+        """
         if (
             event.certificate_signing_request.strip()
             != self.charm.get_secret(SCOPE, "csr").strip()
@@ -107,8 +117,12 @@ class MySQLTLS(Object):
             return
 
         if self.charm.unit_peer_data.get("tls") == "enabled":
-            logger.debug("TLS is already enabled.")
-            return
+            stored_cert = self.charm.get_secret(SCOPE, "certificate")
+            stored_ca = self.charm.get_secret(SCOPE, "certificate-authority")
+            if event.certificate == stored_cert and event.ca == stored_ca:
+                logger.debug("TLS is already enabled.")
+                return
+            logger.info("Updating TLS certificate (CA rotation detected).")
 
         state = self.charm._mysql.get_member_state()
         if state != InstanceState.ONLINE:
@@ -165,6 +179,28 @@ class MySQLTLS(Object):
         )
         self.charm.set_secret(SCOPE, "csr", new_csr.decode("utf-8"))
 
+    def _on_certificate_invalidated(self, event: CertificateInvalidatedEvent) -> None:
+        """Handle certificate invalidation by requesting a new certificate.
+
+        When a certificate is revoked or expired, invalidate the current
+        certificate and request a new one through the TLS interface.
+        """
+        if event.certificate != self.charm.get_secret(SCOPE, "certificate"):
+            logger.error("An unknown certificate invalidated.")
+            return
+
+        if event.reason == "expired":
+            self._on_certificate_expiring(event)
+            return
+
+        # Invalidate the current certificate so _on_certificate_available
+        # will accept and install the new one when it arrives.
+        self.charm.set_secret(SCOPE, "certificate", None)
+
+        # For revoked certificates, request a new certificate using the
+        # existing private key (the key is not compromised, only the CA rotated)
+        self._request_certificate(key=self.charm.get_secret(SCOPE, "key").encode("utf-8"))
+
     def _on_tls_relation_broken(self, _) -> None:
         """Disable TLS when TLS relation broken."""
         if self.charm.removing_unit:
@@ -188,9 +224,16 @@ class MySQLTLS(Object):
     # =======================
     #  Helpers
     # =======================
-    def _request_certificate(self, param: str | None):
+    def _request_certificate(self, *, param: str | None = None, key: bytes | None = None):
         """Request a certificate to TLS Certificates Operator."""
-        key = generate_private_key() if param is None else self._parse_tls_file(param)
+        if param is None and key is None:
+            key = generate_private_key()
+        elif param is not None and key is None:
+            key = self._parse_tls_file(param)
+        elif key is not None and param is None:
+            pass
+        else:
+            raise ValueError("Cannot pass param and key at the same time")
 
         csr = generate_csr(
             private_key=key,
