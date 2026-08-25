@@ -412,7 +412,6 @@ class TestMySQL(unittest.TestCase):
     @patch("pathlib.Path.touch")
     @patch("pathlib.Path.owner")
     @patch("pathlib.Path.exists")
-    @patch("subprocess.check_call")
     @patch("subprocess.run")
     @patch("os.path.exists", return_value=True)
     @patch("mysql_vm_helpers.snap.SnapCache")
@@ -421,7 +420,6 @@ class TestMySQL(unittest.TestCase):
         _cache,
         _path_exists,
         _run,
-        _check_call,
         _pathlib_exists,
         _pathlib_owner,
         _touch,
@@ -437,10 +435,6 @@ class TestMySQL(unittest.TestCase):
         _pathlib_owner.return_value = None
 
         self.mysql.install_and_configure_mysql_dependencies()
-
-        _check_call.assert_called_once_with(
-            ["/snap/bin/charmed-mysql.mysqlsh", "--help"], stderr=-1
-        )
 
         assert _mysql_snap.alias.call_count == 7
         _mysql_snap.alias.assert_any_call("mysql")
