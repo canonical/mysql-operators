@@ -68,7 +68,9 @@ def _construct_endpoint(s3_parameters: dict) -> str:
     return endpoint
 
 
-def _get_bucket(s3_parameters: dict, ca_file: str | None = None) -> boto3.resources.base.ServiceResource:
+def _get_bucket(
+    s3_parameters: dict, ca_file: str | None = None
+) -> boto3.resources.base.ServiceResource:
     """Get an S3 bucket resource.
 
     Args:
@@ -110,14 +112,17 @@ def upload_content_to_s3(content: str, content_path: str, s3_parameters: dict) -
         logger.info(f"Uploading content to bucket={s3_parameters['bucket']}, path={content_path}")
 
         ca_chain = s3_parameters.get("tls-ca-chain")
-        with tempfile.NamedTemporaryFile() as content_file, tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
+        with (
+            tempfile.NamedTemporaryFile() as content_file,
+            tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file,
+        ):
             content_file.write(content.encode("utf-8"))
             content_file.flush()
             if ca_file:
                 ca = "\n".join(ca_chain)
                 ca_file.write(ca.encode())
                 ca_file.flush()
-    
+
             bucket = _get_bucket(s3_parameters, ca_file=ca_file.name if ca_file else None)
             bucket.upload_file(content_file.name, content_path)
     except Exception as e:
@@ -146,7 +151,10 @@ def _read_content_from_s3(content_path: str, s3_parameters: dict) -> str | None:
     try:
         logger.info(f"Reading content from bucket={s3_parameters['bucket']}, path={content_path}")
         ca_chain = s3_parameters.get("tls-ca-chain")
-        with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file, BytesIO() as buf:
+        with (
+            tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file,
+            BytesIO() as buf,
+        ):
             if ca_file:
                 ca = "\n".join(ca_chain)
                 ca_file.write(ca.encode())
@@ -245,9 +253,7 @@ def _list_backups_from_s3(s3_client: boto3.client, s3_parameters: dict) -> list[
     """List backup ids from S3 and compile their statuses."""
     list_objects_v2_paginator = s3_client.get_paginator("list_objects_v2")
     s3_path_directory = (
-        s3_parameters["path"]
-        if s3_parameters["path"][-1] == "/"
-        else f"{s3_parameters['path']}/"
+        s3_parameters["path"] if s3_parameters["path"][-1] == "/" else f"{s3_parameters['path']}/"
     )
 
     pages = list_objects_v2_paginator.paginate(

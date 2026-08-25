@@ -97,14 +97,8 @@ from constants import (
     SERVER_CONFIG_PASSWORD_KEY,
     SERVER_CONFIG_USERNAME,
 )
-
 from mysql_shell.builders import QueryQuoter
 from mysql_shell.clients import ClusterClient, InstanceClient
-from mysql_shell_contrib.builders import (
-    CharmAuthorizationQueryBuilder,
-    CharmLockingQueryBuilder,
-    CharmLoggingQueryBuilder,
-)
 from mysql_shell.executors import BaseExecutor
 from mysql_shell.executors.errors import ExecutionError
 from mysql_shell.models.account import User
@@ -113,6 +107,11 @@ from mysql_shell.models.connection import ConnectionDetails
 from mysql_shell.models.instance import InstanceRole, InstanceState
 from mysql_shell.models.statement import LogType
 from mysql_shell.models.statement import VariableScope as Scope
+from mysql_shell_contrib.builders import (
+    CharmAuthorizationQueryBuilder,
+    CharmLockingQueryBuilder,
+    CharmLoggingQueryBuilder,
+)
 from ops.charm import ActionEvent, CharmBase, RelationBrokenEvent
 from ops.model import Unit
 from tenacity import (
@@ -2624,9 +2623,7 @@ class MySQLBase(ABC):
         ca_file_location = None
         try:
             nproc, _ = self._execute_commands(nproc_command)
-            tmp_dir, _ = self._execute_commands(
-                make_temp_dir_command, user=user, group=group
-            )
+            tmp_dir, _ = self._execute_commands(make_temp_dir_command, user=user, group=group)
             if ca_chain:
                 ca_file_location = self.create_sa_pem_file(
                     ca_chain, tmp_base_directory, user=user, group=group
@@ -2668,7 +2665,9 @@ class MySQLBase(ABC):
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"--s3-bucket-lookup={s3_parameters['s3-uri-style']}",
         ]
-        xtrabackup_commands.append(f"--cacert={ca_file_location}") if ca_chain and ca_file_location else None
+        xtrabackup_commands.append(
+            f"--cacert={ca_file_location}"
+        ) if ca_chain and ca_file_location else None
         xtrabackup_commands.append(f"{s3_path}")
         try:
             logger.debug(
@@ -2765,7 +2764,9 @@ class MySQLBase(ABC):
             f"--s3-api-version={s3_parameters['s3-api-version']}",
             f"{s3_parameters['path']}/{backup_id}",
         ]
-        retrieve_backup_command.append(f"--cacert={ca_file_location}") if ca_chain and ca_file_location else None
+        retrieve_backup_command.append(
+            f"--cacert={ca_file_location}"
+        ) if ca_chain and ca_file_location else None
         retrieve_backup_command += [
             f"| {xbstream_location}",
             "--decompress",

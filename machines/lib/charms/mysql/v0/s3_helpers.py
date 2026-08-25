@@ -111,7 +111,10 @@ def upload_content_to_s3(content: str, content_path: str, s3_parameters: dict) -
         logger.info(f"Uploading content to bucket={s3_parameters['bucket']}, path={content_path}")
 
         ca_chain = s3_parameters.get("tls-ca-chain")
-        with tempfile.NamedTemporaryFile() as content_file, tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file:
+        with (
+            tempfile.NamedTemporaryFile() as content_file,
+            tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file,
+        ):
             content_file.write(content.encode("utf-8"))
             content_file.flush()
             if ca_file:
@@ -147,7 +150,10 @@ def _read_content_from_s3(content_path: str, s3_parameters: dict) -> str | None:
     try:
         logger.info(f"Reading content from bucket={s3_parameters['bucket']}, path={content_path}")
         ca_chain = s3_parameters.get("tls-ca-chain")
-        with tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file, BytesIO() as buf:
+        with (
+            tempfile.NamedTemporaryFile() if ca_chain else nullcontext() as ca_file,
+            BytesIO() as buf,
+        ):
             if ca_file:
                 ca = "\n".join(ca_chain)
                 ca_file.write(ca.encode())
