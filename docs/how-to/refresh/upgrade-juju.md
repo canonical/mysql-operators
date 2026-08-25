@@ -119,7 +119,7 @@ Optionally rerun the `juju --version` command to confirm the upgrade.
 
 <details><summary>2. Bootstrap the new controller</summary>
 
-Use the [`juju bootstrap`](https://juju.is/docs/juju/juju-bootstrap) command to create a new controller. In this example, we specify a particular version (and name the controller accordingly):
+Use the [`juju bootstrap`](https://canonical.com/juju/docs/juju-cli/latest/reference/juju-cli/list-of-juju-cli-commands/bootstrap/) command to create a new controller. In this example, we specify a particular version (and name the controller accordingly):
 
 ```text
 juju bootstrap lxd lxd_3.6.14 --agent-version 3.6.14
@@ -216,11 +216,6 @@ At this stage, the application continues running under the supervision of the ne
 You can now proceed with the {ref}`charm upgrade <refresh-single-cluster>`.
 
 ## Resources
-Further documentation about Juju upgrades: 
-* [Juju | Upgrade a controller](https://juju.is/docs/juju/manage-controllers#upgrade-a-controller)
-* [Juju | `upgrade-controller`](https://juju.is/docs/juju/juju-upgrade-controller)
-* [Juju | `upgrade-model`](https://juju.is/docs/juju/juju-upgrade-model)
-
-<!-- LINKS -->
-
-[bootstrap]: https://juju.is/docs/juju/juju-bootstrap
+Further documentation about Juju upgrades:
+* [Juju | `upgrade-controller`](https://canonical.com/juju/docs/juju-cli/latest/reference/juju-cli/list-of-juju-cli-commands/upgrade-controller/)
+* [Juju | `upgrade-model`](https://canonical.com/juju/docs/juju-cli/latest/reference/juju-cli/list-of-juju-cli-commands/upgrade-model/)

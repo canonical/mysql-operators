@@ -34,9 +34,9 @@ juju add-model mymodel
 
 ## Deploy MySQL with Juju zones constraints
 
-Juju provides the support for availability zones using **constraints**. Read more about zones in [Juju documentation](https://juju.is/docs/juju/constraint#zones).
+Juju provides the support for availability zones using **constraints**. Read more about zones in [Juju documentation](https://canonical.com/juju/docs/juju-cli/latest/reference/constraint/#zones).
 
-The command below demonstrates how Juju automatically deploys Charmed MySQL VM using [Juju constraints](https://juju.is/docs/juju/constraint#zones):
+The command below demonstrates how Juju automatically deploys Charmed MySQL VM using [Juju constraints](https://canonical.com/juju/docs/juju-cli/latest/reference/constraint/#zones):
 
 ```shell
 juju deploy mysql -n 3 \
