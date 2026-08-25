@@ -438,3 +438,76 @@ class TestCharm(unittest.TestCase):
         with patch("ops.charm.StartEvent.defer") as _defer:
             self.charm.on.start.emit()
             _defer.assert_called_once()
+
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
+    @patch("mysql_k8s_helpers.MySQL.release_lock")
+    @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
+    def test_get_blocking_lock_owner_live_peer(
+        self, _get_lock_owner, _release_lock, _get_unit_address
+    ):
+        """A lock held by a live peer blocks and is left alone."""
+        _get_lock_owner.return_value = f"{APP_NAME}-1"
+
+        assert self.charm.get_blocking_lock_owner("1.1.1.1", "unit-add") == f"{APP_NAME}-1"
+        _release_lock.assert_not_called()
+
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
+    @patch("mysql_k8s_helpers.MySQL.release_lock")
+    @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
+    def test_get_blocking_lock_owner_self_held(
+        self, _get_lock_owner, _release_lock, _get_unit_address
+    ):
+        """A lock left behind by this very unit is reclaimed, not waited on."""
+        _get_lock_owner.return_value = f"{APP_NAME}-0"
+
+        assert self.charm.get_blocking_lock_owner("1.1.1.1", "unit-add") is None
+        _release_lock.assert_called_once_with("1.1.1.1", f"{APP_NAME}-0", "unit-add")
+
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
+    @patch("mysql_k8s_helpers.MySQL.release_lock")
+    @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
+    def test_get_blocking_lock_owner_departed_unit(
+        self, _get_lock_owner, _release_lock, _get_unit_address
+    ):
+        """A lock left behind by a unit that is no longer a peer is reclaimed."""
+        _get_lock_owner.return_value = f"{APP_NAME}-9"
+
+        assert self.charm.get_blocking_lock_owner("1.1.1.1", "unit-add") is None
+        _release_lock.assert_called_once_with("1.1.1.1", f"{APP_NAME}-9", "unit-add")
+
+    @patch("charm.sleep")
+    @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
+    @patch("charm.MySQLOperatorCharm._get_primary_from_online_peer", return_value="2.2.2.2")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="1.1.1.1")
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=1)
+    @patch("mysql_k8s_helpers.MySQL.is_cluster_replica", return_value=False)
+    @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
+    @patch("mysql_k8s_helpers.MySQL.release_lock")
+    @patch("mysql_k8s_helpers.MySQL.stop_group_replication")
+    @patch(
+        "mysql_k8s_helpers.MySQL.get_cluster_status",
+        return_value={"defaultReplicaSet": {"topology": {}}},
+    )
+    @patch("mysql_k8s_helpers.MySQL.add_instance_to_cluster")
+    def test_join_unit_to_cluster_reclaims_own_stale_lock(
+        self,
+        _add_instance_to_cluster,
+        _get_cluster_status,
+        _stop_group_replication,
+        _release_lock,
+        _get_lock_owner,
+        _is_cluster_replica,
+        _get_cluster_node_count,
+        _get_unit_address,
+        _get_primary_from_online_peer,
+        _is_instance_in_cluster,
+        _sleep,
+    ):
+        """A unit that died holding the unit-add lock reclaims it and joins."""
+        _get_lock_owner.return_value = f"{APP_NAME}-0"
+
+        self.charm.join_unit_to_cluster()
+
+        _release_lock.assert_called_once_with("2.2.2.2", f"{APP_NAME}-0", "unit-add")
+        _add_instance_to_cluster.assert_called_once()
+        self.assertTrue(isinstance(self.charm.unit.status, ActiveStatus))
