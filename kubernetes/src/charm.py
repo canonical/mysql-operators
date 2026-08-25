@@ -723,16 +723,18 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not config_content:
             return
 
-        logger.info("Persisting configuration changes to file")
-        old_config = self.mysql_config.get_custom_config(config_content)
-        new_config = self._write_mysqld_configuration()
-        changed_config = compare_dictionaries(old_config, new_config)
-
         # Override log rotation
         self.log_rotate_setup.setup()
 
         # Rotate TLS keys
         self._rotate_private_keys()
+
+        logger.info("Persisting configuration changes to file")
+        previous_config_dict = self.mysql_config.get_custom_config(config_content)
+        new_config_dict = self._write_mysqld_configuration()
+        # flatten new_config_dict to match previous_config_dict format (all values as strings)
+        new_config_dict_flat = {k: str(v) for k, v in new_config_dict.items()}
+        changed_config = compare_dictionaries(previous_config_dict, new_config_dict_flat)
 
         if (
             self.mysql_config.keys_requires_restart(changed_config)
@@ -746,7 +748,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # if only dynamic config changed, apply it
             logger.info("Configuration does not requires restart")
             for config in dynamic_config:
-                self._mysql.set_dynamic_variable(config.removeprefix("loose-"), new_config[config])
+                self._mysql.set_dynamic_variable(config.removeprefix("loose-"), new_config_dict[config])
 
     def _on_leader_elected(self, _) -> None:
         """Handle the leader elected event.

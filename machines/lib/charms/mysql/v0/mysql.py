@@ -1151,13 +1151,8 @@ class MySQLBase(ABC):
                 performance_schema_instrument = "'memory/%=OFF'"
 
         binlog_retention_seconds = binlog_retention_days * 24 * 60 * 60
-        config = configparser.ConfigParser(interpolation=None)
-
-        # do not enable slow query logs, but specify a log file path in case
-        # the admin enables them manually
-        base_config = {
+        mysqld_config: dict = {
             "datadir": MYSQL_DATA_DIR,
-            # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104
             "admin_address": self.instance_address,
@@ -1175,11 +1170,11 @@ class MySQLBase(ABC):
             "general_log_file": f"{MYSQL_LOGS_DIR}/general.log",
             "loose-group_replication_paxos_single_leader": "ON",
             "slow_query_log_file": f"{MYSQL_LOGS_DIR}/slow.log",
-            "binlog_expire_logs_seconds": f"{binlog_retention_seconds}",
+            "binlog_expire_logs_seconds": binlog_retention_seconds,
             "gtid_mode": "ON",
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
-            "max_connect_errors": "10000",
+            "max_connect_errors": 10000,
             # Password validation
             "loose-validate_password.check_user_name": "ON",
             "loose-validate_password.length": 12,
@@ -1188,29 +1183,31 @@ class MySQLBase(ABC):
             "loose-validate_password.policy": "MEDIUM",
             "loose-validate_password.special_char_count": 0,
         }
-        config["mysqld"] = base_config  # ty:ignore[invalid-assignment]
 
         if audit_log_enabled:
-            config["mysqld"]["loose-audit_log_filter.file"] = f"{MYSQL_LOGS_DIR}/audit.log"
-            config["mysqld"]["loose-audit_log_filter.format"] = "JSON"
-            config["mysqld"]["loose-audit_log_filter.policy"] = audit_log_policy.upper()
+            mysqld_config["loose-audit_log_filter.file"] = f"{MYSQL_LOGS_DIR}/audit.log"
+            mysqld_config["loose-audit_log_filter.format"] = "JSON"
+            mysqld_config["loose-audit_log_filter.policy"] = audit_log_policy.upper()
         if audit_log_strategy == "async":
-            config["mysqld"]["loose-audit_log_filter.strategy"] = "ASYNCHRONOUS"
+            mysqld_config["loose-audit_log_filter.strategy"] = "ASYNCHRONOUS"
         else:
-            config["mysqld"]["loose-audit_log_filter.strategy"] = "SEMISYNCHRONOUS"
+            mysqld_config["loose-audit_log_filter.strategy"] = "SEMISYNCHRONOUS"
 
         if innodb_buffer_pool_chunk_size:
-            config["mysqld"]["innodb_buffer_pool_chunk_size"] = str(innodb_buffer_pool_chunk_size)
+            mysqld_config["innodb_buffer_pool_chunk_size"] = innodb_buffer_pool_chunk_size
         if performance_schema_instrument:
-            config["mysqld"]["performance-schema-instrument"] = performance_schema_instrument
+            mysqld_config["performance-schema-instrument"] = performance_schema_instrument
         if group_replication_message_cache_size:
-            config["mysqld"]["loose-group_replication_message_cache_size"] = str(
+            mysqld_config["loose-group_replication_message_cache_size"] = (
                 group_replication_message_cache_size
             )
 
+        config = configparser.ConfigParser(interpolation=None)
+        config["mysqld"] = {k: str(v) for k, v in mysqld_config.items()}
+
         with io.StringIO() as string_io:
             config.write(string_io)
-            return string_io.getvalue(), dict(config["mysqld"])
+            return string_io.getvalue(), mysqld_config
 
     def _build_mysql_database_dba_role(self, database: str) -> str:
         """Builds the database-level DBA role, given length constraints."""
