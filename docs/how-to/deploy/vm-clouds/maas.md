@@ -9,7 +9,7 @@ myst:
 
 This guide aims to provide a quick start to deploying Charmed MySQL on MAAS. It summarizes the instructions from the [Build a MAAS and LXD environment with Multipass Tutorial](https://discourse.maas.io/t/5360) to set up and tear down a **playground environment**.
 
-If you want to deploy MySQL on MAAS in a **production environment**, refer to the official [Bootstrap MAAS Tutorial](https://maas.io/docs/tutorial-bootstrapping-maas) followed by the {ref}`Charmed MySQL Tutorial <tutorial>`.
+If you want to deploy MySQL on MAAS in a **production environment**, refer to the official [MAAS Get-started Tutorial](https://canonical.com/maas/docs/stable/how-to-guides/get-started/) followed by the {ref}`Charmed MySQL Tutorial <tutorial>`.
 
 ## Bootstrap a Multipass VM
 
@@ -20,7 +20,7 @@ sudo snap install multipass
 wget -qO- https://raw.githubusercontent.com/canonical/maas-multipass/main/maas.yml \
  | multipass launch --name maas -c8 -m12GB -d50GB --cloud-init -
 ```
-> The wget command provides a [cloud-init](https://github.com/canonical/maas-multipass/blob/main/maas.yml) file that will set up the VM's LXD and MAAS environment.
+> The `wget` command provides a [cloud-init](https://github.com/canonical/maas-multipass/blob/main/maas.yml) file that will set up the VMs LXD and MAAS environment.
 
 ## Configure MAAS
 
@@ -59,7 +59,7 @@ The LXD machine will be up and running after the images downloading and sync is 
 >
 > **Make sure to enable DHCP service inside the MAAS VM only.**
 >
- >Use the internal VM network `fabric-1` on `10.10.10.0/24` and choose a range (e.g. `10.10.10.100-10.10.10.120`). Check the [official MAAS manual](https://maas.io/docs/enabling-dhcp) for more information about enabling DHCP.
+ >Use the internal VM network `fabric-1` on `10.10.10.0/24` and choose a range (e.g. `10.10.10.100-10.10.10.120`). Check the [official MAAS manual](https://canonical.com/maas/docs/stable/how-to-guides/get-started/configure-maas/) for more information about enabling DHCP.
 
 
 **6.** Finally, dump MAAS admin user API key to add as Juju credentials later:
@@ -146,6 +146,7 @@ To stop your VM, run:
 ```shell
 multipass stop maas
 ```
+
 If you're done with testing and would like to free up resources on your machine, you can remove the VM entirely.
 
 ```{caution}
