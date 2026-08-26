@@ -17,7 +17,7 @@ This guide will teach you how to deploy and configure the S3-integrator charm fo
 
 ## Create the S3 bucket (optional)
 
-Version 2 of the `s3-integrator` charm automatically create the bucket upon configuration. Therefore, the bucket does not need to be manually created before passing its name to the integrator charm, although this option allows for a more flexible policy specification.
+Version 2 of the `s3-integrator` charm automatically creates the bucket upon configuration if it does not exist or it is not accessible. Therefore, the bucket does not need to be manually created before passing its name to the integrator charm, although this option allows for a more flexible policy specification.
 
 ## Configure the integrator
 
