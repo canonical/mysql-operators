@@ -48,21 +48,22 @@ def test_ubuntu_pro(juju: Juju, charm):
     )
 
 
-def test_landscape_client(juju: Juju):
-    juju.deploy(
-        LANDSCAPE_CLIENT_APP_NAME,
-        LANDSCAPE_CLIENT_APP_NAME,
-        channel="latest/edge",
-        config={
-            "account-name": os.environ["LANDSCAPE_ACCOUNT_NAME"],
-            "registration-key": os.environ["LANDSCAPE_REGISTRATION_KEY"],
-            "ppa": "ppa:landscape/self-hosted-beta",
-        },
-        base="ubuntu@22.04",
-    )
-    juju.integrate(DATABASE_APP_NAME, LANDSCAPE_CLIENT_APP_NAME)
-
-    juju.wait(
-        jubilant_backports.all_active,
-        timeout=TIMEOUT,
-    )
+# TODO: Uncomment after https://bugs.launchpad.net/landscape/+bug/2165025 fix
+# def test_landscape_client(juju: Juju):
+#     juju.deploy(
+#         LANDSCAPE_CLIENT_APP_NAME,
+#         LANDSCAPE_CLIENT_APP_NAME,
+#         channel="latest/edge",
+#         config={
+#             "account-name": os.environ["LANDSCAPE_ACCOUNT_NAME"],
+#             "registration-key": os.environ["LANDSCAPE_REGISTRATION_KEY"],
+#             "ppa": "ppa:landscape/self-hosted-beta",
+#         },
+#         base="ubuntu@22.04",
+#     )
+#     juju.integrate(DATABASE_APP_NAME, LANDSCAPE_CLIENT_APP_NAME)
+#
+#     juju.wait(
+#         jubilant_backports.all_active,
+#         timeout=TIMEOUT,
+#     )
