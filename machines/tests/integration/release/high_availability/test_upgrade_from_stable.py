@@ -185,12 +185,9 @@ def relation_through_router(juju: Juju) -> None:
     )
 
     logging.info("Waiting for router unit to be waiting (no backend relation yet)")
-    router_units = get_app_units(juju, MYSQL_ROUTER_APP_NAME)
+    router_unit_name = get_app_units(juju, MYSQL_ROUTER_APP_NAME)[0]
     juju.wait(
-        ready=lambda status: all(
-            wait_for_unit_status(MYSQL_ROUTER_APP_NAME, unit_name, "waiting")(status)
-            for unit_name in router_units
-        ),
+        ready=wait_for_unit_status(MYSQL_ROUTER_APP_NAME, router_unit_name, "waiting"),
         timeout=10 * MINUTE_SECS,
     )
 
