@@ -7,6 +7,7 @@ import logging
 import os
 
 import jubilant_backports
+import pytest
 from jubilant_backports import Juju
 
 from .relations.test_database import APPLICATION_APP_NAME, CLUSTER_NAME, DATABASE_APP_NAME, TIMEOUT
@@ -48,6 +49,7 @@ def test_ubuntu_pro(juju: Juju, charm):
     )
 
 
+@pytest.mark.skip(reason="https://bugs.launchpad.net/landscape/+bug/2165025")
 def test_landscape_client(juju: Juju):
     juju.deploy(
         LANDSCAPE_CLIENT_APP_NAME,
