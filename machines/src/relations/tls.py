@@ -19,7 +19,7 @@ from charms.mysql.v0.async_replication import (
     RELATION_CONSUMER,
     RELATION_OFFER,
 )
-from charms.mysql.v0.mysql import MySQLTLSSetupError
+from charms.mysql.v0.mysql import MySQLTLSSetupError, MySQLUnableToGetMemberStateError
 from mysql_shell.models import InstanceState
 from ops.framework import EventBase, EventSource, Object
 from ops.model import BlockedStatus, MaintenanceStatus, SecretNotFoundError
@@ -221,9 +221,15 @@ class TLS(Object):
 
     def _on_client_certificate_available(self, event: EventBase) -> None:
         """Handler for the certificate available event."""
-        state = self.charm._mysql.get_member_state()
+        try:
+            state = self.charm._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Unit not initialized yet, deferring client TLS configuration.")
+            event.defer()
+            return
+
         if state != InstanceState.ONLINE:
-            logger.debug("Unit not initialized yet, deferring client TLS configuration.")
+            logger.debug("Unit is not healthy, deferring client TLS configuration.")
             event.defer()
             return
 
@@ -253,9 +259,15 @@ class TLS(Object):
 
     def _on_peer_certificate_available(self, event: EventBase) -> None:
         """Handler for the peer certificate available event."""
-        state = self.charm._mysql.get_member_state()
+        try:
+            state = self.charm._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Unit not initialized yet, deferring client TLS configuration.")
+            event.defer()
+            return
+
         if state != InstanceState.ONLINE:
-            logger.debug("Unit not initialized yet, deferring peer TLS configuration.")
+            logger.debug("Unit is not healthy, deferring client TLS configuration.")
             event.defer()
             return
 
