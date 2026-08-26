@@ -28,21 +28,6 @@ When a Charmed MySQL Router application is integrated with the cluster, **refres
 
 Run the router `juju refresh` (and resume/verify each router unit) **before** running the MySQL `pre-upgrade-check` action in this guide.
 
-The router charm depends on your deployment substrate:
-
-`````{tab-set}
-````{tab-item} VM
-:sync: vm
-
-[Charmed MySQL Router](https://charmhub.io/mysql-router) (`mysql-router`)
-````
-
-````{tab-item} K8s
-:sync: k8s
-
-[Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s) (`mysql-router-k8s`)
-````
-`````
 ```
 
 **Rollback when refreshing from revisions with MySQL < 8.0.35 is incompatible**
