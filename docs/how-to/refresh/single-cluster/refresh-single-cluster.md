@@ -24,7 +24,7 @@ To upgrade Juju, see {ref}`upgrade-juju`
 ```{admonition} Refresh MySQL Router first
 :class: tip
 
-When a Charmed MySQL Router application is integrated with the cluster, **refresh the router before refreshing the MySQL cluster**. MySQL Router is forward-compatible with the MySQL server, so an updated router can route traffic to both old and new database units. Refreshing the router first keeps client traffic flowing uninterrupted while the MySQL units refresh one at a time.
+When a Charmed MySQL Router application is integrated with a Charmed MySQL server application, **refresh the router before refreshing the MySQL cluster**. MySQL Router is forward-compatible with the MySQL server, so an updated router can route traffic to both old and new database units. Refreshing the router first keeps client traffic flowing uninterrupted while the MySQL units refresh one at a time.
 
 Run the router `juju refresh` (and resume/verify each router unit) **before** running the MySQL `pre-upgrade-check` action in this guide.
 
