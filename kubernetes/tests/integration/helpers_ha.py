@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import subprocess
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -703,3 +704,19 @@ def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
         with attempt:
             if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is not None:
                 raise Exception(f"mysqld still alive on {unit_name} after SIGKILL + pebble stop")
+
+
+@contextmanager
+def continuous_writes_ctx(juju: Juju, app_name: str) -> Generator:
+    """Starts continuous writes to the MySQL cluster for a test and clear the writes at the end."""
+    test_app_leader = get_app_leader(juju, app_name)
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")
+    logging.info("Starting continuous writes")
+    juju.run(test_app_leader, "start-continuous-writes")
+
+    yield
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")

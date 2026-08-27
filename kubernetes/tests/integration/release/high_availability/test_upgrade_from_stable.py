@@ -3,8 +3,7 @@
 
 import logging
 import os
-from collections.abc import Generator
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 
 import jubilant_backports
 import pytest
@@ -24,28 +23,15 @@ from ...helpers_ha import (
     wait_for_unit_message,
     wait_for_unit_status,
 )
+from ...helpers_ha import (
+    continuous_writes_ctx as continuous_writes,
+)
 
 MYSQL_APP_NAME = "mysql-k8s"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
 MYSQL_ROUTER_APP_NAME = "mysql-router-k8s"
 
 MINUTE_SECS = 60
-
-
-@contextmanager
-def continuous_writes(juju: Juju) -> Generator:
-    """Starts continuous writes to the MySQL cluster for a test and clear the writes at the end."""
-    test_app_leader = get_app_leader(juju, MYSQL_TEST_APP_NAME)
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
-    logging.info("Starting continuous writes")
-    juju.run(test_app_leader, "start-continuous-writes")
-
-    yield
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
 
 
 @markers.amd64_only
@@ -59,7 +45,7 @@ def test_upgrade_from_stable_amd(juju: Juju, charm: str):
     deploy_stable(juju, int(revision), image)
     run_upgrade_check(juju)
 
-    with continuous_writes(juju):
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
         upgrade_from_stable(juju, charm)
 
     relation_through_router(juju)
@@ -76,7 +62,7 @@ def test_upgrade_from_stable_arm(juju: Juju, charm: str):
     deploy_stable(juju, int(revision), image)
     run_upgrade_check(juju)
 
-    with continuous_writes(juju):
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
         upgrade_from_stable(juju, charm)
 
     relation_through_router(juju)
@@ -242,13 +228,5 @@ def relation_through_router(juju: Juju) -> None:
         timeout=20 * MINUTE_SECS,
     )
 
-    logging.info("Start continuous writes through the router-mediated relation")
-    test_app_leader = get_app_leader(juju, MYSQL_TEST_APP_NAME)
-    juju.run(test_app_leader, "clear-continuous-writes")
-    juju.run(test_app_leader, "start-continuous-writes")
-
-    logging.info("Ensure continuous writes are incrementing through the router")
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
+        check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
