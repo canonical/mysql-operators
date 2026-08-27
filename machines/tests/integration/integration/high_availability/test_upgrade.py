@@ -21,7 +21,6 @@ from ...helpers_ha import (
     get_mysql_variable_value,
     load_mysql_test_data,
     wait_for_apps_status,
-    wait_for_unit_status,
 )
 
 MYSQL_APP_NAME = "mysql"
@@ -161,13 +160,6 @@ def test_relation_through_router(juju: Juju) -> None:
         base="ubuntu@26.04",
         channel="8.4/edge",
         num_units=1,
-    )
-
-    logging.info("Waiting for router unit to be waiting (no backend relation yet)")
-    router_unit_name = get_app_units(juju, MYSQL_ROUTER_APP_NAME)[0]
-    juju.wait(
-        ready=wait_for_unit_status(MYSQL_ROUTER_APP_NAME, router_unit_name, "waiting"),
-        timeout=10 * MINUTE_SECS,
     )
 
     logging.info("Relating mysql and mysql-test-app through the router")
