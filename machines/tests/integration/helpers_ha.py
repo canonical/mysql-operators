@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 import json
+import logging
 import subprocess
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -649,3 +650,19 @@ def wait_for_unit_message(app_name: str, unit_name: str, unit_message: str) -> J
     return lambda status: (
         status.apps[app_name].units[unit_name].workload_status.message == unit_message
     )
+
+
+@contextmanager
+def continuous_writes_ctx(juju: Juju, app_name: str) -> Generator:
+    """Starts continuous writes to the MySQL cluster for a test and clear the writes at the end."""
+    test_app_leader = get_app_leader(juju, app_name)
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")
+    logging.info("Starting continuous writes")
+    juju.run(test_app_leader, "start-continuous-writes")
+
+    yield
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")

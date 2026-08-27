@@ -3,8 +3,7 @@
 
 import logging
 import os
-from collections.abc import Generator
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 
 import jubilant_backports
 import pytest
@@ -15,40 +14,30 @@ from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
     get_app_leader,
+    get_app_units,
     get_k8s_stateful_set_partitions,
     get_mysql_primary_unit,
     get_unit_by_number,
     load_mysql_test_data,
     wait_for_apps_status,
     wait_for_unit_message,
+    wait_for_unit_status,
+)
+from ...helpers_ha import (
+    continuous_writes_ctx as continuous_writes,
 )
 
 MYSQL_APP_NAME = "mysql-k8s"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
+MYSQL_ROUTER_APP_NAME = "mysql-router-k8s"
 
 MINUTE_SECS = 60
-
-
-@contextmanager
-def continuous_writes(juju: Juju) -> Generator:
-    """Starts continuous writes to the MySQL cluster for a test and clear the writes at the end."""
-    test_app_leader = get_app_leader(juju, MYSQL_TEST_APP_NAME)
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
-    logging.info("Starting continuous writes")
-    juju.run(test_app_leader, "start-continuous-writes")
-
-    yield
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
 
 
 @markers.amd64_only
 def test_upgrade_from_stable_amd(juju: Juju, charm: str):
     """Simple test to ensure that all MySQL stable revisions can be upgraded."""
-    image = os.getenv("MYSQL_IMAGE")
+    image = os.environ["MYSQL_IMAGE"]
     revision = os.getenv("CHARM_REVISION_AMD64")
     if revision is None:
         pytest.skip(f"No revision for {architecture.architecture} architecture")
@@ -56,14 +45,16 @@ def test_upgrade_from_stable_amd(juju: Juju, charm: str):
     deploy_stable(juju, int(revision), image)
     run_upgrade_check(juju)
 
-    with continuous_writes(juju):
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
         upgrade_from_stable(juju, charm)
+
+    relation_through_router(juju)
 
 
 @markers.arm64_only
 def test_upgrade_from_stable_arm(juju: Juju, charm: str):
     """Simple test to ensure that all MySQL stable revisions can be upgraded."""
-    image = os.getenv("MYSQL_IMAGE")
+    image = os.environ["MYSQL_IMAGE"]
     revision = os.getenv("CHARM_REVISION_ARM64")
     if revision is None:
         pytest.skip(f"No revision for {architecture.architecture} architecture")
@@ -71,8 +62,10 @@ def test_upgrade_from_stable_arm(juju: Juju, charm: str):
     deploy_stable(juju, int(revision), image)
     run_upgrade_check(juju)
 
-    with continuous_writes(juju):
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
         upgrade_from_stable(juju, charm)
+
+    relation_through_router(juju)
 
 
 # TODO: add s390x test
@@ -172,3 +165,68 @@ def upgrade_from_stable(juju: Juju, charm: str) -> None:
 
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+
+
+def relation_through_router(juju: Juju) -> None:
+    """Test that a fresh relation routed through mysql-router-k8s works after upgrade."""
+    logging.info("Removing pre-existing direct relation to mysql-test-app")
+    juju.remove_relation(
+        f"{MYSQL_APP_NAME}:database",
+        f"{MYSQL_TEST_APP_NAME}:database",
+    )
+
+    logging.info("Waiting for mysql-test-app to be blocked (no database)")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
+        timeout=10 * MINUTE_SECS,
+    )
+    juju.wait(
+        ready=lambda status: all(
+            wait_for_unit_status(MYSQL_TEST_APP_NAME, unit_name, "blocked")(status)
+            for unit_name in get_app_units(juju, MYSQL_TEST_APP_NAME)
+        ),
+        timeout=10 * MINUTE_SECS,
+    )
+
+    logging.info("Deploying mysql-router-k8s")
+    constraints = {"arch": architecture.architecture}
+    juju.deploy(
+        charm=MYSQL_ROUTER_APP_NAME,
+        app=MYSQL_ROUTER_APP_NAME,
+        base="ubuntu@22.04",
+        channel="8.0/edge",
+        num_units=1,
+        trust=True,
+        constraints=constraints,
+    )
+
+    logging.info("Waiting for router unit to be waiting (no backend relation yet)")
+    router_unit_name = get_app_units(juju, MYSQL_ROUTER_APP_NAME)[0]
+    juju.wait(
+        ready=wait_for_unit_status(MYSQL_ROUTER_APP_NAME, router_unit_name, "waiting"),
+        timeout=10 * MINUTE_SECS,
+    )
+
+    logging.info("Relating mysql-k8s and mysql-test-app through the router")
+    juju.integrate(
+        f"{MYSQL_APP_NAME}:database",
+        f"{MYSQL_ROUTER_APP_NAME}:backend-database",
+    )
+    juju.integrate(
+        f"{MYSQL_TEST_APP_NAME}:database",
+        f"{MYSQL_ROUTER_APP_NAME}:database",
+    )
+
+    logging.info("Waiting for all applications to become active")
+    juju.wait(
+        ready=wait_for_apps_status(
+            jubilant_backports.all_active,
+            MYSQL_APP_NAME,
+            MYSQL_ROUTER_APP_NAME,
+            MYSQL_TEST_APP_NAME,
+        ),
+        timeout=20 * MINUTE_SECS,
+    )
+
+    with continuous_writes(juju, MYSQL_TEST_APP_NAME):
+        check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
