@@ -16,6 +16,7 @@ from ... import architecture
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
+    continuous_writes_ctx,
     get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
@@ -27,6 +28,7 @@ from ...helpers_ha import (
 
 MYSQL_APP_NAME = "mysql-k8s"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
+MYSQL_ROUTER_APP_NAME = "mysql-router-k8s"
 
 MINUTE_SECS = 60
 
@@ -149,6 +151,60 @@ def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
 
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
+
+
+def test_relation_through_router(juju: Juju) -> None:
+    """Test that a fresh relation routed through mysql-router-k8s works after refresh."""
+    logging.info("Removing pre-existing direct relation to mysql-test-app")
+    juju.remove_relation(
+        f"{MYSQL_APP_NAME}:database",
+        f"{MYSQL_TEST_APP_NAME}:database",
+    )
+
+    logging.info("Waiting for mysql-test-app to be blocked (no database)")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
+        timeout=10 * MINUTE_SECS,
+    )
+    juju.wait(
+        ready=wait_for_apps_status(jubilant.all_blocked, MYSQL_TEST_APP_NAME),
+        timeout=10 * MINUTE_SECS,
+    )
+
+    logging.info("Deploying mysql-router-k8s")
+    juju.deploy(
+        charm=MYSQL_ROUTER_APP_NAME,
+        app=MYSQL_ROUTER_APP_NAME,
+        base="ubuntu@26.04",
+        channel="8.4/edge",
+        num_units=1,
+        trust=True,
+    )
+
+    logging.info("Relating mysql-k8s and mysql-test-app through the router")
+    juju.integrate(
+        f"{MYSQL_APP_NAME}:database",
+        f"{MYSQL_ROUTER_APP_NAME}:backend-database",
+    )
+    juju.integrate(
+        f"{MYSQL_TEST_APP_NAME}:database",
+        f"{MYSQL_ROUTER_APP_NAME}:database",
+    )
+
+    logging.info("Waiting for all applications to become active")
+    juju.wait(
+        ready=wait_for_apps_status(
+            jubilant.all_active,
+            MYSQL_APP_NAME,
+            MYSQL_ROUTER_APP_NAME,
+            MYSQL_TEST_APP_NAME,
+        ),
+        timeout=20 * MINUTE_SECS,
+    )
+
+    logging.info("Ensure continuous writes are incrementing through the router")
+    with continuous_writes_ctx(juju, MYSQL_TEST_APP_NAME):
+        check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
 
 def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
