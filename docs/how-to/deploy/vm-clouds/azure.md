@@ -10,13 +10,11 @@ myst:
 [Azure](https://azure.com/) is a cloud computing platform developed by Microsoft. It has management, access and development of applications and services to individuals, companies, and governments through its global infrastructure. Access the Azure web console at [portal.azure.com](https://portal.azure.com/).
 
 ## Set up Juju and Azure tooling
-```{caution}
-**Warning**: The described `Azure interactive` method (with web browser authentication `service-principal-secret-via-browser`) described here is only supported starting Juju 3.6-rc1+!
-```
+
 ### Install Juju and Azure CLI
 Install Juju via snap:
 ```shell
-sudo snap install juju --channel 3.6/edge
+sudo snap install juju --channel 3.6/stable
 ```
 
 Follow the installation guides for:
