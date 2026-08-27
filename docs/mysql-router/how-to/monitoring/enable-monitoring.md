@@ -94,8 +94,8 @@ Example of `juju status` on the MySQL Router VM model:
     prometheus  active  k8s    admin/cos.prometheus
 
     App                      Version  Status  Scale  Charm                    Channel     Rev  Exposed  Message
-    mysql                    8.4.10   active      1  mysql                    8.4/stable       no
-    mysql-router             8.4.10   active      1  mysql-router             8.4/stable       no
+    mysql                    8.4.13   active      1  mysql                    8.4/stable       no
+    mysql-router             8.4.13   active      1  mysql-router             8.4/stable       no
     mysql-test-app           0.0.2    active      1  mysql-test-app           stable       36  no
     opentelemetry-collector           active      1  opentelemetry-collector  2/stable    316  no
 
@@ -153,8 +153,8 @@ An example of `juju status` on Charmed MySQL Router K8s model:
     prometheus  active  k8s	   admin/cos.prometheus
 
     App            	            Version  Status  Scale  Charm           	         Channel 	 Rev  Address     	  Exposed  Message
-    mysql-k8s      	             8.4.10  active      1  mysql-k8s      	             8.4/stable       10.152.183.105  no
-    mysql-router-k8s             8.4.10  active      1  mysql-router-k8s             8.4/stable	      10.152.183.92   no
+    mysql-k8s      	             8.4.13  active      1  mysql-k8s      	             8.4/stable       10.152.183.105  no
+    mysql-router-k8s             8.4.13  active      1  mysql-router-k8s             8.4/stable	      10.152.183.92   no
     mysql-test-app 	             0.0.2   active      1  mysql-test-app 	             stable   	  36  10.152.183.35   no
     opentelemetry-collector-k8s          active      1  opentelemetry-collector-k8s  2/stable     64  10.152.183.141  no
 
