@@ -2,6 +2,9 @@
 # See LICENSE file for licensing details.
 
 import logging
+import shutil
+from contextlib import contextmanager
+from pathlib import Path
 from time import sleep
 
 import boto3
@@ -277,3 +280,13 @@ def check_test_data_existence(
         commit=True,
     )
     return all(res_elem in should_exist and res_elem not in should_not_exist for res_elem in res)
+
+
+@contextmanager
+def local_tmp_folder(name: str = "tmp"):
+    """Return a temporary folder path and clean it up after use."""
+    if (tmp_folder := Path.cwd() / name).exists():
+        shutil.rmtree(tmp_folder)
+    tmp_folder.mkdir()
+    yield tmp_folder
+    shutil.rmtree(tmp_folder)

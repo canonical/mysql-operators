@@ -2,13 +2,16 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import base64
 import dataclasses
 import json
 import logging
 import os
 import socket
 import subprocess
+import tempfile
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from time import sleep
 
@@ -17,6 +20,7 @@ import botocore.exceptions
 import jubilant_backports
 import pytest
 from jubilant_backports import Juju
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from constants import CLUSTER_ADMIN_USERNAME, ROOT_USERNAME, SERVER_CONFIG_USERNAME
 
@@ -39,10 +43,9 @@ from ..helpers_ha import (
 from ..helpers_ha import (
     TEST_DATABASE_NAME as DATABASE_NAME,
 )
+from .helpers_backups import local_tmp_folder
 
 logger = logging.getLogger(__name__)
-
-host_ip = socket.gethostbyname(socket.gethostname())
 
 DATABASE_APP_NAME = "mysql"
 S3_INTEGRATOR = "s3-integrator"
@@ -61,16 +64,44 @@ MICROCEPH_BUCKET = "testbucket"
 backup_id, value_before_backup, value_after_backup = "", None, None
 
 
+@retry(stop=stop_after_attempt(20), wait=wait_fixed(3), reraise=True)
+def wait_for_rgw_ready():
+    """Wait for RADOS Gateway to be ready by checking if account list command succeeds."""
+    subprocess.run(
+        ["sudo", "microceph.radosgw-admin", "account", "list"],
+        capture_output=True,
+        check=True,
+        encoding="utf-8",
+    )
+
+
 @dataclasses.dataclass(frozen=True)
 class MicrocephConnectionInformation:
     endpoint_url: str
     access_key_id: str
     secret_access_key: str
     bucket: str
+    ca_cert_base64: str
+    region: str
 
 
 @pytest.fixture(scope="session")
-def microceph():
+def certs_path() -> Iterable[Path]:
+    """A temporary directory to store certificates and keys."""
+    with local_tmp_folder("temp-certs") as tmp_folder:
+        yield tmp_folder
+
+
+@pytest.fixture(scope="session")
+def host_ip() -> str:
+    """The IP address of the host running these tests."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.connect(("1.1.1.1", 80))
+        return s.getsockname()[0]
+
+
+@pytest.fixture(scope="session")
+def microceph(certs_path, host_ip) -> MicrocephConnectionInformation:
     if os.environ.get("CI") != "true":
         logging.info("Not running on CI. Skipping microceph installation")
         return MicrocephConnectionInformation(
@@ -79,12 +110,57 @@ def microceph():
             os.environ["CEPH_SECRET_KEY"],
             MICROCEPH_BUCKET,
         )
+    logger.info("Setting up TLS certificates")
+    subprocess.run(f"openssl genrsa -out {certs_path}/ca.key 2048".split(), check=True)
+    ca_key_path = str(certs_path / "ca.key")
+    ca_crt_path = str(certs_path / "ca.crt")
+    ca_subject = f"/C=US/ST=Denial/L=Springfield/O=Dis/CN={host_ip}"
+    subprocess.run(
+        f"openssl req -x509 -new -nodes -key {ca_key_path} -days 1024 -out {ca_crt_path} -outform PEM -subj {ca_subject}".split(),
+        check=True,
+    )
+    server_key_path = str(certs_path / "server.key")
+    server_csr_path = str(certs_path / "server.csr")
+    subprocess.run(
+        f"openssl genrsa -out {server_key_path} 2048".split(),
+        check=True,
+    )
+    subprocess.run(
+        f"openssl req -new -key {server_key_path} -out {server_csr_path} -subj {ca_subject}".split(),
+        check=True,
+    )
 
+    with open(certs_path / "extfile.cnf", "w") as extfile:
+        extfile.write(f"subjectAltName = DNS:{host_ip}, IP:{host_ip}")
+
+    server_crt_path = str(certs_path / "server.crt")
+    extfile_path = str(certs_path / "extfile.cnf")
+    subprocess.run(
+        f"openssl x509 -req -in {server_csr_path} -CA {ca_crt_path} -CAkey {ca_key_path} -CAcreateserial -out {server_crt_path} -days 365 -extfile {extfile_path}".split(),
+        check=True,
+    )
     logger.info("Setting up microceph")
     subprocess.run(["sudo", "snap", "install", "microceph"], check=True)
     subprocess.run(["sudo", "microceph", "cluster", "bootstrap"], check=True)
     subprocess.run(["sudo", "microceph", "disk", "add", "loop,4G,3"], check=True)
-    subprocess.run(["sudo", "microceph", "enable", "rgw"], check=True)
+    server_crt_base64 = subprocess.run(
+        f"sudo base64 -w0 {server_crt_path}".split(),
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    server_key_base64 = subprocess.run(
+        f"sudo base64 -w0 {server_key_path}".split(),
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    logger.info("Enabling rest gateway")
+    subprocess.run(
+        f"sudo microceph enable rgw --ssl-certificate {server_crt_base64} --ssl-private-key {server_key_base64}".split(),
+        check=True,
+    )
+    wait_for_rgw_ready()
     output = subprocess.run(
         [
             "sudo",
@@ -108,9 +184,10 @@ def microceph():
         try:
             boto3.client(
                 "s3",
-                endpoint_url="http://localhost",
+                endpoint_url=f"https://{host_ip}",
                 aws_access_key_id=key_id,
                 aws_secret_access_key=secret_key,
+                verify=str(certs_path / "ca.crt"),
             ).create_bucket(Bucket=MICROCEPH_BUCKET)
         except botocore.exceptions.EndpointConnectionError:
             if attempt == 2:
@@ -121,8 +198,19 @@ def microceph():
         else:
             break
     logger.info("Set up microceph")
+    ca_crt_base64 = subprocess.run(
+        f"sudo base64 -w0 {ca_crt_path}".split(),
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
     return MicrocephConnectionInformation(
-        f"http://{host_ip}", key_id, secret_key, MICROCEPH_BUCKET
+        endpoint_url=f"https://{host_ip}",
+        access_key_id=key_id,
+        secret_access_key=secret_key,
+        bucket=MICROCEPH_BUCKET,
+        ca_cert_base64=ca_crt_base64,
+        region="default",
     )
 
 
@@ -132,7 +220,8 @@ def cloud_configs_ceph(microceph) -> tuple[dict[str, str], dict[str, str]]:
         "endpoint": microceph.endpoint_url,
         "bucket": microceph.bucket,
         "path": "mysql",
-        "region": "",
+        "region": "default",
+        "tls-ca-chain": microceph.ca_cert_base64,
     }
     credentials = {
         "access-key": microceph.access_key_id,
@@ -154,13 +243,17 @@ def clean_backups_from_buckets(cloud_configs_ceph):
         aws_secret_access_key=cloud_credentials["secret-key"],
         region_name=cloud_configs["region"],
     )
-    s3 = session.resource("s3", endpoint_url=cloud_configs["endpoint"])
-    bucket = s3.Bucket(cloud_configs["bucket"])
+    with tempfile.NamedTemporaryFile() as ca_file:
+        ca_chain = base64.b64decode(cloud_configs["tls-ca-chain"])
+        ca_file.write(ca_chain)
+        ca_file.flush()
 
-    # GCS doesn't support batch delete operation, so delete the objects one by one
-    backup_path = str(Path(cloud_configs["path"]) / backup_id)
-    for bucket_object in bucket.objects.filter(Prefix=backup_path):
-        bucket_object.delete()
+        s3 = session.resource("s3", endpoint_url=cloud_configs["endpoint"], verify=ca_file.name)
+        bucket = s3.Bucket(cloud_configs["bucket"])
+
+        backup_path = str(Path(cloud_configs["path"]) / backup_id)
+        for bucket_object in bucket.objects.filter(Prefix=backup_path):
+            bucket_object.delete()
 
 
 def test_build_and_deploy(juju: Juju, charm) -> None:
