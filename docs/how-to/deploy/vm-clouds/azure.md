@@ -177,9 +177,9 @@ Check the status:
 Model    Controller       Cloud/Region     Version    SLA          Timestamp
 welcome  azure-centralus  azure/centralus  3.6.14     unsupported  16:05:59+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.4.7            active      1  mysql            8.4/edge            no
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable   41  no
+mysql            8.4.10   active      1  mysql            8.4/stable          no
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228
@@ -206,7 +206,7 @@ mysql:
   endpoints: 192.168.0.5:3306
   password: 1yGJ2KqtN4Qlf6KgeJDLOVES
   username: relation-14
-  version: 8.4.7
+  version: 8.4.10
 ```
 
 At this point, you can access your DB inside Azure VM using the internal IP address. All further Juju applications will use the database through the internal network:
@@ -230,9 +230,9 @@ Once exposed, you can connect your database using the same credentials as above.
 Model    Controller       Cloud/Region     Version    SLA          Timestamp
 welcome  azure-centralus  azure/centralus  3.6.14     unsupported  16:05:59+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no
-mysql            8.4.7            active      1  mysql            8.4/edge            yes
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable   41  no
+mysql            8.4.10   active      1  mysql            8.4/stable          yes
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   3        20.83.8.228

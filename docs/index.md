@@ -1,5 +1,5 @@
 ---
-relatedlinks: "https://charmhub.io/mysql?channel=8.4/edge, https://charmhub.io/mysql-k8s?channel=8.4/edge"
+relatedlinks: "https://charmhub.io/mysql?channel=8.4/stable, https://charmhub.io/mysql-k8s?channel=8.4/stable"
 myst:
   html_meta:
     description: "Official documentation for Charmed MySQL operator. Deploy and manage MySQL Community Edition on VMs and Kubernetes using Juju."

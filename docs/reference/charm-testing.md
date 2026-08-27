@@ -33,7 +33,7 @@ Create a Juju model for testing, deploy a database with a test application and s
 
     juju add-model smoke-test
 
-    juju deploy mysql --channel 8.4/edge --config profile=testing
+    juju deploy mysql --channel 8.4/stable --config profile=testing
     juju add-unit mysql -n 2 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
@@ -55,7 +55,7 @@ Create a Juju model for testing, deploy a database with a test application and s
 
     juju add-model smoke-test
 
-    juju deploy mysql-k8s --trust --channel 8.4/edge --config profile=testing
+    juju deploy mysql-k8s --trust --channel 8.4/stable --config profile=testing
     juju scale-application mysql-k8s 3 # (optional)
 
     juju deploy mysql-test-app --channel latest/edge
@@ -114,4 +114,3 @@ To deploy and test all parts at once, use the MySQL bundle:
 <!--TODO: table-->
 
 Refer to the [Charmed Sysbench documentation](https://charmhub.io/sysbench).
-
