@@ -648,3 +648,19 @@ def create_app_secret(
     secret_uri = juju.add_secret(secret_name, content=contents)
     juju.grant_secret(secret_uri, app_name)
     return secret_uri
+
+
+@contextmanager
+def continuous_writes_ctx(juju: Juju, app_name: str) -> Generator:
+    """Starts continuous writes to the MySQL cluster for a test and clear the writes at the end."""
+    test_app_leader = get_app_leader(juju, app_name)
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")
+    logging.info("Starting continuous writes")
+    juju.run(test_app_leader, "start-continuous-writes")
+
+    yield
+
+    logging.info("Clearing continuous writes")
+    juju.run(test_app_leader, "clear-continuous-writes")

@@ -15,6 +15,7 @@ from jubilant import Juju
 
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
+    continuous_writes_ctx,
     get_app_leader,
     get_app_units,
     get_mysql_primary_unit,
@@ -183,16 +184,9 @@ def test_relation_through_router(juju: Juju) -> None:
         timeout=20 * MINUTE_SECS,
     )
 
-    logging.info("Start continuous writes through the router-mediated relation")
-    test_app_leader = get_app_leader(juju, MYSQL_TEST_APP_NAME)
-    juju.run(test_app_leader, "clear-continuous-writes")
-    juju.run(test_app_leader, "start-continuous-writes")
-
     logging.info("Ensure continuous writes are incrementing through the router")
-    check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
-
-    logging.info("Clearing continuous writes")
-    juju.run(test_app_leader, "clear-continuous-writes")
+    with continuous_writes_ctx(juju, MYSQL_TEST_APP_NAME):
+        check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
 
 def test_fail_and_rollback(juju: Juju, charm: str, continuous_writes) -> None:
