@@ -140,13 +140,6 @@ def test_relation_through_router(juju: Juju) -> None:
         trust=True,
     )
 
-    logging.info("Waiting for router unit to be waiting (no backend relation yet)")
-    router_unit_name = get_app_units(juju, MYSQL_ROUTER_APP_NAME)[0]
-    juju.wait(
-        ready=wait_for_unit_status(MYSQL_ROUTER_APP_NAME, router_unit_name, "waiting"),
-        timeout=10 * MINUTE_SECS,
-    )
-
     logging.info("Relating mysql and mysql-test-app through the router")
     juju.integrate(
         f"{MYSQL_APP_NAME}:database",
