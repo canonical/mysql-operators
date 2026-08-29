@@ -321,7 +321,3 @@ class TestTLS(unittest.TestCase):
         ):
             self.tls._push_tls_files_to_workload()
         mock_mysql.return_value.write_content_to_file.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

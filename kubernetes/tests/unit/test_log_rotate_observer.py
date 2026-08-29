@@ -87,17 +87,15 @@ class TestLogRotateObserver(unittest.TestCase):
     # _rotate_mysql_logs - happy path & errors
     # ------------------------------------------------------------------
 
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
-    def test_rotate_executes_logrotate_and_flushes(self, mock_mysql):
+    def test_rotate_executes_logrotate_and_flushes(self, mock_mysql, mock_config):
         """Rotate executes logrotate and flushes logs (without audit)."""
         mock_mysql.return_value.is_mysqld_running.return_value = True
         mock_mysql.return_value._execute_commands.return_value = None
+        mock_config.return_value.plugin_audit_enabled = False
 
-        with (
-            patch.object(self.charm, "unit_initialized", return_value=True),
-            patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock) as mock_config,
-        ):
-            mock_config.return_value.plugin_audit_enabled = False
+        with patch.object(self.charm, "unit_initialized", return_value=True):
             self.observer._rotate_mysql_logs(None)
 
         mock_mysql.return_value._execute_commands.assert_called_once_with([
@@ -108,17 +106,15 @@ class TestLogRotateObserver(unittest.TestCase):
         mock_mysql.return_value.flush_mysql_logs.assert_called_once()
         mock_mysql.return_value.flush_mysql_audit_log.assert_not_called()
 
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
-    def test_rotate_flushes_audit_when_enabled(self, mock_mysql):
+    def test_rotate_flushes_audit_when_enabled(self, mock_mysql, mock_config):
         """Rotate flushes the audit log when audit plugin is enabled."""
         mock_mysql.return_value.is_mysqld_running.return_value = True
         mock_mysql.return_value._execute_commands.return_value = None
+        mock_config.return_value.plugin_audit_enabled = True
 
-        with (
-            patch.object(self.charm, "unit_initialized", return_value=True),
-            patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock) as mock_config,
-        ):
-            mock_config.return_value.plugin_audit_enabled = True
+        with patch.object(self.charm, "unit_initialized", return_value=True):
             self.observer._rotate_mysql_logs(None)
 
         mock_mysql.return_value.flush_mysql_logs.assert_called_once()
@@ -136,7 +132,3 @@ class TestLogRotateObserver(unittest.TestCase):
             self.observer._rotate_mysql_logs(None)
 
         mock_mysql.return_value.flush_mysql_logs.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

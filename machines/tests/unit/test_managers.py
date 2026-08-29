@@ -246,7 +246,3 @@ class TestCheckPid(unittest.TestCase):
     def test_check_pid_dead(self, mock_kill):
         """check_pid returns False when process does not exist."""
         self.assertFalse(check_pid(1234))
-
-
-if __name__ == "__main__":
-    unittest.main()

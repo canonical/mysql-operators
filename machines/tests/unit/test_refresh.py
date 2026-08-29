@@ -178,7 +178,3 @@ class TestMachinesMySQLRefresh(unittest.TestCase):
         _install_deps.assert_called_once_with(revision="42")
         _set_status.assert_called_once()
         self.assertIsInstance(_set_status.call_args.args[0], MaintenanceStatus)
-
-
-if __name__ == "__main__":
-    unittest.main()

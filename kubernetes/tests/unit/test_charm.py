@@ -430,15 +430,15 @@ class TestCharm(unittest.TestCase):
 
         _create_endpoint_services.assert_not_called()
 
+    @patch("ops.charm.StartEvent.defer")
     @patch("charm.MySQLOperatorCharm._create_endpoint_services")
-    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services):
+    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services, _defer):
         """When service creation fails (no trust), start event is deferred for auto-retry."""
         _create_endpoint_services.return_value = False
         self.harness.set_leader()
 
-        with patch("ops.charm.StartEvent.defer") as _defer:
-            self.charm.on.start.emit()
-            _defer.assert_called_once()
+        self.charm.on.start.emit()
+        _defer.assert_called_once()
 
     # ------------------------------------------------------------------
     # Properties
@@ -502,7 +502,8 @@ class TestCharm(unittest.TestCase):
     # _rotate_private_keys
     # ------------------------------------------------------------------
 
-    def test_rotate_private_keys_emits_refresh_on_change(self):
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
+    def test_rotate_private_keys_emits_refresh_on_change(self, mock_config):
         """_rotate_private_keys emits refresh events when keys change."""
         mock_tls = MagicMock()
         mock_tls.client_certificates_refresh_event = MagicMock()
@@ -510,17 +511,17 @@ class TestCharm(unittest.TestCase):
         self.charm.tls = mock_tls
         self.harness.set_leader()
 
-        with patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock) as mock_config:
-            mock_config.return_value.tls_client_private_key = "new-client-key"
-            mock_config.return_value.tls_peer_private_key = "new-peer-key"
-            self.charm._rotate_private_keys()
+        mock_config.return_value.tls_client_private_key = "new-client-key"
+        mock_config.return_value.tls_peer_private_key = "new-peer-key"
+        self.charm._rotate_private_keys()
 
         mock_tls.client_certificates_refresh_event.emit.assert_called_once()
         mock_tls.peer_certificates_refresh_event.emit.assert_called_once()
         self.assertEqual(self.charm.app_peer_data["client-private-key"], "new-client-key")
         self.assertEqual(self.charm.app_peer_data["peer-private-key"], "new-peer-key")
 
-    def test_rotate_private_keys_no_change(self):
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
+    def test_rotate_private_keys_no_change(self, mock_config):
         """_rotate_private_keys does not emit when keys unchanged."""
         mock_tls = MagicMock()
         mock_tls.client_certificates_refresh_event = MagicMock()
@@ -529,10 +530,9 @@ class TestCharm(unittest.TestCase):
         self.charm.app_peer_data["client-private-key"] = "same-key"
         self.charm.app_peer_data["peer-private-key"] = "same-peer-key"
 
-        with patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock) as mock_config:
-            mock_config.return_value.tls_client_private_key = "same-key"
-            mock_config.return_value.tls_peer_private_key = "same-peer-key"
-            self.charm._rotate_private_keys()
+        mock_config.return_value.tls_client_private_key = "same-key"
+        mock_config.return_value.tls_peer_private_key = "same-peer-key"
+        self.charm._rotate_private_keys()
 
         mock_tls.client_certificates_refresh_event.emit.assert_not_called()
         mock_tls.peer_certificates_refresh_event.emit.assert_not_called()

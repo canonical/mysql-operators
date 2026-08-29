@@ -114,7 +114,3 @@ class TestLogRotationSetup(unittest.TestCase):
         event = MagicMock()
         self.charm.log_rotation_setup._cos_relation_created(event)
         event.defer.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()

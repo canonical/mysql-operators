@@ -189,7 +189,3 @@ class TestLogRotationSetup(unittest.TestCase):
 
         self.assertNotIn("logs_synced", self.charm.unit_peer_data)
         mock_setup.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()

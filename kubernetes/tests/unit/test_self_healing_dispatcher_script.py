@@ -78,7 +78,3 @@ class TestMain(unittest.TestCase):
             self_healing_dispatcher.main()
 
         mock_dispatch.assert_called_once_with("myapp/2", "/opt/charm")
-
-
-if __name__ == "__main__":
-    unittest.main()

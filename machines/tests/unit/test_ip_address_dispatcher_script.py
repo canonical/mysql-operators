@@ -166,7 +166,3 @@ class TestMain(unittest.TestCase):
         # Only the initial message is printed; no change message
         self.assertEqual(mock_print.call_count, 1)
         mock_dispatch.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

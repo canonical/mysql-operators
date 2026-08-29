@@ -148,7 +148,3 @@ class TestSelfHealingMySQLObserver(unittest.TestCase):
             self.observer._heal_mysql_cluster(None)
         _update_status.assert_called_once()
         _update_endpoints.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()

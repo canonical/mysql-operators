@@ -239,7 +239,3 @@ class TestRefresh(unittest.TestCase):
 
         with self.assertRaises(charm_refresh.PrecheckFailed):
             self.refresh.run_pre_refresh_checks_before_any_units_refreshed()
-
-
-if __name__ == "__main__":
-    unittest.main()

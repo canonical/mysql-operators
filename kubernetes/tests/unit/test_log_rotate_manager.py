@@ -87,18 +87,16 @@ class TestLogRotateManager(unittest.TestCase):
         _kill.assert_called_once_with(12345, 0)
         _popen.assert_not_called()
 
+    @patch("services.managers.log_rotate_manager.os.kill", side_effect=OSError)
     @patch("services.managers.log_rotate_manager.subprocess.Popen")
-    def test_start_restarts_when_process_dead(self, _popen):
+    def test_start_restarts_when_process_dead(self, _popen, _kill):
         """Start launches a new process when the previous PID is dead."""
         self.charm.unit.status = ActiveStatus("ok")
         self.harness.set_can_connect(CONTAINER_NAME, True)
         self.charm.unit_peer_data["log-rotate-manager-pid"] = "999"
         _popen.return_value.pid = 4242
 
-        with (
-            patch.object(self.charm, "unit_initialized", return_value=True),
-            patch("services.managers.log_rotate_manager.os.kill", side_effect=OSError),
-        ):
+        with patch.object(self.charm, "unit_initialized", return_value=True):
             self.manager.start_log_rotate_manager()
 
         _popen.assert_called_once()
@@ -153,7 +151,3 @@ class TestLogRotateManager(unittest.TestCase):
         self.charm.unit_peer_data["log-rotate-manager-pid"] = "555"
         self.manager.stop_log_rotate_manager()
         _kill.assert_called_once_with(555, 15)
-
-
-if __name__ == "__main__":
-    unittest.main()

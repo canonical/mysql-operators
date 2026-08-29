@@ -137,7 +137,3 @@ class TestMain(unittest.TestCase):
 
         # In-loop sleep (second sleep call) should be 15 seconds
         self.assertAlmostEqual(mock_sleep.call_args_list[1].args[0], 15.0)
-
-
-if __name__ == "__main__":
-    unittest.main()

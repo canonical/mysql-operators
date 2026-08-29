@@ -64,16 +64,14 @@ class TestSelfHealingManager(unittest.TestCase):
         _kill.assert_called_once_with(12345, 0)
         _popen.assert_not_called()
 
+    @patch("services.managers.self_healing_manager.os.kill", side_effect=OSError)
     @patch("services.managers.self_healing_manager.subprocess.Popen")
-    def test_start_restarts_when_process_dead(self, _popen):
+    def test_start_restarts_when_process_dead(self, _popen, _kill):
         """Start launches a new process when the previous PID is dead."""
         self.charm.unit_peer_data["self-healing-manager-pid"] = "999"
         _popen.return_value.pid = 4242
 
-        with (
-            patch.object(self.charm, "unit_initialized", return_value=True),
-            patch("services.managers.self_healing_manager.os.kill", side_effect=OSError),
-        ):
+        with patch.object(self.charm, "unit_initialized", return_value=True):
             self.manager.start_self_healing_manager()
 
         _popen.assert_called_once()
@@ -126,7 +124,3 @@ class TestSelfHealingManager(unittest.TestCase):
         self.charm.unit_peer_data["self-healing-manager-pid"] = "555"
         self.manager.stop_self_healing_manager()
         _kill.assert_called_once_with(555, 15)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -563,7 +563,3 @@ class TestMySQLProvider(unittest.TestCase):
             with patch.object(self.charm, "_refresh", mock_refresh):
                 self.provider._on_relation_joined(event)
         mock_update.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()

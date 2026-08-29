@@ -398,7 +398,3 @@ class TestTLS(unittest.TestCase):
         with patch.object(self.charm.rolling_ops, "request_async_lock"):
             self.tls._on_peer_relation_broken(Mock())
         self.assertNotIn("peer-private-key", self.charm.app_peer_data)
-
-
-if __name__ == "__main__":
-    unittest.main()
