@@ -382,6 +382,10 @@ class MySQLLockAcquisitionError(Error):
     """Exception raised when a lock fails to be acquired."""
 
 
+class MySQLFetchLockError(Error):
+    """Exception raised when a lock state fails to be fetched."""
+
+
 class MySQLRescanClusterError(Error):
     """Exception raised when there is an issue rescanning the cluster."""
 
@@ -754,6 +758,31 @@ class MySQLCharmBase(CharmBase, ABC):
         return self._mysql.get_cluster_node_count(node_status=InstanceState.ONLINE) == min(
             GR_MAX_MEMBERS, self.app.planned_units()
         )
+
+    def get_blocking_lock_owner(self, lock_instance: str, task_name: str) -> str | None:
+        """Returns the unit label blocking the task, reclaiming the lock when stale.
+
+        A lock is stale when its owner can no longer release it: either this unit
+        acquired it and died before the release ran (Juju serializes hooks per unit,
+        so a lock owned by self is never in use by a live hook), or the owner is no
+        longer a peer. Stale locks are released and None returned, so callers proceed.
+
+        Raises:
+            MySQLFetchLockError: when the lock state can't be read.
+        """
+        owner = self._mysql.get_lock_owner(lock_instance, task_name)
+        if owner is None:
+            return None
+
+        if owner == self.unit_label:
+            logger.warning(f"Reclaiming {task_name} lock left behind by this unit")
+        elif owner not in {self.get_unit_label(unit) for unit in self.app_units}:
+            logger.warning(f"Reclaiming {task_name} lock left behind by departed {owner}")
+        else:
+            return owner
+
+        self._mysql.release_lock(lock_instance, owner, task_name)
+        return None
 
     @property
     def unit_configured(self) -> bool:
@@ -1151,13 +1180,8 @@ class MySQLBase(ABC):
                 performance_schema_instrument = "'memory/%=OFF'"
 
         binlog_retention_seconds = binlog_retention_days * 24 * 60 * 60
-        config = configparser.ConfigParser(interpolation=None)
-
-        # do not enable slow query logs, but specify a log file path in case
-        # the admin enables them manually
-        base_config = {
+        mysqld_config: dict = {
             "datadir": MYSQL_DATA_DIR,
-            # All interfaces bind expected
             "bind_address": "0.0.0.0",  # noqa: S104
             "mysqlx_bind_address": "0.0.0.0",  # noqa: S104
             "admin_address": self.instance_address,
@@ -1175,11 +1199,11 @@ class MySQLBase(ABC):
             "general_log_file": f"{MYSQL_LOGS_DIR}/general.log",
             "loose-group_replication_paxos_single_leader": "ON",
             "slow_query_log_file": f"{MYSQL_LOGS_DIR}/slow.log",
-            "binlog_expire_logs_seconds": f"{binlog_retention_seconds}",
+            "binlog_expire_logs_seconds": binlog_retention_seconds,
             "gtid_mode": "ON",
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
-            "max_connect_errors": "10000",
+            "max_connect_errors": 10000,
             # Password validation
             "loose-validate_password.check_user_name": "ON",
             "loose-validate_password.length": 12,
@@ -1188,29 +1212,31 @@ class MySQLBase(ABC):
             "loose-validate_password.policy": "MEDIUM",
             "loose-validate_password.special_char_count": 0,
         }
-        config["mysqld"] = base_config  # ty:ignore[invalid-assignment]
 
         if audit_log_enabled:
-            config["mysqld"]["loose-audit_log_filter.file"] = f"{MYSQL_LOGS_DIR}/audit.log"
-            config["mysqld"]["loose-audit_log_filter.format"] = "JSON"
-            config["mysqld"]["loose-audit_log_filter.policy"] = audit_log_policy.upper()
+            mysqld_config["loose-audit_log_filter.file"] = f"{MYSQL_LOGS_DIR}/audit.log"
+            mysqld_config["loose-audit_log_filter.format"] = "JSON"
+            mysqld_config["loose-audit_log_filter.policy"] = audit_log_policy.upper()
         if audit_log_strategy == "async":
-            config["mysqld"]["loose-audit_log_filter.strategy"] = "ASYNCHRONOUS"
+            mysqld_config["loose-audit_log_filter.strategy"] = "ASYNCHRONOUS"
         else:
-            config["mysqld"]["loose-audit_log_filter.strategy"] = "SEMISYNCHRONOUS"
+            mysqld_config["loose-audit_log_filter.strategy"] = "SEMISYNCHRONOUS"
 
         if innodb_buffer_pool_chunk_size:
-            config["mysqld"]["innodb_buffer_pool_chunk_size"] = str(innodb_buffer_pool_chunk_size)
+            mysqld_config["innodb_buffer_pool_chunk_size"] = innodb_buffer_pool_chunk_size
         if performance_schema_instrument:
-            config["mysqld"]["performance-schema-instrument"] = performance_schema_instrument
+            mysqld_config["performance-schema-instrument"] = performance_schema_instrument
         if group_replication_message_cache_size:
-            config["mysqld"]["loose-group_replication_message_cache_size"] = str(
+            mysqld_config["loose-group_replication_message_cache_size"] = (
                 group_replication_message_cache_size
             )
 
+        config = configparser.ConfigParser(interpolation=None)
+        config["mysqld"] = {k: str(v) for k, v in mysqld_config.items()}
+
         with io.StringIO() as string_io:
             config.write(string_io)
-            return string_io.getvalue(), dict(config["mysqld"])
+            return string_io.getvalue(), mysqld_config
 
     def _build_mysql_database_dba_role(self, database: str) -> str:
         """Builds the database-level DBA role, given length constraints."""
@@ -1840,19 +1866,30 @@ class MySQLBase(ABC):
         else:
             return result["status"] == "ok"
 
-    def are_locks_acquired(self, from_instance: str, task_name: str) -> bool:
-        """Report if any topology change is being executed."""
+    def get_lock_owner(self, from_instance: str, task_name: str) -> str | None:
+        """Report the unit label holding the lock, or None when it's free.
+
+        Raises:
+            MySQLFetchLockError: when the lock state can't be read.
+        """
         query = self._lock_query_builder.build_fetch_acquired_query(task_name)
         executor = self._build_instance_tcp_executor(from_instance)
 
         try:
             logger.debug(f"Fetching acquired lock {task_name}")
             locks = executor.execute_sql(query)
-        except ExecutionError:
+        except ExecutionError as e:
             logger.error(f"Failed to fetch acquired lock {task_name}")
-            return True
+            raise MySQLFetchLockError(f"Failed to fetch lock {task_name}") from e
         else:
-            return len(locks) == 1
+            return locks[0]["executor"] if locks else None
+
+    def are_locks_acquired(self, from_instance: str, task_name: str) -> bool:
+        """Report if any topology change is being executed."""
+        try:
+            return self.get_lock_owner(from_instance, task_name) is not None
+        except MySQLFetchLockError:
+            return True
 
     def rescan_cluster(
         self,
@@ -2118,6 +2155,14 @@ class MySQLBase(ABC):
             return False
         else:
             return unit_label in [row["executor"] for row in rows]
+
+    def release_lock(self, from_instance: str, unit_label: str, task_name: str) -> bool:
+        """Releases a lock held by the given unit label."""
+        return self._release_lock(
+            executor=self._build_instance_tcp_executor(from_instance),
+            unit_label=unit_label,
+            unit_task=task_name,
+        )
 
     def _release_lock(self, executor: BaseExecutor, unit_label: str, unit_task: str) -> bool:
         """Releases a lock in the mysql.juju_units_operations table."""

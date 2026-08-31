@@ -16,12 +16,11 @@ This page summarises resources for setting up deployments where an external appl
 The available options are heavily depend on the cloud/hardware/virtualization in use. One of the possible options is to use [virtual IP addresses (VIP)](https://en.wikipedia.org/wiki/Virtual_IP_address) which the MySQL Router charm provides with assist of the charm/interface `hacluster`. 
 
 Please follow the MySQL Router documentation:
-* [MySQL Router for machines](https://charmhub.io/mysql-router/docs/h-external-access?channel=8.4/edge)
-* [MySQL Router for Kubernetes](https://charmhub.io/mysql-router-k8s/docs/h-external-access?channel=8.4/edge)
+* [MySQL Router for machines](https://github.com/canonical/mysql-router-operators/blob/8.4/edge/kubernetes/docs/how-to/h-external-access.md)
+* [MySQL Router for Kubernetes](https://github.com/canonical/mysql-router-operators/blob/8.4/edge/machines/docs/how-to/h-external-access.md)
 
 ## External relation (Juju)
 
 **Use case**: the client application is a Juju application outside of the database deployment (e.g. hybrid Juju deployment with different VM clouds/controllers, or mixed K8s and VM applications).
 
 In this case, a cross-controllers relation is necessary. Please {ref}`contact <contacts>` the Data team to discuss the possible option for your use case.
-

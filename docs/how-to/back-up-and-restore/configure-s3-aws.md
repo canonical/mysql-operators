@@ -7,15 +7,19 @@ myst:
 (configure-s3-aws)=
 # Configure S3 for AWS
 
-Charmed MySQL backups can be stored on any S3 compatible storage. S3 access and configurations are managed with the [S3-integrator charm](https://charmhub.io/s3-integrator?channel=2/edge). 
+Charmed MySQL backups can be stored on any S3 compatible storage. S3 access and configurations are managed with the [S3-integrator charm](https://charmhub.io/s3-integrator?channel=2/stable).
 
-This guide will teach you how to deploy and configure the S3-integrator charm for [AWS S3](https://aws.amazon.com/s3/), send the configuration to a Charmed MySQL application, and update it. 
+This guide will teach you how to deploy and configure the S3-integrator charm for [AWS S3](https://aws.amazon.com/s3/), send the configuration to a Charmed MySQL application, and update it.
 
 ```{seealso}
 {ref}`configure-s3-radosgw`
 ```
 
-## Set up `s3-integrator`
+## Create the S3 bucket (optional)
+
+Version 2 of the `s3-integrator` charm automatically creates the bucket upon configuration if it does not exist or it is not accessible. Therefore, the bucket does not need to be manually created before passing its name to the integrator charm, although this option allows for a more flexible policy specification.
+
+## Configure the integrator
 
 Deploy and configure the `s3-integrator` charm for AWS S3:
 
@@ -38,6 +42,8 @@ The Amazon S3 endpoint must be specified as `s3.<region>.amazonaws.com ` within 
 
 See [this post](https://repost.aws/knowledge-center/s3-http-307-response) for more information. 
 ```
+
+## Integrate with Charmed MySQL
 
 To pass these configurations to Charmed MySQL, relate the two applications:
 
@@ -83,4 +89,4 @@ You can also update your S3 configuration options after relating:
 juju config s3-integrator <option>=<value>
 ```
 
-The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configurations?channel=2/edge) for your S3 storage.
+The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configurations?channel=2/stable) for your S3 storage.

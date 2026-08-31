@@ -41,6 +41,7 @@ from charms.mysql.v0.mysql import (
     MySQLConfigureMySQLUsersError,
     MySQLCreateClusterError,
     MySQLCreateClusterSetError,
+    MySQLFetchLockError,
     MySQLGetClusterPrimaryAddressError,
     MySQLGetMySQLVersionError,
     MySQLInitializeJujuOperationsTableError,
@@ -301,6 +302,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Rotate TLS keys
         self._rotate_private_keys()
 
+        logger.info("Persisting configuration changes to file")
+        previous_config_dict = self.mysql_config.get_custom_config(config_content)
+        # render the new config
+        new_config_dict = self._mysql.write_mysqld_config()
+        # flatten new_config_dict to match previous_config format (all values as strings)
+        new_config_dict_flat = {k: str(v) for k, v in new_config_dict.items()}
+        changed_config = compare_dictionaries(previous_config_dict, new_config_dict_flat)
+
         if (
             self.mysql_config.keys_requires_restart(changed_config)
             and self._mysql.is_mysqld_running()
@@ -312,10 +321,12 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # if only dynamic config changed, apply it
             logger.info("Configuration does not requires restart")
             for config in dynamic_config:
-                if config not in new_config:
+                if config not in new_config_dict:
                     # skip removed configs
                     continue
-                self._mysql.set_dynamic_variable(config.removeprefix("loose-"), new_config[config])
+                self._mysql.set_dynamic_variable(
+                    config.removeprefix("loose-"), new_config_dict[config]
+                )
 
     def _on_start(self, event: StartEvent) -> None:
         """Handle the start event.
@@ -564,9 +575,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Not used for cryptographic purpose
         sleep(random.uniform(0, 1.5))  # noqa: S311
 
-        if self._mysql.are_locks_acquired(cluster_primary, UNIT_ADD_LOCKNAME):
-            logger.info("waiting: cluster lock is held")
+        try:
+            lock_owner = self.get_blocking_lock_owner(cluster_primary, UNIT_ADD_LOCKNAME)
+        except MySQLFetchLockError:
+            logger.info("waiting: unable to read the cluster lock state")
             return
+
+        if lock_owner:
+            logger.info(f"waiting: cluster lock is held by {lock_owner}")
+            return
+
         try:
             self._mysql.rejoin_instance_to_cluster(
                 unit_address=self.unit_fqdn,
@@ -1027,9 +1045,16 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 # Not used for cryptographic purpose
                 sleep(random.uniform(0, 1.5))  # noqa: S311
 
-                if self._mysql.are_locks_acquired(lock_instance, UNIT_ADD_LOCKNAME):
-                    self.set_unit_status(WaitingStatus("waiting to join the cluster."))
-                    logger.info("waiting: cluster lock is held")
+                try:
+                    lock_owner = self.get_blocking_lock_owner(lock_instance, UNIT_ADD_LOCKNAME)
+                except MySQLFetchLockError:
+                    self.unit.status = WaitingStatus("waiting to join the cluster.")
+                    logger.info("waiting: unable to read the cluster lock state")
+                    return
+
+                if lock_owner:
+                    self.unit.status = WaitingStatus("waiting to join the cluster.")
+                    logger.info(f"waiting: cluster lock is held by {lock_owner}")
                     return
 
                 self.set_unit_status(MaintenanceStatus("joining the cluster"))

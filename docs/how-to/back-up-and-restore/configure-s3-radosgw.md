@@ -15,7 +15,11 @@ This guide will teach you how to deploy and configure the S3-integrator charm on
 {ref}`configure-s3-aws`
 ```
 
-## Configure `s3-integrator`
+## Create the S3 bucket (optional)
+
+Version 2 of the `s3-integrator` charm automatically creates the bucket upon configuration if it does not exist or it is not accessible. Therefore, the bucket does not need to be manually created before passing its name to the integrator charm, although this option allows for a more flexible policy specification.
+
+## Configure the integrator
 
 First, install the MinIO client and create a bucket:
 
@@ -34,45 +38,51 @@ juju grant-secret s3-credentials s3-integrator
 
 Lastly, use `juju config` to add your configuration parameters. For example:
 
-`````{tab-set}
-````{tab-item} VM
+````{tab-set}
+```{tab-item} VM
 :sync: vm
 
-```shell
-juju config s3-integrator \
-    credentials=<secret-uri-from-previous-step> \
-    endpoint="https://radosgw.mycompany.fqdn" \
-    bucket="backups-bucket" \
-    path="/mysql" \
-    region="" \
-    s3-api-version="" \
-    s3-uri-style="path"
+    juju config s3-integrator \
+        credentials=<secret-uri-from-previous-step> \
+        endpoint="https://radosgw.mycompany.fqdn" \
+        bucket="backups-bucket" \
+        path="/mysql" \
+        region="" \
+        s3-api-version="" \
+        s3-uri-style="path"
 ```
-````
 
-````{tab-item} K8s
+```{tab-item} K8s
 :sync: k8s
 
-```shell
-juju config s3-integrator \
-    credentials=<secret-uri-from-previous-step> \
-    endpoint="https://radosgw.mycompany.fqdn" \
-    bucket="backups-bucket" \
-    path="/mysql-k8s" \
-    region="" \
-    s3-api-version="" \
-    s3-uri-style="path"
+    juju config s3-integrator \
+        credentials=<secret-uri-from-previous-step> \
+        endpoint="https://radosgw.mycompany.fqdn" \
+        bucket="backups-bucket" \
+        path="/mysql-k8s" \
+        region="" \
+        s3-api-version="" \
+        s3-uri-style="path"
 ```
 ````
-`````
 
 ## Integrate with Charmed MySQL
 
 To pass these configurations to Charmed MySQL, integrate the two applications:
 
-```shell
-juju integrate s3-integrator mysql
+````{tab-set}
+```{tab-item} VM
+:sync: vm
+
+    juju relate s3-integrator mysql
 ```
+
+```{tab-item} K8s
+:sync: k8s
+
+    juju relate s3-integrator mysql-k8s
+```
+````
 
 You can create, list, and restore backups now:
 
@@ -102,4 +112,4 @@ You can also update your S3 configuration options after relating:
 juju config s3-integrator <option>=<value>
 ```
 
-The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure?channel=2/edge) for your S3 storage.
+The S3-integrator charm accepts many [configuration parameters](https://charmhub.io/s3-integrator/configure?channel=2/stable) for your S3 storage.

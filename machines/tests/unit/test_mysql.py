@@ -39,6 +39,7 @@ from charms.mysql.v0.mysql import (
     MySQLEmptyDataDirectoryError,
     MySQLExecError,
     MySQLExecuteBackupCommandsError,
+    MySQLFetchLockError,
     MySQLGetAutoTuningParametersError,
     MySQLGetClusterPrimaryAddressError,
     MySQLGetMySQLVersionError,
@@ -1625,6 +1626,45 @@ class TestMySQLBase(unittest.TestCase):
         assert self.mysql.are_locks_acquired("0.0.0.0", UNIT_ADD_LOCKNAME) is False
         self.mock_executor.execute_sql.assert_called_with(query)
 
+    def test_are_locks_acquired_fails_closed(self):
+        """Test are_locks_acquired reports a held lock when the state is unreadable."""
+        self.mock_executor.execute_sql.side_effect = ExecutionError
+
+        assert self.mysql.are_locks_acquired("0.0.0.0", UNIT_ADD_LOCKNAME) is True
+
+    def test_get_lock_owner(self):
+        """Test get_lock_owner."""
+        query = (
+            "SELECT executor "
+            "FROM `mysql`.`juju_units_operations` "
+            f"WHERE task = '{UNIT_ADD_LOCKNAME}' AND status = 'in-progress'"
+        )
+
+        self.mock_executor.execute_sql.return_value = [{"executor": "mysql-0"}]
+        assert self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME) == "mysql-0"
+        self.mock_executor.execute_sql.assert_called_with(query)
+
+        self.mock_executor.execute_sql.return_value = []
+        assert self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME) is None
+
+    def test_get_lock_owner_exception(self):
+        """Test an issue while executing get_lock_owner()."""
+        self.mock_executor.execute_sql.side_effect = ExecutionError
+
+        with self.assertRaises(MySQLFetchLockError):
+            self.mysql.get_lock_owner("0.0.0.0", UNIT_ADD_LOCKNAME)
+
+    def test_release_lock_from_instance(self):
+        """Test release_lock() only clears the lock held by the given unit label."""
+        query = (
+            "UPDATE `mysql`.`juju_units_operations` "
+            "SET status = 'not-started', executor = '' "
+            f"WHERE task = '{UNIT_ADD_LOCKNAME}' AND executor = 'mysql-0'"
+        )
+
+        assert self.mysql.release_lock("0.0.0.0", "mysql-0", UNIT_ADD_LOCKNAME) is True
+        self.mock_executor.execute_sql.assert_called_once_with(query)
+
     def test_get_mysql_user_for_unit(self):
         """Test get_mysql_user_for_unit."""
         query = (
@@ -1753,30 +1793,30 @@ class TestMySQLBase(unittest.TestCase):
             "mysqlx_bind_address": "0.0.0.0",
             "admin_address": "127.0.0.1",
             "report_host": "127.0.0.1",
-            "max_connections": "724",
-            "innodb_buffer_pool_size": "23219666944",
+            "max_connections": 724,
+            "innodb_buffer_pool_size": 23219666944,
             "log_error_services": "log_filter_internal;log_sink_internal",
             "log_error": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/error.log",
             "general_log": "OFF",
             "general_log_file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/general.log",
             "slow_query_log_file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/slow.log",
-            "binlog_expire_logs_seconds": "604800",
+            "binlog_expire_logs_seconds": 604800,
             "loose-audit_log_filter.format": "JSON",
             "loose-audit_log_filter.policy": "LOGINS",
             "loose-audit_log_filter.strategy": "ASYNCHRONOUS",
             "loose-audit_log_filter.file": f"{CHARMED_MYSQL_COMMON_DIRECTORY}/var/lib/mysql/logs/audit.log",
             "loose-group_replication_paxos_single_leader": "ON",
-            "innodb_buffer_pool_chunk_size": "2902458368",
+            "innodb_buffer_pool_chunk_size": 2902458368,
             "gtid_mode": "ON",
             "enforce_gtid_consistency": "ON",
             "activate_all_roles_on_login": "ON",
-            "max_connect_errors": "10000",
+            "max_connect_errors": 10000,
             "loose-validate_password.check_user_name": "ON",
-            "loose-validate_password.length": "12",
-            "loose-validate_password.mixed_case_count": "1",
-            "loose-validate_password.number_count": "1",
+            "loose-validate_password.length": 12,
+            "loose-validate_password.mixed_case_count": 1,
+            "loose-validate_password.number_count": 1,
             "loose-validate_password.policy": "MEDIUM",
-            "loose-validate_password.special_char_count": "0",
+            "loose-validate_password.special_char_count": 0,
         }
         self.maxDiff = None
 
@@ -1792,10 +1832,10 @@ class TestMySQLBase(unittest.TestCase):
         # < 2GB of memory, production profile
         memory_limit = 2147483600
 
-        expected_config["innodb_buffer_pool_size"] = "536870912"
+        expected_config["innodb_buffer_pool_size"] = 536870912
         del expected_config["innodb_buffer_pool_chunk_size"]
         expected_config["performance-schema-instrument"] = "'memory/%=OFF'"
-        expected_config["max_connections"] = "127"
+        expected_config["max_connections"] = 127
 
         _, rendered_config = self.mysql.render_mysqld_configuration(
             profile="production",
@@ -1808,10 +1848,10 @@ class TestMySQLBase(unittest.TestCase):
         self.assertEqual(rendered_config, expected_config)
 
         # testing profile
-        expected_config["innodb_buffer_pool_size"] = "20971520"
-        expected_config["innodb_buffer_pool_chunk_size"] = "1048576"
-        expected_config["loose-group_replication_message_cache_size"] = "134217728"
-        expected_config["max_connections"] = "100"
+        expected_config["innodb_buffer_pool_size"] = 20971520
+        expected_config["innodb_buffer_pool_chunk_size"] = 1048576
+        expected_config["loose-group_replication_message_cache_size"] = 134217728
+        expected_config["max_connections"] = 100
 
         _, rendered_config = self.mysql.render_mysqld_configuration(
             profile="testing",
@@ -1835,7 +1875,7 @@ class TestMySQLBase(unittest.TestCase):
             memory_limit=memory_limit,
         )
 
-        self.assertEqual(rendered_config["max_connections"], "500")
+        self.assertEqual(rendered_config["max_connections"], 500)
 
         # max_connections set,constrained by memory, but enforced
         _, rendered_config = self.mysql.render_mysqld_configuration(
@@ -1848,7 +1888,7 @@ class TestMySQLBase(unittest.TestCase):
             memory_limit=memory_limit,
         )
 
-        self.assertEqual(rendered_config["max_connections"], "800")
+        self.assertEqual(rendered_config["max_connections"], 800)
 
     def test_create_replica_cluster(self):
         """Test create_replica_cluster."""
