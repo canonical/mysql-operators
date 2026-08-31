@@ -738,27 +738,33 @@ class TestCharmExtended(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
     def test_manual_rejoin_locks_acquired(self, _mysql):
         _mysql.return_value.instance_belongs_to_cluster.return_value = True
-        _mysql.return_value.are_locks_acquired.return_value = True
-        with patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"):
+        with (
+            patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value="mysql/1"),
+        ):
             self.charm._execute_manual_rejoin()
         _mysql.return_value.rejoin_instance_to_cluster.assert_not_called()
 
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
     def test_manual_rejoin_success(self, _mysql):
         _mysql.return_value.instance_belongs_to_cluster.return_value = True
-        _mysql.return_value.are_locks_acquired.return_value = False
-        with patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"):
+        with (
+            patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value=None),
+        ):
             self.charm._execute_manual_rejoin()
         _mysql.return_value.rejoin_instance_to_cluster.assert_called_once()
 
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
     def test_manual_rejoin_rejoin_fails(self, _mysql):
         _mysql.return_value.instance_belongs_to_cluster.return_value = True
-        _mysql.return_value.are_locks_acquired.return_value = False
         _mysql.return_value.rejoin_instance_to_cluster.side_effect = (
             MySQLRejoinInstanceToClusterError
         )
-        with patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"):
+        with (
+            patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value=None),
+        ):
             self.charm._execute_manual_rejoin()
         _mysql.return_value.remove_instance.assert_called_once()
         _mysql.return_value.add_instance_to_cluster.assert_called_once()
@@ -1113,9 +1119,9 @@ class TestCharmExtended(unittest.TestCase):
         _mysql.return_value.is_instance_in_cluster.return_value = False
         _mysql.return_value.get_cluster_node_count.return_value = 1
         _mysql.return_value.is_cluster_replica.return_value = False
-        _mysql.return_value.are_locks_acquired.return_value = True
         with (
             patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value="mysql/1"),
             patch.object(self.charm, "set_unit_status"),
         ):
             self.charm.join_unit_to_cluster()
@@ -1126,9 +1132,9 @@ class TestCharmExtended(unittest.TestCase):
         _mysql.return_value.is_instance_in_cluster.return_value = False
         _mysql.return_value.get_cluster_node_count.return_value = 1
         _mysql.return_value.is_cluster_replica.return_value = False
-        _mysql.return_value.are_locks_acquired.return_value = False
         with (
             patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value=None),
             patch.object(self.charm, "build_unit_workload_status", return_value=ActiveStatus()),
         ):
             self.charm.join_unit_to_cluster()
@@ -1139,9 +1145,11 @@ class TestCharmExtended(unittest.TestCase):
         _mysql.return_value.is_instance_in_cluster.return_value = False
         _mysql.return_value.get_cluster_node_count.return_value = 1
         _mysql.return_value.is_cluster_replica.return_value = False
-        _mysql.return_value.are_locks_acquired.return_value = False
         _mysql.return_value.add_instance_to_cluster.side_effect = MySQLAddInstanceToClusterError
-        with patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"):
+        with (
+            patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value=None),
+        ):
             self.charm.join_unit_to_cluster()
 
     @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
@@ -1149,10 +1157,10 @@ class TestCharmExtended(unittest.TestCase):
         _mysql.return_value.is_instance_in_cluster.return_value = False
         _mysql.return_value.get_cluster_node_count.return_value = 1
         _mysql.return_value.is_cluster_replica.return_value = False
-        _mysql.return_value.are_locks_acquired.return_value = False
         _mysql.return_value.add_instance_to_cluster.side_effect = MySQLLockAcquisitionError
         with (
             patch.object(self.charm, "_get_primary_from_online_peer", return_value="1.2.3.4"),
+            patch.object(self.charm, "get_blocking_lock_owner", return_value=None),
             patch.object(self.charm, "set_unit_status"),
         ):
             self.charm.join_unit_to_cluster()

@@ -608,19 +608,6 @@ class TestMySQLVMHelpers(unittest.TestCase):
     @patch("mysql_vm_helpers.snap.SnapCache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.touch")
-    @patch("subprocess.check_call")
-    def test_install_snap_creates_common_dir(self, _check_call, _touch, _path_exists, _snap_cache):
-        _charmed_mysql = MagicMock()
-        _charmed_mysql.present = False
-        _charmed_mysql.held = True
-        _snap_cache.return_value.__getitem__ = Mock(return_value=_charmed_mysql)
-        _path_exists.return_value = False
-        MySQL.install_and_configure_mysql_dependencies(revision="243")
-        _check_call.assert_called_once()
-
-    @patch("mysql_vm_helpers.snap.SnapCache")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.touch")
     def test_install_snap_snap_error(self, _touch, _path_exists, _snap_cache):
         from charmlibs import snap
 

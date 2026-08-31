@@ -444,7 +444,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.release_lock")
     @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
     def test_get_blocking_lock_owner_live_peer(
-            self, _get_lock_owner, _release_lock, _get_unit_address
+        self, _get_lock_owner, _release_lock, _get_unit_address
     ):
         """A lock held by a live peer blocks and is left alone."""
         _get_lock_owner.return_value = f"{APP_NAME}-1"
@@ -456,7 +456,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.release_lock")
     @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
     def test_get_blocking_lock_owner_self_held(
-            self, _get_lock_owner, _release_lock, _get_unit_address
+        self, _get_lock_owner, _release_lock, _get_unit_address
     ):
         """A lock left behind by this very unit is reclaimed, not waited on."""
         _get_lock_owner.return_value = f"{APP_NAME}-0"
@@ -468,7 +468,7 @@ class TestCharm(unittest.TestCase):
     @patch("mysql_k8s_helpers.MySQL.release_lock")
     @patch("mysql_k8s_helpers.MySQL.get_lock_owner")
     def test_get_blocking_lock_owner_departed_unit(
-            self, _get_lock_owner, _release_lock, _get_unit_address
+        self, _get_lock_owner, _release_lock, _get_unit_address
     ):
         """A lock left behind by a unit that is no longer a peer is reclaimed."""
         _get_lock_owner.return_value = f"{APP_NAME}-9"
@@ -491,18 +491,18 @@ class TestCharm(unittest.TestCase):
     )
     @patch("mysql_k8s_helpers.MySQL.add_instance_to_cluster")
     def test_join_unit_to_cluster_reclaims_own_stale_lock(
-            self,
-            _add_instance_to_cluster,
-            _get_cluster_status,
-            _stop_group_replication,
-            _release_lock,
-            _get_lock_owner,
-            _is_cluster_replica,
-            _get_cluster_node_count,
-            _get_unit_address,
-            _get_primary_from_online_peer,
-            _is_instance_in_cluster,
-            _sleep,
+        self,
+        _add_instance_to_cluster,
+        _get_cluster_status,
+        _stop_group_replication,
+        _release_lock,
+        _get_lock_owner,
+        _is_cluster_replica,
+        _get_cluster_node_count,
+        _get_unit_address,
+        _get_primary_from_online_peer,
+        _is_instance_in_cluster,
+        _sleep,
     ):
         """A unit that died holding the unit-add lock reclaims it and joins."""
         _get_lock_owner.return_value = f"{APP_NAME}-0"
