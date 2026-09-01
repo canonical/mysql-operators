@@ -261,7 +261,7 @@ class MySQLProvider(Object):
                 logger.warning(f"User(s) not found for relation {relation_id}")
                 return
             logger.info(f"Removed user(s) for relation {relation_id}")
-        except MySQLDeleteUsersForRelationError:
+        except (MySQLDeleteUsersForRelationError, KeyError):
             logger.error(f"Failed to delete user(s) for relation {relation_id}")
 
     def _on_database_provides_relation_departed(self, event: RelationDepartedEvent) -> None:
