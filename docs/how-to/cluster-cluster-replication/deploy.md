@@ -17,10 +17,10 @@ Deploy two MySQL Clusters, named `Rome` and `Lisbon`.
     juju add-model lisbon  # 2nd cluster location: Lisbon
 
     juju switch rome
-    juju deploy mysql db1 --channel=8.4/edge --config profile=testing --config cluster-name=rome --base ubuntu@26.04
+    juju deploy mysql db1 --channel=8.4/stable --config profile=testing --config cluster-name=rome --base ubuntu@26.04
 
     juju switch lisbon
-    juju deploy mysql db2 --channel=8.4/edge --config profile=testing --config cluster-name=lisbon --base ubuntu@26.04
+    juju deploy mysql db2 --channel=8.4/stable --config profile=testing --config cluster-name=lisbon --base ubuntu@26.04
 ```
 
 ```{tab-item} K8s
@@ -30,10 +30,10 @@ Deploy two MySQL Clusters, named `Rome` and `Lisbon`.
     juju add-model lisbon  # 2nd cluster location: Lisbon
 
     juju switch rome
-    juju deploy mysql-k8s db1 --trust --channel=8.4/edge --config profile=testing --config cluster-name=rome --base ubuntu@26.04
+    juju deploy mysql-k8s db1 --trust --channel=8.4/stable --config profile=testing --config cluster-name=rome --base ubuntu@26.04
 
     juju switch lisbon
-    juju deploy mysql-k8s db2 --trust --channel=8.4/edge --config profile=testing --config cluster-name=lisbon --base ubuntu@26.04
+    juju deploy mysql-k8s db2 --trust --channel=8.4/stable --config profile=testing --config cluster-name=lisbon --base ubuntu@26.04
 ```
 ````
 

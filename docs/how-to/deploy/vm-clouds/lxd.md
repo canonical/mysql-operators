@@ -18,9 +18,10 @@ For a detailed walkthrough of setting up an environment and deploying the charm 
 juju bootstrap localhost <controller name>
 juju add-model <model name>
 ```
+
 Deploy MySQL
 ```shell
-juju deploy mysql --channel 8.4/edge
+juju deploy mysql --channel 8.4/stable
 ```
 > See the [`juju deploy` documentation](https://juju.is/docs/juju/juju-deploy) for all available options at deploy time.
 > 
@@ -31,8 +32,8 @@ Sample output of `juju status --watch 1s`:
 Model   Controller  Cloud/Region         Version  SLA          Timestamp
 mysql   overlord    localhost/localhost  3.6.14   unsupported  00:52:59+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7            active      1  mysql  8.4/edge         no       Primary
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active      1  mysql  8.4/stable       no       Primary
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
