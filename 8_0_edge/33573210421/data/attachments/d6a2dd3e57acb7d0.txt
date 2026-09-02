@@ -1,0 +1,26 @@
+Sep 02 00:45:01 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Sep 02 00:45:02 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:42 Deploying mysql
+Sep 02 00:45:02 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql-k8s_ubuntu@22.04-amd64.charm mysql-k8s --base ubuntu@22.04 --config mysql-root-interface-user=keystone --config mysql-root-interface-database=keystone --config profile=testing --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:824b302484f83dbbd2cf4506f620a48e53f20053f6ff3c57aa6123e121705bfc --trust
+Sep 02 00:45:08 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:53 Deploying osm-keystone
+Sep 02 00:45:08 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing osm-keystone --base ubuntu@22.04 --channel latest/beta --resource keystone-image=opensourcemano/keystone:testing-daily
+Sep 02 00:45:09 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:61 Deploying osm-pol
+Sep 02 00:45:09 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing osm-pol osm-pol --base ubuntu@22.04 --channel latest/beta --resource image=opensourcemano/pol:testing-daily --trust
+Sep 02 00:45:10 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:71 Deploying kafka
+Sep 02 00:45:10 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing kafka-k8s kafka --base ubuntu@20.04 --channel latest/stable --trust
+Sep 02 00:45:11 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:80 Deploying zookeeper
+Sep 02 00:45:11 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing zookeeper-k8s zookeeper --base ubuntu@20.04 --channel latest/stable
+Sep 02 00:45:12 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:88 Deploying mongodb
+Sep 02 00:45:12 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing mongodb-k8s mongodb --base ubuntu@22.04 --channel 6/stable --trust
+Sep 02 00:45:13 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:98 Waiting for mysql and mongodb to become active
+Sep 02 00:47:14 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:104 Waiting for all apps to have units
+Sep 02 00:47:16 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:115 Relate kafka and zookeeper
+Sep 02 00:47:16 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing kafka:zookeeper zookeeper:zookeeper
+Sep 02 00:47:21 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:123 Relate keystone and mysql
+Sep 02 00:47:21 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing osm-keystone:db mysql-k8s:mysql-root
+Sep 02 00:47:21 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:126 Waiting for keystone and mysql to settle
+Sep 02 00:47:38 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:133 Relate osm-pol and mongo
+Sep 02 00:47:38 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing osm-pol:mongodb mongodb:database
+Sep 02 00:47:39 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:136 Relate osm-pol and kafka
+Sep 02 00:47:39 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing osm-pol:kafka kafka:kafka
+Sep 02 00:47:39 [32mINFO    [0m integration.integration.test_osm_integration_bundle:test_osm_integration_bundle.py:139 Relate osm-pol and mysql
+Sep 02 00:47:39 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing osm-pol:mysql mysql-k8s:mysql-root

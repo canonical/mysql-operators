@@ -1,0 +1,14 @@
+Sep 02 00:43:15 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Sep 02 00:43:16 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:71 Deploying s3 integrator
+Sep 02 00:43:16 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing s3-integrator s3-integrator --base ubuntu@22.04 --channel 1/stable
+Sep 02 00:43:17 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:79 Deploying mysql
+Sep 02 00:43:17 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql-k8s_ubuntu@22.04-amd64.charm mysql-k8s --base ubuntu@22.04 --config cluster-name=test_cluster --config profile=testing --num-units 3 --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:824b302484f83dbbd2cf4506f620a48e53f20053f6ff3c57aa6123e121705bfc --trust
+Sep 02 00:45:47 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:99 Rotating mysql credentials
+Sep 02 00:45:47 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Sep 02 00:45:47 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-k8s/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpb7vohg79
+Sep 02 00:45:49 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-k8s/0 set-password --params /root/snap/juju/common/tmp0govi2jx
+Sep 02 00:45:53 [32mINFO    [0m integration.integration.helpers_backups:helpers_backups.py:105 Configuring s3 integrator and integrating it with mysql
+Sep 02 00:45:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju config --model testing s3-integrator endpoint=https://s3.amazonaws.com bucket=data-charms-testing path=mysql-k8s/51353bbc-031b-4c21-a08e-e6fd2f669fa7 region=us-east-1
+Sep 02 00:45:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Sep 02 00:45:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json s3-integrator/0 sync-s3-credentials --params /root/snap/juju/common/tmp95lc7axt
+Sep 02 00:46:06 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql-k8s s3-integrator
