@@ -636,6 +636,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             else MaintenanceStatus(state)
         )
 
+        # Ensure mysqld ports are registered with juju
+        if state == InstanceState.ONLINE:
+            self.unit.set_ports(3306, 33060)
+
         if not self._handle_non_online_instance_status(state):
             return
 
