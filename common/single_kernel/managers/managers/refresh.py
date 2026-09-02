@@ -1,0 +1,57 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+import logging
+from functools import cached_property
+
+from charm_refresh import PrecheckFailed
+from mysql_shell.executors.errors import ExecutionError
+from mysql_shell.models import InstanceRole, InstanceState
+
+from ...state import RefreshState
+from ...workload import BaseSystem
+from ..clients import ManagerClients
+
+logger = logging.getLogger(__name__)
+
+
+class RefreshManager:
+    """Class to deal with the operator refresh."""
+
+    def __init__(self, state: RefreshState, system: BaseSystem, clients: ManagerClients):
+        """Initialize the class attributes."""
+        self._state = state
+        self._system = system
+        self._clients = clients
+
+    @cached_property
+    def is_cluster_primary(self) -> bool:
+        """Return whether the MySQL instance is the primary."""
+        return self._clients.instance.fetch_role() == InstanceRole.PRIMARY
+
+    def check_cluster(self) -> None:
+        """Check the MySQL cluster health."""
+        try:
+            _________ = self._clients.cluster.rescan()
+            instances = self._clients.cluster.fetch_instances()
+        except ExecutionError as e:
+            raise PrecheckFailed(f"Failed to check cluster health: {e}")
+
+        for instance in instances.values():
+            if instance["status"] != InstanceState.ONLINE:
+                raise PrecheckFailed("Cluster instances are not online")
+
+    def prepare_cluster(self, instance_label: str) -> None:
+        """Prepare the MySQL cluster for an operator refresh."""
+        try:
+            self._clients.cluster.promote_instance(instance_label)
+        except ExecutionError as e:
+            raise PrecheckFailed(f"Failed to prepare cluster: {e}")
+
+    def prepare_instance(self, instance_host: str) -> None:
+        """Prepare the MySQL instance for an operator refresh."""
+        with self._clients.build_instance_client(instance_host) as client:
+            try:
+                client.update_variable("innodb_fast_shutdown", 0)
+            except ExecutionError as e:
+                raise PrecheckFailed(f"Failed to prepare instance: {e}")
