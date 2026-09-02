@@ -189,7 +189,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             self.unit.status = MaintenanceStatus("Tearing down")
             self._refresh = None
         else:
-            self._refresh.next_unit_allowed_to_refresh = True
+            if not self._refresh.next_unit_allowed_to_refresh:
+                if self._refresh.in_progress:
+                    self._post_snap_refresh(self._refresh)
+                else:
+                    self._refresh.next_unit_allowed_to_refresh = True
 
         self.rolling_ops = RollingOpsManager(
             charm=self,
@@ -851,16 +855,27 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except KeyError:
             return ""
 
-    def set_unit_status(self, status: ops.StatusBase):
-        """Set unit status without overriding higher priority refresh status."""
-        if self._refresh is None:
+    def set_unit_status(
+        self, status: ops.StatusBase, /, *, refresh: charm_refresh.Machines | None = None
+    ):
+        """Set unit status without overriding higher priority refresh status.
+
+        `refresh` must be passed explicitly by callers that run while
+        `charm_refresh.Machines()` is still being constructed (e.g.
+        `MachinesMySQLRefresh.refresh_snap`), since `self._refresh` is not
+        assigned until that constructor returns.
+        """
+        if refresh is None:
+            refresh = getattr(self, "_refresh", None)
+
+        if refresh is None:
             self.unit.status = status
             return
 
-        if self._refresh.unit_status_higher_priority:
+        if refresh.unit_status_higher_priority:
             return
 
-        refresh_status = self._refresh.unit_status_lower_priority()
+        refresh_status = refresh.unit_status_lower_priority()
         if refresh_status and isinstance(status, ActiveStatus):
             status = refresh_status
 
@@ -1050,6 +1065,49 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-state"] = InstanceState.ONLINE.value
         self.set_unit_status(self.build_unit_workload_status())
         logger.info(f"Instance {instance_label} added to cluster")
+
+    def _post_snap_refresh(self, refresh: charm_refresh.Machines) -> None:
+        """Start mysqld, rejoin the cluster and allow the next unit to refresh.
+
+        Called from `__init__` on every event until this unit is healthy again, because
+        `_on_update_status` and `_on_config_changed` both bail out while a refresh is in
+        progress. Without this the unit would stay in a maintenance status forever: the
+        refresh does not complete until the unit reports healthy.
+
+        The next unit is only allowed to refresh once this unit has rejoined the cluster,
+        so that a broken refresh does not roll forward across the whole application.
+        """
+        self.set_unit_status(MaintenanceStatus("starting mysqld"), refresh=refresh)
+        try:
+            self._mysql.start_mysqld()
+        except MySQLStartMySQLDError:
+            logger.exception("Failed to start mysqld after refreshing the snap")
+            self.set_unit_status(BlockedStatus("Failed to start mysqld"), refresh=refresh)
+            return
+
+        self.set_unit_status(MaintenanceStatus("recovering unit after refresh"), refresh=refresh)
+        try:
+            self.recover_unit_after_restart()
+        except (RetryError, MySQLRebootFromCompleteOutageError):
+            logger.exception("Failed to rejoin the cluster after refreshing the snap")
+            self.set_unit_status(
+                BlockedStatus("Failed to rejoin the cluster after refresh"), refresh=refresh
+            )
+            return
+
+        try:
+            role = self._mysql.get_member_role()
+            state = self._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            logger.error("Failed to read member state after refreshing the snap")
+            self.set_unit_status(MaintenanceStatus("Unable to get member state"), refresh=refresh)
+            return
+
+        logger.info(f"Unit workload member-state is {state} with member-role {role}")
+        self.unit_peer_data["member-role"] = role
+        self.unit_peer_data["member-state"] = state
+        refresh.next_unit_allowed_to_refresh = True
+        self.set_unit_status(self.build_unit_workload_status(), refresh=refresh)
 
     def recover_unit_after_restart(self) -> None:
         """Wait for unit recovery/rejoin after restart."""
