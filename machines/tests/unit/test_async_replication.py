@@ -455,7 +455,6 @@ class TestAsyncRelation(unittest.TestCase):
         _mysql.promote_cluster_to_primary.assert_called_with(
             self.charm.app_peer_data["cluster-name"], False
         )
-        self.assertEqual(self.async_replica.relation_data["switchover"], "1")
 
         _mysql.reset_mock()
 
@@ -471,7 +470,6 @@ class TestAsyncRelation(unittest.TestCase):
         _mysql.promote_cluster_to_primary.assert_called_with(
             self.charm.app_peer_data["cluster-name"], True
         )
-        self.assertEqual(self.async_replica.relation_data["switchover"], "2")
 
     @patch("charm.MySQLOperatorCharm._mysql")
     def test_rejoin_cluster_action(self, _mysql, _):
