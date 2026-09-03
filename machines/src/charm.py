@@ -335,6 +335,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLGetMySQLVersionError:
             logger.debug("Fail to get MySQL version")
 
+        self.unit.set_ports(3306, 33060)
         if not self.unit.is_leader():
             # Wait to be joined and set flags
             self.unit.status = WaitingStatus("Waiting to join the cluster")
@@ -356,7 +357,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-            self.unit.set_ports(3306, 33060)
 
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer relation event")
@@ -636,10 +636,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             else MaintenanceStatus(state)
         )
 
-        # Ensure mysqld ports are registered with juju
-        if state == InstanceState.ONLINE:
-            self.unit.set_ports(3306, 33060)
-
         if not self._handle_non_online_instance_status(state):
             return
 
@@ -912,7 +908,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # Create the cluster and cluster set from the leader unit
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
-            self.unit.set_ports(3306, 33060)
             self.unit.status = ActiveStatus(self.active_status_message)
         except (
             MySQLCreateClusterError,
