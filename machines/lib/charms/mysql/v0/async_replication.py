@@ -135,17 +135,17 @@ class MySQLAsyncReplication(Object):
         )
 
     @property
-    def relation_data(self) -> RelationDataContent | None:
+    def relation_data(self) -> RelationDataContent | dict:
         """Relation data."""
         if not self.relation:
-            return
+            return {}
         return self.relation.data[self.model.app]
 
     @property
-    def remote_relation_data(self) -> RelationDataContent | None:
+    def remote_relation_data(self) -> RelationDataContent | dict:
         """Remote relation data."""
         if not self.relation or not self.relation.app:
-            return
+            return {}
         return self.relation.data[self.relation.app]
 
     def _on_promote_to_primary(self, event: ActionEvent) -> None:
@@ -258,9 +258,9 @@ class MySQLAsyncReplication(Object):
                 self._charm.unit_peer_data["member-state"] = "UNKNOWN"
             self._charm._on_update_status(None)
 
-        if self._charm.app_peer_data.get("async-ready"):
+        if self.relation_data.get("async-ready"):
             # if set reset async-ready flag
-            del self._charm.app_peer_data["async-ready"]
+            del self.relation_data["async-ready"]
 
     def _on_rejoin_cluster_action(self, event: ActionEvent) -> None:
         """Rejoin cluster to cluster set action handler."""
@@ -381,7 +381,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             # non leader units are always idle
             return True
 
-        if self._charm.app_peer_data.get("async-ready") == "true":
+        if self.relation_data.get("async-ready") == "true":
             # transitional state between relation created and setup_action
             return False
 
@@ -406,7 +406,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
 
     def _on_create_replication(self, event: ActionEvent):
         """Promote the offer side to primary on initial setup."""
-        if self._charm.app_peer_data.get("async-ready") != "true":
+        if self.relation_data.get("async-ready") != "true":
             event.fail("Relation created but not ready")
             return
 
@@ -454,7 +454,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             }
         )
         # reset async-ready flag set on relation created
-        del self._charm.app_peer_data["async-ready"]
+        del self.relation_data["async-ready"]
 
     def _on_offer_created(self, event: RelationCreatedEvent):
         """Validate relations and share credentials with replica cluster."""
@@ -504,7 +504,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             }
         )
         # sets ok flag
-        self._charm.app_peer_data["async-ready"] = "true"
+        self.relation_data["async-ready"] = "true"
         message = "Ready to create replication"
         self._charm.unit.status = BlockedStatus(message)
         self._charm.app.status = BlockedStatus(message)
