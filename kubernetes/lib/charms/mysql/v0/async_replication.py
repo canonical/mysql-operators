@@ -172,10 +172,6 @@ class MySQLAsyncReplication(Object):
             logger.info(message)
             event.set_results({"message": message})
             self._charm._on_update_status(None)
-            # write counter to propagate status update on the other side
-            self.relation_data["switchover"] = str(
-                int(self.relation_data.get("switchover", 0)) + 1
-            )
         except MySQLPromoteClusterToPrimaryError:
             logger.exception("Failed to promote cluster to primary")
             event.fail("Failed to promote cluster to primary")
