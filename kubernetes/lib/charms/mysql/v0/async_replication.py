@@ -32,7 +32,6 @@ from mysql_shell.models import (
 )
 from ops import (
     ActionEvent,
-    ActiveStatus,
     BlockedStatus,
     MaintenanceStatus,
     Relation,
@@ -255,9 +254,9 @@ class MySQLAsyncReplication(Object):
                 self._charm.unit_peer_data["member-state"] = "UNKNOWN"
             self._charm._on_update_status(None)
 
-        if self.relation_data.get("async-ready"):
+        if self.relation_data.get("replication-ready"):
             # if set reset async-ready flag
-            del self.relation_data["async-ready"]
+            del self.relation_data["replication-ready"]
 
     def _on_rejoin_cluster_action(self, event: ActionEvent) -> None:
         """Rejoin cluster to cluster set action handler."""
@@ -346,10 +345,13 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
         if local_data.get("is-replica") == "true":
             return States.FAILED
 
-        if local_data.get("secret-id") and not remote_data.get("endpoint"):
+        secret_id = local_data.get("secret-id")
+        address = remote_data.get("instance-address")
+
+        if secret_id and not address:
             return States.SYNCING
 
-        if local_data.get("secret-id") and remote_data.get("endpoint"):
+        if secret_id and address:
             # evaluate cluster status
             replica_status = self._charm._mysql.get_replica_cluster_status(
                 remote_data["cluster-name"]
@@ -378,7 +380,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             # non leader units are always idle
             return True
 
-        if self.relation_data.get("async-ready") == "true":
+        if self.relation_data.get("replication-ready") == "true":
             # transitional state between relation created and setup_action
             return False
 
@@ -403,7 +405,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
 
     def _on_create_replication(self, event: ActionEvent):
         """Promote the offer side to primary on initial setup."""
-        if self.relation_data.get("async-ready") != "true":
+        if self.relation_data.get("replication-ready") != "true":
             event.fail("Relation created but not ready")
             return
 
@@ -446,12 +448,12 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             {
                 "secret-id": secret_id,
                 "cluster-name": self.cluster_name,
-                "mysql-version": version,
+                "cluster-version": version,
                 "replication-name": event.params.get("name", "default"),
             }
         )
         # reset async-ready flag set on relation created
-        del self.relation_data["async-ready"]
+        del self.relation_data["replication-ready"]
 
     def _on_offer_created(self, event: RelationCreatedEvent):
         """Validate relations and share credentials with replica cluster."""
@@ -501,7 +503,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             }
         )
         # sets ok flag
-        self.relation_data["async-ready"] = "true"
+        self.relation_data["replication-ready"] = "true"
         message = "Ready to create replication"
         self._charm.unit.status = BlockedStatus(message)
         self._charm.app.status = BlockedStatus(message)
@@ -519,24 +521,20 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             self._charm.unit.status = MaintenanceStatus("Adding replica cluster")
             remote_data = self.remote_relation_data or {}
 
-            cluster = remote_data["cluster-name"]
-            endpoint = remote_data["endpoint"]
-            unit_label = remote_data["node-label"]
+            cluster_name = remote_data["cluster-name"]
+            instance_label = remote_data["instance-label"]
+            instance_address = remote_data["instance-address"]
 
             logger.debug("Looking for a donor node")
             _, ro, _ = self._charm.get_cluster_endpoints(self.relation.name)
 
-            if not ro:
-                logger.debug(f"Adding replica {cluster=} with {endpoint=}. Primary is the donor")
-                self._charm._mysql.create_replica_cluster(
-                    endpoint, cluster, instance_label=unit_label
-                )
-            else:
-                donor = ro.split(",")[0]
-                logger.debug(f"Adding replica {cluster=} with {endpoint=} using {donor=}")
-                self._charm._mysql.create_replica_cluster(
-                    endpoint, cluster, instance_label=unit_label, donor=donor
-                )
+            logger.debug(f"Adding replica {cluster_name=} with {instance_address=}.")
+            self._charm._mysql.create_replica_cluster(
+                replica_cluster_name=cluster_name,
+                instance_address=instance_address,
+                instance_label=instance_label,
+                donor=ro.split(",")[0] if ro else None,
+            )
 
             event.relation.data[self.model.app]["replica-state"] = "initialized"
             logger.info("Replica cluster created")
@@ -618,7 +616,10 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
         if self.relation_data.get("user-data-found") == "true":
             return States.FAILED
 
-        if self.remote_relation_data.get("secret-id") and not self.relation_data.get("endpoint"):
+        secret_id = self.remote_relation_data.get("secret-id")
+        address = self.relation_data.get("instance-address")
+
+        if secret_id and not address:
             # received credentials from primary cluster
             # and did not synced credentials
             return States.SYNCING
@@ -662,7 +663,7 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
 
     def _check_version(self) -> bool:
         """Check if the MySQL version is compatible with the primary cluster."""
-        remote_version = self.remote_relation_data.get("mysql-version")
+        remote_version = self.remote_relation_data.get("cluster-version")
         local_version = self._charm._mysql.get_mysql_version()
 
         if not remote_version:
@@ -687,8 +688,8 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
         secret = self._obtain_secret()
         return secret.peek_content()
 
-    def _get_endpoint(self) -> str | None:
-        """Get endpoint to be used by the primary cluster.
+    def _get_address(self) -> str | None:
+        """Get address to be used by the primary cluster.
 
         This is the address in which the unit must be reachable from the primary cluster.
         Not necessarily the locally resolved address, but an ingress address.
@@ -821,14 +822,14 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
                     f"{self.cluster_name}{self.model.uuid.replace('-', '')}"[:63]
                 )
 
-            self._charm.unit.status = MaintenanceStatus("Populate endpoint")
+            self._charm.unit.status = MaintenanceStatus("Populate address")
 
             # this cluster name is used by the primary cluster to identify the replica cluster
             self.relation_data["cluster-name"] = self.cluster_name
-            # the reachable endpoint address
-            self.relation_data["endpoint"] = self._get_endpoint()
+            # the reachable instance address
+            self.relation_data["instance-address"] = self._get_address()
             # the node label in the replica cluster to be created
-            self.relation_data["node-label"] = self._charm.unit_label
+            self.relation_data["instance-label"] = self._charm.unit_label
 
             logger.debug("Data for adding replica cluster shared with primary cluster")
 

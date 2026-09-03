@@ -1642,8 +1642,8 @@ class MySQLBase(ABC):
 
     def create_replica_cluster(
         self,
-        endpoint: str,
         replica_cluster_name: str,
+        instance_address: str,
         instance_label: str,
         donor: str | None = None,
         method: str | None = "auto",
@@ -1659,7 +1659,7 @@ class MySQLBase(ABC):
         if donor:
             options["cloneDonor"] = donor
 
-        host = endpoint.split(":")[0]
+        host = instance_address.split(":")[0]
         port = str(3306)
 
         try:
@@ -1681,8 +1681,8 @@ class MySQLBase(ABC):
 
             logger.warning("Failed to create replica cluster. Fallback to clone method")
             self.create_replica_cluster(
-                endpoint=endpoint,
                 replica_cluster_name=replica_cluster_name,
+                instance_address=instance_address,
                 instance_label=instance_label,
                 donor=donor,
                 method="clone",
