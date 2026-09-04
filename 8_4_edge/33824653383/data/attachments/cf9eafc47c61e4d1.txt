@@ -1,0 +1,10 @@
+Sep 04 02:01:53 [32mINFO    [0m root:test_replication_data_consistency.py:30 Deploying MySQL cluster
+Sep 04 02:01:53 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql-k8s_ubuntu@26.04-amd64.charm mysql-k8s --base ubuntu@26.04 --config profile=testing --num-units 3 --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:b2486bc20e074f199f12d8dbd68bc82dae9a65b72eb0e72dc7f0255ba74ad2cf --storage data=500M --storage archive=250M --storage logs=250M --storage temp=250M --trust
+Sep 04 02:02:00 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing mysql-test-app mysql-test-app --base ubuntu@26.04 --channel latest/edge --config sleep_interval=300 --constraints arch=amd64
+Sep 04 02:02:01 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing mysql-k8s:database mysql-test-app:database
+Sep 04 02:02:02 [32mINFO    [0m root:test_replication_data_consistency.py:57 Wait for applications to become active
+Sep 04 02:07:33 [32mINFO    [0m root:test_replication_data_consistency.py:64 Loading test database
+Sep 04 02:07:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Sep 04 02:07:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql-k8s/1 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpee74u5vv
+Sep 04 02:07:38 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Sep 04 02:07:39 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json mysql-k8s/1 get-password --params /root/snap/juju/common/tmpn0kqv9qx
