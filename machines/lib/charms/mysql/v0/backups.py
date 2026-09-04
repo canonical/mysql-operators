@@ -77,7 +77,6 @@ from charms.mysql.v0.s3_helpers import (
     list_backups_in_s3_path,
     upload_content_to_s3,
 )
-from constants import MYSQL_DATA_DIR
 from mysql_shell.models.cluster import ClusterStatus
 from mysql_shell.models.instance import InstanceRole, InstanceState
 from object_storage import S3Requirer
@@ -660,9 +659,6 @@ class MySQLBackups(Object):
         try:
             self.charm._mysql.delete_temp_restore_directory()
             self.charm._mysql.delete_temp_backup_directory()
-            # Old backups may contain the temp backup directory (as previously, the temp
-            # backup directory was created in the mysql data directory to reduce IOPS latency)
-            self.charm._mysql.delete_temp_backup_directory(tmp_base_directory=MYSQL_DATA_DIR)
         except MySQLDeleteTempRestoreDirectoryError:
             return False, "Failed to delete the temp restore directory"
         except MySQLDeleteTempBackupDirectoryError:
