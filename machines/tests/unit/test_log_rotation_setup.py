@@ -47,7 +47,7 @@ class TestLogRotationSetup(unittest.TestCase):
         mock_setup.assert_called_once()
         mock_setup.reset_mock()
         self.charm.log_rotation_setup._update_logs_rotation(event)
-        self.assertEqual(self.harness.charm.unit_peer_data["logs_synced"], "true")
+        self.assertEqual(self.harness.charm.unit_peer_data["logs-synced"], "true")
         mock_setup.assert_called_once()
 
     @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
@@ -55,7 +55,7 @@ class TestLogRotationSetup(unittest.TestCase):
         self.harness.update_config({"logs-retention-period": "auto"})
         event = MagicMock()
         self.charm.log_rotation_setup._cos_relation_broken(event)
-        self.assertNotIn("logs_synced", self.harness.charm.unit_peer_data)
+        self.assertNotIn("logs-synced", self.harness.charm.unit_peer_data)
         mock_setup.assert_called_once()
 
 

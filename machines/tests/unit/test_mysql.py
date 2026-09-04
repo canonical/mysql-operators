@@ -1892,8 +1892,8 @@ class TestMySQLBase(unittest.TestCase):
 
     def test_create_replica_cluster(self):
         """Test create_replica_cluster."""
-        endpoint = "address:3306"
-        replica_cluster_name = "replica_cluster"
+        cluster_name = "replica_cluster"
+        instance_address = "host:3306"
         instance_label = "label"
         options = {
             "recoveryProgress": 0,
@@ -1905,17 +1905,17 @@ class TestMySQLBase(unittest.TestCase):
         creation_commands = [
             "shell.connect_to_primary()",
             "cluster_set = dba.get_cluster_set()",
-            f"cluster_set.create_replica_cluster('{endpoint}', '{replica_cluster_name}', {{options}})",
+            f"cluster_set.create_replica_cluster('{instance_address}', '{cluster_name}', {{options}})",
         ]
         updating_commands = [
-            f"cluster = dba.get_cluster('{replica_cluster_name}')",
-            f"cluster.set_instance_option('{endpoint}', 'label', '{instance_label}')",
+            f"cluster = dba.get_cluster('{cluster_name}')",
+            f"cluster.set_instance_option('{instance_address}', 'label', '{instance_label}')",
         ]
 
         auto_options = copy.copy(options)
         auto_options["recoveryMethod"] = "auto"
 
-        self.mysql.create_replica_cluster(endpoint, replica_cluster_name, instance_label)
+        self.mysql.create_replica_cluster(cluster_name, instance_address, instance_label)
         self.mock_executor.execute_py.assert_has_calls([
             call("\n".join(creation_commands).format(options=auto_options)),
             call("\n".join(updating_commands)),
@@ -1927,7 +1927,7 @@ class TestMySQLBase(unittest.TestCase):
         self.mock_executor.execute_py.reset_mock()
         self.mock_executor.execute_py.side_effect = ExecutionError
         with self.assertRaises(MySQLCreateReplicaClusterError):
-            self.mysql.create_replica_cluster(endpoint, replica_cluster_name, instance_label)
+            self.mysql.create_replica_cluster(cluster_name, instance_address, instance_label)
             self.mock_executor.execute_py.assert_has_calls([
                 call("\n".join(creation_commands).format(options=auto_options)),
                 call("\n".join(updating_commands)),
@@ -1937,47 +1937,47 @@ class TestMySQLBase(unittest.TestCase):
 
     def test_remove_replica_cluster(self):
         """Test remove_replica_cluster."""
-        replica_cluster_name = "replica_cluster"
+        cluster_name = "replica_cluster"
         commands = [
             "shell.connect_to_primary()",
             "cluster_set = dba.get_cluster_set()",
-            f"cluster_set.remove_cluster('{replica_cluster_name}', {{'force': 'False'}})",
+            f"cluster_set.remove_cluster('{cluster_name}', {{'force': 'False'}})",
         ]
-        self.mysql.remove_replica_cluster(replica_cluster_name)
+        self.mysql.remove_replica_cluster(cluster_name)
         self.mock_executor.execute_py.assert_called_with("\n".join(commands))
         self.mock_executor.execute_py.reset_mock()
 
         commands = [
             "shell.connect_to_primary()",
             "cluster_set = dba.get_cluster_set()",
-            f"cluster_set.remove_cluster('{replica_cluster_name}', {{'force': 'True'}})",
+            f"cluster_set.remove_cluster('{cluster_name}', {{'force': 'True'}})",
         ]
-        self.mysql.remove_replica_cluster(replica_cluster_name, force=True)
+        self.mysql.remove_replica_cluster(cluster_name, force=True)
         self.mock_executor.execute_py.assert_called_with("\n".join(commands))
         self.mock_executor.execute_py.reset_mock()
 
         self.mock_executor.execute_py.side_effect = ExecutionError
         with self.assertRaises(MySQLRemoveReplicaClusterError):
-            self.mysql.remove_replica_cluster(replica_cluster_name)
+            self.mysql.remove_replica_cluster(cluster_name)
 
     @patch("charms.mysql.v0.mysql.MySQLBase.get_cluster_set_status")
     def test_get_replica_cluster_status(self, _get_cluster_set_status):
         """Test get_replica_cluster_status."""
-        replica_cluster_name = "replica_cluster"
-        replica_cluster_status = ClusterGlobalStatus.OK
+        cluster_name = "replica_cluster"
+        cluster_status = ClusterGlobalStatus.OK
 
         _get_cluster_set_status.return_value = {
             "clusters": {
-                replica_cluster_name: {
-                    "globalStatus": replica_cluster_status,
+                cluster_name: {
+                    "globalStatus": cluster_status,
                 }
             }
         }
-        status = self.mysql.get_replica_cluster_status(replica_cluster_name)
-        self.assertEqual(status, replica_cluster_status)
+        status = self.mysql.get_replica_cluster_status(cluster_name)
+        self.assertEqual(status, cluster_status)
 
         _get_cluster_set_status.return_value = None
-        status = self.mysql.get_replica_cluster_status(replica_cluster_name)
+        status = self.mysql.get_replica_cluster_status(cluster_name)
         self.assertEqual(status, ClusterGlobalStatus.UNKNOWN)
 
     def test_get_cluster_node_count(self):

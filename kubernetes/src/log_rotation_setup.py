@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_LOGS_SYNCED = "logs_synced"
+_LOGS_SYNCED = "logs-synced"
 
 
 class LogRotationSetup(Object):
@@ -92,5 +92,5 @@ class LogRotationSetup(Object):
             return
         logger.info("Reconfigure log rotation after logs upload stops")
 
-        del self.charm.unit_peer_data["logs_synced"]
+        del self.charm.unit_peer_data[_LOGS_SYNCED]
         self.setup()
