@@ -1156,11 +1156,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # Inform other hooks of current status
         self.unit_peer_data["unit-status"] = "removing"
 
-        if self.unit.is_leader():
-            # Update 'units-added-to-cluster' counter in the peer relation databag
-            units = int(self.app_peer_data.get("units-added-to-cluster", 1))
-            self.app_peer_data["units-added-to-cluster"] = str(units - 1)
-
 
 if __name__ == "__main__":
     main(MySQLOperatorCharm)
