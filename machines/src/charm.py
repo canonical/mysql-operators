@@ -353,6 +353,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLGetMySQLVersionError:
             logger.debug("Fail to get MySQL version")
 
+        self.unit.set_ports(3306, 33060)
+
     def _on_peer_relation_changed(self, event: RelationChangedEvent) -> None:
         """Handle the peer relation changed event."""
         # Only execute if peer relation data contains cluster config values
@@ -365,7 +367,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-            self.unit.set_ports(3306, 33060)
 
     def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
@@ -944,7 +945,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # Create the cluster and cluster set from the leader unit
             logger.info(f"Creating cluster {self.app_peer_data['cluster-name']}")
             self.create_cluster()
-            self.unit.set_ports(3306, 33060)
             self.set_unit_status(self.build_unit_workload_status())
         except (
             MySQLCreateClusterError,
