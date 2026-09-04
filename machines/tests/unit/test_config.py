@@ -7,9 +7,11 @@ from pathlib import Path
 
 import pytest
 import yaml
+from charms.mysql.v0.mysql import MAX_CONNECTIONS_FLOOR
 from ops.testing import Harness
 
 from charm import MySQLOperatorCharm
+from config import MySQLConfig
 from constants import PEER
 
 CONFIG = str(yaml.safe_load(Path("./config.yaml").read_text()))
@@ -67,3 +69,75 @@ def test_cluster_name_values(harness) -> None:
 
     accepted_values = ["c1", "cluster_name", "cluster.name", "Cluster-name", 63 * "c"]
     _check_valid_values(harness, "cluster-name", accepted_values)
+
+
+# --- MySQLConfig (non-charm) tests ---
+
+
+def test_keys_requires_restart():
+    """Test keys_requires_restart returns True only for static config keys."""
+    config = MySQLConfig()
+    assert config.keys_requires_restart({"innodb_buffer_pool_size"}) is True
+    assert config.keys_requires_restart({"innodb_buffer_pool_size", "max_connections"}) is True
+    assert config.keys_requires_restart({"max_connections"}) is False
+    assert config.keys_requires_restart(set()) is False
+
+
+def test_filter_static_keys():
+    """Test filter_static_keys removes static config keys."""
+    config = MySQLConfig()
+    keys = {"innodb_buffer_pool_size", "max_connections", "log_error"}
+    assert config.filter_static_keys(keys) == {"max_connections"}
+    assert config.filter_static_keys(set()) == set()
+
+
+def test_get_custom_config():
+    """Test get_custom_config parses a mysqld config section."""
+    content = "[mysqld]\nmax_connections=100\ninnodb_buffer_pool_size=1G\n"
+    result = MySQLConfig.get_custom_config(content)
+    assert result == {"max_connections": "100", "innodb_buffer_pool_size": "1G"}
+
+
+# --- Remaining CharmConfig validators ---
+
+
+def test_max_connections_values(harness) -> None:
+    """Test max-connections validator."""
+    _check_invalid_values(harness, "max-connections", [MAX_CONNECTIONS_FLOOR - 1, 0, -10])
+    _check_valid_values(harness, "max-connections", [MAX_CONNECTIONS_FLOOR, 100, 1000])
+
+
+def test_binlog_retention_days_values(harness) -> None:
+    """Test binlog-retention-days validator."""
+    _check_invalid_values(harness, "binlog-retention-days", [0, -1])
+    _check_valid_values(harness, "binlog-retention-days", [1, 7, 30])
+
+
+def test_plugin_audit_strategy_values(harness) -> None:
+    """Test plugin-audit-strategy validator."""
+    _check_invalid_values(harness, "plugin-audit-strategy", ["sync", "ASYNC", "fast"])
+    _check_valid_values(harness, "plugin-audit-strategy", ["async", "semi-async"])
+
+
+def test_logs_audit_policy_values(harness) -> None:
+    """Test logs-audit-policy validator."""
+    _check_invalid_values(harness, "logs-audit-policy", ["none", "errors", "ALL"])
+    _check_valid_values(harness, "logs-audit-policy", ["all", "logins", "queries"])
+
+
+def test_logs_retention_period_values(harness) -> None:
+    """Test logs-retention-period validator."""
+    _check_invalid_values(harness, "logs-retention-period", ["2", "1", "abc"])
+    _check_valid_values(harness, "logs-retention-period", ["auto", "3", "30"])
+
+
+def test_pause_after_unit_refresh_values(harness) -> None:
+    """Test pause-after-unit-refresh validator."""
+    _check_invalid_values(harness, "pause-after-unit-refresh", ["some", "ALL", "1"])
+    _check_valid_values(harness, "pause-after-unit-refresh", ["all", "first", "none"])
+
+
+def test_cluster_set_name_values(harness) -> None:
+    """Test cluster-set-name validator (shares logic with cluster-name)."""
+    _check_invalid_values(harness, "cluster-set-name", [64 * "b", "1set", "set#"])
+    _check_valid_values(harness, "cluster-set-name", ["s1", "set_name", "set.name", 63 * "s"])

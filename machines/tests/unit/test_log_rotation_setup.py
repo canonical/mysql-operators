@@ -58,6 +58,59 @@ class TestLogRotationSetup(unittest.TestCase):
         self.assertNotIn("logs_synced", self.harness.charm.unit_peer_data)
         mock_setup.assert_called_once()
 
+    @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
+    @patch(
+        "charm.MySQLOperatorCharm._is_peer_data_set",
+        new_callable=PropertyMock,
+        return_value=True,
+    )
+    def test_setup_with_numeric_retention(self, mock_is_peer_data_set, mock_setup):
+        """setup() uses the numeric retention period when not `auto`."""
+        self.harness.update_config({"logs-retention-period": "7"})
+        self.charm.log_rotation_setup.setup()
+        mock_setup.assert_called_once()
+        # retention_period=7, text_logs, compress=True (no cos relation)
+        args = mock_setup.call_args.args
+        self.assertEqual(args[0], 7)
 
-if __name__ == "__main__":
-    unittest.main()
+    @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
+    @patch(
+        "charm.MySQLOperatorCharm._is_peer_data_set",
+        new_callable=PropertyMock,
+        return_value=True,
+    )
+    def test_setup_auto_with_logs_syncing(self, mock_is_peer_data_set, mock_setup):
+        """setup() uses retention 1 when auto and logs are syncing."""
+        self.harness.update_config({"logs-retention-period": "auto"})
+        self.charm.unit_peer_data["logs_synced"] = "true"
+        self.charm.log_rotation_setup.setup()
+        mock_setup.assert_called_once()
+        args = mock_setup.call_args.args
+        self.assertEqual(args[0], 1)
+
+    @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
+    def test_update_logs_rotation_already_syncing(self, mock_setup):
+        """_update_logs_rotation is a no-op when logs already syncing."""
+        self.harness.add_relation(COS_AGENT_RELATION_NAME, "opentelemetry-collector")
+        self.charm.unit_peer_data["logs_synced"] = "true"
+        event = MagicMock()
+        self.charm.log_rotation_setup._update_logs_rotation(event)
+        mock_setup.assert_not_called()
+
+    @patch("mysql_vm_helpers.MySQL.setup_logrotate_and_cron")
+    def test_update_logs_rotation_no_cos_relation(self, mock_setup):
+        """_update_logs_rotation is a no-op when no COS relation."""
+        event = MagicMock()
+        self.charm.log_rotation_setup._update_logs_rotation(event)
+        mock_setup.assert_not_called()
+
+    @patch(
+        "charm.MySQLOperatorCharm._is_peer_data_set",
+        new_callable=PropertyMock,
+        return_value=False,
+    )
+    def test_cos_relation_created_defers_when_peer_data_not_set(self, mock_is_peer_data_set):
+        """_cos_relation_created defers when peer data is not set."""
+        event = MagicMock()
+        self.charm.log_rotation_setup._cos_relation_created(event)
+        event.defer.assert_called_once()

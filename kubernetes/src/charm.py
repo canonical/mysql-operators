@@ -731,6 +731,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if not config_content:
             return
 
+        self._apply_config_changes(config_content)
+
+    def _apply_config_changes(self, config_content: str) -> None:
+        """Apply configuration changes after initial guards have passed.
+
+        Args:
+            config_content: mysqld configuration file content.
+        """
+        logger.info("Persisting configuration changes to file")
+        old_config = self.mysql_config.get_custom_config(config_content)
+        new_config = self._write_mysqld_configuration()
+        changed_config = compare_dictionaries(old_config, new_config)
+
         # Override log rotation
         self.log_rotate_setup.setup()
 

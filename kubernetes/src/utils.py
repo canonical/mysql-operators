@@ -39,6 +39,18 @@ def generate_pebble_layer_env() -> dict[str, str]:
     return environment
 
 
+def _password_meets_rules(password: str) -> bool:
+    """Check that a password meets MySQL password validation rules.
+
+    Requires at least one lowercase letter, one uppercase letter, and one digit.
+    """
+    return all((
+        any(c.islower() for c in password),
+        any(c.isupper() for c in password),
+        any(c.isdigit() for c in password),
+    ))
+
+
 def generate_random_password(length: int) -> str:
     """Randomly generate a string intended to be used as a password.
 
@@ -50,13 +62,8 @@ def generate_random_password(length: int) -> str:
     choices = string.ascii_letters + string.digits
     # Might seem risky but in fact the probability that a password doesn't pass these checks is low
     while True:
-        password = "".join([secrets.choice(choices) for i in range(length)])
-        # These checks are consistent with our rules for the password validation MySQL component
-        if all((
-            any(c.islower() for c in password),
-            any(c.isupper() for c in password),
-            any(c.isdigit() for c in password),
-        )):
+        password = "".join(secrets.choice(choices) for _ in range(length))
+        if _password_meets_rules(password):
             return password
 
 

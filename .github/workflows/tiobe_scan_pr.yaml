@@ -1,0 +1,68 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+#
+# TEMPORARY workflow to test TICS scan changes on the fix/tiobe-machine-issues
+# branch before merging.
+# TODO: Remove this file before merge.
+
+name: TICS scan (branch)
+
+on:
+  push:
+    branches:
+      - fix/tiobe-machine-issues
+
+jobs:
+  tics:
+    runs-on: [self-hosted, linux, amd64, tiobe, noble]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - operator: machines
+            project: mysql-vm-8.4
+          - operator: kubernetes
+            project: mysql-k8s-8.4
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ matrix.operator }}
+            common
+
+      - name: Create and activate virtual environment
+        run: |
+          sudo apt update && sudo apt install -y python3-venv
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install flake8 poetry pylint pytest tox
+          echo PATH="$PATH" >> "$GITHUB_ENV"
+
+      - name: Install project dependencies
+        run: |
+          . .venv/bin/activate
+          cd ${{ matrix.operator }}
+          poetry install --only main,charm-libs
+
+      - name: Run coverage tests
+        run: |
+          tox -e unit -c ${{ matrix.operator }}/tox.ini
+
+      - name: Coverage reports for TICS
+        run: |
+          mkdir -p ${{ matrix.operator }}/.cover
+          cp ${{ matrix.operator }}/coverage.xml ${{ matrix.operator }}/.cover/cobertura.xml
+
+      - name: TICS GitHub Action
+        uses: tiobe/tics-github-action@v3
+        with:
+          mode: qserver
+          project: ${{ matrix.project }}
+          viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
+          branchdir: ${{ env.GITHUB_WORKSPACE }}
+          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}
+          installTics: true
+          calc: ALL

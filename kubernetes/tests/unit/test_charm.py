@@ -7,13 +7,14 @@ import unittest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.testing import Harness
 from tenacity import wait_none
 
 from charm import MySQLOperatorCharm
 from constants import (
     BACKUPS_PASSWORD_KEY,
+    CONTAINER_NAME,
     DEFAULT_PASSWORD_LENGTH,
     MONITORING_PASSWORD_KEY,
     MYSQL_DATA_DIR,
@@ -429,15 +430,15 @@ class TestCharm(unittest.TestCase):
 
         _create_endpoint_services.assert_not_called()
 
+    @patch("ops.charm.StartEvent.defer")
     @patch("charm.MySQLOperatorCharm._create_endpoint_services")
-    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services):
+    def test_on_start_defers_when_not_trusted(self, _create_endpoint_services, _defer):
         """When service creation fails (no trust), start event is deferred for auto-retry."""
         _create_endpoint_services.return_value = False
         self.harness.set_leader()
 
-        with patch("ops.charm.StartEvent.defer") as _defer:
-            self.charm.on.start.emit()
-            _defer.assert_called_once()
+        self.charm.on.start.emit()
+        _defer.assert_called_once()
 
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="mysql-k8s.somedomain")
     @patch("mysql_k8s_helpers.MySQL.release_lock")
@@ -511,3 +512,210 @@ class TestCharm(unittest.TestCase):
         _release_lock.assert_called_once_with("2.2.2.2", f"{APP_NAME}-0", "unit-add")
         _add_instance_to_cluster.assert_called_once()
         self.assertTrue(isinstance(self.charm.unit.status, ActiveStatus))
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    def test_text_logs_includes_audit_when_enabled(self):
+        """text_logs includes 'audit' when plugin-audit-enabled is True."""
+        self.harness.update_config({"plugin-audit-enabled": True})
+        self.assertEqual(self.charm.text_logs, ["error", "audit"])
+
+    def test_text_logs_excludes_audit_when_disabled(self):
+        """text_logs only includes 'error' when plugin-audit-enabled is False."""
+        self.harness.update_config({"plugin-audit-enabled": False})
+        self.assertEqual(self.charm.text_logs, ["error"])
+
+    def test_get_unit_hostname(self):
+        """get_unit_hostname translates unit name to k8s hostname."""
+        self.assertEqual(
+            self.charm.get_unit_hostname("mysql-k8s/0"),
+            "mysql-k8s-0.mysql-k8s-endpoints",
+        )
+
+    def test_get_unit_hostname_defaults_to_self(self):
+        """get_unit_hostname defaults to this unit when no argument."""
+        self.assertEqual(
+            self.charm.get_unit_hostname(),
+            "mysql-k8s-0.mysql-k8s-endpoints",
+        )
+
+    def test_is_new_unit_true(self):
+        """is_new_unit is True when only default keys present."""
+        # Clear all keys and set only the default keys
+        for key in list(self.charm.unit_peer_data.keys()):
+            del self.charm.unit_peer_data[key]
+        self.charm.unit_peer_data["egress-subnets"] = "10.0.0.0/24"
+        self.charm.unit_peer_data["ingress-address"] = "10.0.0.1"
+        self.charm.unit_peer_data["private-address"] = "10.0.0.1"
+        self.assertTrue(self.charm.is_new_unit)
+
+    def test_is_new_unit_false(self):
+        """is_new_unit is False when extra keys are present."""
+        self.charm.unit_peer_data["member-state"] = "online"
+        self.assertFalse(self.charm.is_new_unit)
+
+    def test_unit_initialized_cannot_connect(self):
+        """unit_initialized returns False when container not accessible."""
+        self.harness.set_can_connect(CONTAINER_NAME, False)
+        self.assertFalse(self.charm.unit_initialized())
+
+    # ------------------------------------------------------------------
+    # _on_peer_relation_joined
+    # ------------------------------------------------------------------
+
+    def test_on_peer_relation_joined_sets_defaults(self):
+        """_on_peer_relation_joined sets member-role and member-state defaults."""
+        self.charm._on_peer_relation_joined(None)
+        self.assertEqual(self.charm.unit_peer_data["member-role"], "UNKNOWN")
+        self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
+
+    # ------------------------------------------------------------------
+    # _rotate_private_keys
+    # ------------------------------------------------------------------
+
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
+    def test_rotate_private_keys_emits_refresh_on_change(self, mock_config):
+        """_rotate_private_keys emits refresh events when keys change."""
+        mock_tls = MagicMock()
+        mock_tls.client_certificates_refresh_event = MagicMock()
+        mock_tls.peer_certificates_refresh_event = MagicMock()
+        self.charm.tls = mock_tls
+        self.harness.set_leader()
+
+        mock_config.return_value.tls_client_private_key = "new-client-key"
+        mock_config.return_value.tls_peer_private_key = "new-peer-key"
+        self.charm._rotate_private_keys()
+
+        mock_tls.client_certificates_refresh_event.emit.assert_called_once()
+        mock_tls.peer_certificates_refresh_event.emit.assert_called_once()
+        self.assertEqual(self.charm.app_peer_data["client-private-key"], "new-client-key")
+        self.assertEqual(self.charm.app_peer_data["peer-private-key"], "new-peer-key")
+
+    @patch("charm.MySQLOperatorCharm.config", new_callable=PropertyMock)
+    def test_rotate_private_keys_no_change(self, mock_config):
+        """_rotate_private_keys does not emit when keys unchanged."""
+        mock_tls = MagicMock()
+        mock_tls.client_certificates_refresh_event = MagicMock()
+        mock_tls.peer_certificates_refresh_event = MagicMock()
+        self.charm.tls = mock_tls
+        self.charm.app_peer_data["client-private-key"] = "same-key"
+        self.charm.app_peer_data["peer-private-key"] = "same-peer-key"
+
+        mock_config.return_value.tls_client_private_key = "same-key"
+        mock_config.return_value.tls_peer_private_key = "same-peer-key"
+        self.charm._rotate_private_keys()
+
+        mock_tls.client_certificates_refresh_event.emit.assert_not_called()
+        mock_tls.peer_certificates_refresh_event.emit.assert_not_called()
+
+    # ------------------------------------------------------------------
+    # set_unit_status
+    # ------------------------------------------------------------------
+
+    def test_set_unit_status_no_refresh(self):
+        """set_unit_status sets status directly when refresh is None."""
+        self.charm._refresh = None
+        self.charm.set_unit_status(MaintenanceStatus("test"))
+        self.assertTrue(isinstance(self.charm.unit.status, MaintenanceStatus))
+
+    def test_set_unit_status_refresh_higher_priority(self):
+        """set_unit_status does not override higher priority refresh status."""
+        self.charm._refresh.unit_status_higher_priority = True
+        self.charm.unit.status = ActiveStatus("existing")
+        self.charm.set_unit_status(MaintenanceStatus("test"))
+        self.assertTrue(isinstance(self.charm.unit.status, ActiveStatus))
+
+    def test_set_unit_status_refresh_lower_priority_overrides_active(self):
+        """set_unit_status uses lower priority refresh status when current is Active."""
+        refresh_status = MaintenanceStatus("refreshing")
+        self.charm._refresh.unit_status_higher_priority = None
+        self.charm._refresh.unit_status_lower_priority.return_value = refresh_status
+        self.charm.set_unit_status(ActiveStatus("ok"))
+        self.assertTrue(isinstance(self.charm.unit.status, MaintenanceStatus))
+
+    # ------------------------------------------------------------------
+    # _set_app_status
+    # ------------------------------------------------------------------
+
+    @patch("charm.MySQLOperatorCharm.build_app_workload_status")
+    def test_set_app_status_leader_online(self, mock_build):
+        """_set_app_status sets app status when leader and online."""
+        from charms.mysql.v0.mysql import InstanceState
+
+        mock_build.return_value = ActiveStatus("ok")
+        self.harness.set_leader()
+        self.charm._set_app_status(InstanceState.ONLINE)
+        self.assertTrue(isinstance(self.charm.app.status, ActiveStatus))
+
+    @patch("charm.MySQLOperatorCharm.build_app_workload_status")
+    def test_set_app_status_non_leader(self, mock_build):
+        """_set_app_status is a no-op when non-leader."""
+        from charms.mysql.v0.mysql import InstanceState
+
+        self.charm._set_app_status(InstanceState.ONLINE)
+        mock_build.assert_not_called()
+
+    @patch("charm.MySQLOperatorCharm.build_app_workload_status")
+    def test_set_app_status_not_online(self, mock_build):
+        """_set_app_status is a no-op when state is not online."""
+        from charms.mysql.v0.mysql import InstanceState
+
+        self.harness.set_leader()
+        self.charm._set_app_status(InstanceState.OFFLINE)
+        mock_build.assert_not_called()
+
+    # ------------------------------------------------------------------
+    # _all_peers_reachable
+    # ------------------------------------------------------------------
+
+    @patch("charm.socket.create_connection")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="1.2.3.4")
+    def test_all_peers_reachable_true(self, _get_addr, mock_socket):
+        """_all_peers_reachable returns True when all peers respond."""
+        mock_socket.return_value.__enter__ = MagicMock()
+        self.assertTrue(self.charm._all_peers_reachable())
+
+    @patch("charm.socket.create_connection", side_effect=OSError("unreachable"))
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="1.2.3.4")
+    def test_all_peers_reachable_false(self, _get_addr, _mock_socket):
+        """_all_peers_reachable returns False when a peer is unreachable."""
+        self.assertFalse(self.charm._all_peers_reachable())
+
+    # ------------------------------------------------------------------
+    # _get_primary_from_online_peer
+    # ------------------------------------------------------------------
+
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="peer-address")
+    def test_get_primary_from_online_peer_success(self, _get_addr, mock_mysql):
+        """_get_primary_from_online_peer returns primary address from online peer."""
+        from charms.mysql.v0.mysql import InstanceState
+
+        online_unit = next(iter(self.charm.peers.units))
+        self.charm.peers.data[online_unit]["member-state"] = InstanceState.ONLINE
+        mock_mysql.return_value.get_cluster_primary_address.return_value = "primary:3306"
+
+        result = self.charm._get_primary_from_online_peer()
+        self.assertEqual(result, "primary:3306")
+
+    @patch("charm.MySQLOperatorCharm._mysql", new_callable=PropertyMock)
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value="peer-address")
+    def test_get_primary_from_online_peer_no_online(self, _get_addr, mock_mysql):
+        """_get_primary_from_online_peer returns None when no peer is online."""
+        mock_mysql.return_value.get_cluster_primary_address.return_value = None
+        result = self.charm._get_primary_from_online_peer()
+        self.assertIsNone(result)
+
+    # ------------------------------------------------------------------
+    # update_endpoints
+    # ------------------------------------------------------------------
+
+    @patch("charm.MySQLOperatorCharm._on_update_status")
+    def test_update_endpoints(self, mock_update_status):
+        """update_endpoints configures endpoints and triggers update status."""
+        self.charm.database_relation = MagicMock()
+        self.charm.update_endpoints()
+        self.charm.database_relation._configure_endpoints.assert_called_once_with(None)
+        mock_update_status.assert_called_once_with(None)
