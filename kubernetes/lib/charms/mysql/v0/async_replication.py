@@ -341,7 +341,7 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             return States.UNINITIALIZED
 
         local_data = self.relation_data
-        remote_data = self.remote_relation_data or {}
+        remote_data = self.remote_relation_data
 
         if not local_data:
             return States.UNINITIALIZED
@@ -523,11 +523,10 @@ class MySQLAsyncReplicationOffer(MySQLAsyncReplication):
             # Add replica cluster primary node
             logger.info("Creating replica cluster primary node")
             self._charm.unit.status = MaintenanceStatus("Adding replica cluster")
-            remote_data = self.remote_relation_data or {}
 
-            cluster_name = remote_data["cluster-name"]
-            instance_label = remote_data["instance-label"]
-            instance_address = remote_data["instance-address"]
+            cluster_name = self.remote_relation_data["cluster-name"]
+            instance_label = self.remote_relation_data["instance-label"]
+            instance_address = self.remote_relation_data["instance-address"]
 
             logger.debug("Looking for a donor node")
             _, ro, _ = self._charm.get_cluster_endpoints(self.relation.name)
