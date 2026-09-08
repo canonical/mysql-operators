@@ -16,6 +16,12 @@ jobs:
     steps:
       - name: Checkout the project
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ inputs.operator }}
+            common
+          ref: ${{ inputs.ref }}
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-venv
       - name: Install pipx
@@ -26,8 +32,23 @@ jobs:
         run: |
           pipx install tox
           pipx install poetry
+      - name: Create and activate virtual environment
+        run: |
+          sudo apt update && sudo apt install -y python3-venv
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install flake8 poetry pylint pytest tox
+          echo PATH="$PATH" >> "$GITHUB_ENV"
+      - name: Install project dependencies
+        run: |
+          . .venv/bin/activate
+          cd ${{ inputs.operator }}
+          poetry install --only main,charm-libs
       - name: Run tox tests to create coverage.xml
         run: tox run -e unit
+      - name: Run coverage tests
+        run: |
+          tox -e unit -c ${{ inputs.operator }}/tox.ini
       - name: Move results to necessary folder for TICS
         run: |
           mkdir -p .cover
