@@ -16,6 +16,10 @@ def generate_pebble_layer_env() -> dict[str, str]:
     When any HTTP or HTTPS proxy is configured, `.svc.cluster.local` is
     always included in NO_PROXY so that internal Kubernetes pod-to-pod
     traffic is never routed through a corporate proxy.
+
+    The returned values must be stable across invocations: this environment
+    is part of the mysqld pebble layer, and any difference makes
+    `_reconcile_pebble_layer` consider the layer changed and restart mysqld.
     """
     external_http_proxy = os.getenv("JUJU_CHARM_HTTP_PROXY", "")
     external_https_proxy = os.getenv("JUJU_CHARM_HTTPS_PROXY", "")
@@ -32,9 +36,13 @@ def generate_pebble_layer_env() -> dict[str, str]:
         environment["NO_PROXY"] = internal_proxy
 
     if external_http_proxy or external_https_proxy:
-        internal_proxy_entries = {entry.strip() for entry in internal_proxy.split(",")}
+        internal_proxy_entries = {
+            entry for entry in (raw.strip() for raw in internal_proxy.split(",")) if entry
+        }
         internal_proxy_entries.add(internal_domain)
-        environment["NO_PROXY"] = ",".join(internal_proxy_entries)
+        # sorted(): set iteration order depends on PYTHONHASHSEED, which Juju
+        # randomizes per hook process
+        environment["NO_PROXY"] = ",".join(sorted(internal_proxy_entries))
 
     return environment
 
