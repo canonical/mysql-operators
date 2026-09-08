@@ -919,22 +919,22 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                 self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
             }
 
-            peers_waiting = all_states == {"waiting"}
+            peers_waiting_offline = all_states <= {"waiting", "offline"}
             # Add state 'offline' for this unit (self.peers.unit does not include this unit)
             all_offline = all_states | {"offline"} == {"offline"}
 
-            if (all_offline and self.unit.is_leader()) or peers_waiting:
+            if (all_offline and self.unit.is_leader()) or peers_waiting_offline:
                 # All instance are off or this instance if offline, and others waiting
                 # reboot cluster from outage
                 logger.info("Attempting reboot from complete outage.")
                 try:
                     # Need condition to avoid rebooting on all units of application
-                    if self.unit.is_leader() or peers_waiting:
+                    if self.unit.is_leader() or peers_waiting_offline:
                         self._mysql.reboot_from_complete_outage()
                 except MySQLRebootFromCompleteOutageError:
                     logger.error("Failed to reboot cluster from complete outage.")
 
-                    if peers_waiting:
+                    if all_states == {"waiting"}:
                         logger.info(
                             "All units are in waiting state, likely due to crash during cluster creation. Recreating cluster."
                         )
