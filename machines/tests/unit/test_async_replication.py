@@ -122,7 +122,7 @@ class TestAsyncRelation(unittest.TestCase):
         self.harness.update_relation_data(
             async_primary_relation_id,
             "db2",
-            {"endpoint": "db2-endpoint", "cluster-name": "other-cluster"},
+            {"instance-address": "db2-address", "cluster-name": "other-cluster"},
         )
         _mysql.get_replica_cluster_status.return_value = "OK"
         self.assertEqual(self.async_primary.state, States.READY)
@@ -156,7 +156,7 @@ class TestAsyncRelation(unittest.TestCase):
             async_primary_relation_id, self.charm.app.name
         )
         self.assertIn("secret-id", relation_data)
-        self.assertEqual(relation_data["mysql-version"], "8.4.0")
+        self.assertEqual(relation_data["cluster-version"], "8.4.0")
 
     @patch(
         "charms.mysql.v0.async_replication.MySQLAsyncReplicationOffer.state",
@@ -177,18 +177,21 @@ class TestAsyncRelation(unittest.TestCase):
         _state.return_value = States.INITIALIZING
 
         # test with donor
-        _get_cluster_endpoints.return_value = (None, "db2-ro-endpoint", None)
+        _get_cluster_endpoints.return_value = (None, "db2-ro-address", None)
         self.harness.update_relation_data(
             async_primary_relation_id,
             "db2",
             {
                 "cluster-name": "cuzco",
-                "endpoint": "db2-endpoint",
-                "node-label": "db2-0",
+                "instance-label": "db2-0",
+                "instance-address": "db2-address",
             },
         )
         _mysql.create_replica_cluster.assert_called_with(
-            "db2-endpoint", "cuzco", instance_label="db2-0", donor="db2-ro-endpoint"
+            replica_cluster_name="cuzco",
+            instance_address="db2-address",
+            instance_label="db2-0",
+            donor="db2-ro-address",
         )
 
         relation_data = self.harness.get_relation_data(
@@ -208,7 +211,10 @@ class TestAsyncRelation(unittest.TestCase):
             },
         )
         _mysql.create_replica_cluster.assert_called_with(
-            "db2-endpoint", "other-name", instance_label="db2-0"
+            replica_cluster_name="other-name",
+            instance_address="db2-address",
+            instance_label="db2-0",
+            donor=None,
         )
 
         # recovering state
@@ -242,7 +248,7 @@ class TestAsyncRelation(unittest.TestCase):
                 async_relation_id, "db1", {"replica-state": "initialized"}
             )
             self.harness.update_relation_data(
-                async_relation_id, self.charm.app.name, {"endpoint": "endpoint"}
+                async_relation_id, self.charm.app.name, {"instance-address": "instance-address"}
             )
 
         # recovering
@@ -332,7 +338,7 @@ class TestAsyncRelation(unittest.TestCase):
         _defer.reset_mock()
         _mysql.get_cluster_node_count.return_value = 1
         _mysql.get_mysql_version.return_value = "8.4.0"
-        self.harness.update_relation_data(async_relation_id, "db1", {"mysql-version": "8.0.0"})
+        self.harness.update_relation_data(async_relation_id, "db1", {"cluster-version": "8.0.0"})
 
         self.assertTrue(isinstance(self.charm.unit.status, BlockedStatus))
         _defer.assert_not_called()
@@ -352,9 +358,9 @@ class TestAsyncRelation(unittest.TestCase):
             async_relation_id,
             "db1",
             {
-                "mysql-version": "8.4.0",
-                "secret-id": secret.id,
+                "cluster-version": "8.4.0",
                 "cluster-name": original_cluster_name,
+                "secret-id": secret.id,
             },
         )
 

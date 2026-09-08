@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_LOGS_SYNCED = "logs_synced"
+_LOGS_SYNCED = "logs-synced"
 
 
 class LogRotationSetup(Object):
