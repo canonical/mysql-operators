@@ -1,13 +1,22 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import os
 import socket
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
 import tenacity
 
-from utils import any_memory_to_bytes, generate_random_password, get_k8s_fqdn, split_mem
+from utils import (
+    any_memory_to_bytes,
+    generate_pebble_layer_env,
+    generate_random_password,
+    get_k8s_fqdn,
+    split_mem,
+)
 
 
 class TestUtils(unittest.TestCase):
@@ -25,6 +34,71 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(any_memory_to_bytes("1Gi"), 1073741824)
         self.assertEqual(any_memory_to_bytes("1G"), 10**9)
         self.assertEqual(any_memory_to_bytes("1024"), 1024)
+
+    @patch.dict(
+        os.environ,
+        {
+            "JUJU_CHARM_HTTP_PROXY": "http://squid.internal:3128",
+            "JUJU_CHARM_HTTPS_PROXY": "http://squid.internal:3128",
+            "JUJU_CHARM_NO_PROXY": "10.0.0.0/8,localhost,127.0.0.1,.internal",
+        },
+    )
+    def test_generate_pebble_layer_env_no_proxy_is_sorted(self):
+        """NO_PROXY entries are emitted in a stable, sorted order."""
+        environment = generate_pebble_layer_env()
+
+        self.assertEqual(
+            environment["NO_PROXY"],
+            ".internal,.svc.cluster.local,10.0.0.0/8,127.0.0.1,localhost",
+        )
+        self.assertEqual(environment["HTTP_PROXY"], "http://squid.internal:3128")
+        self.assertEqual(environment["HTTPS_PROXY"], "http://squid.internal:3128")
+
+    @patch.dict(
+        os.environ,
+        {
+            "JUJU_CHARM_HTTP_PROXY": "http://squid.internal:3128",
+            "JUJU_CHARM_HTTPS_PROXY": "",
+            "JUJU_CHARM_NO_PROXY": "",
+        },
+    )
+    def test_generate_pebble_layer_env_no_proxy_drops_empty_entries(self):
+        """An empty JUJU_CHARM_NO_PROXY must not produce an empty NO_PROXY entry."""
+        self.assertEqual(generate_pebble_layer_env()["NO_PROXY"], ".svc.cluster.local")
+
+    def test_generate_pebble_layer_env_stable_across_hash_seeds(self):
+        """The env must be identical across processes.
+
+        The mysqld pebble layer embeds this environment, so any variation
+        between hook invocations makes `_reconcile_pebble_layer` see a changed
+        layer and restart mysqld. Python randomizes PYTHONHASHSEED per process,
+        which is why this has to be checked out-of-process.
+        """
+        child_env = os.environ | {
+            "JUJU_CHARM_HTTP_PROXY": "http://squid.internal:3128",
+            "JUJU_CHARM_HTTPS_PROXY": "http://squid.internal:3128",
+            "JUJU_CHARM_NO_PROXY": "10.0.0.0/8,localhost,127.0.0.1,.internal",
+            "PYTHONPATH": os.pathsep.join(sys.path),
+        }
+        child_env.pop("PYTHONHASHSEED", None)
+
+        results = {
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "from utils import generate_pebble_layer_env;"
+                    "print(generate_pebble_layer_env()['NO_PROXY'])",
+                ],
+                env=child_env,
+                capture_output=True,
+                check=True,
+                text=True,
+            ).stdout.strip()
+            for _ in range(10)
+        }
+
+        self.assertEqual(len(results), 1, f"NO_PROXY is not deterministic: {results}")
 
     @patch("utils.socket.getaddrinfo")
     def test_get_k8s_fqdn_local_unit(self, mock_getaddrinfo):
