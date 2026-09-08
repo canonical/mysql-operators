@@ -626,6 +626,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # empty config means not initialized, skipping
             return
 
+        self._apply_config_changes(config_content)
+
+    def _apply_config_changes(self, config_content: str) -> None:
+        """Apply configuration changes after initial guards have passed.
+
+        Args:
+            config_content: mysqld configuration file content.
+        """
         previous_config_dict = self.mysql_config.custom_config(config_content)
 
         # always setup log rotation
