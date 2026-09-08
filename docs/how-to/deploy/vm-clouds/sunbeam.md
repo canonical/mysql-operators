@@ -53,8 +53,8 @@ Sample output of `juju status --watch 1s`:
 Model  Controller     Cloud/Region       Version  SLA          Timestamp
 mysql  my-controller  sunbeam/RegionOne  3.6.14   unsupported  20:22:42Z
 
-App    Version   Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7     active      3  mysql  8.4/edge         no       
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active      3  mysql  8.4/stable       no       
 
 Unit      Workload  Agent  Machine  Public address   Ports           Message
 mysql/0*  active    idle   0        192.168.122.211  3306,33060/tcp  Primary

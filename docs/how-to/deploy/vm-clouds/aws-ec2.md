@@ -108,9 +108,9 @@ Check the status:
 Model    Controller     Cloud/Region   Version  SLA          Timestamp
 welcome  aws-us-east-1  aws/us-east-1  3.6.14   unsupported  17:52:25+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no       
-mysql            8.4.7            active      3  mysql            8.4/edge            no       
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable   41  no       
+mysql            8.4.10   active      3  mysql            8.4/stable          no       
 
 Unit                Workload  Agent  Machine  Public address  Ports           Message
 data-integrator/1*  active    idle   9        34.207.85.249                   
@@ -149,7 +149,7 @@ mysql:
   password: e7vOMyzj2FnrBDnXZdXScEOc
   read-only-endpoints: 172.31.10.167:3306,172.31.39.202:3306
   username: relation-16
-  version: 8.4.7
+  version: 8.4.10
 ok: "True"
 ```
 

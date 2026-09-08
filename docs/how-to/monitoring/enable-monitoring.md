@@ -142,9 +142,9 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     loki         active  k8s      admin/cos.loki
     prometheus   active  k8s      admin/cos.prometheus
 
-    App                      Version  Status  Scale  Charm                    Channel   Rev  Exposed  Message
-    mysql                    8.4.7    active      1  mysql                    8.4/edge       no       Primary
-    opentelemetry-collector           active      1  opentelemetry-collector  2/stable  316  no
+    App                      Version  Status  Scale  Charm                    Channel     Rev  Exposed  Message
+    mysql                    8.4.10   active      1  mysql                    8.4/stable       no       Primary
+    opentelemetry-collector           active      1  opentelemetry-collector  2/stable    316  no
 
     Unit                          Workload  Agent  Machine  Public address  Ports               Message
     mysql/0*                      active    idle   4        10.85.186.140   3306/tcp,33060/tcp  Primary
@@ -163,9 +163,9 @@ After this is complete, Grafana will show the new dashboards: `MySQL Exporter` a
     loki        active  charmed-dev  admin/cos.loki
     prometheus  active  charmed-dev  admin/cos.prometheus
 
-    App                          Version  Status  Scale  Charm                        Channel   Rev  Address         Exposed  Message
-    mysql-k8s                    8.4.7    active      1  mysql-k8s                    8.4/edge       10.152.183.115  no       Primary
-    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable  207  10.152.183.116
+    App                          Version  Status  Scale  Charm                        Channel     Rev  Address         Exposed  Message
+    mysql-k8s                    8.4.10   active      1  mysql-k8s                    8.4/stable       10.152.183.115  no       Primary
+    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable    207  10.152.183.116
 
     Unit                            Workload  Agent  Address      Ports  Message
     mysql-k8s/0*                    active    idle   10.1.84.117         Primary

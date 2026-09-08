@@ -74,7 +74,7 @@ The command below demonstrates how to deploy Charmed MySQL K8s with Juju constra
 
 ```shell
 export MYAPP="mydatabase" ; \
-juju deploy mysql-k8s ${MYAPP} --trust -n 3 \
+juju deploy mysql-k8s ${MYAPP} --channel 8.4/stable --trust -n 3 \
  --constraints="tags=anti-pod.app.kubernetes.io/name=${MYAPP},anti-pod.topology-key=topology.kubernetes.io/zone"
 ```
 
@@ -146,7 +146,7 @@ Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.6.14   unsupported  22:02:32+02:00
 
 App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge         34.118.235.169  no       
+mydatabase  8.4.10   active      3  mysql-k8s  8.4/stable       34.118.235.169  no       
 
 Unit           Workload  Agent  Address    Ports  Message
 mydatabase/0   active    idle   10.80.5.9         
@@ -203,8 +203,8 @@ In case we lose (cordon) all nodes in AZ, the pod will stay pending as K8s sched
 Let's simulate it:
 
 ```shell
-kubectl drain  --ignore-daemonsets --delete-emptydir-data  gke-default-pool-b33634ac-phjx
-kubectl drain  --ignore-daemonsets --delete-emptydir-data  gke-default-pool-b33634ac-w2jv
+kubectl drain --ignore-daemonsets --delete-emptydir-data  gke-default-pool-b33634ac-phjx
+kubectl drain --ignore-daemonsets --delete-emptydir-data  gke-default-pool-b33634ac-w2jv
 
 kubectl get nodes --show-labels | awk 'NR == 1 {next} {print $1,$2,$6}' | awk -F "[ /]" '{print $1" \t"$NF" \t"$2}'
 ```
@@ -253,7 +253,7 @@ Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.6.14   unsupported  22:31:00+02:00
 
 App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge         34.118.235.169  no       installing agent
+mydatabase  8.4.10   active      3  mysql-k8s  8.4/stable       34.118.235.169  no       installing agent
 
 Unit           Workload  Agent  Address    Ports  Message
 mydatabase/0   unknown   lost                     agent lost, see 'juju show-status-log mydatabase/0'
@@ -276,12 +276,12 @@ Model    Controller  Cloud/Region  Version  SLA          Timestamp
 mymodel  gke         gke/us-east4  3.6.14   unsupported  22:38:23+02:00
 
 App         Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mydatabase  8.4.7    active      3  mysql-k8s  8.4/edge         34.118.235.169  no   
+mydatabase  8.4.10   active      3  mysql-k8s  8.4/stable       34.118.235.169  no
 
 Unit           Workload  Agent  Address     Ports  Message
 mydatabase/0   active    idle   10.80.5.10         
 mydatabase/1*  active    idle   10.80.6.7          Primary
-mydatabase/2   active    idle   10.80.1.6   
+mydatabase/2   active    idle   10.80.1.6          
 ```
 
 At this point we can relax and enjoy the protection from Cloud Availability zones!
@@ -318,4 +318,3 @@ Information about availability zones on specific clouds, and more about node sel
 * [Node selector](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)
 * [Affinity/anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity)
 * [Taint and toleration](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
-

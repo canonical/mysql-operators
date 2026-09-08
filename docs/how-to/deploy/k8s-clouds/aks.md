@@ -129,11 +129,11 @@ juju model-config logging-config='<root>=INFO;unit=DEBUG'
 The following command deploys MySQL K8s:
 
 ```shell
-juju deploy mysql-k8s --trust -n 3
+juju deploy mysql-k8s --channel 8.4/stable --trust -n 3
 ```
 Sample output:
 ```shell
-Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision 127 in channel 8.4/edge on ubuntu@26.04/stable
+Deployed "mysql-k8s" from charm-hub charm "mysql-k8s", revision XXX in channel 8.4/stable on ubuntu@26.04/stable
 ```
 
 Check the status:
@@ -146,7 +146,7 @@ Model    Controller  Cloud/Region  Version  SLA          Timestamp
 welcome  aks         aks/eastus    3.6.14   unsupported  16:42:15+02:00
 
 App        Version  Status  Scale  Charm      Channel     Rev  Address       Exposed  Message
-mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge         10.0.238.103  no       
+mysql-k8s  8.4.10   active      3  mysql-k8s  8.4/stable       10.0.238.103  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.244.0.14         Primary

@@ -118,7 +118,7 @@ juju bootstrap --constraints tags=juju maas-cloud maas-controller
 
 ```shell
 juju add-model mysql maas-cloud
-juju deploy mysql --channel 8.4/edge
+juju deploy mysql --channel 8.4/stable
 ```
 
 Sample `juju status` output:
@@ -127,8 +127,8 @@ Sample `juju status` output:
 Model  Controller       Cloud/Region        Version  SLA          Timestamp
 mysql  maas-controller  maas-cloud/default  3.6.14   unsupported  12:57:06+02:00
 
-App    Version          Status  Scale  Charm  Channel      Rev  Exposed  Message
-mysql  8.4.7            active      1  mysql  8.4/edge          no       
+App    Version  Status  Scale  Charm  Channel      Rev  Exposed  Message
+mysql  8.4.10   active      1  mysql  8.4/stable        no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/1*  active    idle   1        10.10.10.7      3306,33060/tcp  Primary

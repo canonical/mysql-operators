@@ -68,8 +68,8 @@ Example output:
 Model   Controller  Cloud/Region  Version  SLA          Timestamp
 mysql   ck8s        ck8s          3.6.14   unsupported  18:32:38+01:00
 
-App         Version   Status  Scale  Charm           Channel     Rev  Address         Exposed  Message
-mysql-k8s   8.4.7     active      1  mysql-k8s       8.4/edge         10.152.183.146  no       
+App         Version   Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s   8.4.10    active      1  mysql-k8s  8.4/stable       10.152.183.146  no       
 
 Unit           Workload  Agent  Address    Ports  Message
 mysql-k8s/0*   active    idle   10.1.0.11         Primary

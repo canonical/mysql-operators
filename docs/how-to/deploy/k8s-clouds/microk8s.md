@@ -19,7 +19,7 @@ juju add-model <model name>
 
 Deploy MySQL:
 ```shell
-juju deploy mysql-k8s --channel 8.4/edge --trust
+juju deploy mysql-k8s --channel 8.4/stable --trust
 ```
 
 ```{warning}
@@ -34,8 +34,8 @@ Sample output of `juju status --watch 1s`:
 Model   Controller  Cloud/Region        Version  SLA          Timestamp
 mysql   overlord    microk8s/localhost  3.6.14   unsupported  22:48:57+01:00
 
-App        Version    Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
-mysql-k8s  8.4.7      active      1  mysql-k8s  8.4/edge         10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.10   active      1  mysql-k8s  8.4/stable       10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74          Primary

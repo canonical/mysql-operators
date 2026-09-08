@@ -81,13 +81,13 @@ To deploy a new MySQL charm database:
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy mysql --channel 8.4/edge -n 3
+    juju deploy mysql --channel 8.4/stable -n 3
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju deploy mysql-k8s --channel 8.4/edge -n 3
+    juju deploy mysql-k8s --channel 8.4/stable -n 3
 ```
 ````
 
@@ -226,7 +226,7 @@ Output:
 5c5
 < -- Server version 5.5.5-10.3.17-MariaDB-1:10.3.17+maria~bionic
 ---
-> -- Server version 8.4.7-0ubuntu0.26.04.1
+> -- Server version 8.4.10-0ubuntu0.26.04.1
 16a17,26
 > SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
 > SET @@SESSION.SQL_LOG_BIN= 0;

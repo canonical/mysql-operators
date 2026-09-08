@@ -33,7 +33,7 @@ variable "constraints" {
 variable "channel" {
   description = "Charm channel to deploy from"
   type        = string
-  default     = "8.4/edge"
+  default     = "8.4/stable"
 }
 
 variable "revision" {

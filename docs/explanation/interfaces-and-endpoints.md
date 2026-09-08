@@ -30,7 +30,7 @@ Example:
 :sync: vm
 
     # Deploy Charmed MySQL cluster with 3 nodes
-    juju deploy mysql -n 3 --channel 8.4/edge
+    juju deploy mysql -n 3 --channel 8.4/stable
 
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app
@@ -50,7 +50,7 @@ Example:
 :sync: k8s
 
     # Deploy Charmed MySQL cluster with 3 nodes
-    juju deploy mysql-k8s -n 3 --trust --channel 8.4/edge
+    juju deploy mysql-k8s -n 3 --trust --channel 8.4/stable
 
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app
