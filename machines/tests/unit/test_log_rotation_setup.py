@@ -57,7 +57,3 @@ class TestLogRotationSetup(unittest.TestCase):
         self.charm.log_rotation_setup._cos_relation_broken(event)
         self.assertNotIn("logs_synced", self.harness.charm.unit_peer_data)
         mock_setup.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()
