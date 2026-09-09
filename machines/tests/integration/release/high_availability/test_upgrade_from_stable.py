@@ -165,8 +165,6 @@ def relation_through_router(juju: Juju) -> None:
         app=MYSQL_ROUTER_APP_NAME,
         base="ubuntu@22.04",
         channel="dpe/edge",
-        num_units=1,
-        trust=True,
     )
 
     logging.info("Waiting for router unit to be waiting (no backend relation yet)")
