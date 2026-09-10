@@ -154,52 +154,33 @@ class MySQLRootRelation(Object):
                 "Remove and re-relate `mysql` relations in order to change config"
             )
 
-    def _on_mysql_root_relation_created(self, event: RelationCreatedEvent) -> None:
-        """Handle the legacy 'mysql-root' relation created event.
+    def _check_mysql_user_exists(self, username: str) -> bool | None:
+        """Check if a mysql user exists.
 
-        Will set up the database and the scoped application user. The connection
-        data (relation data) is then copied into the peer relation databag (to
-        be copied over to the new leader unit's databag in case of a new leader
-        being elected).
+        Returns:
+            True/False if the check succeeded, None if it failed.
         """
-        if not self.charm.unit.is_leader():
-            return
-
-        container = self.charm.unit.get_container(CONTAINER_NAME)
-        if not container.can_connect():
-            event.defer()
-            return
-
-        # Wait until on-config-changed event is executed
-        # (wait for root password to have been set) or wait until the unit is initialized
-        if not (self.charm._is_peer_data_set and self.charm.unit_initialized()):
-            event.defer()
-            return
-
-        logger.warning("DEPRECATION WARNING - `mysql-root` is a legacy interface")
-
-        username = self._get_or_generate_username(event.relation.id)
-        database = self._get_or_generate_database(event.relation.id)
-
-        user_exists = False
         try:
-            user_exists = self.charm._mysql.does_mysql_user_exist(username, "%")
+            return self.charm._mysql.does_mysql_user_exist(username, "%")
         except MySQLCheckUserExistenceError:
             self.charm.unit.status = BlockedStatus("Failed to check user existence")
-            return
+            return None
 
-        # Only execute if the application user does not exist
-        # since it could have been created by another related app
-        if user_exists:
-            mysql_root_relation_data = self.charm.app_peer_data[MYSQL_ROOT_RELATION_DATA_KEY]
+    def _publish_existing_mysql_root_relation_data(self, event: RelationCreatedEvent) -> None:
+        """Publish the stored `mysql-root` relation data for an already existing user."""
+        mysql_root_relation_data = self.charm.app_peer_data[MYSQL_ROOT_RELATION_DATA_KEY]
 
-            updates = json.loads(mysql_root_relation_data)
-            event.relation.data[self.charm.unit].update(updates)
+        updates = json.loads(mysql_root_relation_data)
+        event.relation.data[self.charm.unit].update(updates)
 
-            return
+    def _create_mysql_root_database_and_users(
+        self, database: str, username: str, password: str
+    ) -> str | None:
+        """Create the legacy relation database and users and return the root password.
 
-        password = self._get_or_set_password_in_peer_secrets(username)
-
+        Returns:
+            The root password on success, None on failure.
+        """
         try:
             root_password = self.charm.get_secret("app", ROOT_PASSWORD_KEY)
             if not root_password:
@@ -217,8 +198,51 @@ class MySQLRootRelation(Object):
                 )
             self.charm._mysql.escalate_user_privileges("root")
             self.charm._mysql.escalate_user_privileges(username)
+            return root_password
         except (MySQLCreateDatabaseError, MySQLCreateUserError, MySQLEscalateUserPrivilegesError):
             self.charm.unit.status = BlockedStatus("Failed to create relation database and users")
+            return None
+
+    def _on_mysql_root_relation_created(self, event: RelationCreatedEvent) -> None:
+        """Handle the legacy 'mysql-root' relation created event.
+
+        Will set up the database and the scoped application user. The connection
+        data (relation data) is then copied into the peer relation databag (to
+        be copied over to the new leader unit's databag in case of a new leader
+        being elected).
+        """
+        if not self.charm.unit.is_leader():
+            return
+
+        container = self.charm.unit.get_container(CONTAINER_NAME)
+        if not container.can_connect():
+            event.defer()
+            return
+
+        # Wait until on-config-changed event is executed
+        # (for root password to have been set) or wait until the unit is initialized
+        if not (self.charm._is_peer_data_set and self.charm.unit_initialized()):
+            event.defer()
+            return
+
+        logger.warning("DEPRECATION WARNING - `mysql-root` is a legacy interface")
+
+        username = self._get_or_generate_username(event.relation.id)
+        database = self._get_or_generate_database(event.relation.id)
+
+        if (user_exists := self._check_mysql_user_exists(username)) is None:
+            return
+
+        # Only execute if the application user does not exist
+        # since it could have been created by another related app
+        if user_exists:
+            self._publish_existing_mysql_root_relation_data(event)
+            return
+
+        password = self._get_or_set_password_in_peer_secrets(username)
+
+        root_password = self._create_mysql_root_database_and_users(database, username, password)
+        if not root_password:
             return
 
         primary_address = self.charm._mysql.get_cluster_primary_address()
