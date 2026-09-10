@@ -85,6 +85,8 @@ from constants import (
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     MYSQL_EXPORTER_PORT,
+    MYSQL_PORT,
+    MYSQL_X_PORT,
     MYSQLD_CUSTOM_CONFIG_FILE,
     MYSQLD_SOCK_FILE,
     PASSWORD_LENGTH,
@@ -335,7 +337,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         except MySQLGetMySQLVersionError:
             logger.debug("Fail to get MySQL version")
 
-        self.unit.set_ports(3306, 33060)
+        self._set_ports()
         if not self.unit.is_leader():
             # Wait to be joined and set flags
             self.unit.status = WaitingStatus("Waiting to join the cluster")
@@ -578,6 +580,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # avoid changing status while in initialising
             logger.info("skip status update while initialising")
             return
+
+        # ensure ports are open for units initialised before this was done on start
+        self._set_ports()
 
         if not self.upgrade.idle:
             # avoid changing status while in upgrade
@@ -853,6 +858,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def update_endpoints(self) -> None:
         """Update endpoints for the cluster."""
         self.database_relation._update_endpoints_all_relations(None)
+
+    def _set_ports(self) -> None:
+        """Open the MySQL classic and X protocol ports.
+
+        Idempotent, and called both when a unit is initialised and on update
+        status, so that units initialised by a revision which did not open the
+        ports get them opened on refresh.
+        """
+        self.unit.set_ports(MYSQL_PORT, MYSQL_X_PORT)
 
     def _can_start(self, event: StartEvent) -> bool:
         """Check if the unit can start.

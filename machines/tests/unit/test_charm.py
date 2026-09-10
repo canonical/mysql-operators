@@ -16,6 +16,7 @@ from ops.testing import Harness
 from tenacity import Retrying, stop_after_attempt
 
 from charm import MySQLOperatorCharm
+from constants import MYSQL_PORT, MYSQL_X_PORT
 from mysql_vm_helpers import (
     MySQLCreateCustomMySQLDConfigError,
     MySQLResetRootPasswordAndStartMySQLDError,
@@ -163,18 +164,29 @@ class TestCharm(unittest.TestCase):
         self.harness.set_leader(True)
         self.charm.on.config_changed.emit()
 
+        self.assertEqual(self.harness.model.unit.opened_ports(), set())
+
         self.charm.on.start.emit()
         _workload_initialise.assert_called_once()
         _create_cluster.assert_called_once()
         _can_start.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
+        self.assertEqual(
+            {(port.protocol, port.port) for port in self.harness.model.unit.opened_ports()},
+            {("tcp", MYSQL_PORT), ("tcp", MYSQL_X_PORT)},
+        )
 
         self.harness.set_leader(False)
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, WaitingStatus))
         self.assertEqual(self.charm.unit_peer_data["member-role"], "secondary")
         self.assertEqual(self.charm.unit_peer_data["member-state"], "waiting")
+        # ports are opened for non leader units as well
+        self.assertEqual(
+            {(port.protocol, port.port) for port in self.harness.model.unit.opened_ports()},
+            {("tcp", MYSQL_PORT), ("tcp", MYSQL_X_PORT)},
+        )
 
     @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
     @patch("charm.instance_hostname", return_value="test-hostname")
@@ -310,6 +322,9 @@ class TestCharm(unittest.TestCase):
         _get_member_role.return_value = "PRIMARY"
         _get_member_state.return_value = "ONLINE"
 
+        # unit initialised by a revision which did not open the ports
+        self.assertEqual(self.harness.model.unit.opened_ports(), set())
+
         self.charm.on.update_status.emit()
         _get_member_role.assert_called_once()
         _get_member_state.assert_called_once()
@@ -319,6 +334,11 @@ class TestCharm(unittest.TestCase):
         _get_cluster_primary_address.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, ActiveStatus))
+        # ports are (re)opened on update status, covering charm refresh
+        self.assertEqual(
+            {(port.protocol, port.port) for port in self.harness.model.unit.opened_ports()},
+            {("tcp", MYSQL_PORT), ("tcp", MYSQL_X_PORT)},
+        )
 
         # test instance state = offline
         _get_member_role.reset_mock()
