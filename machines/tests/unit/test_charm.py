@@ -126,11 +126,18 @@ class TestCharm(unittest.TestCase):
         self.harness.set_leader(True)
         self.charm.on.config_changed.emit()
 
+        self.assertEqual(self.harness.model.unit.opened_ports(), set())
+
         self.charm.on.start.emit()
         _workload_initialise.assert_called_once()
         _can_start.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
+        # ports are opened for every initialised unit, regardless of its role
+        self.assertEqual(
+            {(port.protocol, port.port) for port in self.harness.model.unit.opened_ports()},
+            {("tcp", 3306), ("tcp", 33060)},
+        )
 
     @patch("charm.LogRotationSetup.setup")
     @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
