@@ -161,9 +161,12 @@ class MySQLVMUpgrade(DataUpgrade):
             logger.debug("Wait until all peers have set upgrade state to ready")
             event.defer()
 
-    @override
-    def _on_upgrade_granted(self, event: UpgradeGrantedEvent) -> None:
-        """Handle the upgrade granted event."""
+    def _upgrade_workload_snap(self) -> bool:
+        """Stop services, upgrade the snap, and restart services.
+
+        Returns:
+            True if the upgrade succeeded, False otherwise.
+        """
         try:
             self.charm.unit.status = MaintenanceStatus("stopping services..")
             self.charm._mysql.stop_mysqld()
@@ -173,7 +176,7 @@ class MySQLVMUpgrade(DataUpgrade):
             if not self.charm.install_workload():
                 logger.error("Failed to install workload snap")
                 self.set_unit_failed()
-                return
+                return False
 
             # override config, avoid restart
             self.charm._mysql.write_mysqld_config()
@@ -184,33 +187,29 @@ class MySQLVMUpgrade(DataUpgrade):
             if self.charm.config.plugin_audit_enabled:
                 self.charm._mysql.install_plugins(["audit_log"])
             self.charm._mysql.install_plugins(["binlog_utils_udf"])
+            return True
         except VersionError:
             logger.exception("Failed to upgrade MySQL dependencies")
             self.set_unit_failed()
-            return
+            return False
         except MySQLStartMySQLDError:
             # failed to start - check for a unsupported downgrade
             logger.error("Failed to start MySQL server after snap refresh")
             self.set_unit_failed()
-            return
-
+            return False
         except MySQLStopMySQLDError:
             logger.exception("Failed to stop MySQL server")
             self.set_unit_failed()
-            return
+            return False
         except MySQLPluginInstallError:
             logger.exception("Failed to install MySQL plugins")
             self.set_unit_failed()
-            return
+            return False
         finally:
             set_cron_daemon("start")
 
-        try:
-            self.charm.unit.set_workload_version(self.charm._mysql.get_mysql_version() or "unset")
-        except MySQLGetMySQLVersionError:
-            # don't fail on this, just log it
-            logger.warning("Failed to get MySQL version")
-
+    def _recover_upgraded_unit(self, event: UpgradeGrantedEvent) -> None:
+        """Recover the unit after upgrade and reconcile roles."""
         self.charm.unit.status = MaintenanceStatus("recovering unit after upgrade")
 
         try:
@@ -234,6 +233,20 @@ class MySQLVMUpgrade(DataUpgrade):
             self.charm.unit.status = BlockedStatus(
                 "upgrade failed. Check logs for rollback instruction"
             )
+
+    @override
+    def _on_upgrade_granted(self, event: UpgradeGrantedEvent) -> None:
+        """Handle the upgrade granted event."""
+        if not self._upgrade_workload_snap():
+            return
+
+        try:
+            self.charm.unit.set_workload_version(self.charm._mysql.get_mysql_version() or "unset")
+        except MySQLGetMySQLVersionError:
+            # don't fail on this, just log it
+            logger.warning("Failed to get MySQL version")
+
+        self._recover_upgraded_unit(event)
 
     def _on_upgrade_changed(self, _) -> None:
         """Handle the upgrade changed event.

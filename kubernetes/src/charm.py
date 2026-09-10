@@ -860,7 +860,76 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self._create_cluster()
         self._mysql.reconcile_binlogs_collection(force_restart=True)
 
-    def _handle_potential_cluster_crash_scenario(self) -> bool:  # noqa: C901
+    def _handle_no_quorum_state(self) -> bool:
+        """Handle the scenario where the unit is ONLINE but the cluster has no quorum.
+
+        Returns:
+            bool indicating whether the caller should return.
+        """
+        logger.warning("Cluster has no quorum")
+        if self.peers.units and not self._all_peers_reachable():
+            logger.warning("Skipping quorum recovery: not all peers reachable")
+            return True
+        try:
+            # reboot_cluster_from_complete_outage rejects an instance whose
+            # GR is still running; drop it to OFFLINE first.
+            self._mysql.stop_group_replication()
+            if self.unit.is_leader():
+                # run on leader only for coordinate recovery
+                logger.warning("Attempting reboot from complete outage")
+                self._mysql.reboot_from_complete_outage()
+                return False
+        except MySQLRebootFromCompleteOutageError:
+            logger.error("Failed to reboot cluster from complete outage")
+            self.unit.status = BlockedStatus("failed to recover cluster")
+        return True
+
+    def _handle_offline_state(self) -> bool:
+        """Handle the scenario where the unit member-state is OFFLINE.
+
+        Returns:
+            bool indicating whether the caller should return (always True).
+        """
+        # Group Replication is active but the member does not belong to any group
+        all_states = {
+            self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
+        }
+
+        peers_waiting_offline = all_states <= {"waiting", "offline"}
+        # Add state 'offline' for this unit (self.peers.unit does not include this unit)
+        all_offline = all_states | {"offline"} == {"offline"}
+
+        if (all_offline and self.unit.is_leader()) or peers_waiting_offline:
+            # All instance are off or this instance if offline, and others waiting
+            # reboot cluster from outage
+            logger.info("Attempting reboot from complete outage.")
+            try:
+                # Need condition to avoid rebooting on all units of application
+                if self.unit.is_leader() or peers_waiting_offline:
+                    self._mysql.reboot_from_complete_outage()
+            except MySQLRebootFromCompleteOutageError:
+                logger.error("Failed to reboot cluster from complete outage.")
+
+                if all_states == {"waiting"}:
+                    logger.info(
+                        "All units are in waiting state, likely due to crash during cluster creation. Recreating cluster."
+                    )
+                    self._mysql.drop_group_replication_metadata_schema()
+                    self.create_cluster()
+                    self.unit.status = ActiveStatus(self.active_status_message)
+                else:
+                    self.unit.status = BlockedStatus("failed to recover cluster.")
+            return True
+
+        if self._mysql.is_cluster_auto_rejoin_ongoing():
+            logger.info("Cluster auto-rejoin attempts are still ongoing.")
+        else:
+            logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
+            self._execute_manual_rejoin()
+
+        return True
+
+    def _handle_potential_cluster_crash_scenario(self) -> bool:
         """Handle potential full cluster crash scenarios.
 
         Returns:
@@ -893,23 +962,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # complete-outage path below only fires on state == OFFLINE, so
         # without this the leader stays stuck and the cluster never recovers.
         if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
-            logger.warning("Cluster has no quorum")
-            if self.peers.units and not self._all_peers_reachable():
-                logger.warning("Skipping quorum recovery: not all peers reachable")
-                return True
-            try:
-                # reboot_cluster_from_complete_outage rejects an instance whose
-                # GR is still running; drop it to OFFLINE first.
-                self._mysql.stop_group_replication()
-                if self.unit.is_leader():
-                    # run on leader only for coordinate recovery
-                    logger.warning("Attempting reboot from complete outage")
-                    self._mysql.reboot_from_complete_outage()
-                    return False
-            except MySQLRebootFromCompleteOutageError:
-                logger.error("Failed to reboot cluster from complete outage")
-                self.unit.status = BlockedStatus("failed to recover cluster")
-            return True
+            return self._handle_no_quorum_state()
 
         # set unit status based on member-{state,role}
         self.unit.status = (
@@ -922,44 +975,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return True
 
         if state == InstanceState.OFFLINE:
-            # Group Replication is active but the member does not belong to any group
-            all_states = {
-                self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
-            }
-
-            peers_waiting_offline = all_states <= {"waiting", "offline"}
-            # Add state 'offline' for this unit (self.peers.unit does not include this unit)
-            all_offline = all_states | {"offline"} == {"offline"}
-
-            if (all_offline and self.unit.is_leader()) or peers_waiting_offline:
-                # All instance are off or this instance if offline, and others waiting
-                # reboot cluster from outage
-                logger.info("Attempting reboot from complete outage.")
-                try:
-                    # Need condition to avoid rebooting on all units of application
-                    if self.unit.is_leader() or peers_waiting_offline:
-                        self._mysql.reboot_from_complete_outage()
-                except MySQLRebootFromCompleteOutageError:
-                    logger.error("Failed to reboot cluster from complete outage.")
-
-                    if all_states == {"waiting"}:
-                        logger.info(
-                            "All units are in waiting state, likely due to crash during cluster creation. Recreating cluster."
-                        )
-                        self._mysql.drop_group_replication_metadata_schema()
-                        self.create_cluster()
-                        self.unit.status = ActiveStatus(self.active_status_message)
-                    else:
-                        self.unit.status = BlockedStatus("failed to recover cluster.")
-                return True
-
-            if self._mysql.is_cluster_auto_rejoin_ongoing():
-                logger.info("Cluster auto-rejoin attempts are still ongoing.")
-            else:
-                logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
-                self._execute_manual_rejoin()
-
-            return True
+            return self._handle_offline_state()
 
         if state in ("UNKNOWN", InstanceState.ERROR):
             # instance in unknown/error state that has cluster metadata
