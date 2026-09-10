@@ -1,0 +1,30 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Manual TICS scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch ref to checkout (e.g. 8.0/edge)
+        required: true
+        type: string
+      project:
+        description: TICS project name (e.g. mysql-k8s-8.0)
+        required: true
+        type: string
+      operator:
+        description: Operator directory to scan (kubernetes or machines)
+        required: true
+        type: string
+
+jobs:
+  TICS:
+    name: TICS scan | ${{ inputs.project }}
+    uses: ./.github/workflows/tiobe_scan.yaml
+    with:
+      operator: ${{ inputs.operator }}
+      ref: ${{ inputs.ref }}
+      project: ${{ inputs.project }}
+    secrets: inherit
