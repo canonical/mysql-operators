@@ -607,32 +607,58 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             from_instance=cluster_primary,
         )
 
-    def _on_update_status(self, _) -> None:  # noqa: C901
-        """Handle update status.
+    def _should_skip_update_status(self) -> bool:
+        """Check early guard conditions for the update status handler.
 
-        Takes care of workload health checks.
+        Returns True if the handler should return early.
         """
         if (
             not self.cluster_initialized
             or not self.unit_peer_data.get("member-role")
             or not is_volume_mounted()
         ):
-            # health checks only after cluster and member are initialised
             logger.info("skip status update when not initialized")
-            return
+            return True
         if (
             self.unit_peer_data.get("member-state") == "waiting"
             and not self.unit_configured
             and not self.unit_initialized()
             and not self.unit.is_leader()
         ):
-            # avoid changing status while in initialising
             logger.info("skip status update while initialising")
-            return
+            return True
 
         if not self.upgrade.idle:
-            # avoid changing status while in upgrade
             logger.debug("skip status update while upgrading")
+            return True
+
+        return False
+
+    def _set_leader_app_status_for_online(self) -> None:
+        """Set the application status when the leader unit is ONLINE."""
+        try:
+            primary_address = self._mysql.get_cluster_primary_address()
+        except MySQLGetClusterPrimaryAddressError:
+            primary_address = None
+
+        if not primary_address:
+            logger.error("Cluster has no primary. Check cluster status on online units.")
+            self.app.status = MaintenanceStatus("Cluster has no primary.")
+            return
+
+        if "s3-block-message" in self.app_peer_data:
+            self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
+            return
+
+        # Set active status when primary is known
+        self.app.status = ActiveStatus()
+
+    def _on_update_status(self, _) -> None:
+        """Handle update status.
+
+        Takes care of workload health checks.
+        """
+        if self._should_skip_update_status():
             return
 
         if self._is_unit_waiting_to_join_cluster():
@@ -658,26 +684,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-role"] = role.lower()
         self.unit_peer_data["member-state"] = state.lower()
 
-        # A surviving member can stay ONLINE in its local view while the
-        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
-        # complete-outage path below only fires on state == OFFLINE, so
-        # without this the leader stays stuck and the cluster never recovers.
         if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
-            logger.warning("Cluster has no quorum")
-            if self.peers.units and not self._all_peers_reachable():
-                logger.warning("Skipping quorum recovery: not all peers reachable")
-                return
-            try:
-                # reboot_cluster_from_complete_outage rejects an instance whose
-                # GR is still running; drop it to OFFLINE first.
-                self._mysql.stop_group_replication()
-                if self.unit.is_leader():
-                    # run on leader only for coordinate recovery
-                    logger.warning("Attempting reboot from complete outage")
-                    self._mysql.reboot_from_complete_outage()
-            except MySQLRebootFromCompleteOutageError:
-                logger.error("Failed to reboot cluster from complete outage")
-                self.unit.status = BlockedStatus("failed to recover cluster")
+            self._handle_online_no_quorum()
             return
 
         # set unit status based on member-{state,role}
@@ -691,22 +699,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         if self.unit.is_leader() and state == InstanceState.ONLINE:
-            try:
-                primary_address = self._mysql.get_cluster_primary_address()
-            except MySQLGetClusterPrimaryAddressError:
-                primary_address = None
-
-            if not primary_address:
-                logger.error("Cluster has no primary. Check cluster status on online units.")
-                self.app.status = MaintenanceStatus("Cluster has no primary.")
-                return
-
-            if "s3-block-message" in self.app_peer_data:
-                self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
-                return
-
-            # Set active status when primary is known
-            self.app.status = ActiveStatus()
+            self._set_leader_app_status_for_online()
 
     # =======================
     #  Helpers
