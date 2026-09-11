@@ -220,7 +220,7 @@ class MySQLRootRelation(Object):
             return
 
         # Wait until on-config-changed event is executed
-        # (for root password to have been set) or wait until the unit is initialized
+        # (wait for root password to have been set) or wait until the unit is initialized
         if not (self.charm._is_peer_data_set and self.charm.unit_initialized()):
             event.defer()
             return
