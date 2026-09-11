@@ -295,7 +295,7 @@ class MySQLRelation(Object):
         if not self._create_mysql_database_and_user(database, username, password):
             return
 
-        primary_address = self._mysql.get_cluster_primary_address()
+        primary_address = self.charm._mysql.get_cluster_primary_address()
         if not primary_address:
             logger.error("Unable to get cluster primary address")
             self.charm.unit.status = BlockedStatus("Failed to retrieve cluster primary address")
