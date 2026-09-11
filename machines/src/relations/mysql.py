@@ -125,6 +125,21 @@ class MySQLRelation(Object):
 
             relation_databag[self.charm.unit]["host"] = primary_address_ip
 
+    def _is_mysql_interface_config_mismatched(self) -> bool:
+        """Report whether the mysql-interface config differs from what is in use."""
+        if not (
+            isinstance(self.charm.unit.status, ActiveStatus)
+            and self.model.relations.get(LEGACY_MYSQL)
+        ):
+            return False
+
+        return (
+            self.charm.config.mysql_interface_database
+            != self.charm.app_peer_data[MYSQL_RELATION_DATABASE_KEY]
+            or self.charm.config.mysql_interface_user
+            != self.charm.app_peer_data[MYSQL_RELATION_USER_KEY]
+        )
+
     def _on_config_changed(self, _) -> None:
         """Handle the change of the username/database in config."""
         if not self.charm.unit.is_leader():
@@ -136,19 +151,33 @@ class MySQLRelation(Object):
         ):
             return
 
-        if (
-            isinstance(self.charm.unit.status, ActiveStatus)
-            and self.model.relations.get(LEGACY_MYSQL)
-            and (
-                self.charm.config.mysql_interface_database
-                != self.charm.app_peer_data[MYSQL_RELATION_DATABASE_KEY]
-                or self.charm.config.mysql_interface_user
-                != self.charm.app_peer_data[MYSQL_RELATION_USER_KEY]
-            )
-        ):
+        if self._is_mysql_interface_config_mismatched():
             self.charm.app.status = BlockedStatus(
                 "Remove and re-relate `mysql` relations in order to change config"
             )
+
+    def _is_unit_ready_for_mysql_relation(self) -> bool:
+        """Return whether the unit is ready to handle the `mysql` relation created event."""
+        return self.charm._is_peer_data_set and self.charm.unit_initialized()
+
+    def _check_mysql_user_exists(self, username: str) -> bool | None:
+        """Check if a mysql user exists.
+
+        Returns:
+            True/False if the check succeeded, None if it failed.
+        """
+        try:
+            return self.charm._mysql.does_mysql_user_exist(username, "%")
+        except MySQLCheckUserExistenceError:
+            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+            return None
+
+    def _publish_existing_mysql_relation_data(self, event: RelationCreatedEvent) -> None:
+        """Publish the stored `mysql` relation data for an already existing user."""
+        mysql_relation_data = self.charm.app_peer_data[MYSQL_RELATION_DATA_KEY]
+
+        updates = json.loads(mysql_relation_data)
+        event.relation.data[self.charm.unit].update(updates)
 
     def _on_mysql_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the legacy `mysql` relation created event.
@@ -163,12 +192,8 @@ class MySQLRelation(Object):
 
         # Wait until on-config-changed event is executed
         # (wait for root password to have been set)
-        if not self.charm._is_peer_data_set:
-            event.defer()
-            return
-
-        # wait until the unit is initialized
-        if not self.charm.unit_initialized():
+        # and for the unit to be initialized
+        if not self._is_unit_ready_for_mysql_relation():
             event.defer()
             return
 
@@ -177,20 +202,13 @@ class MySQLRelation(Object):
         username = self._get_or_generate_username(event.relation.id)
         database = self._get_or_generate_database(event.relation.id)
 
-        try:
-            user_exists = self.charm._mysql.does_mysql_user_exist(username, "%")
-        except MySQLCheckUserExistenceError:
-            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+        if (user_exists := self._check_mysql_user_exists(username)) is None:
             return
 
         # Only execute if the application user does not exist
         # since it could have been created by another related app
         if user_exists:
-            mysql_relation_data = self.charm.app_peer_data[MYSQL_RELATION_DATA_KEY]
-
-            updates = json.loads(mysql_relation_data)
-            event.relation.data[self.charm.unit].update(updates)
-
+            self._publish_existing_mysql_relation_data(event)
             return
 
         password = self._get_or_set_password_in_peer_secrets(username)

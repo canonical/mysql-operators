@@ -3,17 +3,18 @@
 
 """Dispatch event for self-healing."""
 
-import subprocess
 import logging
+import subprocess
 import sys
 import time
 
 logger = logging.getLogger(__name__)
 
+
 def dispatch(run_command, unit, charm_directory):
     """Use the juju-run command to dispatch :class:`SelfHealingMySQLEvent`."""
     dispatch_sub_command = "JUJU_DISPATCH_PATH=hooks/heal_mysql_cluster {}/dispatch"
-    subprocess.run([run_command, "-u", unit, dispatch_sub_command.format(charm_directory)])
+    subprocess.run([run_command, "-u", unit, dispatch_sub_command.format(charm_directory)])  # noqa: S603
 
 
 def main():

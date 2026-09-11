@@ -267,6 +267,15 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             # empty config means not initialized, skipping
             return
 
+        self._apply_config_changes(previous_config)
+
+    def _apply_config_changes(self, previous_config: str) -> None:
+        """Apply configuration changes after initial guards have passed.
+
+        Args:
+            previous_config: mysqld configuration file content.
+        """
+        logger.info("Persisting configuration changes to file")
         # render the new config
         new_config_dict = self._mysql.write_mysqld_config()
         # flatten new_config_dict to match previous_config format (all values as strings)
@@ -302,7 +311,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                     config.removeprefix("loose-"), new_config_dict[config]
                 )
 
-    def _on_start(self, event: StartEvent) -> None:  # noqa: C901
+    def _on_start(self, event: StartEvent) -> None:
         """Handle the start event.
 
         Configure MySQL users and the instance for use in an InnoDB cluster.
@@ -311,7 +320,10 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         self.unit.status = MaintenanceStatus("Setting up cluster node")
+        self._handle_workload_initialise()
 
+    def _handle_workload_initialise(self) -> None:
+        """Initialize the workload and handle errors."""
         try:
             self.workload_initialise()
         except MySQLInitialiseMySQLDError:
@@ -430,56 +442,25 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         set_destination(f"{endpoint}/v1/traces", None)
 
-    def _handle_non_online_instance_status(self, state: str) -> bool:  # noqa: C901
+    def _handle_non_online_instance_status(self, state: str) -> bool:
         """Helper method to handle non-online instance statuses.
 
         Invoked from the update status event handler.
         """
+        # A surviving member can stay ONLINE in its local view while the
+        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
+        # complete-outage path below only fires on state == OFFLINE, so
+        # without this the leader stays stuck and the cluster never recovers.
+        if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
+            return self._handle_online_no_quorum()
+
         if state == InstanceState.RECOVERING:
             # server is in the process of becoming an active member
             logger.info("Instance is being recovered")
             return True
 
         if state == InstanceState.OFFLINE:
-            # Group Replication is active but the member does not belong to any group
-            all_states = {
-                self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
-            }
-
-            all_states.add(InstanceState.OFFLINE.lower())
-            all_offline = all_states == {InstanceState.OFFLINE.lower()}
-            peers_waiting_offline = all_states <= {"waiting", "offline"}
-
-            if (all_offline and self.unit.is_leader()) or peers_waiting_offline:
-                loopback_entry_exists = self.hostname_observer.update_etc_hosts(None)
-                if loopback_entry_exists and not snap_service_operation(
-                    CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
-                ):
-                    self.unit.status = BlockedStatus(
-                        "Unable to restart mysqld before rebooting from complete outage"
-                    )
-                    return False
-
-                self._mysql.wait_until_mysql_connection()
-
-                # All instance are off or its a single unit cluster
-                # or this instance is offline and others waiting to join
-                # reboot cluster from outage from the leader unit
-                logger.info("Attempting reboot from complete outage.")
-                try:
-                    # reboot from outage forcing it when it a single unit
-                    self._mysql.reboot_from_complete_outage()
-                    return True
-                except MySQLRebootFromCompleteOutageError:
-                    logger.error("Failed to reboot cluster from complete outage.")
-                    self.unit.status = BlockedStatus("failed to recover cluster.")
-                    return False
-
-            if self._mysql.is_cluster_auto_rejoin_ongoing():
-                logger.info("Cluster auto-rejoin attempts are still ongoing.")
-            else:
-                logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
-                self._execute_manual_rejoin()
+            return self._handle_offline_state(state)
 
         if state in ("UNKNOWN", InstanceState.ERROR):
             # instance in unknown/error state that has cluster metadata
@@ -490,17 +471,87 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return True
 
         if state == InstanceState.UNREACHABLE:
-            try:
-                if not snap_service_operation(
-                    CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
-                ):
-                    # mysqld access not possible and daemon restart fails
-                    # force reset necessary
-                    self.unit.status = BlockedStatus("Unable to recover from an unreachable state")
-                    return False
-            except SnapServiceOperationError as e:
-                self.unit.status = BlockedStatus(e.message)
+            return self._handle_unreachable_state()
+
+        return True
+
+    def _handle_online_no_quorum(self) -> bool:
+        """Handle the case where an ONLINE instance detects the cluster has no quorum."""
+        logger.warning("Cluster has no quorum")
+        if self.peers.units and not self._all_peers_reachable():
+            logger.warning("Skipping quorum recovery: not all peers reachable")
+            return True
+        try:
+            # reboot_cluster_from_complete_outage rejects an instance whose
+            # GR is still running; drop it to OFFLINE first.
+            self._mysql.stop_group_replication()
+            if self.unit.is_leader():
+                # run on leader only for coordinate recovery
+                logger.warning("Attempting reboot from complete outage")
+                self._mysql.reboot_from_complete_outage()
                 return False
+        except MySQLRebootFromCompleteOutageError:
+            logger.error("Failed to reboot cluster from complete outage")
+            self.unit.status = BlockedStatus("failed to recover cluster")
+        return True
+
+    def _handle_offline_state(self, state: str) -> bool:
+        """Handle an OFFLINE instance status."""
+        # Group Replication is active but the member does not belong to any group
+        all_states = {
+            self.peers.data[unit].get("member-state", "unknown") for unit in self.peers.units
+        }
+
+        all_states.add(InstanceState.OFFLINE.lower())
+        all_offline = all_states == {InstanceState.OFFLINE.lower()}
+        peers_waiting_offline = all_states <= {"waiting", "offline"}
+
+        if (all_offline and self.unit.is_leader()) or peers_waiting_offline:
+            loopback_entry_exists = self.hostname_observer.update_etc_hosts(None)
+            if loopback_entry_exists and not snap_service_operation(
+                CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
+            ):
+                self.unit.status = BlockedStatus(
+                    "Unable to restart mysqld before rebooting from complete outage"
+                )
+                return False
+
+            self._mysql.wait_until_mysql_connection()
+
+            # All instance are off or its a single unit cluster
+            # or this instance is offline and others waiting to join
+            # reboot cluster from outage from the leader unit
+            logger.info("Attempting reboot from complete outage.")
+            try:
+                # reboot from outage forcing it when it a single unit
+                self._mysql.reboot_from_complete_outage()
+                return True
+            except MySQLRebootFromCompleteOutageError:
+                logger.error("Failed to reboot cluster from complete outage.")
+                self.unit.status = BlockedStatus("failed to recover cluster.")
+                return False
+
+        if self._mysql.is_cluster_auto_rejoin_ongoing():
+            logger.info("Cluster auto-rejoin attempts are still ongoing.")
+        else:
+            logger.info("Cluster auto-rejoin attempts are exhausted. Attempting manual rejoin")
+            self._execute_manual_rejoin()
+
+        return True
+
+    def _handle_unreachable_state(self) -> bool:
+        """Handle an UNREACHABLE instance status."""
+        try:
+            if not snap_service_operation(
+                CHARMED_MYSQL_SNAP_NAME, CHARMED_MYSQLD_SERVICE, "restart"
+            ):
+                # mysqld access not possible and daemon restart fails
+                # force reset necessary
+                self.unit.status = BlockedStatus("Unable to recover from an unreachable state")
+                return False
+        except SnapServiceOperationError as e:
+            self.unit.status = BlockedStatus(e.message)
+            return False
 
         return True
 
@@ -558,35 +609,61 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             from_instance=cluster_primary,
         )
 
-    def _on_update_status(self, _) -> None:  # noqa: C901
-        """Handle update status.
+    def _should_skip_update_status(self) -> bool:
+        """Check early guard conditions for the update status handler.
 
-        Takes care of workload health checks.
+        Returns True if the handler should return early.
         """
         if (
             not self.cluster_initialized
             or not self.unit_peer_data.get("member-role")
             or not is_volume_mounted()
         ):
-            # health checks only after cluster and member are initialised
             logger.info("skip status update when not initialized")
-            return
+            return True
         if (
             self.unit_peer_data.get("member-state") == "waiting"
             and not self.unit_configured
             and not self.unit_initialized()
             and not self.unit.is_leader()
         ):
-            # avoid changing status while in initialising
             logger.info("skip status update while initialising")
-            return
+            return True
 
         # ensure ports are open for units initialised before this was done on start
         self._set_ports()
 
         if not self.upgrade.idle:
-            # avoid changing status while in upgrade
             logger.debug("skip status update while upgrading")
+            return True
+
+        return False
+
+    def _set_leader_app_status_for_online(self) -> None:
+        """Set the application status when the leader unit is ONLINE."""
+        try:
+            primary_address = self._mysql.get_cluster_primary_address()
+        except MySQLGetClusterPrimaryAddressError:
+            primary_address = None
+
+        if not primary_address:
+            logger.error("Cluster has no primary. Check cluster status on online units.")
+            self.app.status = MaintenanceStatus("Cluster has no primary.")
+            return
+
+        if "s3-block-message" in self.app_peer_data:
+            self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
+            return
+
+        # Set active status when primary is known
+        self.app.status = ActiveStatus()
+
+    def _on_update_status(self, _) -> None:
+        """Handle update status.
+
+        Takes care of workload health checks.
+        """
+        if self._should_skip_update_status():
             return
 
         if self._is_unit_waiting_to_join_cluster():
@@ -612,26 +689,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.unit_peer_data["member-role"] = role.lower()
         self.unit_peer_data["member-state"] = state.lower()
 
-        # A surviving member can stay ONLINE in its local view while the
-        # cluster has lost quorum (majority UNREACHABLE). The reboot-from-
-        # complete-outage path below only fires on state == OFFLINE, so
-        # without this the leader stays stuck and the cluster never recovers.
         if state == InstanceState.ONLINE and self._mysql.is_cluster_in_no_quorum():
-            logger.warning("Cluster has no quorum")
-            if self.peers.units and not self._all_peers_reachable():
-                logger.warning("Skipping quorum recovery: not all peers reachable")
-                return
-            try:
-                # reboot_cluster_from_complete_outage rejects an instance whose
-                # GR is still running; drop it to OFFLINE first.
-                self._mysql.stop_group_replication()
-                if self.unit.is_leader():
-                    # run on leader only for coordinate recovery
-                    logger.warning("Attempting reboot from complete outage")
-                    self._mysql.reboot_from_complete_outage()
-            except MySQLRebootFromCompleteOutageError:
-                logger.error("Failed to reboot cluster from complete outage")
-                self.unit.status = BlockedStatus("failed to recover cluster")
+            self._handle_online_no_quorum()
             return
 
         # set unit status based on member-{state,role}
@@ -645,22 +704,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return
 
         if self.unit.is_leader() and state == InstanceState.ONLINE:
-            try:
-                primary_address = self._mysql.get_cluster_primary_address()
-            except MySQLGetClusterPrimaryAddressError:
-                primary_address = None
-
-            if not primary_address:
-                logger.error("Cluster has no primary. Check cluster status on online units.")
-                self.app.status = MaintenanceStatus("Cluster has no primary.")
-                return
-
-            if "s3-block-message" in self.app_peer_data:
-                self.app.status = BlockedStatus(self.app_peer_data["s3-block-message"])
-                return
-
-            # Set active status when primary is known
-            self.app.status = ActiveStatus()
+            self._set_leader_app_status_for_online()
 
     # =======================
     #  Helpers

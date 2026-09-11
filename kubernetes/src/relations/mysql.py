@@ -89,6 +89,21 @@ class MySQLRelation(Object):
             self.charm.config.mysql_interface_database or f"database-{event_relation_id}",
         )
 
+    def _is_mysql_interface_config_mismatched(self) -> bool:
+        """Report whether the mysql-interface config differs from what is in use."""
+        if not (
+            isinstance(self.charm.unit.status, ActiveStatus)
+            and self.model.relations.get(LEGACY_MYSQL)
+        ):
+            return False
+
+        return (
+            self.charm.config.mysql_interface_database
+            != self.charm.app_peer_data[MYSQL_RELATION_DATABASE_KEY]
+            or self.charm.config.mysql_interface_user
+            != self.charm.app_peer_data[MYSQL_RELATION_USER_KEY]
+        )
+
     def _on_config_changed(self, _) -> None:
         """Handle the change of the username/database config."""
         if not self.charm.unit.is_leader():
@@ -100,16 +115,7 @@ class MySQLRelation(Object):
         ):
             return
 
-        active_and_related = isinstance(
-            self.charm.unit.status, ActiveStatus
-        ) and self.model.relations.get(LEGACY_MYSQL)
-
-        if active_and_related and (
-            self.charm.config.mysql_interface_database
-            != self.charm.app_peer_data[MYSQL_RELATION_DATABASE_KEY]
-            or self.charm.config.mysql_interface_user
-            != self.charm.app_peer_data[MYSQL_RELATION_USER_KEY]
-        ):
+        if self._is_mysql_interface_config_mismatched():
             self.charm.app.status = BlockedStatus(
                 "Remove and re-relate `mysql` relations in order to change config"
             )
@@ -197,6 +203,60 @@ class MySQLRelation(Object):
 
         self.model.get_relation(LEGACY_MYSQL).data[self.charm.unit].update(updates)
 
+    def _is_unit_ready_for_mysql_relation(self) -> bool:
+        """Return whether the unit is ready to handle the `mysql` relation created event."""
+        return (
+            self.charm._is_peer_data_set
+            and self.charm.unit_initialized()
+            and self.charm.unit_peer_data.get("member-state") == "online"
+        )
+
+    def _publish_existing_mysql_relation_data(self, event: RelationCreatedEvent) -> None:
+        """Publish the stored `mysql` relation data for an already existing user."""
+        mysql_relation_data = self.charm.app_peer_data[MYSQL_RELATION_DATA_KEY]
+
+        updates = json.loads(mysql_relation_data)
+        event.relation.data[self.charm.unit].update(updates)
+
+    def _create_mysql_database_and_user(self, database: str, username: str, password: str) -> bool:
+        """Create the application database and scoped user.
+
+        Returns:
+            True if the database and user were created, False otherwise.
+        """
+        try:
+            logger.info("Creating application database and scoped user")
+            self.charm._mysql.create_database(database)
+            self.charm._mysql.create_scoped_user(
+                database,
+                username,
+                password,
+                "%",
+                unit_name="mysql-legacy-relation",
+            )
+            return True
+        except (
+            MySQLCreateApplicationDatabaseError,
+            MySQLCreateApplicationScopedUserError,
+        ):
+            self.charm.unit.status = BlockedStatus(
+                "Failed to create application database and scoped user"
+            )
+            return False
+
+    def _check_mysql_user_exists(self, username: str) -> bool | None:
+        """Check if a mysql user exists.
+
+        Returns:
+            True/False if the check succeeded, None if it failed.
+        """
+        try:
+            logger.info(f"Checking if mysql user {username} exists")
+            return self.charm._mysql.does_mysql_user_exist(username, "%")
+        except MySQLCheckUserExistenceError:
+            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+            return None
+
     def _on_mysql_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the legacy 'mysql' relation created event.
 
@@ -211,11 +271,7 @@ class MySQLRelation(Object):
 
         # Wait until on-config-changed event is executed (for root password to have been set)
         # and for the member to be initialized and online
-        if (
-            not self.charm._is_peer_data_set
-            or not self.charm.unit_initialized()
-            or self.charm.unit_peer_data.get("member-state") != "online"
-        ):
+        if not self._is_unit_ready_for_mysql_relation():
             logger.info("Unit not ready to execute `mysql` relation created. Deferring")
             event.defer()
             return
@@ -225,43 +281,18 @@ class MySQLRelation(Object):
         username = self._get_or_generate_username(event.relation.id)
         database = self._get_or_generate_database(event.relation.id)
 
-        user_exists = False
-        try:
-            logger.info(f"Checking if mysql user {username} exists")
-            user_exists = self.charm._mysql.does_mysql_user_exist(username, "%")
-        except MySQLCheckUserExistenceError:
-            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+        if (user_exists := self._check_mysql_user_exists(username)) is None:
             return
 
         # Only execute if the application user does not exist
         if user_exists:
             logger.info(f"mysql user {username} exists. nooping")
-            mysql_relation_data = self.charm.app_peer_data[MYSQL_RELATION_DATA_KEY]
-
-            updates = json.loads(mysql_relation_data)
-            event.relation.data[self.charm.unit].update(updates)
-
+            self._publish_existing_mysql_relation_data(event)
             return
 
         password = self._get_or_set_password_in_peer_secrets(username)
 
-        try:
-            logger.info("Creating application database and scoped user")
-            self.charm._mysql.create_database(database)
-            self.charm._mysql.create_scoped_user(
-                database,
-                username,
-                password,
-                "%",
-                unit_name="mysql-legacy-relation",
-            )
-        except (
-            MySQLCreateApplicationDatabaseError,
-            MySQLCreateApplicationScopedUserError,
-        ):
-            self.charm.unit.status = BlockedStatus(
-                "Failed to create application database and scoped user"
-            )
+        if not self._create_mysql_database_and_user(database, username, password):
             return
 
         primary_address = self.charm._mysql.get_cluster_primary_address()
