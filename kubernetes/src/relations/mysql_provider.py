@@ -253,6 +253,10 @@ class MySQLProvider(Object):
             # https://bugs.launchpad.net/juju/+bug/1979811
             return
 
+        if not self.charm.app_peer_data.get("cluster-name"):
+            logger.warning("Skipping user removal: cluster name not available")
+            return
+
         relation_id = event.relation.id
         try:
             if self.charm._mysql.does_mysql_user_exist(self._get_username(relation_id), "%"):
