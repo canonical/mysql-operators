@@ -113,5 +113,6 @@ class LogRotationSetup(Object):
             return
         logger.info("Reconfigure log rotation after logs upload stops")
 
-        del self.charm.unit_peer_data["logs_synced"]
+        if self.charm.unit_peer_data.get(_LOGS_SYNCED):
+            del self.charm.unit_peer_data[_LOGS_SYNCED]
         self.setup()
