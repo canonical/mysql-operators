@@ -126,9 +126,9 @@ Wait until the model settles. The following is an example of the `juju status --
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
 
-    App                      Version  Status   Scale  Charm                    Channel      Rev  Exposed  Message
-    mysql                    8.4.7    active       1  mysql                    8.4/edge          no
-    opentelemetry-collector           blocked      1  opentelemetry-collector  2/stable     316  no
+    App                      Version  Status   Scale  Charm                    Channel     Rev  Exposed  Message
+    mysql                    8.4.10   active       1  mysql                    8.4/stable       no
+    opentelemetry-collector           blocked      1  opentelemetry-collector  2/stable    316  no
 
     Unit                          Workload  Agent  Machine  Public address  Ports           Message
     mysql/0*                      active    idle   0        10.205.193.32   3306,33060/tcp  Primary
@@ -154,9 +154,9 @@ Wait until the model settles. The following is an example of the `juju status --
     SAAS   Status  Store       URL
     tempo  active  k8s         admin/cos.tempo
 
-    App                          Version  Status  Scale  Charm                        Channel   Rev  Address         Exposed  Message
-    mysql-k8s                    8.4.7    active      1  mysql-k8s                    8.4/edge       10.152.183.135  no       Primary
-    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable  207  10.152.183.136
+    App                          Version  Status  Scale  Charm                        Channel     Rev  Address         Exposed  Message
+    mysql-k8s                    8.4.10   active      1  mysql-k8s                    8.4/stable       10.152.183.135  no       Primary
+    opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable    207  10.152.183.136
 
     Unit                            Workload  Agent      Address       Ports  Message
     mysql-k8s/0*                    active    executing  10.1.241.253         Primary

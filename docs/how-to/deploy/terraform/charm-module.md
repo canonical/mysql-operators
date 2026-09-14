@@ -83,7 +83,7 @@ Model     Controller      Cloud/Region         Version  SLA          Timestamp
 my-model  lxd-controller  localhost/localhost  3.6.14   unsupported  12:49:34Z
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7    active      1  mysql  8.4/edge         no
+mysql  8.4.10   active      1  mysql  8.4/stable       no
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        10.101.248.220  3306,33060/tcp  Primary

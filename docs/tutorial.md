@@ -158,7 +158,7 @@ To deploy Charmed MySQL, run the following command:
 :user: ubuntu
 :host: my-vm
 
-juju deploy mysql --channel 8.4/edge
+juju deploy mysql --channel 8.4/stable
 ```
 ````
 
@@ -169,7 +169,7 @@ juju deploy mysql --channel 8.4/edge
 :user: ubuntu
 :host: my-vm
 
-juju deploy mysql-k8s --channel 8.4/edge --trust
+juju deploy mysql-k8s --channel 8.4/stable --trust
 ```
 ````
 `````
@@ -200,7 +200,7 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.13   unsupported  22:33:45+01:00
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7    active      1  mysql  8.4/edge         no       Primary
+mysql  8.4.10   active      1  mysql  8.4/stable       no       Primary
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   1        10.234.188.135  3306,33060/tcp  Primary
@@ -217,8 +217,8 @@ Machine  State    Address         Inst id        Base          AZ  Message
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:33:45+01:00
 
-App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
-mysql-k8s  8.4.7    active      1  mysql-k8s  8.4/edge       10.152.183.234  no
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.10   active      1  mysql-k8s  8.4/stable       10.152.183.234  no
 
 Unit          Workload  Agent  Address     Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74
@@ -340,7 +340,7 @@ mysql -h 127.0.0.1 -userverconfig -pyWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
-Server version: 8.4.7-0ubuntu0.26.04 (Ubuntu)
+Server version: 8.4.10-0ubuntu0.26.04 (Ubuntu)
 
 Copyright (c) 2000, 2023, Oracle and/or its affiliates.
 
@@ -362,11 +362,11 @@ SELECT VERSION(), CURRENT_DATE;
 ```
 
 ```text
-+-------------------------+--------------+
-| VERSION()               | CURRENT_DATE |
-+-------------------------+--------------+
-| 8.4.7-0ubuntu0.26.04.1  | 2026-01-22   |
-+-------------------------+--------------+
++--------------------------+--------------+
+| VERSION()                | CURRENT_DATE |
++--------------------------+--------------+
+| 8.4.10-0ubuntu0.26.04.1  | 2026-01-22   |
++--------------------------+--------------+
 1 row in set (0.00 sec)
 ```
 
@@ -432,7 +432,7 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.13   unsupported  22:48:57+01:00
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7    active      3  mysql  8.4/edge         no
+mysql  8.4.10   active      3  mysql  8.4/stable       no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -453,8 +453,8 @@ Machine  State    Address         Inst id        Series         AZ  Message
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:48:57+01:00
 
-App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
-mysql-k8s  8.4.7    active      3  mysql-k8s  8.4/edge       10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.10   active      3  mysql-k8s  8.4/stable       10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74
@@ -514,8 +514,8 @@ You’ll know that the replica was successfully removed when you no longer see t
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.13   unsupported  22:48:57+01:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7            active      2  mysql  8.4/edge         no
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active      2  mysql  8.4/stable       no
 
 Unit      Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*  active    idle   0        10.234.188.135         Primary
@@ -534,8 +534,8 @@ Machine  State    Address         Inst id        Series         AZ  Message
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:48:57+01:00
 
-App        Version  Status  Scale  Charm      Channel   Rev  Address         Exposed  Message
-mysql-k8s  8.4.7    active      2  mysql-k8s  8.4/edge       10.152.183.234  no       
+App        Version  Status  Scale  Charm      Channel     Rev  Address         Exposed  Message
+mysql-k8s  8.4.10   active      2  mysql-k8s  8.4/stable       10.152.183.234  no       
 
 Unit          Workload  Agent  Address      Ports  Message
 mysql-k8s/0*  active    idle   10.1.84.74
@@ -576,7 +576,7 @@ tutorial  overlord    localhost/localhost  3.6.13   unsupported  22:54:31+01:00
 
 App              Version  Status   Scale  Charm            Channel     Rev  Exposed  Message
 data-integrator           blocked      1  data-integrator  stable      363  no       Please relate the data-integrator with the desired product
-mysql            8.4.7    active       2  mysql            8.4/edge         no
+mysql            8.4.10   active       2  mysql            8.4/stable       no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
 data-integrator/0*  blocked   idle   4        10.234.188.85          Please relate the data-integrator with the desired product
@@ -592,9 +592,9 @@ mysql/1             active    idle   1        10.234.188.214
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:54:31+01:00
 
-App              Version  Status   Scale  Charm            Channel   Rev  Address         Exposed  Message
-data-integrator           waiting      1  data-integrator  stable    363  10.152.183.180  no       installing agent
-mysql-k8s        8.4.7    active       2  mysql-k8s        8.4/edge       10.152.183.234  no       
+App              Version  Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
+data-integrator           waiting      1  data-integrator  stable      363  10.152.183.180  no       installing agent
+mysql-k8s        8.4.10   active       2  mysql-k8s        8.4/stable       10.152.183.234  no       
 
 Unit                Workload  Agent  Address      Ports  Message
 data-integrator/0*  blocked   idle   10.1.84.66          Please relate the data-integrator with the desired product
@@ -644,7 +644,7 @@ tutorial  overlord    localhost/localhost  3.6.13   unsupported  22:55:44+01:00
 
 App              Version  Status  Scale  Charm            Channel     Rev  Exposed  Message
 data-integrator           active      1  data-integrator  stable      363  no
-mysql            8.4.7    active      2  mysql            8.4/edge         no
+mysql            8.4.10   active      2  mysql            8.4/stable       no
 
 Unit                Workload  Agent  Machine  Public address  Ports  Message
 data-integrator/1*  active    idle   4        10.234.188.85
@@ -665,9 +665,9 @@ Machine  State    Address         Inst id        Series         AZ  Message
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  22:55:44+01:00
 
-App              Version  Status   Scale  Charm            Channel   Rev  Address         Exposed  Message
-data-integrator           active       1  data-integrator  stable    363  10.152.183.180  no
-mysql-k8s        8.4.7    active       2  mysql-k8s        8.4/edge       10.152.183.234  no
+App              Version  Status   Scale  Charm            Channel     Rev  Address         Exposed  Message
+data-integrator           active       1  data-integrator  stable      363  10.152.183.180  no
+mysql-k8s        8.4.10   active       2  mysql-k8s        8.4/stable       10.152.183.234  no
 
 Unit                Workload  Agent  Address      Ports  Message
 data-integrator/0*  active    idle   10.1.84.66
@@ -691,7 +691,7 @@ mysql:
   password: NZWCNOyfSElJW0u6bnQDOWAA
   read-only-endpoints: 10.234.188.214:10.234.188.85:3306
   username: relation-5
-  version: 8.4.7-0ubuntu0.26.04
+  version: 8.4.10-0ubuntu0.26.04
 ok: "True"
 ```
 
@@ -828,9 +828,9 @@ Wait until `self-signed-certificates` is up and active, using `juju status --wat
 Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.13   unsupported  23:04:02+01:00
 
-App                       Version  Status  Scale  Charm                      Channel   Rev  Exposed  Message
-mysql                     8.4.7    active      2  mysql                      8.4/edge       no
-self-signed-certificates           active      1  self-signed-certificates   1/stable  588  no
+App                       Version  Status  Scale  Charm                      Channel     Rev  Exposed  Message
+mysql                     8.4.10   active      2  mysql                      8.4/stable       no
+self-signed-certificates           active      1  self-signed-certificates   1/stable    588  no
 
 Unit                         Workload  Agent  Machine  Public address  Ports  Message
 mysql/0*                     active    idle   0        10.234.188.135         Primary
@@ -851,9 +851,9 @@ Machine  State    Address         Inst id        Series         AZ  Message
 Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.13   unsupported  23:04:02+01:00
 
-App                       Version  Status  Scale  Charm                      Channel   Rev  Address         Exposed  Message
-mysql-k8s                 8.4.7    active      2  mysql-k8s                  8.4/edge       10.152.183.234  no       
-self-signed-certificates           active      1  self-signed-certificates   1/stable  588  10.152.183.76   no       
+App                       Version  Status  Scale  Charm                      Channel     Rev  Address         Exposed  Message
+mysql-k8s                 8.4.10   active      2  mysql-k8s                  8.4/stable       10.152.183.234  no       
+self-signed-certificates           active      1  self-signed-certificates   1/stable    588  10.152.183.76   no       
 
 Unit                         Workload  Agent  Address      Ports  Message
 mysql-k8s/0*                 active    idle   10.1.84.74
@@ -962,7 +962,7 @@ If you once again check the TLS certificates in use with the OpenSSL client, you
 openssl s_client -starttls mysql -connect 10.234.188.135:3306 | grep Issuer
 
 ...
-depth=1 CN = MySQL_Server_8.4.7_Auto_Generated_CA_Certificate
+depth=1 CN = MySQL_Server_8.4.10_Auto_Generated_CA_Certificate
 ```
 ````
 
@@ -976,7 +976,7 @@ depth=1 CN = MySQL_Server_8.4.7_Auto_Generated_CA_Certificate
 openssl s_client -starttls mysql -connect 10.1.84.74:3306 | grep Issuer
 
 ...
-depth=1 CN = MySQL_Server_8.4.7_Auto_Generated_CA_Certificate
+depth=1 CN = MySQL_Server_8.4.10_Auto_Generated_CA_Certificate
 ```
 ````
 `````
