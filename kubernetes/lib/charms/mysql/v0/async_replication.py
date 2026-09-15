@@ -715,7 +715,9 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
             self._charm.unit.status = BlockedStatus(
                 "Wait until unit is initialized before running create-replication on offer side"
             )
-            self._charm.app.status = MaintenanceStatus("Setting up replication")
+            self._charm.app.status = MaintenanceStatus(
+                "Waiting for create-replication to be run on the offer side"
+            )
             return
         if self.returning_cluster:
             # flag set on prior async relation broken
@@ -741,7 +743,9 @@ class MySQLAsyncReplicationConsumer(MySQLAsyncReplication):
                 self.relation_data["user-data-found"] = "true"
                 return
 
-        self._charm.app.status = MaintenanceStatus("Setting up replication")
+        self._charm.app.status = MaintenanceStatus(
+            "Waiting for create-replication to be run on the offer side"
+        )
         self._charm.unit.status = WaitingStatus("Awaiting sync data from primary cluster")
 
     def _on_consumer_changed(self, event):  # noqa: C901
