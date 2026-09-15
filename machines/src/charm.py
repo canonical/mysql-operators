@@ -633,6 +633,9 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # ensure ports are open for units initialised before this was done on start
         self._set_ports()
 
+        # ensure ports are open for units initialised before this was done on start
+        self._set_ports()
+
         if not self.upgrade.idle:
             logger.debug("skip status update while upgrading")
             return True
