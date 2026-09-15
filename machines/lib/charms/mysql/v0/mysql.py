@@ -595,7 +595,16 @@ class MySQLCharmBase(CharmBase, ABC):
 
     def _on_promote_to_primary(self, event: ActionEvent) -> None:
         """Action for setting this unit as the cluster primary."""
-        if event.params.get("scope") != "unit":
+        scope = event.params.get("scope")
+        if scope not in {"unit", "cluster"}:
+            message = (
+                "The action requires the scope parameter to be set to either 'unit' or 'cluster'"
+            )
+            event.fail(message)
+            logger.info(message)
+            return
+
+        if scope != "unit":
             return
 
         if event.params.get("force"):
