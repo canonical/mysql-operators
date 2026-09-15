@@ -19,11 +19,12 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v52
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v53
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
       contents: read
+    cache-mode: none
 
   integration-test:
     name: Integration tests
@@ -40,6 +41,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
+    cache-mode: none
 
   release-test:
     name: Release tests
@@ -56,6 +58,7 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
+    cache-mode: none
 
   allure-report:
     name: Publish Allure report
@@ -230,3 +233,4 @@ jobs:
           git push origin gh-pages-beta
         env:
           VAR_RUN_ID: ${{ github.run_id }}
+    cache-mode: none
