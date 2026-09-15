@@ -154,6 +154,55 @@ class MySQLRootRelation(Object):
                 "Remove and re-relate `mysql` relations in order to change config"
             )
 
+    def _check_mysql_user_exists(self, username: str) -> bool | None:
+        """Check if a mysql user exists.
+
+        Returns:
+            True/False if the check succeeded, None if it failed.
+        """
+        try:
+            return self.charm._mysql.does_mysql_user_exist(username, "%")
+        except MySQLCheckUserExistenceError:
+            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+            return None
+
+    def _publish_existing_mysql_root_relation_data(self, event: RelationCreatedEvent) -> None:
+        """Publish the stored `mysql-root` relation data for an already existing user."""
+        mysql_root_relation_data = self.charm.app_peer_data[MYSQL_ROOT_RELATION_DATA_KEY]
+
+        updates = json.loads(mysql_root_relation_data)
+        event.relation.data[self.charm.unit].update(updates)
+
+    def _create_mysql_root_database_and_users(
+        self, database: str, username: str, password: str
+    ) -> str | None:
+        """Create the legacy relation database and users and return the root password.
+
+        Returns:
+            The root password on success, None on failure.
+        """
+        try:
+            root_password = self.charm.get_secret("app", ROOT_PASSWORD_KEY)
+            if not root_password:
+                raise MySQLCreateUserError("MySQL root password not found in peer secrets")
+
+            self.charm._mysql.create_database_legacy(database)
+            self.charm._mysql.create_user_legacy(username, password, "mysql-root-legacy-relation")
+            if not self.charm._mysql.does_mysql_user_exist("root", "%"):
+                # create `root@%` user if it doesn't exist
+                # this is needed for the `mysql-root` interface to work
+                self.charm._mysql.create_user_legacy(
+                    "root",
+                    root_password,
+                    "mysql-root-legacy-relation",
+                )
+            self.charm._mysql.escalate_user_privileges("root")
+            self.charm._mysql.escalate_user_privileges(username)
+            return root_password
+        except (MySQLCreateDatabaseError, MySQLCreateUserError, MySQLEscalateUserPrivilegesError):
+            self.charm.unit.status = BlockedStatus("Failed to create relation database and users")
+            return None
+
     def _on_mysql_root_relation_created(self, event: RelationCreatedEvent) -> None:
         """Handle the legacy 'mysql-root' relation created event.
 
@@ -181,44 +230,19 @@ class MySQLRootRelation(Object):
         username = self._get_or_generate_username(event.relation.id)
         database = self._get_or_generate_database(event.relation.id)
 
-        user_exists = False
-        try:
-            user_exists = self.charm._mysql.does_mysql_user_exist(username, "%")
-        except MySQLCheckUserExistenceError:
-            self.charm.unit.status = BlockedStatus("Failed to check user existence")
+        if (user_exists := self._check_mysql_user_exists(username)) is None:
             return
 
         # Only execute if the application user does not exist
         # since it could have been created by another related app
         if user_exists:
-            mysql_root_relation_data = self.charm.app_peer_data[MYSQL_ROOT_RELATION_DATA_KEY]
-
-            updates = json.loads(mysql_root_relation_data)
-            event.relation.data[self.charm.unit].update(updates)
-
+            self._publish_existing_mysql_root_relation_data(event)
             return
 
         password = self._get_or_set_password_in_peer_secrets(username)
 
-        try:
-            root_password = self.charm.get_secret("app", ROOT_PASSWORD_KEY)
-            if not root_password:
-                raise MySQLCreateUserError("MySQL root password not found in peer secrets")
-
-            self.charm._mysql.create_database_legacy(database)
-            self.charm._mysql.create_user_legacy(username, password, "mysql-root-legacy-relation")
-            if not self.charm._mysql.does_mysql_user_exist("root", "%"):
-                # create `root@%` user if it doesn't exist
-                # this is needed for the `mysql-root` interface to work
-                self.charm._mysql.create_user_legacy(
-                    "root",
-                    root_password,
-                    "mysql-root-legacy-relation",
-                )
-            self.charm._mysql.escalate_user_privileges("root")
-            self.charm._mysql.escalate_user_privileges(username)
-        except (MySQLCreateDatabaseError, MySQLCreateUserError, MySQLEscalateUserPrivilegesError):
-            self.charm.unit.status = BlockedStatus("Failed to create relation database and users")
+        root_password = self._create_mysql_root_database_and_users(database, username, password)
+        if not root_password:
             return
 
         primary_address = self.charm._mysql.get_cluster_primary_address()
