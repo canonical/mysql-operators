@@ -48,6 +48,9 @@ jobs:
           . .venv/bin/activate
           cd ${{ inputs.operator }}
           poetry install --only main,charm-libs
+          # Restore poetry's own poetry-core, which may be downgraded by the
+          # charm-libs install (8.0 pins poetry-core 1.x, breaking poetry 2.x)
+          pip install --force-reinstall poetry
 
       - name: Run coverage tests
         run: |
