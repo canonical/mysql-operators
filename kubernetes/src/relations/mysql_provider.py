@@ -82,6 +82,52 @@ class MySQLProvider(Object):
         """
         return f"relation-{relation_id}_{self.model.uuid.replace('-', '')}"[:26]
 
+    def _is_relation_setup_incomplete(self, relation_id: int) -> bool:
+        """Check whether database user setup is incomplete.
+
+        The password is written to the provider databag before the scoped user is
+        created, while endpoints are only published after user creation succeeds.
+        A relation with a password but no endpoints means the setup hook failed
+        midway.
+
+        Args:
+            relation_id: the identifier for a particular relation.
+
+        Returns:
+            bool: whether the relation setup is incomplete.
+        """
+        return self.database.fetch_my_relation_field(
+            relation_id, "password"
+        ) and not self.database.fetch_my_relation_field(relation_id, "endpoints")
+
+    def set_blocked_status_if_incomplete(self) -> bool:
+        """Set a blocked unit status if any database relation setup is incomplete.
+
+        The blocked status set by the failed database-relation-changed hook can
+        be overridden by subsequent hooks that report an active unit; re-detect
+        the situation from the relation data so the unit stays blocked as long
+        as it persists.
+
+        See https://github.com/canonical/mysql-operators/issues/327
+
+        Returns:
+            bool: whether the blocked status was set.
+        """
+        if not self.charm.unit.is_leader():
+            # only the leader can read the provider-side (application) databag
+            return False
+        for relation in self.charm.model.relations.get(DB_RELATION_NAME, []):
+            if relation.app is None:
+                continue
+            if self._is_relation_setup_incomplete(relation.id):
+                logger.warning(
+                    f"Database relation setup incomplete for app {relation.app.name} "
+                    f"(relation id {relation.id})"
+                )
+                self.charm.set_unit_status(BlockedStatus("Failed to create scoped user"))
+                return True
+        return False
+
     # =============
     # Handlers
     # =============

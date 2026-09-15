@@ -2,8 +2,9 @@
 # See LICENSE file for licensing details.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from ops.model import ActiveStatus, BlockedStatus
 from ops.testing import Harness
 
 from charm import MySQLOperatorCharm
@@ -131,3 +132,90 @@ class TestDatabase(unittest.TestCase):
         _update_endpoints.assert_called_once()
         _wait_service_ready.assert_called_once()
         self.assertEqual(mock_get_k8s_fqdn.call_count, 2)
+
+    def _set_up_healthy_cluster(self, mock_mysql):
+        """Mock a healthy cluster for update-status tests."""
+        # the update-status handler is wrapped in a rolling-ops manager
+        self.harness.add_relation("rolling-ops", "rolling-ops")
+        self.harness.set_can_connect("mysql", True)
+        self.harness.set_leader(True)
+        self.charm._mysql = mock_mysql
+        self.charm.replication_offer = MagicMock(idle=True)
+        self.charm.replication_consumer = MagicMock(idle=True)
+        mock_mysql.is_mysqld_running.return_value = True
+        mock_mysql.get_member_state.return_value = "ONLINE"
+        mock_mysql.get_member_role.return_value = "PRIMARY"
+        mock_mysql.is_cluster_replica.return_value = False
+
+    @patch("charm.MySQLOperatorCharm._handle_potential_cluster_crash_scenario", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql")
+    def test_update_status_blocked_on_incomplete_database_relation_setup(
+        self, mock_mysql, _handle_potential_cluster_crash_scenario
+    ):
+        """update-status reports blocked while a database relation setup is incomplete.
+
+        Regression test for https://github.com/canonical/mysql-operators/issues/327:
+        when the database-relation-changed hook fails after the password is written
+        to the provider databag (e.g. a transient DNS failure, or CREATE USER error
+        1396 on hook retry), the relation data is never published. Subsequent
+        update-status hooks must detect this situation and keep the unit blocked
+        instead of overriding the status with an active one.
+        """
+        self._set_up_healthy_cluster(mock_mysql)
+
+        # state left behind by the failed relation hook: the password is in the
+        # provider databag, but endpoints/credentials were never published
+        self.harness.update_relation_data(
+            self.database_relation_id, APP_NAME, {"password": "super_secure_password"}
+        )
+
+        self.harness.charm.on.update_status.emit()
+
+        self.assertEqual(self.charm.unit.status, BlockedStatus("Failed to create scoped user"))
+
+    @patch("charm.MySQLOperatorCharm._handle_potential_cluster_crash_scenario", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql")
+    def test_update_status_not_blocked_when_database_relation_setup_complete(
+        self, mock_mysql, _handle_potential_cluster_crash_scenario
+    ):
+        """update-status only reports blocked while the relation setup is incomplete."""
+        self._set_up_healthy_cluster(mock_mysql)
+
+        # the relation hook completed: credentials and endpoints are published
+        self.harness.update_relation_data(
+            self.database_relation_id,
+            APP_NAME,
+            {"password": "super_secure_password", "endpoints": "mysql-k8s-primary.:3306"},
+        )
+
+        self.harness.charm.on.update_status.emit()
+
+        self.assertEqual(self.charm.unit.status, ActiveStatus("Primary"))
+
+    @patch("charm.MySQLOperatorCharm._handle_potential_cluster_crash_scenario", return_value=True)
+    @patch("charm.MySQLOperatorCharm._mysql")
+    def test_direct_update_status_call_blocked_on_incomplete_setup(
+        self, mock_mysql, _handle_potential_cluster_crash_scenario
+    ):
+        """Direct _on_update_status calls keep the unit blocked on incomplete setup.
+
+        The self-healing observer calls charm._on_update_status() directly every
+        120 seconds without emitting an update_status event, so the provider's
+        update-status handler never runs on that path. The charm's handler must
+        not override the blocked status for the incomplete relation setup.
+
+        See https://github.com/canonical/mysql-operators/issues/327
+        """
+        self._set_up_healthy_cluster(mock_mysql)
+
+        # state left behind by the failed relation hook: the password is in the
+        # provider databag, but endpoints/credentials were never published
+        self.harness.update_relation_data(
+            self.database_relation_id, APP_NAME, {"password": "super_secure_password"}
+        )
+
+        # replicate the self-healing observer's direct calls
+        self.charm._on_update_status(None)
+        self.charm.update_endpoints()
+
+        self.assertEqual(self.charm.unit.status, BlockedStatus("Failed to create scoped user"))
