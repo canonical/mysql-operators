@@ -39,6 +39,7 @@ jobs:
         run: |
           tox run -e lint
           tox run -e lint-terraform
+    cache-mode: none
 
   unit-test:
     name: Unit test | ${{ matrix.path }}
@@ -64,6 +65,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           directory: ${{ matrix.path }}
+    cache-mode: none
 
   alert-test:
     name: Test Alert Rules | ${{ matrix.path }}
@@ -86,6 +88,7 @@ jobs:
       - name: Run unit tests for prometheus alert rules
         working-directory: ${{ matrix.path }}
         run: promtool test rules tests/alerts/*.yaml
+    cache-mode: none
 
   build:
     name: Build charm | ${{ matrix.path }}
@@ -100,6 +103,7 @@ jobs:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
       contents: read
+    cache-mode: none
 
   integration-test:
     name: Integration tests
@@ -118,3 +122,4 @@ jobs:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
     secrets: inherit
+    cache-mode: none
