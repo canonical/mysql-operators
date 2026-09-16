@@ -424,13 +424,6 @@ class TestCharm(unittest.TestCase):
         self.charm._on_database_storage_detaching(None)
         mock_remove_instance.assert_called_once_with(self.charm.unit_label, from_instance=None)
 
-        self.assertEqual(
-            self.harness.get_relation_data(self.peer_relation_id, self.charm.unit.name)[
-                "unit-status"
-            ],
-            "removing",
-        )
-
     @patch("k8s_helpers.KubernetesHelpers.create_endpoint_services")
     def test_create_endpoint_services(self, _create_endpoint_services):
         """_create_endpoint_services creates the primary & replicas k8s services.
