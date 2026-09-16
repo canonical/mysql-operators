@@ -1,0 +1,16 @@
+summary: test_proxied_deployment.py
+environment:
+  TEST_MODULE: high_availability/test_proxied_deployment.py
+execute: |
+  tox run -e integration -- "tests/integration/integration/$TEST_MODULE" --alluredir="$SPREAD_TASK/allure-results"
+restore: |
+  # Drop the proxy setup, in case the test was interrupted before its own teardown ran
+  sudo iptables -S FORWARD | grep -- '-j JUJU-PROXY-TEST' | sed 's/^-A/-D/' | while read -r rule; do
+    sudo iptables $rule || true
+  done
+  sudo iptables --flush JUJU-PROXY-TEST || true
+  sudo iptables --delete-chain JUJU-PROXY-TEST || true
+  sudo rm -f /etc/squid/conf.d/99-juju-integration-test.conf
+  sudo systemctl stop squid || true
+artifacts:
+  - allure-results
