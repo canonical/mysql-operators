@@ -59,6 +59,7 @@ from ops import (
     InstallEvent,
     MaintenanceStatus,
     RelationChangedEvent,
+    RelationDepartedEvent,
     StartEvent,
     Unit,
     WaitingStatus,
@@ -156,6 +157,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         self.framework.observe(self.on.temp_storage_detaching, self._on_storage_detaching)
 
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
+        self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
         self.mysql_config = MySQLConfig()
         self.database_relation = MySQLProvider(self)
@@ -384,6 +386,14 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
 
+    def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
+        """Handle the relation departed event."""
+        # This event handler is the only place to distinguish between:
+        # - Unit removal (departing_unit = the one leaving)
+        # - Rel removal (departing_unit = the one handling the event)
+        if event.departing_unit.name == self.unit.name:
+            self.unit_peer_data["unit-status"] = "removing"
+
     def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
         # Only executes if the unit was initialised
@@ -420,9 +430,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # The following operation uses locks to ensure that only one instance is removed
         # from the cluster at a time (to avoid split-brain or lack of majority issues)
         self._mysql.remove_instance(self.unit_label, from_instance=from_instance)
-
-        # Inform other hooks of current status
-        self.unit_peer_data["unit-status"] = "removing"
 
     def _charm_tracing_config(self) -> None:
         """Utility function to set tracing destination."""
