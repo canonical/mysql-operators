@@ -53,7 +53,7 @@ from charms.mysql.v0.mysql import (
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from object_storage import S3Requirer
 from ops import EventBase, ModelError
-from ops.charm import RelationChangedEvent, RelationDepartedEvent, UpdateStatusEvent
+from ops.charm import RelationChangedEvent, UpdateStatusEvent
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
@@ -151,7 +151,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         self.framework.observe(self.on[PEER].relation_joined, self._on_peer_relation_joined)
         self.framework.observe(self.on[PEER].relation_changed, self._on_peer_relation_changed)
-        self.framework.observe(self.on[PEER].relation_departed, self._on_peer_relation_departed)
 
         self.mysql_config = MySQLConfig()
         self.k8s_helpers = KubernetesHelpers(self)
@@ -1214,14 +1213,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         if self._is_unit_waiting_to_join_cluster():
             self.join_unit_to_cluster()
-
-    def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
-        """Handle the relation departed event."""
-        # This event handler is the only place to distinguish between:
-        # - Unit removal (departing_unit = the one leaving)
-        # - Rel removal (departing_unit = the one handling the event)
-        if event.departing_unit.name == self.unit.name:
-            self.unit_peer_data["unit-status"] = "removing"
 
     def _on_storage_detaching(self, _) -> None:
         """Handle the database storage detaching event."""
