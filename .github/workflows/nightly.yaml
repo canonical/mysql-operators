@@ -36,11 +36,19 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: ./.github/workflows/integration_test.yaml
+    uses: $/.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
+    permissions: {}
     cache-mode: none
 
   release-test:
@@ -53,11 +61,19 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: ./.github/workflows/release_test.yaml
+    uses: $/.github/workflows/release_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
+    permissions: {}
     cache-mode: none
 
   allure-report:
@@ -97,6 +113,7 @@ jobs:
         with:
           ref: gh-pages-beta
           path: repo/
+          persist-credentials: false
       # ${{ steps.branch.outputs.branch }} will be 8_4_edge for 8.4/edge, 8_0_edge for 8.0/edge and so forth
       - name: Parse branch name
         id: branch

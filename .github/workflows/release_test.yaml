@@ -16,15 +16,33 @@ on:
         description: Relative path to charm directory from repository directory
         default: .
         type: string
+    secrets:
+      AWS_ACCESS_KEY:
+        required: true
+      AWS_SECRET_KEY:
+        required: true
+      GCP_ACCESS_KEY:
+        required: true
+      GCP_SECRET_KEY:
+        required: true
+      UBUNTU_PRO_TOKEN:
+        required: true
+      LANDSCAPE_ACCOUNT_NAME:
+        required: true
+      LANDSCAPE_REGISTRATION_KEY:
+        required: true
 
 jobs:
   collect-release-tests:
     name: Collect spread jobs | ${{ inputs.path-to-charm-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up environment
         run: |
           sudo snap install go --classic
@@ -102,6 +120,7 @@ jobs:
       - collect-release-tests
     runs-on: ${{ matrix.job.runner }}
     timeout-minutes: 226  # Sum of steps `timeout-minutes` + 5
+    permissions: {}
     steps:
       - name: Free up disk space
         timeout-minutes: 10
@@ -115,6 +134,8 @@ jobs:
       - name: Checkout
         timeout-minutes: 3
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up environment
         timeout-minutes: 5
         run: |

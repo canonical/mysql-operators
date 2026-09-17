@@ -25,6 +25,8 @@ on:
 jobs:
   TICS:
     runs-on: [self-hosted, linux, amd64, tiobe, noble]
+    timeout-minutes: 60
+    permissions: {}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -44,19 +46,25 @@ jobs:
           echo PATH="$PATH" >> "$GITHUB_ENV"
 
       - name: Install project dependencies
+        env:
+          OPERATOR: ${{ inputs.operator }}
         run: |
           . .venv/bin/activate
-          cd ${{ inputs.operator }}
+          cd "${OPERATOR}"
           poetry install --only main,charm-libs
 
       - name: Run coverage tests
+        env:
+          OPERATOR: ${{ inputs.operator }}
         run: |
-          tox -e unit -c ${{ inputs.operator }}/tox.ini
+          tox -e unit -c "${OPERATOR}/tox.ini"
 
       - name: Coverage reports for TICS
+        env:
+          OPERATOR: ${{ inputs.operator }}
         run: |
-          mkdir -p ${{ inputs.operator }}/.cover
-          cp ${{ inputs.operator }}/coverage.xml ${{ inputs.operator }}/.cover/cobertura.xml
+          mkdir -p "${OPERATOR}/.cover"
+          cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
 
       - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v4
@@ -68,5 +76,4 @@ jobs:
           ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}  # zizmor: ignore[secrets-outside-env] Organization secret (does not support environments: https://github.com/orgs/community/discussions/15379)
           installTics: true
           calc: ALL
-    permissions: {}
     cache-mode: none
