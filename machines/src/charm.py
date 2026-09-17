@@ -365,12 +365,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
     def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
         """Handle the relation departed event."""
-        # This event handler is the only place to distinguish between:
-        # - Unit removal (departing_unit = the one leaving)
-        # - Rel removal (departing_unit = the one handling the event)
-        if event.departing_unit.name == self.unit.name:
-            self.unit_peer_data["unit-status"] = "removing"
-
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer departed event")
 
