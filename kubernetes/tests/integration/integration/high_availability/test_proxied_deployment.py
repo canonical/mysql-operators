@@ -1,4 +1,4 @@
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
@@ -88,7 +88,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
         app=MYSQL_TEST_APP_NAME,
         base="ubuntu@22.04",
         channel="latest/edge",
-        config={"sleep_interval": 300},
+        config={"sleep_interval": 500},
         num_units=1,
         constraints={"arch": architecture.architecture},
     )
