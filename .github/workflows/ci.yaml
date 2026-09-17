@@ -18,6 +18,7 @@ jobs:
     name: Lint | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install terraform
         run: |
           sudo snap install terraform --classic
@@ -45,6 +48,7 @@ jobs:
     name: Unit test | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +58,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install tox & poetry
         run: |
           pipx install tox
@@ -71,6 +77,7 @@ jobs:
     name: Test Alert Rules | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     strategy:
       fail-fast: false
       matrix:
@@ -80,6 +87,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install prometheus snap
         run: sudo snap install prometheus
       - name: Check validity of prometheus alert rules
@@ -117,9 +126,17 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: ./.github/workflows/integration_test.yaml
+    uses: $/.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
+    permissions: {}
     cache-mode: none
