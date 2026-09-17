@@ -1118,6 +1118,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.error("Failed to reconcile binlogs collection during peer relation event")
 
     def _on_peer_relation_departed(self, event: RelationDepartedEvent) -> None:
+        """Handle the relation departed event."""
         if not self._mysql.reconcile_binlogs_collection(force_restart=True):
             logger.error("Failed to reconcile binlogs collection during peer departed event")
 
@@ -1152,9 +1153,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         # The following operation uses locks to ensure that only one instance is removed
         # from the cluster at a time (to avoid split-brain or lack of majority issues)
         self._mysql.remove_instance(self.unit_label, from_instance=from_instance)
-
-        # Inform other hooks of current status
-        self.unit_peer_data["unit-status"] = "removing"
 
 
 if __name__ == "__main__":

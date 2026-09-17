@@ -286,9 +286,13 @@ class MySQLProvider(Object):
 
     def _on_database_provides_relation_departed(self, event: RelationDepartedEvent) -> None:
         """Remove MySQL Router cluster metadata & router user for departing unit."""
+        # This event handler is the only place to distinguish between:
+        # - Unit removal (departing_unit = the one leaving)
+        # - Rel removal (departing_unit = any other unit)
+        if event.departing_unit.name == self.charm.unit.name:
+            self.charm.unit_peer_data["unit-status"] = "removing"
+
         if not self.charm.unit.is_leader():
-            return
-        if event.departing_unit.app.name == self.charm.app.name:
             return
 
         users = self.charm._mysql.get_mysql_router_users_for_unit(
