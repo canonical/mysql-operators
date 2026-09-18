@@ -8,8 +8,10 @@ Squid is installed on the test runner host. While it is up, it is the only route
 internet for the units under test: direct egress out of the LXD bridge is dropped, so a
 charm that ignores the Juju proxy configuration cannot reach anything.
 
-The tests do not run as root, so every step that touches the host (the package, the Squid
-configuration, its log and the firewall) goes through passwordless sudo.
+The Squid package is installed by the spread task, so that a local run against an already
+prepared host does not have to install it again. The tests do not run as root, so every
+step that touches the host (the Squid configuration, its log and the firewall) goes through
+passwordless sudo.
 """
 
 import ipaddress
@@ -25,6 +27,7 @@ from tenacity import Retrying, stop_after_delay, wait_fixed
 MINUTE_SECS = 60
 
 PROXY_PORT = 3128
+SQUID_BINARY_PATH = Path("/usr/sbin/squid")
 SQUID_CONFIG_PATH = Path("/etc/squid/conf.d/99-juju-integration-test.conf")
 SQUID_ACCESS_LOG_PATH = Path("/var/log/squid/access.log")
 
@@ -44,7 +47,11 @@ PROXY_CONFIG_KEYS = (
 
 
 def _run(*command: str, check: bool = True) -> str:
-    """Run a command on the test runner host and return its output."""
+    """Run a command on the test runner host and return its output.
+
+    Wraps :func:`subprocess.run` to log the standard error of a failing command, which is
+    otherwise captured and lost in a run that is only inspected after the fact.
+    """
     result = subprocess.run(command, capture_output=True, check=False, text=True)
     if check and result.returncode:
         logging.error("Command %s failed: %s", command, result.stderr)
@@ -102,10 +109,17 @@ def get_controller_addresses() -> list[str]:
 
 
 def install_squid(allowed_cidr: str) -> None:
-    """Install Squid on the test runner host and allow the given network through it."""
-    logging.info("Installing squid on the test runner")
-    _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
-    _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
+    """Set up Squid on the test runner host and allow the given network through it.
+
+    The package is expected to come from the spread task, and is only installed here as a
+    fallback for a run on a host that the task did not prepare.
+    """
+    if SQUID_BINARY_PATH.exists():
+        logging.info("Squid is already installed on the test runner")
+    else:
+        logging.info("Installing squid on the test runner")
+        _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
+        _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
 
     logging.info("Allowing %s through squid", allowed_cidr)
     _sudo_write(
@@ -182,18 +196,17 @@ def set_model_proxy(juju: Juju, proxy_url: str, no_proxy: list[str]) -> None:
     """Configure the model so that units reach the internet through the proxy."""
     no_proxy_value = ",".join(no_proxy)
     logging.info("Setting the model proxy to %s (no proxy: %s)", proxy_url, no_proxy_value)
-    juju.cli(
-        "model-config",
-        f"juju-http-proxy={proxy_url}",
-        f"juju-https-proxy={proxy_url}",
-        f"juju-no-proxy={no_proxy_value}",
-        f"snap-http-proxy={proxy_url}",
-        f"snap-https-proxy={proxy_url}",
-        f"apt-http-proxy={proxy_url}",
-        f"apt-https-proxy={proxy_url}",
-    )
+    juju.model_config({
+        "juju-http-proxy": proxy_url,
+        "juju-https-proxy": proxy_url,
+        "juju-no-proxy": no_proxy_value,
+        "snap-http-proxy": proxy_url,
+        "snap-https-proxy": proxy_url,
+        "apt-http-proxy": proxy_url,
+        "apt-https-proxy": proxy_url,
+    })
 
 
 def unset_model_proxy(juju: Juju) -> None:
     """Reset the model proxy configuration."""
-    juju.cli("model-config", f"--reset={','.join(PROXY_CONFIG_KEYS)}")
+    juju.model_config(reset=PROXY_CONFIG_KEYS)

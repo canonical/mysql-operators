@@ -4,37 +4,47 @@
 
 """Helpers to run the integration tests behind a Squid forward proxy.
 
-Squid is installed on the test runner host. While it is up, it is the only route to the
-internet for the units under test: a NetworkPolicy scoped to the model namespace drops
-every other egress, so a charm that ignores the Juju proxy configuration cannot reach
-anything. The policy is namespace scoped on purpose, to leave the controller alone.
+Squid runs on the test runner host. While it is up, it is the only route to the internet
+for the units under test: a NetworkPolicy scoped to the model namespace drops every other
+egress, so a charm that ignores the Juju proxy configuration cannot reach anything. The
+policy is namespace scoped on purpose, to leave the controller alone.
 
-The tests do not run as root, so every step that touches the host (the package, the Squid
-configuration, its log and the microk8s service arguments) goes through passwordless sudo.
+The Squid package is installed by the spread task, so that a local run against an already
+prepared host does not have to install it again. The tests do not run as root, so every
+step that touches the host (the Squid configuration, its log and the microk8s service
+arguments) goes through passwordless sudo.
 """
 
 import logging
-import os
 import re
 import socket
 import subprocess
-import tempfile
 from pathlib import Path
-from string import Template
 
 from jubilant_backports import Juju
+from lightkube.core.client import Client
+from lightkube.core.exceptions import ApiError
+from lightkube.models.meta_v1 import LabelSelector, ObjectMeta
+from lightkube.models.networking_v1 import (
+    IPBlock,
+    NetworkPolicyEgressRule,
+    NetworkPolicyPeer,
+    NetworkPolicyPort,
+    NetworkPolicySpec,
+)
+from lightkube.resources.core_v1 import Node
+from lightkube.resources.networking_v1 import NetworkPolicy
 from tenacity import Retrying, stop_after_delay, wait_fixed
 
 MINUTE_SECS = 60
 
 PROXY_PORT = 3128
+SQUID_BINARY_PATH = Path("/usr/sbin/squid")
 SQUID_CONFIG_PATH = Path("/etc/squid/conf.d/99-juju-integration-test.conf")
 SQUID_ACCESS_LOG_PATH = Path("/var/log/squid/access.log")
 
 EGRESS_POLICY_NAME = "proxy-egress-only"
-EGRESS_POLICY_PATH = (
-    "tests/integration/integration/high_availability/manifests/proxy_egress_only.yml"
-)
+FIELD_MANAGER = "mysql-integration-tests"
 
 MICROK8S_ARGS_PATH = Path("/var/snap/microk8s/current/args")
 DEFAULT_POD_CIDR = "10.1.0.0/16"
@@ -48,9 +58,15 @@ PROXY_CONFIG_KEYS = (
 )
 
 
-def _run(*command: str, check: bool = True) -> str:
-    """Run a command on the test runner host and return its output."""
-    result = subprocess.run(command, capture_output=True, check=False, text=True)
+def _sudo(*command: str, check: bool = True) -> str:
+    """Run a command on the test runner host as root, without a password prompt.
+
+    Wraps :func:`subprocess.run` to log the standard error of a failing command, which is
+    otherwise captured and lost in a run that is only inspected after the fact.
+    """
+    result = subprocess.run(
+        ["sudo", "--non-interactive", *command], capture_output=True, check=False, text=True
+    )
     if check and result.returncode:
         logging.error("Command %s failed: %s", command, result.stderr)
         raise subprocess.CalledProcessError(
@@ -58,11 +74,6 @@ def _run(*command: str, check: bool = True) -> str:
         )
 
     return result.stdout.strip()
-
-
-def _sudo(*command: str, check: bool = True) -> str:
-    """Run a command on the test runner host as root, without a password prompt."""
-    return _run("sudo", "--non-interactive", *command, check=check)
 
 
 def _sudo_write(path: Path, content: str) -> None:
@@ -76,19 +87,6 @@ def _sudo_write(path: Path, content: str) -> None:
     )
 
 
-def _kubectl(*args: str) -> str:
-    """Run a kubectl command against the microk8s cluster."""
-    environment = {**os.environ, "KUBECONFIG": os.path.expanduser("~/.kube/config")}
-    result = subprocess.run(
-        ["microk8s.kubectl", *args], capture_output=True, check=False, env=environment, text=True
-    )
-    if result.returncode:
-        logging.error("Command kubectl %s failed: %s", args, result.stderr)
-        raise subprocess.CalledProcessError(result.returncode, args, result.stdout, result.stderr)
-
-    return result.stdout.strip()
-
-
 def _get_microk8s_arg(service: str, argument: str, default: str) -> str:
     """Read a command line argument of a microk8s service, falling back to a default."""
     arguments = _sudo("cat", str(MICROK8S_ARGS_PATH / service), check=False)
@@ -97,6 +95,40 @@ def _get_microk8s_arg(service: str, argument: str, default: str) -> str:
 
     logging.warning("No --%s found for %s, assuming %s", argument, service, default)
     return default
+
+
+def _egress_policy(
+    namespace: str, node_address: str, pod_cidr: str, service_cidr: str
+) -> NetworkPolicy:
+    """Build the policy that leaves the proxy as the only route out of the namespace."""
+    return NetworkPolicy(
+        metadata=ObjectMeta(name=EGRESS_POLICY_NAME, namespace=namespace),
+        spec=NetworkPolicySpec(
+            # Every pod of the model, including the ones added by a later scale up
+            podSelector=LabelSelector(),
+            policyTypes=["Egress"],
+            egress=[
+                # The squid proxy and the Kubernetes API both live on the node
+                NetworkPolicyEgressRule(
+                    to=[NetworkPolicyPeer(ipBlock=IPBlock(cidr=f"{node_address}/32"))]
+                ),
+                # Other pods (the units and the Juju controller) and the cluster services
+                NetworkPolicyEgressRule(
+                    to=[
+                        NetworkPolicyPeer(ipBlock=IPBlock(cidr=pod_cidr)),
+                        NetworkPolicyPeer(ipBlock=IPBlock(cidr=service_cidr)),
+                    ]
+                ),
+                # The cluster DNS
+                NetworkPolicyEgressRule(
+                    ports=[
+                        NetworkPolicyPort(port=53, protocol="UDP"),
+                        NetworkPolicyPort(port=53, protocol="TCP"),
+                    ]
+                ),
+            ],
+        ),
+    )
 
 
 def check_passwordless_sudo() -> bool:
@@ -108,16 +140,15 @@ def check_passwordless_sudo() -> bool:
 
 def get_node_address() -> str:
     """Return the internal address of the Kubernetes node, i.e. the test runner host."""
-    output = _kubectl(
-        "get",
-        "nodes",
-        "-o",
-        'jsonpath={.items[0].status.addresses[?(@.type=="InternalIP")].address}',
-    )
-    address = output.split()[0]
-    logging.info("Kubernetes node address is %s", address)
+    client = Client()
+    for node in client.list(res=Node):
+        for address in (node.status and node.status.addresses) or []:
+            if address.type == "InternalIP":
+                logging.info("Kubernetes node address is %s", address.address)
 
-    return address
+                return address.address
+
+    raise Exception("No Kubernetes node with an internal address found")
 
 
 def get_cluster_cidrs() -> tuple[str, str]:
@@ -132,10 +163,17 @@ def get_cluster_cidrs() -> tuple[str, str]:
 
 
 def install_squid(allowed_sources: list[str]) -> None:
-    """Install Squid on the test runner host and allow the given sources through it."""
-    logging.info("Installing squid on the test runner")
-    _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
-    _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
+    """Set up Squid on the test runner host and allow the given sources through it.
+
+    The package is expected to come from the spread task, and is only installed here as a
+    fallback for a run on a host that the task did not prepare.
+    """
+    if SQUID_BINARY_PATH.exists():
+        logging.info("Squid is already installed on the test runner")
+    else:
+        logging.info("Installing squid on the test runner")
+        _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
+        _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
 
     logging.info("Allowing %s through squid", allowed_sources)
     _sudo_write(
@@ -176,43 +214,38 @@ def block_direct_egress(namespace: str, node_address: str) -> None:
     inside the cluster keeps the units, the controller and the cluster DNS reachable.
     """
     pod_cidr, service_cidr = get_cluster_cidrs()
-    template = Template(Path(EGRESS_POLICY_PATH).read_text()).substitute(
-        namespace=namespace,
-        node_address=node_address,
-        pod_cidr=pod_cidr,
-        service_cidr=service_cidr,
-    )
 
     logging.info("Dropping direct egress from namespace %s", namespace)
-    with tempfile.NamedTemporaryFile(dir=Path.home(), suffix=".yml") as manifest:
-        manifest.write(template.encode())
-        manifest.flush()
-        _kubectl("apply", "-f", manifest.name)
+    client = Client()
+    client.apply(
+        _egress_policy(namespace, node_address, pod_cidr, service_cidr),
+        field_manager=FIELD_MANAGER,
+    )
 
 
 def unblock_direct_egress(namespace: str) -> None:
     """Remove the policy installed by :func:`block_direct_egress`."""
-    _kubectl(
-        "delete",
-        "networkpolicy",
-        EGRESS_POLICY_NAME,
-        f"--namespace={namespace}",
-        "--ignore-not-found",
-    )
+    client = Client()
+    try:
+        client.delete(res=NetworkPolicy, name=EGRESS_POLICY_NAME, namespace=namespace)
+    except ApiError as error:
+        if error.status.code != 404:
+            raise
+
+        logging.info("No %s policy to remove in namespace %s", EGRESS_POLICY_NAME, namespace)
 
 
 def set_model_proxy(juju: Juju, proxy_url: str, no_proxy: list[str]) -> None:
     """Configure the model so that units reach the internet through the proxy."""
     no_proxy_value = ",".join(no_proxy)
     logging.info("Setting the model proxy to %s (no proxy: %s)", proxy_url, no_proxy_value)
-    juju.cli(
-        "model-config",
-        f"juju-http-proxy={proxy_url}",
-        f"juju-https-proxy={proxy_url}",
-        f"juju-no-proxy={no_proxy_value}",
-    )
+    juju.model_config({
+        "juju-http-proxy": proxy_url,
+        "juju-https-proxy": proxy_url,
+        "juju-no-proxy": no_proxy_value,
+    })
 
 
 def unset_model_proxy(juju: Juju) -> None:
     """Reset the model proxy configuration."""
-    juju.cli("model-config", f"--reset={','.join(PROXY_CONFIG_KEYS)}")
+    juju.model_config(reset=PROXY_CONFIG_KEYS)

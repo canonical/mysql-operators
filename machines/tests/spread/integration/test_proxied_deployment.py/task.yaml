@@ -1,6 +1,11 @@
 summary: test_proxied_deployment.py
 environment:
   TEST_MODULE: high_availability/test_proxied_deployment.py
+prepare: |
+  # Install squid here rather than from the test, so that a local `tox run -e integration`
+  # or plain `pytest` against an already prepared host does not reinstall it every run
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get update || true
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get install --yes squid
 execute: |
   tox run -e integration -- "tests/integration/integration/$TEST_MODULE" --alluredir="$SPREAD_TASK/allure-results"
 restore: |
