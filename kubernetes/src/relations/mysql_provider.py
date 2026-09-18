@@ -82,6 +82,43 @@ class MySQLProvider(Object):
         """
         return f"relation-{relation_id}_{self.model.uuid.replace('-', '')}"[:26]
 
+    def _is_relation_setup_incomplete(self, relation_id: int) -> bool:
+        """Check whether database user setup is incomplete.
+
+        The password is written to the provider databag before the scoped user is
+        created, while endpoints are only published after user creation succeeds.
+        A relation with a password but no endpoints means the setup hook failed
+        midway.
+
+        Args:
+            relation_id: the identifier for a particular relation.
+
+        Returns:
+            bool: whether the relation setup is incomplete.
+        """
+        return self.database.fetch_my_relation_field(
+            relation_id, "password"
+        ) and not self.database.fetch_my_relation_field(relation_id, "endpoints")
+
+    def has_incomplete_setup(self) -> bool:
+        """Check whether any database relation setup is incomplete.
+
+        Returns:
+            bool: whether any database relation setup is incomplete.
+        """
+        if not self.charm.unit.is_leader():
+            return False
+        for relation in self.charm.model.relations.get(DB_RELATION_NAME, []):
+            if relation.app is None:
+                continue
+            if self._is_relation_setup_incomplete(relation.id):
+                logger.warning(
+                    f"Database relation setup incomplete for app {relation.app.name} "
+                    f"(relation id {relation.id})"
+                )
+                return True
+        return False
+
     # =============
     # Handlers
     # =============
