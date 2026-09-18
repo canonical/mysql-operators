@@ -14,11 +14,10 @@ from charms.mysql.v0.mysql import (
     MySQLSetClusterPrimaryError,
     MySQLSetVariableError,
 )
-from ops import (
-    MaintenanceStatus,
-)
+from ops import MaintenanceStatus
 
 from constants import PEER
+from mysql_vm_helpers import MySQL
 
 if typing.TYPE_CHECKING:
     from charm import MySQLOperatorCharm
@@ -116,5 +115,9 @@ class MachinesMySQLRefresh(charm_refresh.CharmSpecificMachines):
         # TODO: Future improvement
         # If snap refresh fails (i.e. same snap revision installed) after graceful shutdown, restart workload
 
-        self._charm.set_unit_status(MaintenanceStatus("refreshing the snap"))
-        self._charm.install_and_configure_mysql_dependencies(revision=snap_revision)
+        self._charm.set_unit_status(MaintenanceStatus("refreshing the snap"), refresh=refresh)
+        MySQL.install_and_configure_mysql_dependencies(revision=snap_revision)
+        # Must be called immediately after the snap is refreshed, otherwise
+        # `next_unit_allowed_to_refresh = True` raises. The workload is started & rejoined
+        # to the cluster by `MySQLOperatorCharm._post_snap_refresh`.
+        refresh.update_snap_revision()
