@@ -1,0 +1,21 @@
+summary: test_proxied_deployment.py
+environment:
+  TEST_MODULE: high_availability/test_proxied_deployment.py
+prepare: |
+  # Install squid here rather than from the test, so that a local `tox run -e integration`
+  # or plain `pytest` against an already prepared host does not reinstall it every run
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get update || true
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get install --yes squid
+execute: |
+  tox run -e integration -- "tests/integration/integration/$TEST_MODULE" --alluredir="$SPREAD_TASK/allure-results"
+restore: |
+  # Drop the proxy setup, in case the test was interrupted before its own teardown ran
+  sudo iptables -S FORWARD | grep -- '-j JUJU-PROXY-TEST' | sed 's/^-A/-D/' | while read -r rule; do
+    sudo iptables $rule || true
+  done
+  sudo iptables --flush JUJU-PROXY-TEST || true
+  sudo iptables --delete-chain JUJU-PROXY-TEST || true
+  sudo rm -f /etc/squid/conf.d/99-juju-integration-test.conf
+  sudo systemctl stop squid || true
+artifacts:
+  - allure-results
