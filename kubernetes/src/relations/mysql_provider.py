@@ -100,21 +100,13 @@ class MySQLProvider(Object):
             relation_id, "password"
         ) and not self.database.fetch_my_relation_field(relation_id, "endpoints")
 
-    def set_blocked_status_if_incomplete(self) -> bool:
-        """Set a blocked unit status if any database relation setup is incomplete.
-
-        The blocked status set by the failed database-relation-changed hook can
-        be overridden by subsequent hooks that report an active unit; re-detect
-        the situation from the relation data so the unit stays blocked as long
-        as it persists.
-
-        See https://github.com/canonical/mysql-operators/issues/327
+    def has_incomplete_setup(self) -> bool:
+        """Check whether any database relation setup is incomplete.
 
         Returns:
-            bool: whether the blocked status was set.
+            bool: whether any database relation setup is incomplete.
         """
         if not self.charm.unit.is_leader():
-            # only the leader can read the provider-side (application) databag
             return False
         for relation in self.charm.model.relations.get(DB_RELATION_NAME, []):
             if relation.app is None:
@@ -124,7 +116,6 @@ class MySQLProvider(Object):
                     f"Database relation setup incomplete for app {relation.app.name} "
                     f"(relation id {relation.id})"
                 )
-                self.charm.set_unit_status(BlockedStatus("Failed to create scoped user"))
                 return True
         return False
 
