@@ -5,6 +5,22 @@
 
 PASSWORD_LENGTH = 24
 PEER = "database-peers"
+
+# Seconds to wait for this pod's FQDN to resolve to its own (possibly new)
+# address before starting mysqld.
+LOCAL_ADDRESS_RESOLUTION_TIMEOUT = 300
+
+# Consecutive local answers required before mysqld is started. DNS server
+# replicas hold independent caches and consecutive queries are spread over
+# them, so one local answer does not imply the next one is local too.
+LOCAL_ADDRESS_RESOLUTION_CONFIRMATIONS = 3
+
+# Recovery poll attempt from which Group Replication is restarted when it is not
+# running. mysqld starts Group Replication itself on boot and needs a few
+# seconds for it to leave OFFLINE, so restarting on the first poll would churn
+# the group membership on every single roll. Only a member that is still not
+# running by this attempt has actually given up (e.g. MY-011735).
+GROUP_REPLICATION_RESTART_AFTER_ATTEMPTS = 3
 CONTAINER_NAME = "mysql"
 MYSQLD_SERVICE = "mysqld"
 MYSQL_LOG_SERVICE = "mysql"
