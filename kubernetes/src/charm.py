@@ -111,9 +111,14 @@ from utils import (
     generate_pebble_layer_env,
     generate_random_password,
     get_k8s_fqdn,
+    resolve_addresses,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class DNSAddressMismatchError(Exception):
+    """Raised to retry while the unit FQDN does not resolve to this pod's address."""
 
 
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
@@ -292,19 +297,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return None
 
         return str(binding.network.bind_address)
-
-    @staticmethod
-    def _resolve_addresses(fqdn: str) -> set[str]:
-        """Return the IPv4 addresses a name resolves to, empty when it does not resolve."""
-        try:
-            return {
-                info[4][0]
-                for info in socket.getaddrinfo(
-                    fqdn, None, family=socket.AF_INET, type=socket.SOCK_STREAM
-                )
-            }
-        except socket.gaierror:
-            return set()
 
     @property
     def is_unit_primary(self) -> bool:
@@ -611,25 +603,25 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         try:
             for attempt in Retrying(stop=stop_after_delay(timeout), wait=wait_fixed(1)):
                 with attempt:
-                    resolved = self._resolve_addresses(fqdn)
+                    resolved = resolve_addresses(fqdn)
                     if pod_address not in resolved:
                         confirmed = 0
                         logger.debug(
                             f"{fqdn} resolves to {resolved or 'nothing'}, not {pod_address}"
                         )
-                        raise Exception
+                        raise DNSAddressMismatchError
 
                     confirmed += 1
                     if confirmed < confirmations:
                         logger.debug(
                             f"{fqdn} resolved to {pod_address} {confirmed}/{confirmations} times"
                         )
-                        raise Exception
+                        raise DNSAddressMismatchError
         except RetryError:
             # Not fatal on its own: mysqld still starts, and the Group
             # Replication restart in recover_unit_after_restart repairs the
             # unit once DNS catches up.
-            logger.error(f"{fqdn} did not resolve to {pod_address} within {timeout}s")
+            logger.warning(f"{fqdn} did not resolve to {pod_address} within {timeout}s")
             return False
 
         return True

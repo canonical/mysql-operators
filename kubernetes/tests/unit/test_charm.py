@@ -558,7 +558,7 @@ class TestCharm(unittest.TestCase):
         self.assertTrue(isinstance(self.charm.unit.status, ActiveStatus))
 
     @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
-    @patch("charm.MySQLOperatorCharm._resolve_addresses")
+    @patch("charm.resolve_addresses")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_wait_until_unit_address_is_local(
         self, _get_unit_address, _resolve_addresses, _pod_address
@@ -571,7 +571,7 @@ class TestCharm(unittest.TestCase):
         _resolve_addresses.assert_called_once_with(UNIT_FQDN)
 
     @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
-    @patch("charm.MySQLOperatorCharm._resolve_addresses")
+    @patch("charm.resolve_addresses")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_wait_until_unit_address_is_local_needs_consecutive_answers(
         self, _get_unit_address, _resolve_addresses, _pod_address
@@ -597,7 +597,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(_resolve_addresses.call_count, 5)
 
     @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
-    @patch("charm.MySQLOperatorCharm._resolve_addresses")
+    @patch("charm.resolve_addresses")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_wait_until_unit_address_is_local_waits_for_stale_dns(
         self, _get_unit_address, _resolve_addresses, _pod_address
@@ -613,7 +613,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(_resolve_addresses.call_count, 3)
 
     @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
-    @patch("charm.MySQLOperatorCharm._resolve_addresses", return_value={"10.1.1.113"})
+    @patch("charm.resolve_addresses", return_value={"10.1.1.113"})
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_wait_until_unit_address_is_local_times_out(
         self, _get_unit_address, _resolve_addresses, _pod_address
@@ -624,7 +624,7 @@ class TestCharm(unittest.TestCase):
         self.assertFalse(self.charm.wait_until_unit_address_is_local(timeout=0))
 
     @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock, return_value=None)
-    @patch("charm.MySQLOperatorCharm._resolve_addresses")
+    @patch("charm.resolve_addresses")
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_wait_until_unit_address_is_local_without_pod_address(
         self, _get_unit_address, _resolve_addresses, _pod_address
