@@ -5,7 +5,7 @@ import logging
 import random
 import time
 
-from mysql_shell.models import ClusterStatus, InstanceState
+from mysql_shell.models import InstanceState
 
 from ...state import PeerState
 from ...workload import BaseSystem
