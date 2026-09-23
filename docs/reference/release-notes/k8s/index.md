@@ -23,6 +23,7 @@ All revisions of MySQL described below are built for *Ubuntu 22.04 LTS (Jammy)*.
 
 | Revision (`amd`) | Revision (`arm`) | Revision (`s390x`) | MySQL version | Juju version | {ref}`TLS <enable-tls>`* | {ref}`Monitoring <enable-monitoring>` | {ref}`In-place upgrades <refresh-single-cluster>`| {ref}`Cluster-cluster replication <cluster-cluster-replication>` |
 |:-----:|:-----:|:-----:|:------:|:---------:|:--------:|:--------:|:--------:|:--------:|
+| [444] | [447] | [446] | 8.0.45 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
 | [423] | [425] | [424] | 8.0.45 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
 | [400] | [399] | [401] | 8.0.44 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
 | [343] | [344] | [342] | 8.0.44 | `3.5.4+`  | ![check] | ![check] | ![check] | ![check] |
@@ -45,6 +46,7 @@ All release notes for `8.0/stable` revisions of Charmed MySQL 8.0 for K8s:
 ```{toctree}
 :titlesonly:
 
+Revisions 444-447 <revisions-444-447>
 Revisions 423-425 <revisions-423-425>
 Revisions 399-401 <revisions-399-401>
 Revisions 342-344 <revisions-342-344>
@@ -60,6 +62,9 @@ Revision 75  <revision-75>
 ```
 
 <!-- LINKS -->
+[444]: revisions-444-447.md
+[446]: revisions-444-447.md
+[447]: revisions-444-447.md
 [425]: revisions-423-425.md
 [424]: revisions-423-425.md
 [423]: revisions-423-425.md
