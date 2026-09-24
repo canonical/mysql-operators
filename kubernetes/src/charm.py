@@ -111,7 +111,6 @@ from services.managers import LogRotateManager, SelfHealingManager
 from services.observers import RotateMySQLLogsObserver, SelfHealingMySQLObserver
 from utils import (
     compare_dictionaries,
-    dotappend,
     generate_pebble_layer_env,
     generate_random_password,
     get_k8s_fqdn,
@@ -386,7 +385,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.warning("Can't get fully qualified domain name for unit")
             raise RuntimeError("Can't get fully qualified domain name for unit")
 
-        return dotappend(unit_dns_domain)
+        return unit_dns_domain
 
     def _all_peers_reachable(self) -> bool:
         """Return True if all peer units respond on MySQL port 3306.

@@ -314,7 +314,7 @@ class TestCharm(unittest.TestCase):
     def test_get_unit_address(self, mock_get_k8s_fqdn):
         self.assertEqual(
             self.charm.get_unit_address(self.charm.unit),
-            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local.",
+            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
         )
         mock_get_k8s_fqdn.assert_called_once_with("mysql-k8s-0.mysql-k8s-endpoints")
 
@@ -333,7 +333,7 @@ class TestCharm(unittest.TestCase):
         # Use wait_none to reduce waiting between retries to zero for the sake of this test
         self.assertEqual(
             self.charm.get_unit_address.retry_with(wait=wait_none())(self.charm, self.charm.unit),
-            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local.",
+            "mysql-k8s-0.mysql-k8s-endpoints.default.svc.cluster.local",
         )
         self.assertEqual(mock_get_k8s_fqdn.call_count, 2)
 

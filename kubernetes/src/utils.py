@@ -132,13 +132,6 @@ def compare_dictionaries(dict1: dict, dict2: dict) -> set:
     return different_keys
 
 
-def dotappend(string: str) -> str:
-    """Append a dot to a string if it does not already end with one."""
-    if not string.endswith("."):
-        string += "."
-    return string
-
-
 def get_k8s_fqdn(name: str) -> str:
     """Resolve the canonical FQDN for a Kubernetes service or pod name."""
     try:
