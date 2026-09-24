@@ -40,13 +40,13 @@ Install Multipass from the [snap store](https://snapcraft.io/multipass):
 sudo snap install multipass
 ```
 
-Spin up a new VM using [`multipass launch`](https://multipass.run/docs/launch-command) with the [charm-dev](https://github.com/canonical/multipass-blueprints/blob/main/v1/charm-dev.yaml) cloud-init configuration:
+Spin up a new VM using [`multipass launch`](https://canonical.com/multipass/docs/how-to-guides/manage-instances/create-an-instance) with the official [charm-dev cloud-init](https://canonical.com/multipass/docs/how-to-guides/manage-instances/customise-the-initial-instance-configuration) configuration. Pass the cloud-init file explicitly:
 
 ```{terminal}
 :user: user
 :host: my-pc
 
-multipass launch --cpus 4 --memory 8G --disk 50G --name my-vm charm-dev
+multipass launch 24.04 --cpus 4 --memory 8G --disk 50G --name my-vm --timeout 1800 --cloud-init https://raw.githubusercontent.com/canonical/multipass/refs/heads/main/data/cloud-init-yaml/cloud-init-charm-dev.yaml
 ```
 
 This may take several minutes if it's the first time you launch this VM.
