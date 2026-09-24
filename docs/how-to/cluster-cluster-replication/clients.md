@@ -32,7 +32,7 @@ juju consume lisbon.db2-database
     juju switch app
 
     juju deploy mysql-test-app
-    juju deploy mysql-router --channel 8.4/edge
+    juju deploy mysql-router --channel 8.4/stable
 
     juju integrate mysql-test-app mysql-router
     juju integrate mysql-router db1-database
@@ -44,7 +44,7 @@ juju consume lisbon.db2-database
     juju switch app
 
     juju deploy mysql-test-app
-    juju deploy mysql-router-k8s --trust --channel 8.4/edge
+    juju deploy mysql-router-k8s --trust --channel 8.4/stable
 
     juju integrate mysql-test-app mysql-router-k8s
     juju integrate mysql-router-k8s db1-database
@@ -60,7 +60,7 @@ juju consume lisbon.db2-database
     juju switch app
 
     juju deploy data-integrator --config database-name=mydatabase
-    juju deploy mysql-router mysql-router-external --channel 8.4/edge
+    juju deploy mysql-router mysql-router-external --channel 8.4/stable
 
     juju integrate data-integrator mysql-router-external
     juju integrate mysql-router-external db1-database
@@ -74,7 +74,7 @@ juju consume lisbon.db2-database
     juju switch app
 
     juju deploy data-integrator --config database-name=mydatabase
-    juju deploy mysql-router-k8s mysql-router-external --trust --channel 8.4/edge
+    juju deploy mysql-router-k8s mysql-router-external --trust --channel 8.4/stable
 
     juju integrate data-integrator mysql-router-external
     juju integrate mysql-router-external db1-database

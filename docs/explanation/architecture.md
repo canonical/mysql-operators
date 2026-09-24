@@ -23,8 +23,8 @@ The installed snap:
 ```shell
 $ juju ssh mysql/0
 $ snap list charmed-mysql
-Name           Version  Rev  Tracking       Publisher        Notes
-charmed-mysql  8.4.7          latest/stable  dataplatformbot  held
+Name           Version  Rev  Tracking    Publisher        Notes
+charmed-mysql  8.4.10        8.4/stable  dataplatformbot  held
 ```
 
 The snap ships the following components:
@@ -52,7 +52,7 @@ charmed-mysql.mysqlrouterd-exporter  disabled  inactive  -
 
 The `mysqld` snap service is a main MySQL instance which is normally up and running right after the charm deployment.
 
-The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/edge) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql?channel=8.4/edge) deployments.
+The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/stable) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql?channel=8.4/stable) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
@@ -138,7 +138,7 @@ services:
 
 The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
 
-The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
+The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
