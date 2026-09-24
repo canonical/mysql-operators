@@ -35,10 +35,10 @@ MYSQL_TEST_APP_NAME = "mysql-test-app"
 MINUTE_SECS = 60
 
 # Used to tell a working proxy route apart from a working direct route
-EXTERNAL_HOST = "api.snapcraft.io"
+EXTERNAL_URL = "api.snapcraft.io"
 EXTERNAL_PROBE = (
     'python3 -c "import urllib.request;'
-    f" urllib.request.urlopen('https://{EXTERNAL_HOST}', timeout=30)\""
+    f" urllib.request.urlopen('https://{EXTERNAL_URL}', timeout=30)\""
 )
 
 
@@ -55,17 +55,18 @@ def http_proxy(juju: Juju) -> Generator:
     # Traffic from a pod to the node may leave with the pod address or, once masqueraded,
     # with the node address, so both are allowed through the proxy
     install_squid(allowed_sources=[pod_cidr, f"{node_address}/32"])
+    assert juju.model
     try:
         set_model_proxy(
             juju,
             proxy_url,
             no_proxy=["127.0.0.1", "localhost", "::1", pod_cidr, service_cidr, node_address],
         )
-        block_direct_egress(juju.model, node_address)
+        block_direct_egress(juju.model, node_address, pod_cidr, service_cidr)
 
         yield proxy_url
     finally:
-        logging.info("Squid access log:\n%s", get_squid_access_log())
+        logging.info(f"Squid access log: {get_squid_access_log()}")
         unblock_direct_egress(juju.model)
         unset_model_proxy(juju)
         remove_squid()
@@ -111,15 +112,15 @@ def test_proxy_is_the_only_route_out(juju: Juju, http_proxy: str) -> None:
     """Confirm that the cluster was deployed with the proxy as its only route out."""
     unit_name = f"{MYSQL_APP_NAME}/0"
 
-    logging.info("Checking that %s cannot reach %s directly", unit_name, EXTERNAL_HOST)
+    logging.info(f"Checking that {unit_name} cannot reach {EXTERNAL_URL} directly")
     with pytest.raises(CLIError):
         juju.ssh(unit_name, EXTERNAL_PROBE)
 
-    logging.info("Checking that %s can reach %s through the proxy", unit_name, EXTERNAL_HOST)
+    logging.info(f"Checking that {unit_name} can reach {EXTERNAL_URL} through the proxy")
     juju.ssh(unit_name, f"https_proxy={http_proxy} {EXTERNAL_PROBE}")
 
-    assert check_proxy_relayed_traffic_to(EXTERNAL_HOST), (
-        f"No traffic to {EXTERNAL_HOST} in the proxy access log"
+    assert check_proxy_relayed_traffic_to(EXTERNAL_URL), (
+        f"No traffic to {EXTERNAL_URL} in the proxy access log"
     )
 
 

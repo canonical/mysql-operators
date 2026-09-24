@@ -57,7 +57,7 @@ def http_proxy(juju: Juju) -> Generator:
 
         yield proxy_url
     finally:
-        logging.info("Squid access log:\n%s", get_squid_access_log())
+        logging.info(f"Squid access log: {get_squid_access_log()}")
         unblock_direct_egress(bridge)
         unset_model_proxy(juju)
         remove_squid()
@@ -101,11 +101,11 @@ def test_proxy_is_the_only_route_out(juju: Juju, http_proxy: str) -> None:
     unit_name = f"{MYSQL_APP_NAME}/0"
     curl = "curl --silent --show-error --output /dev/null --max-time 30"
 
-    logging.info("Checking that %s cannot reach %s directly", unit_name, EXTERNAL_URL)
+    logging.info(f"Checking that {unit_name} cannot reach {EXTERNAL_URL} directly")
     with pytest.raises(TaskError):
         juju.exec(f"{curl} {EXTERNAL_URL}", unit=unit_name)
 
-    logging.info("Checking that %s can reach %s through the proxy", unit_name, EXTERNAL_URL)
+    logging.info(f"Checking that {unit_name} can reach {EXTERNAL_URL} through the proxy")
     juju.exec(f"{curl} --proxy {http_proxy} {EXTERNAL_URL}", unit=unit_name)
 
 

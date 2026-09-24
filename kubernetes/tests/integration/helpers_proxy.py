@@ -59,19 +59,10 @@ PROXY_CONFIG_KEYS = (
 
 
 def _sudo(*command: str, check: bool = True) -> str:
-    """Run a command on the test runner host as root, without a password prompt.
-
-    Wraps :func:`subprocess.run` to log the standard error of a failing command, which is
-    otherwise captured and lost in a run that is only inspected after the fact.
-    """
+    """Run a command on the test runner host as root, without a password prompt."""
     result = subprocess.run(
-        ["sudo", "--non-interactive", *command], capture_output=True, check=False, text=True
+        ["sudo", "--non-interactive", *command], capture_output=True, check=check, text=True
     )
-    if check and result.returncode:
-        logging.error("Command %s failed: %s", command, result.stderr)
-        raise subprocess.CalledProcessError(
-            result.returncode, command, result.stdout, result.stderr
-        )
 
     return result.stdout.strip()
 
@@ -93,7 +84,7 @@ def _get_microk8s_arg(service: str, argument: str, default: str) -> str:
     if match := re.search(rf"--{argument}=(\S+)", arguments):
         return match.group(1)
 
-    logging.warning("No --%s found for %s, assuming %s", argument, service, default)
+    logging.warning(f"No {argument} found for {service}, assuming {default}")
     return default
 
 
@@ -144,7 +135,7 @@ def get_node_address() -> str:
     for node in client.list(res=Node):
         for address in (node.status and node.status.addresses) or []:
             if address.type == "InternalIP":
-                logging.info("Kubernetes node address is %s", address.address)
+                logging.info(f"Kubernetes node address is {address.address}")
 
                 return address.address
 
@@ -157,7 +148,7 @@ def get_cluster_cidrs() -> tuple[str, str]:
     service_cidr = _get_microk8s_arg(
         "kube-apiserver", "service-cluster-ip-range", DEFAULT_SERVICE_CIDR
     )
-    logging.info("Cluster pod CIDR is %s, service CIDR is %s", pod_cidr, service_cidr)
+    logging.info(f"Cluster pod CIDR is {pod_cidr}, service CIDR is {service_cidr}")
 
     return pod_cidr, service_cidr
 
@@ -175,7 +166,7 @@ def install_squid(allowed_sources: list[str]) -> None:
         _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
         _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
 
-    logging.info("Allowing %s through squid", allowed_sources)
+    logging.info(f"Allowing {allowed_sources} through squid")
     _sudo_write(
         SQUID_CONFIG_PATH,
         f"acl juju_units src {' '.join(allowed_sources)}\nhttp_access allow juju_units\n",
@@ -207,15 +198,15 @@ def check_proxy_relayed_traffic_to(*hosts: str) -> bool:
     return any(host in access_log for host in hosts)
 
 
-def block_direct_egress(namespace: str, node_address: str) -> None:
+def block_direct_egress(
+    namespace: str, node_address: str, pod_cidr: str, service_cidr: str
+) -> None:
     """Drop pod egress in the model namespace, so the proxy is the only route out.
 
     Traffic to the node keeps the proxy and the Kubernetes API reachable, and traffic
     inside the cluster keeps the units, the controller and the cluster DNS reachable.
     """
-    pod_cidr, service_cidr = get_cluster_cidrs()
-
-    logging.info("Dropping direct egress from namespace %s", namespace)
+    logging.info(f"Dropping direct egress from namespace {namespace}")
     client = Client()
     client.apply(
         _egress_policy(namespace, node_address, pod_cidr, service_cidr),
@@ -232,13 +223,13 @@ def unblock_direct_egress(namespace: str) -> None:
         if error.status.code != 404:
             raise
 
-        logging.info("No %s policy to remove in namespace %s", EGRESS_POLICY_NAME, namespace)
+        logging.info(f"No {EGRESS_POLICY_NAME} policy to remove in namespace {namespace}")
 
 
 def set_model_proxy(juju: Juju, proxy_url: str, no_proxy: list[str]) -> None:
     """Configure the model so that units reach the internet through the proxy."""
     no_proxy_value = ",".join(no_proxy)
-    logging.info("Setting the model proxy to %s (no proxy: %s)", proxy_url, no_proxy_value)
+    logging.info(f"Setting the model proxy to {proxy_url} (no proxy: {no_proxy_value})")
     juju.model_config({
         "juju-http-proxy": proxy_url,
         "juju-https-proxy": proxy_url,

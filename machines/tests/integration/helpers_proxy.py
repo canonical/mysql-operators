@@ -47,17 +47,8 @@ PROXY_CONFIG_KEYS = (
 
 
 def _run(*command: str, check: bool = True) -> str:
-    """Run a command on the test runner host and return its output.
-
-    Wraps :func:`subprocess.run` to log the standard error of a failing command, which is
-    otherwise captured and lost in a run that is only inspected after the fact.
-    """
-    result = subprocess.run(command, capture_output=True, check=False, text=True)
-    if check and result.returncode:
-        logging.error("Command %s failed: %s", command, result.stderr)
-        raise subprocess.CalledProcessError(
-            result.returncode, command, result.stdout, result.stderr
-        )
+    """Run a command on the test runner host and return its output."""
+    result = subprocess.run(command, capture_output=True, check=check, text=True)
 
     return result.stdout.strip()
 
@@ -121,7 +112,7 @@ def install_squid(allowed_cidr: str) -> None:
         _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "update", check=False)
         _sudo("env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "--yes", "squid")
 
-    logging.info("Allowing %s through squid", allowed_cidr)
+    logging.info(f"Allowing {allowed_cidr} through squid")
     _sudo_write(
         SQUID_CONFIG_PATH, f"acl juju_units src {allowed_cidr}\nhttp_access allow juju_units\n"
     )
@@ -168,7 +159,7 @@ def block_direct_egress(bridge: str, exempt_sources: list[str]) -> None:
         _sudo("iptables", "--append", EGRESS_CHAIN, "--source", source, "--jump", "RETURN")
     _sudo("iptables", "--append", EGRESS_CHAIN, "--jump", "DROP")
 
-    logging.info("Dropping direct egress from bridge %s", bridge)
+    logging.info(f"Dropping direct egress from bridge {bridge}")
     _sudo("iptables", "--insert", "FORWARD", "1", "--in-interface", bridge, "--jump", EGRESS_CHAIN)
 
 
@@ -186,7 +177,7 @@ def unblock_direct_egress(bridge: str) -> None:
         EGRESS_CHAIN,
     ]
     while subprocess.run(delete_jump, capture_output=True).returncode == 0:
-        logging.info("Removed a %s jump from the FORWARD chain", EGRESS_CHAIN)
+        logging.info(f"Removed a {EGRESS_CHAIN} jump from the FORWARD chain")
 
     _sudo("iptables", "--flush", EGRESS_CHAIN, check=False)
     _sudo("iptables", "--delete-chain", EGRESS_CHAIN, check=False)
@@ -195,7 +186,7 @@ def unblock_direct_egress(bridge: str) -> None:
 def set_model_proxy(juju: Juju, proxy_url: str, no_proxy: list[str]) -> None:
     """Configure the model so that units reach the internet through the proxy."""
     no_proxy_value = ",".join(no_proxy)
-    logging.info("Setting the model proxy to %s (no proxy: %s)", proxy_url, no_proxy_value)
+    logging.info(f"Setting the model proxy to {proxy_url} (no proxy: {no_proxy_value})")
     juju.model_config({
         "juju-http-proxy": proxy_url,
         "juju-https-proxy": proxy_url,
