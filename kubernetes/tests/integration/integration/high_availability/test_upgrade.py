@@ -14,7 +14,6 @@ from jubilant import Juju
 
 from ... import architecture
 from ...helpers_ha import (
-    CHARM_METADATA,
     check_mysql_units_writes_increment,
     continuous_writes_ctx,
     get_app_leader,
@@ -22,6 +21,7 @@ from ...helpers_ha import (
     get_mysql_primary_unit,
     get_mysql_variable_value,
     load_mysql_test_data,
+    refresh_mysql_server,
     wait_for_apps_status,
     wait_for_unit_status,
 )
@@ -96,58 +96,7 @@ def test_refresh_from_edge(juju: Juju, charm: str, continuous_writes) -> None:
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
 
-    mysql_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    mysql_units = get_app_units(juju, MYSQL_APP_NAME)
-    mysql_units.sort()
-
-    logging.info("Refresh the charm")
-    juju.refresh(
-        app=MYSQL_APP_NAME,
-        path=charm,
-        resources={"mysql-image": CHARM_METADATA["resources"]["mysql-image"]["upstream-source"]},
-    )
-
-    logging.info("Wait for refresh to start")
-    juju.wait(
-        ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
-        timeout=5 * MINUTE_SECS,
-    )
-    juju.wait(
-        ready=wait_for_unit_status(MYSQL_APP_NAME, mysql_units[-1], "blocked"),
-        timeout=5 * MINUTE_SECS,
-    )
-
-    mysql_status = juju.status().apps[MYSQL_APP_NAME]
-    upgrade_unit_status = mysql_status.units[mysql_units[-1]]
-    upgrade_unit_message = upgrade_unit_status.workload_status.message
-
-    if "Refresh incompatible" in upgrade_unit_message:
-        logging.info("Application refresh is blocked due to incompatibility")
-        juju.run(
-            unit=mysql_units[-1],
-            action="force-refresh-start",
-            params={"check-compatibility": False},
-            wait=5 * MINUTE_SECS,
-        )
-
-    logging.info("Wait for refresh to finish on first unit")
-    juju.wait(
-        ready=jubilant.all_agents_idle,
-        timeout=5 * MINUTE_SECS,
-    )
-
-    logging.info("Resume refresh")
-    juju.run(
-        unit=mysql_leader,
-        action="resume-refresh",
-        wait=5 * MINUTE_SECS,
-    )
-
-    logging.info("Wait for refresh to complete")
-    juju.wait(
-        ready=wait_for_apps_status(jubilant.all_active, MYSQL_APP_NAME),
-        timeout=20 * MINUTE_SECS,
-    )
+    refresh_mysql_server(juju, MYSQL_APP_NAME, charm)
 
     logging.info("Ensure continuous writes are incrementing")
     check_mysql_units_writes_increment(juju, MYSQL_APP_NAME)
