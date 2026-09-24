@@ -6,14 +6,16 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import tenacity
+from lightkube.core.exceptions import ApiError
 from lightkube.models.core_v1 import ServicePort, ServiceSpec
 from lightkube.models.meta_v1 import ObjectMeta
 from lightkube.resources.core_v1 import Pod, Service
 from ops.charm import CharmBase
 from ops.model import Unit
 from ops.testing import Harness
+from parameterized import parameterized
 
-from k8s_helpers import KubernetesHelpers
+from k8s_helpers import KubernetesClientError, KubernetesHelpers
 
 
 class _FakeCharm(CharmBase):
@@ -73,17 +75,67 @@ class TestK8sHelpers(unittest.TestCase):
         self.k8s_helpers.label_pod("role1")
         _patch.assert_called_once_with(Pod, pod.name, pod)
 
+    @staticmethod
+    def _make_api_error(code: int) -> ApiError:
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"code": code, "message": f"error {code}"}
+        return ApiError(response=mock_response)
+
+    @parameterized.expand([
+        ("not_found_404", 404, False),
+        ("conflict_409", 409, False),
+        ("forbidden_403", 403, True),
+        ("other_500", 500, True),
+    ])
     @patch("lightkube.Client.get")
-    def test_get_resources_limit(self, _get):
+    @patch("lightkube.Client.patch")
+    def test_label_pod_api_errors(self, name, status_code, expect_raises, _patch, _get):
+        _patch.side_effect = self._make_api_error(status_code)
+        if expect_raises:
+            with self.assertRaises(KubernetesClientError):
+                self.k8s_helpers.label_pod("role1")
+        else:
+            self.k8s_helpers.label_pod("role1")
+        _patch.assert_called_once()
+
+    @patch("lightkube.Client.get")
+    @patch("lightkube.Client.patch")
+    def test_label_pod_skips_when_role_unchanged(self, _patch, _get):
+        pod = MagicMock()
+        pod.metadata.labels = {"role": "primary"}
+        _get.return_value = pod
+        self.k8s_helpers.label_pod("primary")
+        _patch.assert_not_called()
+
+    @parameterized.expand([
+        ("memory", {"memory": "2Gi"}),
+        ("cpu", {"cpu": "2"}),
+        ("empty", {}),
+    ])
+    @patch("lightkube.Client.get")
+    def test_get_resources_limit(self, name, limits, _get):
         pod = MagicMock()
         container = MagicMock()
-        container.resources.limits = {"memory": "2Gi"}
+        container.resources.limits = limits
         container.name = "mysql"
         pod.spec.containers = [container]
         _get.return_value = pod
-        self.assertEqual(
-            self.k8s_helpers.get_resources_limits(container_name="mysql"), {"memory": "2Gi"}
-        )
+        self.assertEqual(self.k8s_helpers.get_resources_limits(container_name="mysql"), limits)
+
+    @patch("lightkube.Client.get")
+    def test_get_resources_limit_container_not_found(self, _get):
+        pod = MagicMock()
+        container = MagicMock()
+        container.name = "other"
+        pod.spec.containers = [container]
+        _get.return_value = pod
+        self.assertEqual(self.k8s_helpers.get_resources_limits(container_name="mysql"), {})
+
+    @patch("lightkube.Client.get")
+    def test_get_resources_limit_api_error(self, _get):
+        _get.side_effect = self._make_api_error(500)
+        with self.assertRaises(KubernetesClientError):
+            self.k8s_helpers.get_resources_limits(container_name="mysql")
 
     def test_wait_service_ready(self):
         server = socketserver.ForkingTCPServer(("localhost", 9999), MyTCPHandler)

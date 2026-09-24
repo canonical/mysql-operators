@@ -93,6 +93,23 @@ class KubernetesHelpers:
                     logger.exception("Kubernetes service creation failed: %s", e)
                 raise KubernetesClientError from e
 
+    def _handle_label_pod_api_error(self, e: ApiError, pod_name: str) -> None:
+        """Handle ApiError from label_pod.
+
+        Raises KubernetesClientError for non-recoverable errors.
+        """
+        if e.status.code == 404:
+            logger.warning(f"Kubernetes {pod_name=} not found. Scaling in?")
+            return
+        if e.status.code == 409:
+            logger.warning(f"Kubernetes {pod_name=} changed. Labeling skipped")
+            return
+        if e.status.code == 403:
+            logger.error("Kubernetes pod label creation failed: `juju trust` needed")
+        else:
+            logger.exception("Kubernetes pod label creation failed: %s", e)
+        raise KubernetesClientError from e
+
     def label_pod(self, role: str, pod_name: str | None = None) -> None:
         """Create or update pod labels.
 
@@ -117,17 +134,7 @@ class KubernetesHelpers:
             pod.metadata.labels["role"] = role
             self.client.patch(Pod, pod_name, pod)
         except ApiError as e:
-            if e.status.code == 404:
-                logger.warning(f"Kubernetes {pod_name=} not found. Scaling in?")
-                return
-            if e.status.code == 409:
-                logger.warning(f"Kubernetes {pod_name=} changed. Labeling skipped")
-                return
-            if e.status.code == 403:
-                logger.error("Kubernetes pod label creation failed: `juju trust` needed")
-            else:
-                logger.exception("Kubernetes pod label creation failed: %s", e)
-            raise KubernetesClientError from e
+            self._handle_label_pod_api_error(e, pod_name or self.pod_name)
 
     def get_resources_limits(self, container_name: str) -> dict:
         """Return resources limits for a given container.
