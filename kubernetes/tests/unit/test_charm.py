@@ -7,8 +7,10 @@ import unittest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+from charms.mysql.v0.mysql import MySQLUnableToGetMemberStateError
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
+from tenacity import RetryError, stop_after_attempt, wait_fixed
 
 from charm import MySQLOperatorCharm
 from constants import (
@@ -24,6 +26,7 @@ from k8s_helpers import KubernetesClientError
 from mysql_k8s_helpers import MySQL, MySQLInitialiseMySQLDError
 
 APP_NAME = "mysql-k8s"
+UNIT_FQDN = "mysql-k8s-0.mysql-k8s-endpoints.model.svc.cluster.local."
 REQUIRED_PASSWORD_KEYS = [
     ROOT_PASSWORD_KEY,
     MONITORING_PASSWORD_KEY,
@@ -546,3 +549,191 @@ class TestCharm(unittest.TestCase):
         _release_lock.assert_called_once_with("2.2.2.2", f"{APP_NAME}-0", "unit-add")
         _add_instance_to_cluster.assert_called_once()
         self.assertTrue(isinstance(self.charm.unit.status, ActiveStatus))
+
+    @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
+    @patch("charm.resolve_addresses")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_wait_until_unit_address_is_local(
+        self, _get_unit_address, _resolve_addresses, _pod_address
+    ):
+        """One local answer is enough when a single confirmation is asked for."""
+        _pod_address.return_value = "10.1.1.173"
+        _resolve_addresses.return_value = {"10.1.1.173"}
+
+        self.assertTrue(self.charm.wait_until_unit_address_is_local(confirmations=1))
+        _resolve_addresses.assert_called_once_with(UNIT_FQDN)
+
+    @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
+    @patch("charm.resolve_addresses")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_wait_until_unit_address_is_local_needs_consecutive_answers(
+        self, _get_unit_address, _resolve_addresses, _pod_address
+    ):
+        """A local answer followed by a stale one restarts the confirmation count.
+
+        Independent caches across DNS server replicas mean one local answer does
+        not imply the next is local, which is how mysqld binds `admin_address`
+        from a fresh answer and then fails Group Replication on a stale one.
+        """
+        _pod_address.return_value = "10.1.1.173"
+        _resolve_addresses.side_effect = [
+            {"10.1.1.173"},  # replica that caught up
+            {"10.1.1.113"},  # replica still serving the previous address
+            {"10.1.1.173"},
+            {"10.1.1.173"},
+            {"10.1.1.173"},
+        ]
+
+        with patch("charm.wait_fixed", return_value=wait_fixed(0)):
+            self.assertTrue(self.charm.wait_until_unit_address_is_local(confirmations=3))
+
+        self.assertEqual(_resolve_addresses.call_count, 5)
+
+    @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
+    @patch("charm.resolve_addresses")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_wait_until_unit_address_is_local_waits_for_stale_dns(
+        self, _get_unit_address, _resolve_addresses, _pod_address
+    ):
+        """A stale DNS answer is retried until the new pod address shows up."""
+        _pod_address.return_value = "10.1.1.173"
+        # 10.1.1.113 is the previous pod address, as served from the DNS cache
+        _resolve_addresses.side_effect = [set(), {"10.1.1.113"}, {"10.1.1.173"}]
+
+        with patch("charm.wait_fixed", return_value=wait_fixed(0)):
+            self.assertTrue(self.charm.wait_until_unit_address_is_local(confirmations=1))
+
+        self.assertEqual(_resolve_addresses.call_count, 3)
+
+    @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock)
+    @patch("charm.resolve_addresses", return_value={"10.1.1.113"})
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_wait_until_unit_address_is_local_times_out(
+        self, _get_unit_address, _resolve_addresses, _pod_address
+    ):
+        """A DNS record that never updates times out instead of raising."""
+        _pod_address.return_value = "10.1.1.173"
+
+        self.assertFalse(self.charm.wait_until_unit_address_is_local(timeout=0))
+
+    @patch("charm.MySQLOperatorCharm._pod_address", new_callable=PropertyMock, return_value=None)
+    @patch("charm.resolve_addresses")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_wait_until_unit_address_is_local_without_pod_address(
+        self, _get_unit_address, _resolve_addresses, _pod_address
+    ):
+        """Without an address to compare against, the check is skipped."""
+        self.assertTrue(self.charm.wait_until_unit_address_is_local())
+        _resolve_addresses.assert_not_called()
+
+    @patch("mysql_k8s_helpers.MySQL.start_group_replication")
+    @patch("mysql_k8s_helpers.MySQL.stop_group_replication")
+    @patch("mysql_k8s_helpers.MySQL.get_member_state", return_value="OFFLINE")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_restart_group_replication_if_stopped(
+        self,
+        _get_unit_address,
+        _get_member_state,
+        _stop_group_replication,
+        _start_group_replication,
+    ):
+        """An offline member has Group Replication restarted."""
+        self.charm._restart_group_replication_if_stopped()
+
+        _stop_group_replication.assert_called_once()
+        _start_group_replication.assert_called_once()
+
+    @patch("mysql_k8s_helpers.MySQL.start_group_replication")
+    @patch("mysql_k8s_helpers.MySQL.stop_group_replication")
+    @patch("mysql_k8s_helpers.MySQL.get_member_state", return_value="ONLINE")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_restart_group_replication_if_stopped_online_member(
+        self,
+        _get_unit_address,
+        _get_member_state,
+        _stop_group_replication,
+        _start_group_replication,
+    ):
+        """An online member is left alone."""
+        self.charm._restart_group_replication_if_stopped()
+
+        _stop_group_replication.assert_not_called()
+        _start_group_replication.assert_not_called()
+
+    @patch("mysql_k8s_helpers.MySQL.start_group_replication")
+    @patch("mysql_k8s_helpers.MySQL.stop_group_replication")
+    @patch(
+        "mysql_k8s_helpers.MySQL.get_member_state",
+        side_effect=MySQLUnableToGetMemberStateError,
+    )
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_restart_group_replication_if_stopped_unknown_state(
+        self,
+        _get_unit_address,
+        _get_member_state,
+        _stop_group_replication,
+        _start_group_replication,
+    ):
+        """An instance whose state cannot be read is treated as stopped.
+
+        This is the failed Group Replication initialisation case (MY-011735):
+        the member belongs to no group, so its state is not readable.
+        """
+        self.charm._restart_group_replication_if_stopped()
+
+        _stop_group_replication.assert_called_once()
+        _start_group_replication.assert_called_once()
+
+    @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
+    @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
+    @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_recover_unit_after_restart_restarts_group_replication(
+        self,
+        _get_unit_address,
+        _hold_if_recovering,
+        _is_instance_in_cluster,
+        _restart_group_replication_if_stopped,
+    ):
+        """Group Replication is restarted only from the configured attempt on.
+
+        mysqld starts Group Replication itself on boot and needs a few seconds to
+        leave OFFLINE, so restarting on the first poll would churn the group
+        membership on every roll.
+        """
+        self.harness.set_planned_units(2)
+
+        with (
+            patch("charm.wait_fixed", return_value=wait_fixed(0)),
+            patch("charm.stop_after_attempt", return_value=stop_after_attempt(4)),
+            patch("charm.GROUP_REPLICATION_RESTART_AFTER_ATTEMPTS", 3),
+            self.assertRaises(RetryError),
+        ):
+            self.charm.recover_unit_after_restart()
+
+        # attempts 1 and 2 are left alone, 3 and 4 restart it
+        self.assertEqual(_restart_group_replication_if_stopped.call_count, 2)
+
+    @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
+    @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
+    @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_recover_unit_after_restart_leaves_early_attempts_alone(
+        self,
+        _get_unit_address,
+        _hold_if_recovering,
+        _is_instance_in_cluster,
+        _restart_group_replication_if_stopped,
+    ):
+        """Group Replication is left alone while it is still expected to come up."""
+        self.harness.set_planned_units(2)
+
+        with (
+            patch("charm.wait_fixed", return_value=wait_fixed(0)),
+            patch("charm.stop_after_attempt", return_value=stop_after_attempt(2)),
+            patch("charm.GROUP_REPLICATION_RESTART_AFTER_ATTEMPTS", 3),
+            self.assertRaises(RetryError),
+        ):
+            self.charm.recover_unit_after_restart()
+
+        _restart_group_replication_if_stopped.assert_not_called()

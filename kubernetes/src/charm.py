@@ -65,7 +65,7 @@ from ops.model import (
 )
 from ops.pebble import ChangeError, Layer
 from ops_tracing import Tracing
-from tenacity import RetryError, Retrying, stop_after_attempt
+from tenacity import RetryError, Retrying, stop_after_attempt, stop_after_delay
 
 from config import CharmConfig, MySQLConfig
 from constants import (
@@ -75,6 +75,9 @@ from constants import (
     CLUSTER_ADMIN_USERNAME,
     CONTAINER_NAME,
     GR_MAX_MEMBERS,
+    GROUP_REPLICATION_RESTART_AFTER_ATTEMPTS,
+    LOCAL_ADDRESS_RESOLUTION_CONFIRMATIONS,
+    LOCAL_ADDRESS_RESOLUTION_TIMEOUT,
     MONITORING_PASSWORD_KEY,
     MONITORING_USERNAME,
     MYSQL_BINLOGS_COLLECTOR_SERVICE,
@@ -108,9 +111,14 @@ from utils import (
     generate_pebble_layer_env,
     generate_random_password,
     get_k8s_fqdn,
+    resolve_addresses,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class DNSAddressMismatchError(Exception):
+    """Raised to retry while the unit FQDN does not resolve to this pod's address."""
 
 
 class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
@@ -276,6 +284,19 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
     def unit_address(self) -> str:
         """Return the address of this unit."""
         return self.get_unit_address(self.unit)
+
+    @property
+    def _pod_address(self) -> str | None:
+        """Return this pod's own IP address, None when Juju does not report one."""
+        try:
+            binding = self.model.get_binding(PEER)
+        except ModelError:
+            return None
+
+        if not binding or not binding.network.bind_address:
+            return None
+
+        return str(binding.network.bind_address)
 
     @property
     def is_unit_primary(self) -> bool:
@@ -538,11 +559,72 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         if new_layer.services != current_layer.services:
             logger.info("Reconciling the pebble layer")
 
+            # mysqld is started by the replan below, and Group Replication only
+            # resolves its local address once, when it initialises
+            self.wait_until_unit_address_is_local()
             container.add_layer(MYSQLD_SERVICE, new_layer, combine=True)
             # Do not wait for all services to successfully start as binlogs collector may restart several times
             # (pebble failure restart) until MySQL is ready
             container._pebble.replan_services(timeout=0)
             self._mysql.wait_until_mysql_connection()
+
+    def wait_until_unit_address_is_local(
+        self,
+        timeout: int = LOCAL_ADDRESS_RESOLUTION_TIMEOUT,
+        confirmations: int = LOCAL_ADDRESS_RESOLUTION_CONFIRMATIONS,
+    ) -> bool:
+        """Wait until this unit's FQDN resolves to this pod's own address.
+
+        A rolled pod gets a new IP while DNS may still serve the previous one
+        from cache, and mysqld resolves its own FQDN twice at startup, for
+        `admin_address` and for `group_replication_local_address`. A stale
+        answer breaks both:
+
+        - the `admin_address` bind fails ("Cannot assign requested address",
+          MY-010262) and mysqld aborts, leaving pebble to restart it until the
+          cache expires
+        - Group Replication refuses to initialise when the address does not
+          match a local interface (MY-011735) and never retries, so mysqld
+          keeps running with the member permanently outside the group
+
+        Block until the record caught up, so mysqld starts only once its own
+        name resolves to this pod.
+
+        Returns:
+            True when the FQDN resolves locally, False when it timed out.
+        """
+        pod_address = self._pod_address
+        if not pod_address:
+            logger.warning("Pod address unknown. Skipping local address resolution check")
+            return True
+
+        fqdn = self.unit_address
+        confirmed = 0
+        try:
+            for attempt in Retrying(stop=stop_after_delay(timeout), wait=wait_fixed(1)):
+                with attempt:
+                    resolved = resolve_addresses(fqdn)
+                    if pod_address not in resolved:
+                        confirmed = 0
+                        logger.debug(
+                            f"{fqdn} resolves to {resolved or 'nothing'}, not {pod_address}"
+                        )
+                        raise DNSAddressMismatchError
+
+                    confirmed += 1
+                    if confirmed < confirmations:
+                        logger.debug(
+                            f"{fqdn} resolved to {pod_address} {confirmed}/{confirmations} times"
+                        )
+                        raise DNSAddressMismatchError
+        except RetryError:
+            # Not fatal on its own: mysqld still starts, and the Group
+            # Replication restart in recover_unit_after_restart repairs the
+            # unit once DNS catches up.
+            logger.warning(f"{fqdn} did not resolve to {pod_address} within {timeout}s")
+            return False
+
+        return True
 
     def recover_unit_after_restart(self) -> None:
         """Wait for unit recovery/rejoin after restart."""
@@ -562,9 +644,35 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
                                 "Instance not yet back in the cluster."
                                 f" Retry {attempt.retry_state.attempt_number}/{recovery_attempts}"
                             )
+                            if (
+                                attempt.retry_state.attempt_number
+                                >= GROUP_REPLICATION_RESTART_AFTER_ATTEMPTS
+                            ):
+                                self._restart_group_replication_if_stopped()
                             raise Exception
             except RetryError:
                 raise
+
+    def _restart_group_replication_if_stopped(self) -> None:
+        """Restart Group Replication when it is not running on the instance.
+
+        Group Replication never retries a failed initialisation, so an instance
+        whose plugin gave up at boot can not rejoin on its own and polling for it
+        can only ever time out. Issue START GROUP_REPLICATION so the local
+        address is resolved again and the member rejoins the group.
+        """
+        try:
+            state = self._mysql.get_member_state()
+        except MySQLUnableToGetMemberStateError:
+            state = "UNKNOWN"
+
+        if state in (InstanceState.ONLINE, InstanceState.RECOVERING):
+            return
+
+        logger.warning(f"Group Replication not running ({state=}). Restarting it")
+        # a member in ERROR state refuses to start before it is stopped
+        self._mysql.stop_group_replication()
+        self._mysql.start_group_replication()
 
     def _restart(self) -> OperationResult:
         """Restart the service."""
@@ -587,6 +695,8 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
 
         logger.debug("Restarting mysqld")
         self.unit.status = MaintenanceStatus("restarting MySQL")
+        # Group Replication only resolves its local address when it initialises
+        self.wait_until_unit_address_is_local()
         container.pebble.restart_services([MYSQLD_SERVICE], timeout=3600)
         self.unit.status = MaintenanceStatus("recovering unit after restart")
         sleep(10)

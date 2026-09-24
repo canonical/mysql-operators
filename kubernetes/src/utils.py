@@ -128,6 +128,19 @@ def dotappend(string: str) -> str:
     return string
 
 
+def resolve_addresses(fqdn: str) -> set[str]:
+    """Return the IPv4 addresses a name resolves to, empty when it does not resolve."""
+    try:
+        return {
+            info[4][0]
+            for info in socket.getaddrinfo(
+                fqdn, None, family=socket.AF_INET, type=socket.SOCK_STREAM
+            )
+        }
+    except socket.gaierror:
+        return set()
+
+
 @retry(reraise=True, stop=stop_after_delay(30), wait=wait_fixed(0.5))
 def get_k8s_fqdn(name: str, local_unit_label: str) -> str:
     """Resolve the canonical FQDN for a Kubernetes service or pod name.
