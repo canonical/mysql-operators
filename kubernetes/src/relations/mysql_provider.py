@@ -21,7 +21,7 @@ from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus
 
 from constants import CONTAINER_NAME, CONTAINER_RESTARTS, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
-from utils import dotappend, generate_random_password, get_k8s_fqdn
+from utils import generate_random_password, get_k8s_fqdn
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +140,8 @@ class MySQLProvider(Object):
             return
 
         try:
-            primary_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-primary"))
-            replicas_endpoint = dotappend(get_k8s_fqdn(f"{self.charm.app.name}-replicas"))
+            primary_endpoint = get_k8s_fqdn(f"{self.charm.app.name}-primary")
+            replicas_endpoint = get_k8s_fqdn(f"{self.charm.app.name}-replicas")
 
             # wait for the primary endpoint service to be ready
             self.charm.k8s_helpers.wait_service_ready((primary_endpoint, 3306))
