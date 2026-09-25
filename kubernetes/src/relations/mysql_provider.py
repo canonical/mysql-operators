@@ -98,7 +98,7 @@ class MySQLProvider(Object):
         """
         return self.database.fetch_my_relation_field(
             relation_id, "password"
-        ) and not self.database.fetch_my_relation_field(relation_id, "endpoints")
+        ) is not None and not self.database.fetch_my_relation_field(relation_id, "endpoints")
 
     def has_incomplete_setup(self) -> bool:
         """Check whether any database relation setup is incomplete.
