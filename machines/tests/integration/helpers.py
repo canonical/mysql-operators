@@ -19,17 +19,24 @@ from .connector import MysqlConnector
 logger = logging.getLogger(__name__)
 
 
-def generate_random_string(length: int) -> str:
-    """Generate a random string of the provided length.
-
-    Args:
-        length: the length of the random string to generate
-
-    Returns:
-        A random string comprised of letters and digits
-    """
+def generate_random_password(length: int) -> str:
+    """Generate a random password of the provided length."""
     choices = string.ascii_letters + string.digits
-    return "".join([secrets.choice(choices) for i in range(length)])
+
+    while True:
+        password = "".join([secrets.choice(choices) for _ in range(length)])
+        if all((
+            any(c.islower() for c in password),
+            any(c.isupper() for c in password),
+            any(c.isdigit() for c in password),
+        )):
+            return password
+
+
+def generate_random_string(length: int) -> str:
+    """Generate a random string of the provided length."""
+    choices = string.ascii_letters + string.digits
+    return "".join([secrets.choice(choices) for _ in range(length)])
 
 
 def execute_queries_on_unit(
@@ -67,9 +74,7 @@ def execute_queries_on_unit(
 
 
 @retry(stop=stop_after_attempt(30), wait=wait_fixed(5), reraise=True)
-def is_connection_possible(
-    credentials: dict, *, retry_if_not_possible=False, **extra_opts
-) -> bool:
+def is_connection_possible(credentials: dict, *, retry_if_not_possible=False, **extra_opts) -> bool:
     """Test a connection to a MySQL server.
 
     Args:
