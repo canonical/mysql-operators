@@ -8,17 +8,11 @@ from pathlib import Path
 
 import jubilant
 from jubilant import Juju
-from tenacity import (
-    Retrying,
-    stop_after_attempt,
-    wait_fixed,
-)
 
-from constants import MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
-
+from ...constants import MYSQL_ARCH_DIR, MYSQL_LOGS_DIR
 from ...helpers_ha import (
     get_app_leader,
-    get_unit_process_id,
+    get_mysql_instance_label,
     load_mysql_test_data,
     wait_for_apps_status,
 )
@@ -66,18 +60,14 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 def test_log_rotation(juju: Juju) -> None:
     """Test the log rotation of text files."""
-    log_types = ["audit", "error"]
-
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
-
-    logging.info("Removing the cron file")
-    delete_unit_file(juju, mysql_app_leader, "/etc/cron.d/flush_mysql_logs")
+    mysql_log_types = ["audit", "error"]
 
     logging.info("Stopping any running logrotate jobs")
-    stop_unit_flush_logs_job(juju, mysql_app_leader)
+    stop_log_rotate_dispatcher(juju, mysql_app_leader)
 
-    for log_type in log_types:
-        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
+    for log_type in mysql_log_types:
+        archive_log_dir = f"{MYSQL_ARCH_DIR}/archive_{log_type}"
 
         logging.info("Removing existing archive directories")
         delete_unit_file(juju, mysql_app_leader, archive_log_dir)
@@ -91,10 +81,10 @@ def test_log_rotation(juju: Juju) -> None:
         )
 
     logging.info("Executing logrotate")
-    start_unit_flush_logs_job(juju, mysql_app_leader)
+    start_log_rotate_dispatcher(juju, mysql_app_leader)
 
     logging.info("Ensuring log files were rotated")
-    for log_type in log_types:
+    for log_type in mysql_log_types:
         active_log_file_data = read_unit_file(
             juju=juju,
             unit_name=mysql_app_leader,
@@ -102,7 +92,7 @@ def test_log_rotation(juju: Juju) -> None:
         )
         assert f"{log_type} content" not in active_log_file_data
 
-        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCH_DIR}/archive_{log_type}"
         archive_log_files_listed = list_unit_files(juju, mysql_app_leader, archive_log_dir)
 
         assert len(archive_log_files_listed) == 1
@@ -196,23 +186,23 @@ def write_unit_file(juju: Juju, unit_name: str, file_path: str, file_data: str):
     juju.exec(f"sudo chown snap_daemon:root {file_path}", unit=unit_name)
 
 
-def start_unit_flush_logs_job(juju: Juju, unit_name: str) -> None:
-    """Start running the logrotate job."""
+def start_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
+    """Start the logrotate dispatcher."""
+    unit_label = get_mysql_instance_label(unit_name)
+
+    dispatch_cmd = "juju-exec"
+    dispatch_hook = "hooks/log_rotation"
+    dispatch_path = f"/var/lib/juju/agents/unit-{unit_label}/charm/dispatch"
+
     juju.ssh(
-        command="sudo logrotate -f /etc/logrotate.d/flush_mysql_logs",
+        command=f"sudo {dispatch_cmd} JUJU_DISPATCH_PATH={dispatch_hook} {dispatch_path}",
         target=unit_name,
     )
 
 
-def stop_unit_flush_logs_job(juju: Juju, unit_name: str) -> None:
-    """Stop running any logrotate jobs that may have been triggered by cron."""
+def stop_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
+    """Stop the logrotate dispatcher."""
     juju.ssh(
-        command="sudo pkill -f 'logrotate -f /etc/logrotate.d/flush_mysql_logs' --signal SIGTERM",
+        command="sudo pkill -f logrotate/main.py --signal SIGTERM",
         target=unit_name,
     )
-
-    # Hold execution until process is stopped
-    for attempt in Retrying(stop=stop_after_attempt(45), wait=wait_fixed(2)):
-        with attempt:
-            if get_unit_process_id(juju, unit_name, "logrotate") is not None:
-                raise Exception("Failed to stop the flush_mysql_logs logrotate process")
