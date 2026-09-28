@@ -7,9 +7,8 @@ import os
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME
-
 from ... import architecture
+from ...constants import CONTAINER_NAME
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
