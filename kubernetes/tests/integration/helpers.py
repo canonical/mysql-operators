@@ -16,17 +16,24 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from .connector import MySQLConnector
 
 
-def generate_random_string(length: int) -> str:
-    """Generate a random string of the provided length.
-
-    Args:
-        length: the length of the random string to generate
-
-    Returns:
-        A random string comprised of letters and digits
-    """
+def generate_random_password(length: int) -> str:
+    """Generate a random password of the provided length."""
     choices = string.ascii_letters + string.digits
-    return "".join([secrets.choice(choices) for i in range(length)])
+
+    while True:
+        password = "".join([secrets.choice(choices) for _ in range(length)])
+        if all((
+            any(c.islower() for c in password),
+            any(c.isupper() for c in password),
+            any(c.isdigit() for c in password),
+        )):
+            return password
+
+
+def generate_random_string(length: int) -> str:
+    """Generate a random string of the provided length."""
+    choices = string.ascii_letters + string.digits
+    return "".join([secrets.choice(choices) for _ in range(length)])
 
 
 def execute_queries_on_unit(

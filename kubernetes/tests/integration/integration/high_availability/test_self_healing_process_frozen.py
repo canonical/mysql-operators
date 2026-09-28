@@ -13,9 +13,8 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CONTAINER_NAME
-
 from ... import architecture
+from ...constants import CONTAINER_NAME
 from ...helpers_ha import (
     CHARM_METADATA,
     check_mysql_units_writes_increment,
