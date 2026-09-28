@@ -1,74 +1,49 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 [dependency-groups]
-main = [
-    "boto3~=1.28",
-    "charm-refresh~=3.1.1",
-    "charmlibs-interfaces-tls-certificates~=1.0",
-    "charmlibs-rollingops~=1.1",
-    "charmlibs-snap~=1.0",
-    "jinja2~=3.1",
-    "object-storage-charmlib~=1.0.0",
-    "ops[tracing]~=3.5",
-    "python_hosts~=1.0",
-    "tenacity~=8.2",
-    "tomli~=2.3",
-    "typing_extensions~=4.7",
-]
-charm-libs = [
-    # data_platform_libs/v0/data_interfaces.py
-    "ops>=2.0.0",
-    # data_platform_libs/v1/data_models.py
-    "pydantic~=2.0",
-    # grafana_agent/v0/cos_agent.py
-    "cosl>=0.0.50",
-    # mysql/v0/*.py"
-    "charm-refresh~=3.1.1",
-    "mysql_shell_client[contrib]~=1.0",
+build = [
+    "charm-refresh-build-version~=0.4.0"
 ]
 format = [
-    "ruff~=0.12",
+    "ruff~=0.16",
 ]
 lint = [
-    "ruff~=0.12",
-    "codespell~=2.2",
-    "shellcheck-py~=0.9.0",
+    "codespell~=2.4",
+    "ruff~=0.16",
 ]
-unit = [
-    "pytest~=9.0",
-    "pytest-mock~=3.11",
-    "coverage[toml]~=7.2",
-    "parameterized~=0.9.0",
-]
-integration = [
-    "pytest~=9.0",
-    "juju~=3.6",
-    "mysql-connector-python~=9.1",
-    "tenacity~=8.2",
-    "boto3~=1.28",
-    "pyyaml~=6.0",
-    "urllib3~=2.0",
+test = [
     "allure-pytest~=2.13",
     "allure-pytest-default-results~=0.1.2",
+    "boto3~=1.28",
     "cryptography~=50.0",
     "jubilant~=1.4.0",
+    "juju~=3.6",
+    "mysql-connector-python~=9.1.0",
+    "pytest~=9.0",
+    "pyyaml~=6.0",
+    "tenacity~=8.2",
+    "urllib3~=2.0",
     "tomli~=2.3",
     "tomli-w~=1.2",
 ]
-build-refresh-version = [
-    "charm-refresh-build-version~=0.4.0"
-]
 
+# Packaging tools configuration
 [tool.poetry]
 package-mode = false
 requires-poetry = ">=2.2.0"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# This is mandatory to make charmcraftlocal trigger the tagging behavior.
-# https://github.com/canonical/charmcraftlocal/blob/v0.3.4/charmcraftlocal/_main.py#L259
-common = {path = "../common", develop = true}
+# The following dependencies have been copied from the single-kernel
+# machines extra section, given charmcraftlocal lack of support
+# for the extra section.
+charmlibs-snap = { version = "^1.0" }
+python_hosts = { version = "^1.0" }
+single-kernel-mysql = { path = "../common", develop = true }
+
+[tool.poetry.group.build]
+optional = true
 
 [tool.poetry.group.format]
 optional = true
@@ -76,67 +51,50 @@ optional = true
 [tool.poetry.group.lint]
 optional = true
 
-[tool.poetry.group.build-refresh-version]
+[tool.poetry.group.test]
 optional = true
-
-[tool.coverage.run]
-branch = true
-
-[tool.coverage.report]
-show_missing = true
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-log_cli_level = "INFO"
 
 # Linting tools configuration
 [tool.ruff]
-# preview and explicit preview are enabled for CPY001
 preview = true
+line-length = 100
 target-version = "py312"
-src = ["src", "."]
-line-length = 99
+src = ["src"]
 
 [tool.ruff.lint]
 explicit-preview-rules = true
 select = [
-  "A",
-  "E",
-  "W",
-  "F",
-  "C",
-  "N",
-  "D",
-  "I",
-  "B",
-  "CPY001",
-  "RUF",
-  "S",
-  "SIM",
-  "UP",
-  "TC",
+    "A",      # Enable flake8-builtins
+    "C",      # Enable mccabe
+    "D",      # Enable pydocstyle
+    "E",      # Enable pycodestyle errors
+    "W",      # Enable pycodestyle warnings
+    "F",      # Enable pyflakes
+    "I",      # Enable isort
+    "N",      # Enable PEP8 naming
+    "S608",   # Enable flake8-bandit query injection
+    "CPY001", # Enable copyright notice check
 ]
 ignore = [
-  "D107", # Ignore D107 Missing docstring in __init__
-  "E501", # Ignore E501 Line too long
+    "A001",   # Ignore A001 Variable shadowing a Python builtin
+    "D100",   # Ignore D100 Missing docstring in public module
+    "D104",   # Ignore D104 Missing docstring in __init__
+    "E731",   # Ignore E731 Do not assign a `lambda` expression
+    "F541",   # Ignore F541 F-strings without and placeholders
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
-    "D104", # Ignore D104 Missing docstring in __init__.py
-    "F403", # Ignore F403 Unable to detect undefined names
+    "F401",   # Ignore F401 Imported but unused
+    "F403",   # Ignore F403 Unable to detect undefined names
 ]
 "tests/*" = [
-  "D1",
-  "D417",
-  # Asserts
-  "B011",
-  # Disable security checks for tests
-  "S",
+    "S",      # Disable security checks
+    "D1",     # Disable docstring checks
+    "E501",   # Disable line-length checks
 ]
 
 [tool.ruff.lint.flake8-copyright]
-# Check for properly formatted copyright header in each file
 author = "Canonical Ltd."
 notice-rgx = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+"
 
