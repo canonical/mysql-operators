@@ -192,6 +192,7 @@ linkcheck_ignore = [
     "https://dev.mysql.com/*",
     "https://www.mysql.com/*",
     "https://www.terraform.io/*",
+    "https://asciinema.org/*"
 ]
 
 # A regex list of URLs where anchors are ignored by 'make linkcheck'
