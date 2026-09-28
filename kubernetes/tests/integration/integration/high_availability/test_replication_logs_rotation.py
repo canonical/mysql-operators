@@ -9,20 +9,13 @@ from pathlib import Path
 
 import jubilant
 from jubilant import Juju
-from tenacity import (
-    Retrying,
-    stop_after_attempt,
-    wait_fixed,
-)
-
-from constants import CONTAINER_NAME, MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
 
 from ... import architecture
+from ...constants import CONTAINER_NAME, MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
 from ...helpers_ha import (
     CHARM_METADATA,
     get_app_leader,
     get_mysql_instance_label,
-    get_unit_process_id,
     load_mysql_test_data,
     wait_for_apps_status,
 )
@@ -75,24 +68,13 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 
 def test_log_rotation(juju: Juju) -> None:
     """Test the log rotation of text files."""
-    log_types = ["audit", "error"]
-
     mysql_app_leader = get_app_leader(juju, MYSQL_APP_NAME)
-    mysql_app_leader_label = get_mysql_instance_label(mysql_app_leader)
-
-    logging.info("Overwriting the log rotate dispatcher script")
-    write_unit_file(
-        juju=juju,
-        unit_name=mysql_app_leader,
-        container="charm",
-        file_path=f"/var/lib/juju/agents/unit-{mysql_app_leader_label}/charm/scripts/log_rotate_dispatcher.py",
-        file_data="exit(0)\n",
-    )
+    mysql_log_types = ["audit", "error"]
 
     logging.info("Stopping the log rotate dispatcher")
     stop_log_rotate_dispatcher(juju, mysql_app_leader)
 
-    for log_type in log_types:
+    for log_type in mysql_log_types:
         archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
 
         logging.info("Removing existing archive directories")
@@ -116,7 +98,7 @@ def test_log_rotation(juju: Juju) -> None:
     start_log_rotate_dispatcher(juju, mysql_app_leader)
 
     logging.info("Ensuring log files were rotated")
-    for log_type in log_types:
+    for log_type in mysql_log_types:
         active_log_file_data = read_unit_file(
             juju=juju,
             unit_name=mysql_app_leader,
@@ -240,11 +222,11 @@ def write_unit_file(juju: Juju, unit_name: str, container: str, file_path: str, 
 
 def start_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
     """Start the logrotate dispatcher."""
-    pod_name = get_mysql_instance_label(unit_name)
+    unit_label = get_mysql_instance_label(unit_name)
 
     dispatch_cmd = "juju-exec"
-    dispatch_hook = "hooks/rotate_mysql_logs"
-    dispatch_path = f"/var/lib/juju/agents/unit-{pod_name}/charm/dispatch"
+    dispatch_hook = "hooks/log_rotation"
+    dispatch_path = f"/var/lib/juju/agents/unit-{unit_label}/charm/dispatch"
 
     juju.ssh(
         command=f"{dispatch_cmd} JUJU_DISPATCH_PATH={dispatch_hook} {dispatch_path}",
@@ -255,13 +237,6 @@ def start_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
 def stop_log_rotate_dispatcher(juju: Juju, unit_name: str) -> None:
     """Stop the logrotate dispatcher."""
     juju.exec(
-        command="pkill -f log_rotate_dispatcher.py --signal SIGKILL",
+        command="pkill -f logrotate/main.py --signal SIGKILL",
         unit=unit_name,
     )
-
-    # Hold execution until process is stopped
-    for attempt in Retrying(stop=stop_after_attempt(45), wait=wait_fixed(2)):
-        with attempt:
-            process = "/usr/bin/python3 scripts/log_rotate_dispatcher.py"
-            if get_unit_process_id(juju, unit_name, process) is not None:
-                raise Exception("Failed to stop the flush_mysql_logs logrotate process")
