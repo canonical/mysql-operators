@@ -10,6 +10,7 @@ from charms.mysql.v0.mysql import (
     MySQLConfigureMySQLUsersError,
     MySQLCreateClusterError,
     MySQLInitializeJujuOperationsTableError,
+    MySQLRebootFromCompleteOutageError,
 )
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.testing import Harness
@@ -64,6 +65,186 @@ class TestCharm(unittest.TestCase):
     ):
         self.charm.on.install.emit()
 
+        self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
+
+    @patch("mysql_vm_helpers.MySQL.is_cluster_in_no_quorum", return_value=True)
+    @patch("charm.MySQLOperatorCharm._all_peers_reachable", return_value=False)
+    @patch(
+        "charm.MySQLOperatorCharm.cluster_initialized",
+        new_callable=PropertyMock(return_value=True),
+    )
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
+    @patch("mysql_vm_helpers.MySQL.get_member_state")
+    @patch("mysql_vm_helpers.MySQL.get_member_role")
+    @patch("charm.is_volume_mounted", return_value=True)
+    @patch("mysql_vm_helpers.MySQL.reboot_from_complete_outage")
+    @patch("mysql_vm_helpers.MySQL.stop_group_replication")
+    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
+    def test_on_update_status_online_no_quorum_skips_when_peers_unreachable(
+        self,
+        _update_etc_hosts,
+        _reconcile_binlogs_collection,
+        _stop_group_replication,
+        _reboot_from_complete_outage,
+        _is_volume_mounted,
+        _get_member_role,
+        _get_member_state,
+        _active_status_message,
+        _unit_initialized,
+        _cluster_initialized,
+        _all_peers_reachable,
+        _is_cluster_no_quorum,
+    ):
+        """When ONLINE with no quorum and peers unreachable, recovery is skipped."""
+        # _all_peers_reachable patched to return False
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.app.name,
+            {
+                "cluster-name": "test-cluster",
+                "cluster-set-domain-name": "test-domain",
+            },
+        )
+        self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
+        self.harness.set_leader()
+        self.charm.on.config_changed.emit()
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.unit.name,
+            {
+                "member-role": "primary",
+                "member-state": "online",
+            },
+        )
+        _get_member_role.return_value = "PRIMARY"
+        _get_member_state.return_value = "ONLINE"
+
+        self.charm.on.update_status.emit()
+
+        _stop_group_replication.assert_not_called()
+        _reboot_from_complete_outage.assert_not_called()
+
+    @patch("mysql_vm_helpers.MySQL.is_cluster_in_no_quorum", return_value=True)
+    @patch("charm.MySQLOperatorCharm._all_peers_reachable", return_value=True)
+    @patch(
+        "charm.MySQLOperatorCharm.cluster_initialized",
+        new_callable=PropertyMock(return_value=True),
+    )
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
+    @patch("mysql_vm_helpers.MySQL.get_member_state")
+    @patch("mysql_vm_helpers.MySQL.get_member_role")
+    @patch("charm.is_volume_mounted", return_value=True)
+    @patch("mysql_vm_helpers.MySQL.reboot_from_complete_outage")
+    @patch("mysql_vm_helpers.MySQL.stop_group_replication")
+    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
+    def test_on_update_status_online_no_quorum_leader_reboots(
+        self,
+        _update_etc_hosts,
+        _reconcile_binlogs_collection,
+        _stop_group_replication,
+        _reboot_from_complete_outage,
+        _is_volume_mounted,
+        _get_member_role,
+        _get_member_state,
+        _active_status_message,
+        _unit_initialized,
+        _cluster_initialized,
+        _all_peers_reachable,
+        _is_cluster_no_quorum,
+    ):
+        """When ONLINE with no quorum and leader, reboots from complete outage."""
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.app.name,
+            {
+                "cluster-name": "test-cluster",
+                "cluster-set-domain-name": "test-domain",
+            },
+        )
+        self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
+        self.harness.set_leader()
+        self.charm.on.config_changed.emit()
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.unit.name,
+            {
+                "member-role": "primary",
+                "member-state": "online",
+            },
+        )
+        _get_member_role.return_value = "PRIMARY"
+        _get_member_state.return_value = "ONLINE"
+
+        self.charm.on.update_status.emit()
+
+        _stop_group_replication.assert_called_once()
+        _reboot_from_complete_outage.assert_called_once()
+
+    @patch("mysql_vm_helpers.MySQL.is_cluster_in_no_quorum", return_value=True)
+    @patch("charm.MySQLOperatorCharm._all_peers_reachable", return_value=True)
+    @patch(
+        "charm.MySQLOperatorCharm.cluster_initialized",
+        new_callable=PropertyMock(return_value=True),
+    )
+    @patch("charm.MySQLOperatorCharm.unit_initialized", return_value=True)
+    @patch("charms.mysql.v0.mysql.MySQLCharmBase.active_status_message", return_value="")
+    @patch("mysql_vm_helpers.MySQL.get_member_state")
+    @patch("mysql_vm_helpers.MySQL.get_member_role")
+    @patch("charm.is_volume_mounted", return_value=True)
+    @patch(
+        "mysql_vm_helpers.MySQL.reboot_from_complete_outage",
+        side_effect=MySQLRebootFromCompleteOutageError,
+    )
+    @patch("mysql_vm_helpers.MySQL.stop_group_replication")
+    @patch("mysql_vm_helpers.MySQL.reconcile_binlogs_collection", return_value=True)
+    @patch("services.observers.IPAddressObserver.update_etc_hosts", return_value=True)
+    def test_on_update_status_online_no_quorum_reboot_fails(
+        self,
+        _update_etc_hosts,
+        _reconcile_binlogs_collection,
+        _stop_group_replication,
+        _reboot_from_complete_outage,
+        _is_volume_mounted,
+        _get_member_role,
+        _get_member_state,
+        _active_status_message,
+        _unit_initialized,
+        _cluster_initialized,
+        _all_peers_reachable,
+        _is_cluster_no_quorum,
+    ):
+        """When reboot from complete outage fails, unit enters blocked status."""
+        # reboot_from_complete_outage patched to return error
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.app.name,
+            {
+                "cluster-name": "test-cluster",
+                "cluster-set-domain-name": "test-domain",
+            },
+        )
+        self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
+        self.harness.set_leader()
+        self.charm.on.config_changed.emit()
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.unit.name,
+            {
+                "member-role": "primary",
+                "member-state": "online",
+            },
+        )
+        _get_member_role.return_value = "PRIMARY"
+        _get_member_state.return_value = "ONLINE"
+
+        self.charm.on.update_status.emit()
+
+        _stop_group_replication.assert_called_once()
+        _reboot_from_complete_outage.assert_called_once()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
 
     @pytest.mark.usefixtures("without_juju_secrets")

@@ -15,6 +15,44 @@ from tenacity import retry, stop_after_delay, wait_fixed
 logger = logging.getLogger(__name__)
 
 
+def _build_no_proxy(internal_proxy: str, internal_domain: str) -> str:
+    """Build the NO_PROXY value, always including the internal Kubernetes domain."""
+    internal_proxy_entries = {
+        entry for entry in (raw.strip() for raw in internal_proxy.split(",")) if entry
+    }
+    internal_proxy_entries.add(internal_domain)
+    # sorted(): set iteration order depends on PYTHONHASHSEED, which Juju
+    # randomizes per hook process
+    return ",".join(sorted(internal_proxy_entries))
+
+
+def _build_proxy_environment(
+    external_http_proxy: str,
+    external_https_proxy: str,
+    internal_proxy: str,
+    internal_domain: str,
+) -> dict[str, str]:
+    """Build the proxy environment dict from the individual proxy values.
+
+    When any HTTP or HTTPS proxy is configured, the internal Kubernetes
+    domain is always included in NO_PROXY so that pod-to-pod traffic is
+    never routed through a corporate proxy.
+    """
+    environment = {}
+
+    if external_http_proxy:
+        environment["HTTP_PROXY"] = external_http_proxy
+    if external_https_proxy:
+        environment["HTTPS_PROXY"] = external_https_proxy
+    if internal_proxy:
+        environment["NO_PROXY"] = internal_proxy
+
+    if external_http_proxy or external_https_proxy:
+        environment["NO_PROXY"] = _build_no_proxy(internal_proxy, internal_domain)
+
+    return environment
+
+
 def generate_pebble_layer_env() -> dict[str, str]:
     """Generates the pebble layer environment.
 
@@ -26,30 +64,24 @@ def generate_pebble_layer_env() -> dict[str, str]:
     is part of the mysqld pebble layer, and any difference makes
     `_reconcile_pebble_layer` consider the layer changed and restart mysqld.
     """
-    external_http_proxy = os.getenv("JUJU_CHARM_HTTP_PROXY", "")
-    external_https_proxy = os.getenv("JUJU_CHARM_HTTPS_PROXY", "")
-    internal_proxy = os.getenv("JUJU_CHARM_NO_PROXY", "")
+    return _build_proxy_environment(
+        os.getenv("JUJU_CHARM_HTTP_PROXY", ""),
+        os.getenv("JUJU_CHARM_HTTPS_PROXY", ""),
+        os.getenv("JUJU_CHARM_NO_PROXY", ""),
+        ".svc.cluster.local",
+    )
 
-    internal_domain = ".svc.cluster.local"
-    environment = {}
 
-    if external_http_proxy:
-        environment["HTTP_PROXY"] = external_http_proxy
-    if external_https_proxy:
-        environment["HTTPS_PROXY"] = external_https_proxy
-    if internal_proxy:
-        environment["NO_PROXY"] = internal_proxy
+def _password_meets_rules(password: str) -> bool:
+    """Check that a password meets MySQL password validation rules.
 
-    if external_http_proxy or external_https_proxy:
-        internal_proxy_entries = {
-            entry for entry in (raw.strip() for raw in internal_proxy.split(",")) if entry
-        }
-        internal_proxy_entries.add(internal_domain)
-        # sorted(): set iteration order depends on PYTHONHASHSEED, which Juju
-        # randomizes per hook process
-        environment["NO_PROXY"] = ",".join(sorted(internal_proxy_entries))
-
-    return environment
+    Requires at least one lowercase letter, one uppercase letter, and one digit.
+    """
+    return all((
+        any(c.islower() for c in password),
+        any(c.isupper() for c in password),
+        any(c.isdigit() for c in password),
+    ))
 
 
 def generate_random_password(length: int) -> str:
@@ -61,7 +93,11 @@ def generate_random_password(length: int) -> str:
         A randomly generated string intended to be used as a password.
     """
     choices = string.ascii_letters + string.digits
-    return "".join([secrets.choice(choices) for _ in range(length)])
+    # Might seem risky but in fact the probability that a password doesn't pass these checks is low
+    while True:
+        password = "".join(secrets.choice(choices) for _ in range(length))
+        if _password_meets_rules(password):
+            return password
 
 
 def split_mem(mem_str) -> tuple:
