@@ -8,12 +8,7 @@ import re
 import jubilant
 from jubilant import Juju
 
-from constants import (
-    MYSQL_DATA_DIR,
-    MYSQL_LOGS_DIR,
-    MYSQL_TEMP_DIR,
-)
-
+from ..constants import MYSQL_DATA_DIR, MYSQL_LOGS_DIR, MYSQL_TEMP_DIR
 from ..helpers import generate_random_string
 from ..helpers_ha import (
     MINUTE_SECS,

@@ -14,8 +14,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
-
+from ...constants import MYSQL_ARCH_DIR, MYSQL_LOGS_DIR
 from ...helpers_ha import (
     get_app_leader,
     get_unit_process_id,
@@ -77,7 +76,7 @@ def test_log_rotation(juju: Juju) -> None:
     stop_unit_flush_logs_job(juju, mysql_app_leader)
 
     for log_type in log_types:
-        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCH_DIR}/archive_{log_type}"
 
         logging.info("Removing existing archive directories")
         delete_unit_file(juju, mysql_app_leader, archive_log_dir)
@@ -102,7 +101,7 @@ def test_log_rotation(juju: Juju) -> None:
         )
         assert f"{log_type} content" not in active_log_file_data
 
-        archive_log_dir = f"{MYSQL_ARCHIVE_DIR}/archive_{log_type}"
+        archive_log_dir = f"{MYSQL_ARCH_DIR}/archive_{log_type}"
         archive_log_files_listed = list_unit_files(juju, mysql_app_leader, archive_log_dir)
 
         assert len(archive_log_files_listed) == 1
