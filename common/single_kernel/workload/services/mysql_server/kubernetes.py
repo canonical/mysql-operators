@@ -3,8 +3,8 @@
 
 import logging
 import os
+import time
 
-import tenacity
 from ops.model import Container
 from ops.pebble import ChangeError, Layer
 
@@ -189,19 +189,22 @@ class K8sServerService(BaseServerService):
 
     def _wait_for_connection(self) -> None:
         """Wait for service connection."""
-        for attempt in tenacity.Retrying(
-            stop=tenacity.stop_after_delay(120),
-            wait=tenacity.wait_fixed(2),
-            reraise=True,
-        ):
-            with attempt:
-                self._system.shell.execute_sync([
-                    f"{self._system.paths.binary('mysqladmin')}",
-                    f"ping",
-                    f"--host=127.0.0.1",
-                    f"--port={self.port}",
-                    f"--silent",
-                ])
+        time.sleep(10)
+
+        # TODO: Un-comment when `charmed-mysql.mysqladmin` is available
+        # for attempt in tenacity.Retrying(
+        #     stop=tenacity.stop_after_delay(120),
+        #     wait=tenacity.wait_fixed(2),
+        #     reraise=True,
+        # ):
+        #     with attempt:
+        #         self._system.shell.execute_sync([
+        #             f"{self._system.paths.binary('mysqladmin')}",
+        #             f"ping",
+        #             f"--host=127.0.0.1",
+        #             f"--port={self.port}",
+        #             f"--silent",
+        #         ])
 
     def install(self, revision: str | None = None) -> None:
         """Install the service binaries."""
