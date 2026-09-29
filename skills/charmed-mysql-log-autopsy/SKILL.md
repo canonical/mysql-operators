@@ -8,13 +8,15 @@ description: >
   revisions and versions from artifacts, reconstructs hook/event timelines,
   and maps evidence to charm source code to reach a root cause. Use when the
   user shares Charmed MySQL logs, a crashdump, a Test Observer
-  link/execution ID, or asks "what happened here / what does this log mean".
-  Not for live debugging of a reachable deployment (prefer interactive
+  link/execution ID, pastes a bare Python traceback from a charm unit, or
+  asks "what happened here / what does this log mean". Also for judging
+  whether a bug report or AI-triaged regression claim is credible, by git
+  archaeology over the charm source. Not for live debugging of a reachable deployment (prefer interactive
   inspection skills) or for CI/PR triage workflows (prefer nightly-triage).
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
-  version: "0.1.0"
+  version: "0.1.1"
   upstream-repo: canonical/mysql-operators
 ---
 

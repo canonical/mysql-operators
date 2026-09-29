@@ -3,6 +3,10 @@
 Reference for `charmed-mysql-juju-inspect` steps 4 and 6. Who's who inside
 a Charmed MySQL server, and which users make good reproducers.
 
+CLI mechanics around these users (how to fetch credentials via actions and
+relations, the 60s client-side action wait, `--container` for `juju ssh`)
+are owned by the `juju-cli` skill (`skills/juju-cli/SKILL.md`).
+
 ## Internal charm users
 
 | User | Purpose | Notes |
