@@ -5,6 +5,10 @@ state → commands → expected observations → restore. All assume k8s charm
 `mysql-k8s` in model `<m>`; adapt app names/units. For the VM charm, swap
 pebble for snap/systemd (see juju-inspect machines-topology).
 
+CLI-level traps in these recipes (exit 137 from `pkill -f` via `juju ssh`,
+wrong-container ssh, the 60s action-wait) are owned by the `juju-cli` skill
+(`skills/juju-cli/SKILL.md`) — read it before adapting any recipe.
+
 ## Recipe 1 — Control-plane failure for error-path/log verification
 
 **Goal**: force `get-cluster-status` (or any charm↔mysqld path) to hard-fail
