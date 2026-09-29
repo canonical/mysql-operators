@@ -1,11 +1,11 @@
 ---
 myst:
   html_meta:
-    description: "Release notes for Charmed MySQL K8s revisions 444-447 (MySQL 8.0.45)"
+    description: "Release notes for Charmed MySQL K8s revisions 457–459 (MySQL 8.0.45)"
 ---
 
-(revisions-444-447)=
-# Revisions 444, 446, 447
+(revisions-457-459)=
+# Revisions 457, 458, 459
 
 A new stable revision of Charmed MySQL for K8s has been published in the `8.0/stable` channel on [Charmhub](https://charmhub.io/mysql-k8s?channel=8.0/stable).
 
@@ -13,14 +13,11 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 
 | Architecture | Charm revision  | MySQL version | Minimum Juju version |
 | ------------ | --------------- |-------------- |----------------------|
-|   `amd64`    | 444             |  8.0.45       |        3.5.4+        |
-|   `arm64`    | 447             |  8.0.45       |        3.5.4+        |
-|   `s390x`    | 446             |  8.0.45       |        3.5.4+        |
+|   `amd64`    | 459             |  8.0.45       |        3.5.4+        |
+|   `arm64`    | 458             |  8.0.45       |        3.5.4+        |
+|   `s390x`    | 457             |  8.0.45       |        3.5.4+        |
 
 If you are jumping over several stable revisions, make sure to check {ref}`previous release notes <release-notes-k8s>` before upgrading to this revision.
-
-OCI image resources:
-- `mysql-image=ghcr.io/canonical/charmed-mysql@sha256:824b302484f83dbbd2cf4506f620a48e53f20053f6ff3c57aa6123e121705bfc`
 
 ## Highlights
 
@@ -50,4 +47,4 @@ OCI image resources:
 ## New Contributors
 * @wallyworld made their first contribution in https://github.com/canonical/mysql-operators/pull/458
 
-**Full Changelog**: https://github.com/canonical/mysql-operators/compare/mysql-k8s/rev423...mysql-k8s/rev444
+**Full Changelog**: https://github.com/canonical/mysql-operators/compare/mysql-k8s/rev423...mysql-k8s/rev459
