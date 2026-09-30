@@ -7,13 +7,57 @@ from unittest.mock import call, patch
 from scripts.log_rotate_dispatcher import dispatch, main
 
 
-def test_dispatch_invokes_juju_exec_with_rotate_event():
-    with patch("subprocess.run") as _run:
+def test_dispatch_prefers_juju_exec_over_juju_run():
+    with (
+        patch("scripts.log_rotate_dispatcher.shutil.which", side_effect=["/usr/bin/juju-run", "/usr/bin/juju-exec"]) as _which,
+        patch("subprocess.run") as _run,
+    ):
+        dispatch("mysql-k8s/0", "/charm")
+
+    # juju-exec is preferred when both are available.
+    _which.assert_any_call("juju-run")
+    _which.assert_any_call("juju-exec")
+    _run.assert_called_once_with(
+        [
+            "/usr/bin/juju-exec",
+            "-u",
+            "mysql-k8s/0",
+            "JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs",
+            "/charm/dispatch",
+        ],
+        check=True,
+    )
+
+
+def test_dispatch_falls_back_to_juju_run_when_exec_absent():
+    with (
+        patch("scripts.log_rotate_dispatcher.shutil.which", side_effect=["/usr/bin/juju-run", None]),
+        patch("subprocess.run") as _run,
+    ):
         dispatch("mysql-k8s/0", "/charm")
 
     _run.assert_called_once_with(
         [
-            "/usr/bin/juju-exec",
+            "/usr/bin/juju-run",
+            "-u",
+            "mysql-k8s/0",
+            "JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs",
+            "/charm/dispatch",
+        ],
+        check=True,
+    )
+
+
+def test_dispatch_uses_empty_string_when_no_juju_binary_found():
+    with (
+        patch("scripts.log_rotate_dispatcher.shutil.which", side_effect=[None, None]),
+        patch("subprocess.run") as _run,
+    ):
+        dispatch("mysql-k8s/0", "/charm")
+
+    _run.assert_called_once_with(
+        [
+            "",
             "-u",
             "mysql-k8s/0",
             "JUJU_DISPATCH_PATH=hooks/rotate_mysql_logs",
