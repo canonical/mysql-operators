@@ -1,11 +1,11 @@
 ---
 myst:
   html_meta:
-    description: "Release notes for Charmed MySQL VM revisions 529–535 (MySQL 8.0.45): point-in-time backup recovery and Juju network spaces support added."
+    description: "Release notes for Charmed MySQL VM revisions 539–541 (MySQL 8.0.45): point-in-time backup recovery and Juju network spaces support added."
 ---
 
-(revisions-529-535)=
-# Revisions 529, 531, 535
+(revisions-539-541)=
+# Revisions 539, 540, 541
 
 A new revision of Charmed MySQL has been published in the `8.0/stable` channel on [Charmhub](https://charmhub.io/mysql?channel=8.0/stable).
 
@@ -13,9 +13,9 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 
 | Architecture | Charm revision  | MySQL version | Minimum Juju version |
 | ------------ | --------------- |-------------- |----------------------|
-|   `amd64`    | 529             |  8.0.45       |        3.4.3+        |
-|   `arm64`    | 535             |  8.0.45       |        3.4.3+        |
-|   `s390x`    | 531             |  8.0.45       |        3.4.3+        |
+|   `amd64`    | 541             |  8.0.45       |        3.4.3+        |
+|   `arm64`    | 540             |  8.0.45       |        3.4.3+        |
+|   `s390x`    | 539             |  8.0.45       |        3.4.3+        |
 
 If you are jumping over several stable revisions, make sure to check {ref}`previous release notes <release-notes-vm>` before upgrading to this revision.
 
@@ -71,4 +71,4 @@ independently from juju `update-status` hook.
 * @carlcsaposs-canonical made their first contribution in https://github.com/canonical/mysql-operators/pull/278
 * @wallyworld made their first contribution in https://github.com/canonical/mysql-operators/pull/458
 
-**Full Changelog**: https://github.com/canonical/mysql-operators/compare/mysql/rev442...mysql/rev529
+**Full Changelog**: https://github.com/canonical/mysql-operators/compare/mysql/rev442...mysql/rev541
