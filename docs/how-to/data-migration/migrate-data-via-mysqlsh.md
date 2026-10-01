@@ -79,13 +79,13 @@ To deploy a new MySQL charm database:
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy mysql --channel 8.4/edge -n 3
+    juju deploy mysql --channel 8.4/stable -n 3
 ```
 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju deploy mysql-k8s --channel 8.4/edge -n 3
+    juju deploy mysql-k8s --channel 8.4/stable -n 3
 ```
 ````
 

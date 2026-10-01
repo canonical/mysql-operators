@@ -148,9 +148,9 @@ Check the status:
 Model    Controller  Cloud/Region     Version  SLA          Timestamp
 welcome  gce         google/us-east1  3.6.14    unsupported  23:49:56+02:00
 
-App              Version          Status  Scale  Charm            Channel        Rev  Exposed  Message
-data-integrator                   active      1  data-integrator  latest/stable   41  no       
-mysql            8.4.7            active      1  mysql            8.4/edge            no       
+App              Version  Status  Scale  Charm            Channel        Rev  Exposed  Message
+data-integrator           active      1  data-integrator  latest/stable   41  no       
+mysql            8.4.10   active      1  mysql            8.4/stable          no       
 
 Unit                Workload  Agent  Machine  Public address   Ports           Message
 data-integrator/0*  active    idle   1        104.196.104.248                  
@@ -183,7 +183,7 @@ mysql:
   endpoints: 10.142.0.21:3306
   password: zDPalkEi1Uaj26oDSYjCoWYl
   username: relation-4
-  version: 8.4.7
+  version: 8.4.10
 ok: "True"
 ```
 
@@ -215,8 +215,8 @@ Once exposed, you can connect your database using the same credentials as above.
 ```shell
 > juju status mysql
 ...
-Unit                Workload  Agent  Machine  Public address   Ports           Message
-mysql/0*            active    idle   0        34.138.135.20    3306,33060/tcp  Primary
+Unit      Workload  Agent  Machine  Public address   Ports           Message
+mysql/0*  active    idle   0        34.138.135.20    3306,33060/tcp  Primary
 ...
 
 > mysql -h 34.138.135.20 -P 3306 -u relation-4 -pzDPalkEi1Uaj26oDSYjCoWYl test123

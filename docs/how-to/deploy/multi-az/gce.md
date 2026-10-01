@@ -49,8 +49,8 @@ After a successful deployment, `juju status` will show an active application:
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
 mymodel  gce         google/us-east1  3.6.14     unsupported  00:59:53+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7            active      3  mysql  8.4/edge         no       
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active      3  mysql  8.4/stable       no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0   active    idle   0        34.23.202.220   3306,33060/tcp  
@@ -95,8 +95,8 @@ The new MySQL Primary elected automatically:
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
 mymodel  gce         google/us-east1  3.6.14     unsupported  01:03:13+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7            active    2/3  mysql  8.4/edge         no       
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active    2/3  mysql  8.4/stable       no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        34.23.202.220   3306,33060/tcp  Primary
@@ -123,8 +123,8 @@ The command `juju status` shows the machines in a healthy state, but MySQL HA re
 Model    Controller  Cloud/Region     Version    SLA          Timestamp
 mymodel  gce         google/us-east1  3.6.14     unsupported  01:04:42+02:00
 
-App    Version          Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql  8.4.7            active      2  mysql  8.4/edge         no       
+App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
+mysql  8.4.10   active      2  mysql  8.4/stable       no       
 
 Unit      Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*  active    idle   0        34.23.202.220   3306,33060/tcp  Primary
@@ -148,7 +148,7 @@ Model    Controller  Cloud/Region     Version    SLA          Timestamp
 mymodel  gce         google/us-east1  3.6.14     unsupported  01:05:12+02:00
 
 App    Version  Status  Scale  Charm  Channel     Rev  Exposed  Message
-mysql           active    2/3  mysql  8.4/edge         no       
+mysql           active    2/3  mysql  8.4/stable       no       
 
 Unit      Workload  Agent       Machine  Public address  Ports           Message
 mysql/0*  active    idle        0        34.23.202.220   3306,33060/tcp  Primary
