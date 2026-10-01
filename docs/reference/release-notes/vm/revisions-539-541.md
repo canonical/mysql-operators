@@ -23,7 +23,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 ## What's Changed
 
 This revision bumps MySQL version to 8.0.45 and many dependencies.
-Also there are improvements on self healing, by treating new failure modes and trigger self-healing
+Also there are improvements on self-healing, by treating new failure modes and trigger self-healing
 independently from juju `update-status` hook.
 
 ### Features
