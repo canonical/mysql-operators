@@ -31,9 +31,10 @@ def test_main_loops_dispatching_every_120s_until_interrupted():
 
     # Two iterations complete before the second sleep raises.
     assert _dispatch.call_count == 2
-    _dispatch.assert_has_calls(
-        [call("/usr/bin/juju-run", "mysql/0", "/charm"), call("/usr/bin/juju-run", "mysql/0", "/charm")]
-    )
+    _dispatch.assert_has_calls([
+        call("/usr/bin/juju-run", "mysql/0", "/charm"),
+        call("/usr/bin/juju-run", "mysql/0", "/charm"),
+    ])
     assert _sleep.call_count == 2
     _sleep.assert_has_calls([call(120), call(120)])
 
