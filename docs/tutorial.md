@@ -22,13 +22,14 @@ While this tutorial intends to guide you as you deploy Charmed MySQL for the fir
 
 ## Set up the environment
 
-First, we will set up a cloud environment using [Multipass](https://multipass.run/) with [LXD](https://documentation.ubuntu.com/lxd/latest/), [MicroK8s](https://microk8s.io/docs) and [Juju](https://documentation.ubuntu.com/juju/3.6/). This is the quickest and easiest way to get your machine ready for using Charmed MySQL. 
+
+First, we will set up a cloud environment using [Multipass](https://multipass.run/) with [LXD](https://documentation.ubuntu.com/lxd/latest/), [MicroK8s](https://microk8s.io/docs) and [Juju](https://documentation.ubuntu.com/juju/3.6/). This is the quickest and easiest way to get your machine ready for using Charmed MySQL.
 
 To learn about other types of deployment environments and methods (e.g. bootstrapping other clouds, using Terraform), see {ref}`deploy`
 
 (create-multipass-vm)=
 ### Create a Multipass VM
-
+<!--start:multipass-vm-->
 Multipass is a quick and easy way to launch virtual machines running Ubuntu. It uses the [cloud-init](https://cloud-init.io/) standard to install and configure all the necessary parts automatically.
 
 Install Multipass from the [snap store](https://snapcraft.io/multipass):
@@ -68,12 +69,14 @@ Welcome to Ubuntu 26.04.2 LTS (GNU/Linux 7.0.0-63-generic x86_64)
 ```
 
 ```{tip}
-All necessary components have been pre-installed inside VM already, like LXD, MicroK8s and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details. 
+All necessary components have been pre-installed inside VM already, like LXD, MicroK8s and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details.
 ```
+<!--end:multipass-vm-->
 
 ### Set up Juju
+<!--start:set-up-juju-->
 
-Since `my-vm` already has Juju, LXD and MicroK8s installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/). 
+Since `my-vm` already has Juju, LXD and MicroK8s installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/).
 
 We will call our new controller “overlord”, but you can give it any name you’d like:
 
@@ -108,9 +111,9 @@ The controller can work with different [Juju models](https://juju.is/docs/juju/m
 :host: my-vm
 
 juju add-model tutorial
-``` 
+```
 
-You can now view the model you created by running the command [`juju status`](https://juju.is/docs/juju/juju-status). 
+You can now view the model you created by running the command [`juju status`](https://juju.is/docs/juju/juju-status).
 
 `````{tab-set}
 ````{tab-item} VM
@@ -145,10 +148,11 @@ Model "admin/tutorial" is empty.
 ```
 ````
 `````
+<!--end:set-up-juju-->
 
 ## Deploy Charmed MySQL
 
-To deploy Charmed MySQL, run the following command:
+To deploy Charmed MySQL, run the following commands:
 
 `````{tab-set}
 ````{tab-item} VM
@@ -790,7 +794,7 @@ juju integrate data-integrator mysql-k8s
 ````
 `````
 
-Re-integrating generates a new user and password. You can obtain these credentials as before, with the `get-credentials` action, and connect to the database with this new credentials. 
+Re-integrating generates a new user and password. You can obtain these credentials as before, with the `get-credentials` action, and connect to the database with this new credentials.
 
 From here you will see all of your data is still present in the database.
 
@@ -805,7 +809,7 @@ TLS is enabled by integrating Charmed MySQL with the [Self-signed certificates c
 ```{caution}
 **[Self-signed certificates](https://en.wikipedia.org/wiki/Self-signed_certificate) are not recommended for a production environment.**
 
-Check [this guide](https://discourse.charmhub.io/t/11664) for an overview of the TLS certificates charms available. 
+Check [this guide](https://discourse.charmhub.io/t/11664) for an overview of the TLS certificates charms available.
 ```
 
 Before enabling TLS on Charmed MySQL, we must deploy the `self-signed-certificates` charm:
@@ -1001,7 +1005,7 @@ multipass stop my-vm
 If you're done with testing and would like to free up resources on your machine, you can remove the VM entirely.
 
 ```{caution}
-When you remove VM as shown below, you will lose all the data in MySQL and any other applications inside Multipass VM! 
+When you remove the VM as shown below, you will lose all the data in MySQL and any other applications inside the Multipass VM!
 
 For more information, see the docs for [`multipass delete`](https://multipass.run/docs/delete-command).
 ```
