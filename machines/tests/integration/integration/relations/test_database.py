@@ -8,10 +8,8 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import BACKUPS_USERNAME, DB_RELATION_NAME, DEFAULT_PASSWORD_LENGTH
-from utils import generate_random_password
-
-from ...helpers import execute_queries_on_unit
+from ...constants import BACKUPS_USERNAME, DATABASE_PASSWORD_LEN
+from ...helpers import execute_queries_on_unit, generate_random_password
 from ...helpers_ha import (
     MINUTE_SECS,
     get_app_leader,
@@ -30,11 +28,10 @@ logger = logging.getLogger(__name__)
 
 DATABASE_APP_NAME = "mysql"
 APPLICATION_APP_NAME = "mysql-test-app"
-
-APPS = [DATABASE_APP_NAME, APPLICATION_APP_NAME]
-
 ENDPOINT = "database"
 TIMEOUT = 15 * MINUTE_SECS
+
+DATABASE_RELATION_NAME = "database"
 
 
 def test_build_and_deploy(juju: Juju, charm):
@@ -71,7 +68,7 @@ def test_password_rotation(juju: Juju):
     logger.debug("Primary unit detected before password rotation is %s", primary_unit_address)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name)
-    new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
+    new_password = generate_random_password(DATABASE_PASSWORD_LEN)
 
     rotate_mysql_server_credentials(juju, primary_unit_name, password=new_password)
 
@@ -133,12 +130,12 @@ def test_relation_creation(juju: Juju):
     juju.integrate(f"{APPLICATION_APP_NAME}:{ENDPOINT}", f"{DATABASE_APP_NAME}:{ENDPOINT}")
 
     juju.wait(
-        ready=wait_for_apps_status(jubilant.all_active, *APPS),
+        ready=wait_for_apps_status(jubilant.all_active, DATABASE_APP_NAME, APPLICATION_APP_NAME),
         timeout=TIMEOUT,
     )
 
     app_leader = get_app_leader(juju, APPLICATION_APP_NAME)
-    relation_data = get_unit_relation_data(juju, app_leader, DB_RELATION_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, DATABASE_RELATION_NAME)
 
     assert not {"password", "username"} <= set(relation_data["application-data"])
     assert "secret-user" in relation_data["application-data"]
@@ -147,22 +144,32 @@ def test_relation_creation(juju: Juju):
 def test_read_only_endpoints(juju: Juju):
     """Check read-only-endpoints are correctly updated."""
     app_leader = get_app_leader(juju, APPLICATION_APP_NAME)
-    relation_data = get_unit_relation_data(juju, app_leader, DB_RELATION_NAME)
+    relation_data = get_unit_relation_data(juju, app_leader, DATABASE_RELATION_NAME)
     assert relation_data
 
-    check_read_only_endpoints(juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME)
+    check_read_only_endpoints(
+        juju=juju,
+        app_name=DATABASE_APP_NAME,
+        relation_name=DATABASE_RELATION_NAME,
+    )
 
     # increase the number of units
     scale_app_units(juju, DATABASE_APP_NAME, 4)
-    check_read_only_endpoints(juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME)
+    check_read_only_endpoints(
+        juju=juju,
+        app_name=DATABASE_APP_NAME,
+        relation_name=DATABASE_RELATION_NAME,
+    )
 
     # decrease the number of units
     scale_app_units(juju, DATABASE_APP_NAME, 2)
 
     # wait for the update of the endpoints
     juju.wait(
-        ready=lambda status: check_read_only_endpoints(
-            juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME
+        ready=lambda _: check_read_only_endpoints(
+            juju=juju,
+            app_name=DATABASE_APP_NAME,
+            relation_name=DATABASE_RELATION_NAME,
         ),
         timeout=5 * MINUTE_SECS,
     )
@@ -175,8 +182,10 @@ def test_read_only_endpoints(juju: Juju):
 
     # wait for the update of the endpoints
     juju.wait(
-        ready=lambda status: check_read_only_endpoints(
-            juju, app_name=DATABASE_APP_NAME, relation_name=DB_RELATION_NAME
+        ready=lambda _: check_read_only_endpoints(
+            juju=juju,
+            app_name=DATABASE_APP_NAME,
+            relation_name=DATABASE_RELATION_NAME,
         ),
         timeout=5 * MINUTE_SECS,
     )

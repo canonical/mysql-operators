@@ -9,9 +9,8 @@ import time
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME
-
 from ... import architecture
+from ...constants import CONTAINER_NAME
 from ...helpers_ha import (
     CHARM_METADATA,
     get_app_leader,

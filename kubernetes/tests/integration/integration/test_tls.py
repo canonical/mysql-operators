@@ -7,8 +7,11 @@ import logging
 import jubilant
 from jubilant import Juju
 
-from constants import REPLICATION_USERNAME
-
+from ..constants import (
+    REPLICATION_USERNAME,
+    TLS_CLIENT_RELATION,
+    TLS_PEER_RELATION,
+)
 from ..helpers import is_connection_possible
 from ..helpers_ha import (
     CHARM_METADATA,
@@ -97,14 +100,14 @@ def test_enable_tls(juju: Juju) -> None:
 
     # Relate with TLS charm
     logger.info("Relate to TLS operator")
-    juju.integrate(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.integrate(f"{APP_NAME}:{TLS_CLIENT_RELATION}", f"{TLS_APP_NAME}:certificates")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
         timeout=TIMEOUT,
         delay=5,
     )
 
-    juju.integrate(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.integrate(f"{APP_NAME}:{TLS_PEER_RELATION}", f"{TLS_APP_NAME}:certificates")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
         timeout=TIMEOUT,
@@ -126,8 +129,8 @@ def test_enable_tls(juju: Juju) -> None:
 
     # test for ca presence in a given unit
     logger.info("Assert TLS files exists")
-    assert get_unit_relation_data(juju, app_units[0], "client-certificates")
-    assert get_unit_relation_data(juju, app_units[0], "peer-certificates")
+    assert get_unit_relation_data(juju, app_units[0], TLS_CLIENT_RELATION)
+    assert get_unit_relation_data(juju, app_units[0], TLS_PEER_RELATION)
 
 
 def test_disable_tls(juju: Juju) -> None:
@@ -135,14 +138,14 @@ def test_disable_tls(juju: Juju) -> None:
     app_units = get_app_units(juju, APP_NAME)
 
     logger.info("Removing relation")
-    juju.remove_relation(f"{APP_NAME}:client-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.remove_relation(f"{APP_NAME}:{TLS_CLIENT_RELATION}", f"{TLS_APP_NAME}:certificates")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
         timeout=TIMEOUT,
         delay=5,
     )
 
-    juju.remove_relation(f"{APP_NAME}:peer-certificates", f"{TLS_APP_NAME}:certificates")
+    juju.remove_relation(f"{APP_NAME}:{TLS_PEER_RELATION}", f"{TLS_APP_NAME}:certificates")
     juju.wait(
         ready=wait_for_apps_status(jubilant.all_active, APP_NAME, TLS_APP_NAME),
         timeout=TIMEOUT,

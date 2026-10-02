@@ -15,9 +15,8 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import CONTAINER_NAME, MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
-
 from ... import architecture
+from ...constants import CONTAINER_NAME, MYSQL_ARCHIVE_DIR, MYSQL_LOGS_DIR
 from ...helpers_ha import (
     CHARM_METADATA,
     get_app_leader,

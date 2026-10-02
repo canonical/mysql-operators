@@ -13,12 +13,6 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import (
-    CHARMED_MYSQL_SNAP_NAME,
-    CHARMED_MYSQLD_EXPORTER_SERVICE,
-    MYSQL_EXPORTER_PORT,
-)
-
 from ...helpers_ha import (
     get_app_units,
     get_unit_ip,
@@ -30,6 +24,10 @@ MYSQL_APP_NAME = "mysql"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
 
 MINUTE_SECS = 60
+
+MYSQL_SNAP_NAME = "charmed-mysql"
+MYSQL_EXPORTER_SERVICE = "mysqld-exporter"
+MYSQL_EXPORTER_PORT = 9104
 
 
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
@@ -70,7 +68,7 @@ def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
 def test_exporter_endpoints(juju: Juju) -> None:
     """Test that exporter endpoints are running."""
     http_client = urllib3.PoolManager()
-    service_name = f"{CHARMED_MYSQL_SNAP_NAME}.{CHARMED_MYSQLD_EXPORTER_SERVICE}"
+    service_name = f"{MYSQL_SNAP_NAME}.{MYSQL_EXPORTER_SERVICE}"
 
     for unit_name in get_app_units(juju, MYSQL_APP_NAME):
         # Exporter is enabled by default, verify it is active

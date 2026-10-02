@@ -8,9 +8,8 @@ import jubilant
 import pytest
 from jubilant import Juju, TaskError
 
-from constants import MAX_PASSWORD_LENGTH, REPLICATION_USERNAME
-from utils import generate_random_password
-
+from ..constants import DATABASE_PASSWORD_MAX, REPLICATION_USERNAME
+from ..helpers import generate_random_password, generate_random_string
 from ..helpers_ha import (
     MINUTE_SECS,
     get_mysql_primary_unit,
@@ -50,7 +49,7 @@ def test_password_too_short_fails(juju: Juju) -> None:
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME)
     old_password = old_credentials["password"]
 
-    short_password = generate_random_password(8)
+    short_password = generate_random_string(8)
     logger.info(f"Attempting to set short password with length {len(short_password)}")
 
     with pytest.raises(TaskError) as excinfo:
@@ -71,20 +70,20 @@ def test_password_too_short_fails(juju: Juju) -> None:
 
 
 def test_password_too_long_fails(juju: Juju) -> None:
-    """Test that a password with less than 24 characters fails."""
+    """Test that a password with more than 130 characters fails."""
     primary_unit_name = get_mysql_primary_unit(juju, DATABASE_APP_NAME)
 
     old_credentials = get_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME)
     old_password = old_credentials["password"]
 
-    short_password = generate_random_password(MAX_PASSWORD_LENGTH + 1)
-    logger.info(f"Attempting to set exceedingly long password with length {len(short_password)}")
+    long_password = generate_random_password(DATABASE_PASSWORD_MAX + 1)
+    logger.info(f"Attempting to set exceedingly long password with length {len(long_password)}")
 
     with pytest.raises(TaskError) as excinfo:
         juju.run(
             unit=primary_unit_name,
             action="set-password",
-            params={"username": REPLICATION_USERNAME, "password": short_password},
+            params={"username": REPLICATION_USERNAME, "password": long_password},
         )
     assert "MySQLUpdateUserError" in str(excinfo.value)
 
