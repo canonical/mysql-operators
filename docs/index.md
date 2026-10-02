@@ -15,7 +15,7 @@ Charmed MySQL includes features such as cluster-to-cluster replication, TLS encr
 
 ## In this documentation
 
-This documentation contains practical information about installing and operate Charmed MySQL. It covers instructions for both VM and K8s substrates.  
+This documentation contains practical information about installing and operating Charmed MySQL. It covers instructions for both VM and K8s substrates.
 
 ### Get started
 
@@ -68,7 +68,6 @@ Charmed MySQL is an open-source project that welcomes community contributions, s
 
 ```{toctree}
 :titlesonly:
-:maxdepth: 2
 :hidden:
 
 Home <self>
@@ -76,4 +75,15 @@ tutorial
 How-to guides <how-to/index>
 Reference <reference/index>
 Explanation <explanation/index>
+```
+
+```{toctree}
+:caption: MySQL Router
+:hidden:
+
+Home <mysql-router/index>
+Tutorial <mysql-router/tutorial>
+How-to guides <mysql-router/how-to/index>
+Reference <mysql-router/reference/index>
+Explanation <mysql-router/explanation/index>
 ```
