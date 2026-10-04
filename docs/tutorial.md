@@ -40,7 +40,7 @@ Install Multipass from the [snap store](https://snapcraft.io/multipass):
 sudo snap install multipass
 ```
 
-Spin up a new VM using [`multipass launch`](https://canonical.com/multipass/docs/how-to-guides/manage-instances/create-an-instance) with the official [charm-dev cloud-init](https://canonical.com/multipass/docs/how-to-guides/manage-instances/customise-the-initial-instance-configuration) configuration. Pass the cloud-init file explicitly:
+Spin up a new VM using [`multipass launch`](https://canonical.com/multipass/docs/stable-docs/reference/command-line-interface/launch/) with the official [charm-dev cloud-init](https://canonical.com/multipass/docs/latest/how-to-guides/manage-instances/launch-customized-instances-with-multipass-and-cloud-init/#charm-dev) configuration:
 
 ```{terminal}
 :user: user
