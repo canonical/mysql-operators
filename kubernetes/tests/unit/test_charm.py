@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+from charmlibs.rollingops import OperationResult
 from charms.mysql.v0.mysql import MySQLUnableToGetMemberStateError
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
@@ -18,6 +19,7 @@ from constants import (
     CLUSTER_ADMIN_PASSWORD_KEY,
     MONITORING_PASSWORD_KEY,
     MYSQLD_LOCATION,
+    MYSQLD_SERVICE,
     PASSWORD_LENGTH,
     ROOT_PASSWORD_KEY,
     SERVER_CONFIG_PASSWORD_KEY,
@@ -737,3 +739,77 @@ class TestCharm(unittest.TestCase):
             self.charm.recover_unit_after_restart()
 
         _restart_group_replication_if_stopped.assert_not_called()
+
+    def test_restart_no_crash_when_peers_units_is_empty_during_scale_up(self):
+        """Regression test: restart must not crash when no peer has joined yet.
+
+        During a scale-up there is a window where app.planned_units() already
+        counts the new units, but they have not yet appeared on the
+        database-peers relation. In that window peers.units is empty and the
+        primary-switch path used to crash with ``KeyError: 'pop from an empty
+        set'`` (see self.peers.units.pop()).
+        """
+        # simulate the scale-up window: planned units > 1, but no other unit
+        # on the database-peers relation yet
+        self.harness.set_planned_units(3)
+
+        mock_container = MagicMock()
+        mock_container.can_connect.return_value = True
+        mock_mysql = MagicMock()
+        mock_mysql.get_primary_label.return_value = self.charm.unit_label
+        mock_mysql.cluster_metadata_exists.return_value = True
+        empty_peers = MagicMock()
+        empty_peers.units = set()
+
+        with (
+            patch.object(
+                MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
+            ),
+            patch.object(
+                MySQLOperatorCharm, "peers", new_callable=PropertyMock, return_value=empty_peers
+            ),
+            patch.object(self.charm.unit, "get_container", return_value=mock_container),
+            patch("charm.MySQLOperatorCharm.wait_until_unit_address_is_local"),
+            patch("charm.MySQLOperatorCharm.recover_unit_after_restart"),
+            patch("charm.sleep"),
+        ):
+            # before the fix this raised KeyError('pop from an empty set')
+            result = self.charm._restart()
+
+        self.assertEqual(result, OperationResult.RELEASE)
+        # there is no peer to hand primary over to: no switch attempted
+        mock_mysql.set_cluster_primary.assert_not_called()
+        # but mysqld itself is still restarted
+        mock_container.pebble.restart_services.assert_called_once_with(
+            [MYSQLD_SERVICE], timeout=3600
+        )
+
+    def test_restart_switches_primary_when_peers_present(self):
+        """Sanity check: the primary switch still runs when a peer is joined."""
+        self.harness.set_planned_units(3)
+
+        mock_container = MagicMock()
+        mock_container.can_connect.return_value = True
+        mock_mysql = MagicMock()
+        mock_mysql.get_primary_label.return_value = self.charm.unit_label
+        mock_mysql.cluster_metadata_exists.return_value = True
+        peers = MagicMock()
+        peers.units = {MagicMock()}
+
+        with (
+            patch.object(
+                MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
+            ),
+            patch.object(
+                MySQLOperatorCharm, "peers", new_callable=PropertyMock, return_value=peers
+            ),
+            patch.object(self.charm.unit, "get_container", return_value=mock_container),
+            patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN),
+            patch("charm.MySQLOperatorCharm.wait_until_unit_address_is_local"),
+            patch("charm.MySQLOperatorCharm.recover_unit_after_restart"),
+            patch("charm.sleep"),
+        ):
+            result = self.charm._restart()
+
+        self.assertEqual(result, OperationResult.RELEASE)
+        mock_mysql.set_cluster_primary.assert_called_once()
