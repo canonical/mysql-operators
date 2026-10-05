@@ -686,12 +686,18 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             return OperationResult.RETRY_HOLD
 
         if self.app.planned_units() > 1 and self.is_unit_primary:
-            try:
-                new_primary = self.get_unit_address(self.peers.units.pop())
-                logger.debug(f"Switching primary to {new_primary}")
-                self._mysql.set_cluster_primary(new_primary)
-            except MySQLSetClusterPrimaryError:
-                logger.warning("Changing primary failed")
+            if self.peers and self.peers.units:
+                try:
+                    new_primary = self.get_unit_address(self.peers.units.pop())
+                    logger.debug(f"Switching primary to {new_primary}")
+                    self._mysql.set_cluster_primary(new_primary)
+                except MySQLSetClusterPrimaryError:
+                    logger.warning("Changing primary failed")
+            else:
+                # planned units can be counted before new units have joined the
+                # peer relation (e.g. during a scale-up race); nobody to switch
+                # the primary to yet, so just restart
+                logger.warning("No peers to switch the primary to; skipping primary switchover")
 
         logger.debug("Restarting mysqld")
         self.unit.status = MaintenanceStatus("restarting MySQL")
