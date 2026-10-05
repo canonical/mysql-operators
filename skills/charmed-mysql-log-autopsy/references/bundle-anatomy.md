@@ -34,6 +34,16 @@ Caveats learned from real cases:
   `executing` transitions and `Emitting Juju event <name>.` lines are the
   reliable evidence there.
 
+## solutions.qa.canonical.com links
+
+Issues and triage reports often link run artefacts as
+`https://solutions.qa.canonical.com/testruns/<uuid>` (the Solutions QA
+frontend). That host requires login: plain `curl`/`wget` fails (redirect
+to a sign-in page), and reading that as "the artefact is missing" is a
+dead end. Fetch the artefacts with `weebl-tools` using an appropriate
+weebl token (internal Canonical tooling — see internal documentation for
+access), then apply the file map above to whatever bundle comes out.
+
 ## Grep cookbook
 
 ```bash
