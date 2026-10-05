@@ -1,22 +1,18 @@
 ---
 name: charmed-mysql-log-autopsy
 description: >
-  Diagnose Charmed MySQL (mysql-k8s / mysql charms, canonical/mysql-operators)
-  failures from logs and artifacts when there is NO live access: juju
-  debug-log output, Test Observer log bundles, juju crashdumps, db-dump.yaml,
-  CI log excerpts, pasted tracebacks, or issue reports. Fingerprints charm
-  revisions and versions from artifacts, reconstructs hook/event timelines,
-  and maps evidence to charm source code to reach a root cause. Use when the
-  user shares Charmed MySQL logs, a crashdump, a Test Observer
-  link/execution ID, pastes a bare Python traceback from a charm unit, or
-  asks "what happened here / what does this log mean". Also for judging
-  whether a bug report or AI-triaged regression claim is credible, by git
-  archaeology over the charm source. Not for live debugging of a reachable deployment (prefer interactive
-  inspection skills) or for CI/PR triage workflows (prefer nightly-triage).
+  Diagnoses Charmed MySQL (mysql or mysql-k8s) failures to a root cause
+  from evidence: juju debug-log output, Test Observer log bundles,
+  juju crashdumps, pasted tracebacks, issue reports, or a reproduced
+  failure. Fingerprints charm revisions, reconstructs hook/event
+  timelines, and maps evidence to charm source code. Use when logs, a
+  crashdump, a Test Observer execution, or a bare traceback needs
+  explaining, or when a bug report or AI-triaged regression claim needs
+  verification.
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
-  version: "0.1.1"
+  version: "0.3.0"
   upstream-repo: canonical/mysql-operators
 ---
 
@@ -30,13 +26,10 @@ component, why the observed statuses/log lines follow, and suggested fix
 directions — with a confidence level. It never assumes the system is
 reachable: every claim must be derivable from the artifacts plus source code.
 
-Charmed MySQL context you must know up front:
+Charmed MySQL context you must know up front (for monorepo layout and
+reading charm source at a specific revision, see the
+`mysql-operators-source` skill):
 
-- The monorepo `canonical/mysql-operators` builds two charms: `mysql` (VM,
-  `machines/`, snap `charmed-mysql`) and `mysql-k8s` (K8s, `kubernetes/`,
-  ROCK + Pebble). Shared code lives in `kubernetes/lib/charms/mysql/v0/`
-  (and the machines twin) — notably `mysql.py` (InnoDB Cluster/ClusterSet
-  control via mysqlsh), `backups.py`, `async_replication.py`, `tls.py`.
 - Cluster health is Group Replication (single-primary InnoDB Cluster,
   optionally ClusterSet for async replication). Charm statuses are
   *opinions* derived on `update-status`; they lag and can mask reality.
@@ -132,7 +125,8 @@ Load [hook-forensics.md](references/hook-forensics.md), then:
 
 ### 6. Verify against source
 
-Load [version-archaeology.md](references/version-archaeology.md), then:
+Load [version-archaeology.md](references/version-archaeology.md) from the
+`mysql-operators-source` skill, then:
 
 - Read the code **of the branch/revision that was deployed**, not your
   checkout: `git show origin/8.0/edge:<path>` / `git show <charm>/revNNN:<path>`.
@@ -160,7 +154,10 @@ Produce a structured conclusion:
    self-healing considerations. This skill stops here; it does not write
    the fix.
 5. **What to collect next** if confidence is low (specific greps, actions
-   to run on the live system, fields missing from the bundle).
+   to run on the live system, fields missing from the bundle). Gather
+   live evidence with the `charmed-mysql-juju-inspect` skill; test the
+   hypothesis by injecting faults with the `charmed-mysql-fault-injection`
+   skill.
 
 For classification of common signatures, load
 [failure-taxonomy.md](references/failure-taxonomy.md) — tables of
@@ -210,9 +207,9 @@ Load on demand (all paths relative to this skill):
 - [references/hook-forensics.md](references/hook-forensics.md) — step 4:
   hook-context reconstruction, traceback frame analysis, retry/teardown
   semantics, deferred-event and uniter-operation analysis.
-- [references/version-archaeology.md](references/version-archaeology.md) —
-  step 6: revision↔tag mapping, pickaxe searches, branch selection,
-  ops-version pinning.
+- `mysql-operators-source` skill — step 6: revision↔tag mapping, source
+  reading at a deployed revision, branch selection, ops-version pinning
+  (its `references/version-archaeology.md`).
 - [references/failure-taxonomy.md](references/failure-taxonomy.md) —
   step 7: signature → cause → confirmation tables.
 - `scripts/parse_uniter_ops.py` — step 4: measure uniter operation

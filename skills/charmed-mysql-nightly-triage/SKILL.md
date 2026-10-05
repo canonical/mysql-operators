@@ -1,20 +1,18 @@
 ---
 name: charmed-mysql-nightly-triage
 description: >
-  Triage failed CI runs for Charmed MySQL: nightly test runs, PR integration
-  failures, Test Observer artefacts and executions. Classifies each failure
-  as deterministic bug, flake, infrastructure failure, or test-plan bug,
-  extracts evidence from logs bundles and the Test Observer API, detects
-  recurring problems across runs, and produces a structured summary with
-  basic analysis. Use when the user mentions nightly runs, failing CI,
-  Test Observer executions/artefacts, charm QA results, "is this PR failure
-  real", or asks for a summary of test results. Not for reading raw logs of
-  a single incident without CI context (prefer log-autopsy) or for live
-  debugging of a deployment.
+  Triages failed CI runs for Charmed MySQL: nightly test runs, PR
+  integration failures, Test Observer artefacts and executions.
+  Classifies failures as deterministic bug, flake, infrastructure
+  failure, or test-plan bug, extracts evidence from log bundles and the
+  Test Observer API, detects recurring problems across runs, and produces
+  a structured summary. Use when the user mentions nightly runs, failing
+  CI, Test Observer executions or artefacts, or asks whether a PR failure
+  is real.
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
-  version: "0.1.0"
+  version: "0.2.0"
   upstream-repo: canonical/mysql-operators
 ---
 
@@ -98,16 +96,16 @@ Classify each failure into exactly one bucket:
 | **PR-unrelated red check** | Label/lint policy failures ("Check pull request" label errors), or failures in tests with zero textual overlap with the diff |
 
 For signature-level classification (KeyError shapes, status freezes,
-NO_QUORUM signals, poisoned retries), load the log-autopsy skill's
-`references/failure-taxonomy.md`.
+NO_QUORUM signals, poisoned retries), load the
+`charmed-mysql-log-autopsy` skill's `references/failure-taxonomy.md`.
 
 ### 4. Extract deeper evidence when the bucket is unclear
 
 - Download the logs bundle (`relevant_links[].url` →
   `juju-controller-*.tar.gz`) and extract: `pod/<unit>.log`,
   `debug-log.txt`, `status-log/*.yaml`, `juju-status.txt`, `db-dump.yaml`.
-  See the log-autopsy skill's bundle-anatomy reference for the file map
-  and grep cookbook.
+  See the `charmed-mysql-log-autopsy` skill's bundle-anatomy reference for
+  the file map and grep cookbook.
 - Check `previous_results` (Test Observer) for cross-revision history:
   which revisions passed/failed before? A failure appearing at exactly one
   revision with clean neighbors is a regression candidate; the same

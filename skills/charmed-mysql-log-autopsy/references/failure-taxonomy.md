@@ -54,4 +54,4 @@ evidence, then apply the corresponding forensics reference.
 |---|---|---|
 | Snap service crash-looping after a snap refresh, `SnapError: ... Start request repeated too quickly` | systemd `StartLimitBurst` (5 crashes/10s) from a crash on startup; config baked with old `$SNAP_DATA` revision paths | `journalctl -u snap.charmed-mysql.*-service` ("Start request repeated too quickly", "Permission denied" writing old revision dir) |
 | `Access denied` for a user whose recipe worked before | Passwords rotate on every charm refresh/redeploy | Re-fetch via `get-password`; deployment freshness |
-| Charm behavior differs from current git source | Deployed revision ≠ checkout (branch divergence, renamed databag keys, fetched libs) | `git show origin/<branch>:<path>` for the deployed rev; `unzip -p <charm> <file>` |
+| Charm behavior differs from current git source | Deployed revision ≠ checkout (branch divergence, renamed databag keys, fetched libs) | shallow-clone the tag and `git show <tag>:<path>` (mysql-operators-source skill); `unzip -p <charm> <file>` only without GitHub access |
