@@ -36,7 +36,7 @@ def test_deploy_latest(juju: Juju) -> None:
         charm=MYSQL_ROUTER_APP_NAME,
         app=MYSQL_ROUTER_APP_NAME,
         base="ubuntu@26.04",
-        channel="8.4/candidate",
+        channel="8.4/stable",
         num_units=1,
     )
     juju.deploy(
