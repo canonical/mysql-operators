@@ -53,5 +53,5 @@ class BaseServerService(ABC):
             reraise=True,
         ):
             with attempt:
-                a = socket.create_connection(("127.0.0.1", self.port), timeout=1)
-                a.close()
+                conn = socket.create_connection(("127.0.0.1", self.port), timeout=1)
+                conn.close()

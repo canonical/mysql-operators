@@ -221,8 +221,8 @@ class ContainerRuntime(BaseRuntime):
         ):
             with attempt:
                 logger.debug(f"Attempting to connect to address: {address}")
-                a = socket.create_connection((address, port), timeout=1)
-                a.close()
+                conn = socket.create_connection((address, port), timeout=1)
+                conn.close()
 
     def create_service(self, name: str, labels: Mapping[str, str], port: int) -> None:
         """Creates a runtime service.
