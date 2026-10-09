@@ -685,14 +685,6 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             container.restart(MYSQLD_SERVICE)
             return OperationResult.RETRY_HOLD
 
-        if self.app.planned_units() > 1 and self.is_unit_primary:
-            try:
-                new_primary = self.get_unit_address(self.peers.units.pop())
-                logger.debug(f"Switching primary to {new_primary}")
-                self._mysql.set_cluster_primary(new_primary)
-            except MySQLSetClusterPrimaryError:
-                logger.warning("Changing primary failed")
-
         logger.debug("Restarting mysqld")
         self.unit.status = MaintenanceStatus("restarting MySQL")
         # Group Replication only resolves its local address when it initialises
