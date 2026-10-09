@@ -26,7 +26,7 @@ class BaseExporterService(ABC):
 
     @abstractmethod
     def setup(self, username: str, password: str) -> None:
-        """Return the service configuration."""
+        """Set up the service."""
         raise NotImplementedError()
 
     @abstractmethod
