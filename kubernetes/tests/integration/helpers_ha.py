@@ -26,12 +26,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import (
-    CONTAINER_NAME,
-    MYSQLD_SERVICE,
-    OPERATOR_USERNAME,
-)
-
+from .constants import CONTAINER_NAME, OPERATOR_USERNAME
 from .helpers import execute_queries_on_unit
 
 CHARM_METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
@@ -595,7 +590,7 @@ def start_mysqld_service(juju: Juju, unit_name: str) -> None:
         unit_name: The name of the unit
     """
     juju.ssh(
-        command=f"pebble start {MYSQLD_SERVICE}",
+        command=f"pebble start mysqld",
         target=unit_name,
         container=CONTAINER_NAME,
     )
@@ -603,7 +598,7 @@ def start_mysqld_service(juju: Juju, unit_name: str) -> None:
     # Hold execution until process is started
     for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(5)):
         with attempt:
-            if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is None:
+            if get_unit_process_id(juju, unit_name, "mysqld") is None:
                 raise Exception("Failed to start the mysqld process")
 
 
@@ -615,7 +610,7 @@ def stop_mysqld_service(juju: Juju, unit_name: str) -> None:
         unit_name: The name of the unit
     """
     juju.ssh(
-        command=f"pebble stop {MYSQLD_SERVICE}",
+        command=f"pebble stop mysqld",
         target=unit_name,
         container=CONTAINER_NAME,
     )
@@ -623,7 +618,7 @@ def stop_mysqld_service(juju: Juju, unit_name: str) -> None:
     # Hold execution until process is stopped
     for attempt in Retrying(stop=stop_after_attempt(10), wait=wait_fixed(5)):
         with attempt:
-            if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is not None:
+            if get_unit_process_id(juju, unit_name, "mysqld") is not None:
                 raise Exception("Failed to stop the mysqld process")
 
 
@@ -674,21 +669,14 @@ def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
     Args:
         juju: The Juju model.
         unit_name: The name of the unit.
-
     """
-    # TODO: Merge with exec_k8s_container_command
-    # `pkill -x` (exact process-name match), NOT `-f` (full cmdline match):
-    # `juju.ssh` wraps the command in a shell whose cmdline
-    # literally contains the string "mysqld" (from our pkill arguments),
-    # so `-f` would match - and SIGKILL - the shell itself, returning exit 137
-    # before pkill finishes signalling mysqld
     juju.ssh(
-        command=f"pkill -x {MYSQLD_SERVICE} --signal SIGKILL",
+        command=f"pkill -x mysqld --signal SIGKILL",
         target=unit_name,
         container=CONTAINER_NAME,
     )
     juju.ssh(
-        command=f"pebble stop {MYSQLD_SERVICE}",
+        command=f"pebble stop mysqld",
         target=unit_name,
         container=CONTAINER_NAME,
     )
@@ -699,7 +687,7 @@ def force_kill_mysqld_service(juju: Juju, unit_name: str) -> None:
     # Pebble lost the race, so fail fast rather than masking with retries
     for attempt in Retrying(stop=stop_after_attempt(5), wait=wait_fixed(2), reraise=True):
         with attempt:
-            if get_unit_process_id(juju, unit_name, MYSQLD_SERVICE) is not None:
+            if get_unit_process_id(juju, unit_name, "mysqld") is not None:
                 raise Exception(f"mysqld still alive on {unit_name} after SIGKILL + pebble stop")
 
 

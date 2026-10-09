@@ -8,10 +8,8 @@ import jubilant
 import urllib3
 from jubilant import Juju
 
-from constants import BACKUPS_USERNAME, DEFAULT_PASSWORD_LENGTH, REPLICATION_USERNAME
-from utils import generate_random_password
-
-from ..helpers import execute_queries_on_unit
+from ..constants import BACKUPS_USERNAME, DATABASE_PASSWORD_LEN, REPLICATION_USERNAME
+from ..helpers import execute_queries_on_unit, generate_random_password
 from ..helpers_ha import (
     CHARM_METADATA,
     MINUTE_SECS,
@@ -116,13 +114,11 @@ def test_password_rotation(juju: Juju):
         f"Test succeeded Primary unit detected before password rotation is {primary_unit_address}"
     )
 
-    new_password = generate_random_password(DEFAULT_PASSWORD_LENGTH)
+    new_password = generate_random_password(DATABASE_PASSWORD_LEN)
 
     rotate_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME, new_password)
 
-    updated_credentials = get_mysql_server_credentials(
-        juju, random_unit_name, REPLICATION_USERNAME
-    )
+    updated_credentials = get_mysql_server_credentials(juju, random_unit_name, REPLICATION_USERNAME)
     assert updated_credentials["password"] != old_credentials["password"]
     assert updated_credentials["password"] == new_password
 
@@ -151,9 +147,7 @@ def test_password_rotation_silent(juju: Juju):
 
     rotate_mysql_server_credentials(juju, primary_unit_name, REPLICATION_USERNAME)
 
-    updated_credentials = get_mysql_server_credentials(
-        juju, random_unit_name, REPLICATION_USERNAME
-    )
+    updated_credentials = get_mysql_server_credentials(juju, random_unit_name, REPLICATION_USERNAME)
     assert updated_credentials["password"] != old_credentials["password"]
 
     # verify that the new password actually works

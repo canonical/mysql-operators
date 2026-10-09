@@ -8,9 +8,8 @@ import time
 import jubilant
 from jubilant import Juju
 
-from constants import CONTAINER_NAME
-
 from ... import architecture
+from ...constants import CONTAINER_NAME
 from ...helpers import generate_random_string
 from ...helpers_ha import (
     CHARM_METADATA,
