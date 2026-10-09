@@ -1173,7 +1173,11 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
         self.unit_peer_data["member-role"] = role
         self.unit_peer_data["member-state"] = state
-        self.set_unit_status(self.build_unit_workload_status())
+        if self.database_relation.has_incomplete_setup():
+            # an incomplete relation setup outranks the workload status
+            self.set_unit_status(BlockedStatus("Failed to create scoped user"))
+        else:
+            self.set_unit_status(self.build_unit_workload_status())
 
         # TODO: Logic here is almost the opposite as the machines charm, but not quite
         # We should review and fix it
