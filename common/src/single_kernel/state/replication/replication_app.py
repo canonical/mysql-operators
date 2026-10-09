@@ -7,24 +7,6 @@ from typing import MutableMapping
 class ReplicationAppState:
     """Class to deal with the replication application state."""
 
-    # NOTE:
-    # Coming up with the consolidated list of state key was hard.
-    # Keep this note until the final code cut-over is performed:
-    #
-    # - `async-ready` (now called `replication-ready`):
-    #   Moved into the replication databag, given that it is
-    #   only used within async-replication functionality.
-    # - `cluster-name`:
-    #   Duplicated with the Operator state on purpose,
-    #   given that the consumer does not have access to
-    #   the remote peer data-bag.
-    # - `is-replica`:
-    #   Removed, given that it is only used in the offering side,
-    #   and no action is taken with it (other than logging).
-    # - `user-data-found`:
-    #   Removed, given that it is only used in the consumer side,
-    #   and no action is taken with it (other than logging).
-
     cluster_name_key = "cluster-name"
     cluster_version_key = "cluster-version"
     instance_address_key = "instance-address"

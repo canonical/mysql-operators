@@ -8,20 +8,6 @@ from typing import MutableMapping
 class PeerStateUnit:
     """Class to deal with the peer unit state."""
 
-    # NOTE:
-    # Coming up with the consolidated list of state key was hard.
-    # Keep this note until the final code cut-over is performed:
-    #
-    # - `instance-hostname`:
-    #   Removed, given that is only used in the promote-primary action,
-    #   does not take into account Juju spaces, and can be computed at runtime.
-    # - `topology-change-timestamp`:
-    #   Removed, given that it is used to conditionally update endpoints on the
-    #   database-peers relation change, by populating this field upon promote-to-primary.
-    #   Now it always occurs, as member-state / member-role fields are updated after promotion.
-    # - `unit-container-restarts`:
-    #   Removed, given that is only written, and never read.
-
     instance_role_key = "member-role"
     instance_state_key = "member-state"
     unit_leader_key = "leader"
