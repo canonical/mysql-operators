@@ -85,7 +85,7 @@ class S3BackupStorage(BaseBackupStorage):
         # Add some sensible defaults for missing optional parameters
         config.setdefault("endpoint", "https://s3.amazonaws.com")
         config.setdefault("path", "/")
-        config.setdefault("region", None)
+        config.setdefault("region", "")
         config.setdefault("s3-uri-style", "auto")
         config.setdefault("s3-api-version", "auto")
 
