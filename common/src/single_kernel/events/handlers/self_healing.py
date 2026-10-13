@@ -96,10 +96,6 @@ class SelfHealingEventHandler(Object):
         A surviving cluster member can stay ONLINE in its local view
         while the cluster has lost quorum (status is UNREACHABLE).
         """
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
-            return
-
         if not self._manager.fetch_cluster_state() == ClusterStatus.NO_QUORUM:
             logger.debug("Skipping cluster self-healing: cluster has quorum")
             return
@@ -116,10 +112,6 @@ class SelfHealingEventHandler(Object):
 
     def _recover_from_online_follower(self) -> None:
         """Recover the cluster from an ONLINE follower."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
-            return
-
         if not self._manager.fetch_cluster_state() == ClusterStatus.NO_QUORUM:
             logger.debug("Skipping cluster self-healing: cluster has quorum")
             return
@@ -129,10 +121,6 @@ class SelfHealingEventHandler(Object):
 
     def _recover_from_offline_leader(self) -> None:
         """Recover the cluster from an OFFLINE leader."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
-            return
-
         peer_states = self._collect_peer_states()
         peer_states = set(peer_states)
 
@@ -162,10 +150,6 @@ class SelfHealingEventHandler(Object):
 
     def _recover_from_offline_follower(self) -> None:
         """Recover the cluster from an OFFLINE follower."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
-            return
-
         peer_states = self._collect_peer_states()
         peer_states = set(peer_states)
 
@@ -173,19 +157,17 @@ class SelfHealingEventHandler(Object):
             self._rejoin_instance()
             return
 
-    def _recover_from_unreachable_leader(self) -> None:
-        """Recover the cluster from an UNREACHABLE leader."""
-        self._charm.service_server.stop()
-        self._charm.service_server.start()
-
-    def _recover_from_unreachable_follower(self) -> None:
-        """Recover the cluster from an UNREACHABLE follower."""
-        self._charm.service_server.stop()
-        self._charm.service_server.start()
-
     def _on_self_healing(self, _: SelfHealingEvent) -> None:
         """Event handler for the self-healing event."""
+        if not self._charm.service_server.running:
+            self._charm.service_server.start()
+            return
+
+        if not self._helpers.initialized:
+            logger.debug("Skipping cluster self-healing: charm is not initialized")
+            return
         if self._charm.refreshing:
+            logger.debug("Skipping cluster self-healing: charm is refreshing")
             return
 
         state = self._manager.fetch_instance_state()
@@ -200,10 +182,5 @@ class SelfHealingEventHandler(Object):
                 self._recover_from_offline_leader()
             case InstanceState.OFFLINE, False:
                 self._recover_from_offline_follower()
-            case InstanceState.UNREACHABLE, True:
-                self._recover_from_unreachable_leader()
-            case InstanceState.UNREACHABLE, False:
-                self._recover_from_unreachable_follower()
 
-        self._manager.update_state()
         self._helpers.update_database_endpoints()

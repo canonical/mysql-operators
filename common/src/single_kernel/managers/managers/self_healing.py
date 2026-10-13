@@ -27,21 +27,13 @@ class SelfHealingManager:
         """Fetch the cluster members."""
         return self._clients.instance.count_cluster_members(states=[InstanceState.ONLINE])
 
-    def fetch_cluster_state(self) -> str:
+    def fetch_cluster_state(self) -> str | None:
         """Fetch the cluster state."""
-        state = self._clients.cluster.fetch_state()
-        if not state:
-            state = ClusterStatus.UNREACHABLE
+        return self._clients.cluster.fetch_state()
 
-        return state
-
-    def fetch_instance_state(self) -> str:
+    def fetch_instance_state(self) -> str | None:
         """Fetch the instance state."""
-        state = self._clients.instance.fetch_state()
-        if not state:
-            state = InstanceState.UNREACHABLE
-
-        return state
+        return self._clients.instance.fetch_state()
 
     def rejoin_instance(self, instance_label: str, instance_host: str, addrs: list[str]) -> None:
         """Rejoin the instance back into the cluster.
@@ -84,14 +76,3 @@ class SelfHealingManager:
     def stop_replication(self) -> None:
         """Stop the instance replication."""
         self._clients.instance.stop_replication()
-
-    def update_state(self) -> None:
-        """Update the operator state."""
-        role = self._clients.instance.fetch_role()
-        state = self._clients.instance.fetch_state()
-
-        logger.info(f"Instance member-role is {role}")
-        logger.info(f"Instance member-state is {state}")
-
-        self._state.unit.set_instance_role(role)
-        self._state.unit.set_instance_state(state)
