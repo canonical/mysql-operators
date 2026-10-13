@@ -159,10 +159,6 @@ class SelfHealingEventHandler(Object):
 
     def _on_self_healing(self, _: SelfHealingEvent) -> None:
         """Event handler for the self-healing event."""
-        if not self._charm.service_server.running:
-            self._charm.service_server.start()
-            return
-
         if not self._helpers.initialized:
             logger.debug("Skipping cluster self-healing: charm is not initialized")
             return
