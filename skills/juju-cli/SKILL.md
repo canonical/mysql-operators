@@ -1,13 +1,10 @@
 ---
 name: juju-cli
 description: >
-  Operates the Juju CLI correctly against Charmed MySQL (k8s and machines)
-  deployments: deploys with trust, destroys broken models, runs commands in
-  the right unit container, distinguishes charm actions from shell
-  commands, reads juju status and debug-log, drives pebble services, and
-  manages models. Use when running or debugging juju or pebble commands —
-  deploys, scales, destroys, ssh/exec into units, charm actions, status
-  checks, or background sampling loops.
+  Operates the Juju CLI on any cloud, model, or charm, deploys charms
+  with or without trust, executes commands on unit containers, separates
+  actions from shell commands, drives pebble, reads status and debug-log,
+  manages models. Use before any juju or pebble command.
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
@@ -139,10 +136,8 @@ juju remove-unit -m <model> mysql/1 mysql/2 --no-prompt
   `mysql` take much longer (snap install + cluster formation) — poll
   status, don't sleep fixed durations.
 
-## Deploy: trust at deploy time, never after
+## Deploy
 
-- Deploy with trust up front: `juju deploy mysql-k8s --channel 8.0/stable
-  -n 3 -m <model> --trust`. `--trust` grants cluster-scoped RBAC (k8s).
 - Deploy an **exact Charmhub revision** (e.g. to reproduce a bug report's
   charm): `juju deploy mysql-k8s --channel 8.0/stable --revision 423 -n 1
   --trust`. On Juju 3.6 `--revision` REQUIRES `--channel` — revision alone
@@ -160,16 +155,43 @@ juju remove-unit -m <model> mysql/1 mysql/2 --no-prompt
   "revision 423 in channel 8.0/stable". A pinned single unit reaches
   active/Primary ~3 min after deploy. To read that revision's source, use
   the `mysql-operators-source` skill.
-- Do NOT plan to `juju trust <app> --scope=cluster` afterwards: it races
-  the charm's first hooks, which already call `nodes get`; the loser gets
-  **403 Forbidden** and the unit can wedge in error permanently.
-- Symptom: the unit sits in **`unknown`** status (hooks never get to run —
-  the charm service account has no RBAC) or errors with RBAC/Forbidden
-  messages immediately after deploy = trust race lost. The smoking gun is
-  in the charm container logs (`kubectl logs <pod> -n <model> -c charm`):
-  `ApiError: nodes "<node>" is forbidden: User "system:serviceaccount:<model>:<app>"
-  cannot get resource "nodes" in API group "" at the cluster scope`.
-  Fix by redeploying with `--trust`, not retries.
+- **Verify every deploy converges — short polls with a failure exit.**
+  Poll `juju status` a few times (~15–30s apart) after deploying. If a
+  unit shows `blocked`, `error`, or `unknown`, stop and diagnose
+  immediately — the unit message names the problem (for RBAC blocks see
+  [Trust and RBAC](#trust-and-rbac) below); such statuses do not heal
+  on their own. Never run a long "wait until success" loop without a
+  failure exit — polling past the first failure burns wall time for
+  nothing.
+
+### Trust and RBAC
+
+- **What it is**: `--trust` grants the charm's Kubernetes service
+  account cluster-scoped RBAC, so the charm can access Kubernetes
+  resources. A K8s charm that needs such access needs trust — without
+  it the charm cannot, e.g., read nodes or patch its own statefulset.
+- **Grant at deploy time**: `juju deploy mysql-k8s --channel 8.0/stable
+  -n 3 -m <model> --trust`. Prefer this — it is the reliable path.
+- **Apply afterwards**: an already-deployed app that is *not* wedged in
+  error can be trusted in place: `juju trust <app> --scope=cluster
+  -m <model>`. The next hook run picks it up — a **blocked** unit needs
+  no nudge (`juju resolve` only applies to units in error): observed
+  recovery to active within ~60s of granting trust.
+- **Detect it was needed but not applied**: the charm surfaces the
+  missing RBAC as a block, in one of two ways: (a) the unit sits in
+  **`unknown`** right after deploy — its first hooks never got to run;
+  or (b) the app reached a status but later operations fail — the unit
+  message contains `... is forbidden: User
+  "system:serviceaccount:<model>:<app>"`. Confirm by that forbidden
+  message: the service-account string names the exact identity lacking
+  the scope, and the charm container logs (`kubectl logs <pod> -n
+  <model> -c charm`) carry the matching `ApiError: ... is forbidden ...
+  at the cluster scope`.
+- **The first-hook race gotcha**: trusting after deploy races the
+  charm's first hooks, which already call the Kubernetes API; the loser
+  gets **403 Forbidden** and the unit can wedge in error permanently.
+  A unit wedged in error from that race is not fixed by trust —
+  redeploy with `--trust`, not retries.
 
 ## Destroying models
 
@@ -271,7 +293,11 @@ juju remove-unit -m <model> mysql/1 mysql/2 --no-prompt
   churn. They also survive process-group kills when launched via `setsid` —
   see `references/cleanup-and-controller.md` for the sweep patterns.
 
-## Model logging levels (logging-config)
+## Logs, logging levels, logging config
+
+```bash
+juju debug-log -m <model> --ms --level DEBUG --replay [--no-tail / --tail]
+```
 
 The `juju debug-log` stream contains what the agents *forward* per the
 model's `logging-config` — DEBUG spam there is a config state, not a
@@ -308,6 +334,12 @@ noise problem; the dial is model config, not debug-log flags.
 - **Restore** after experiments: `juju model-config -m <model> --reset
   logging-config` (returns to the controller default). Changes apply to
   new log lines immediately; existing entries are not rewritten.
+- Every hook process starts with `ops <version> up and running.` — use as
+  a process-start marker when correlating.
+- On controllers where kubectl works, `kubectl logs <pod> -c charm` gives
+  the same content fresher (but is lost on container restart); `juju
+  debug-log` survives restarts (model logging config permitting — check
+  `juju model-config logging-config`).
 
 ## Do not
 

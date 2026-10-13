@@ -1,6 +1,7 @@
 # Hook forensics — reconstructing charm behavior from logs
 
-Reference for `charmed-mysql-log-autopsy` step 4. The Juju hook model has
+Reference for `charmed-mysql-juju-inspect` step 4 (Reconstruct the
+failure). The Juju hook model has
 sharp edges that show up directly in logs. Learn these patterns and most
 "weird charm behavior" reads like plain text.
 

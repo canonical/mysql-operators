@@ -1,13 +1,12 @@
 ---
 name: charmed-mysql-nightly-triage
 description: >
-  Triages failed CI runs for Charmed MySQL: nightly test runs, PR
+  Inspects failed CI runs for Charmed MySQL: nightly test runs, PR
   integration failures, Test Observer artefacts and executions.
   Classifies failures as deterministic bug, flake, infrastructure
   failure, or test-plan bug, extracts evidence from log bundles and the
   Test Observer API, detects recurring problems across runs, and produces
-  a structured summary. Use when the user mentions nightly runs, failing
-  CI, Test Observer executions or artefacts, or asks whether a PR failure
+  a structured summary. Use when figuring out whether a PR failure
   is real.
 license: Apache-2.0
 metadata:
@@ -24,7 +23,7 @@ Turns failed CI evidence into decisions: which failures are real charm bugs,
 which are flakes or infra, which are test-plan bugs, and which PRs are
 innocent. The workflow is API-heavy (Test Observer, GitHub Actions) but the
 classification step reuses the log-forensics mindset of the
-`charmed-mysql-log-autopsy` skill — load that skill's
+`charmed-mysql-juju-inspect` skill — load that skill's
 `references/failure-taxonomy.md` when classifying signatures.
 
 Ground rules:
@@ -97,14 +96,14 @@ Classify each failure into exactly one bucket:
 
 For signature-level classification (KeyError shapes, status freezes,
 NO_QUORUM signals, poisoned retries), load the
-`charmed-mysql-log-autopsy` skill's `references/failure-taxonomy.md`.
+`charmed-mysql-juju-inspect` skill's `references/failure-taxonomy.md`.
 
 ### 4. Extract deeper evidence when the bucket is unclear
 
 - Download the logs bundle (`relevant_links[].url` →
   `juju-controller-*.tar.gz`) and extract: `pod/<unit>.log`,
   `debug-log.txt`, `status-log/*.yaml`, `juju-status.txt`, `db-dump.yaml`.
-  See the `charmed-mysql-log-autopsy` skill's bundle-anatomy reference for
+  See the `charmed-mysql-juju-inspect` skill's bundle-anatomy reference for
   the file map and grep cookbook.
 - Check `previous_results` (Test Observer) for cross-revision history:
   which revisions passed/failed before? A failure appearing at exactly one
@@ -164,5 +163,5 @@ Produce a report using the template in
   charm-integration-testing internals and wait-condition semantics.
 - [references/report-format.md](references/report-format.md) — step 5:
   nightly summary and PR-triage report templates.
-- The `charmed-mysql-log-autopsy` skill's
-  `references/failure-taxonomy.md` — step 3: signature classification.
+- The `charmed-mysql-juju-inspect` skill's
+  `references/failure-taxonomy.md` — signature classification.

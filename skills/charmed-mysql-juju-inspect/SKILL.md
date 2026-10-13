@@ -1,18 +1,15 @@
 ---
 name: charmed-mysql-juju-inspect
 description: >
-  Inspects a live Charmed MySQL (mysql or mysql-k8s) deployment through
-  Juju: reads juju status, fetches true cluster topology via actions, maps
-  containers/ports/pebble services, obtains credentials, reads charm and
-  mysqld logs, and queries MySQL with the mysql client or mysqlsh.
-  Use when inspecting a live deployment: a blocked, waiting,
-  error, or degraded unit, a bug reproduction or debugging session, or
-  a user request to check cluster, unit, or MySQL health. Ground truth
-  before theorizing about root cause.
+  Inspects a live Charmed MySQL deployment through Juju,
+  gets MySQL cluster status, gets MySQL credentials,
+  executes MySQL queries, pulls MySQL logs, and diagnoses
+  MySQL failures from logs, crashdumps and tracebacks to
+  a root cause.
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
-  version: "0.5.0"
+  version: "0.6.0"
   upstream-repo: canonical/mysql-operators
 ---
 
@@ -26,6 +23,15 @@ insight it encodes: **`juju status` is the charm's opinion, lagging by up
 to the update-status interval (default 5m)** — real cluster truth comes
 from actions, MySQL itself, and the logs. Also covers the physical
 topology (containers, ports, pebble) that everything else depends on.
+
+When the deployment is **not reachable** — a Test Observer bundle, a
+crashdump, pasted logs — work offline from captured artifacts only:
+every claim must be derivable from the artifacts plus source code,
+never from the live system. The steps below cover both modes; the
+offline-specific parts are marked as such. Charm errors and statuses
+are raised from a small, greppable surface either way: grep the exact
+message string in the repo to find the emitting class, the tests
+asserting it, and `docs/reference/charm-statuses.md`.
 
 Generic Juju CLI mechanics — flag order, `juju ssh` vs `juju exec`,
 actions vs shell commands, status JSON parsing conventions, pebble CLI,
@@ -49,7 +55,7 @@ Core topology facts (details in references):
 Run in order; each step either clears a hypothesis or sharpens it. Load
 reference files when a step needs depth.
 
-### 1. Read `juju status` (and what it cannot tell you)
+### 1. Assess status
 
 ```bash
 juju status -m <model> --format json
@@ -63,23 +69,80 @@ out-of-band dispatches, not a hung workload), the free-text `message`,
 and the update-status lag — is in the `juju-cli` skill ("Reading juju
 status"). Only the Charmed-MySQL interpretation is repeated here:
 
+- Find **Charm revisions** per app from `juju status`, and the
+  **channel/branch** they imply (8.0/stable, 8.4/edge, ...).
+- Find **Juju version, Kubernetes client/server versions, MySQL version**:
+  the `get-cluster-status` payload embeds the member MySQL `version`;
+  k8s versions are in `kubernetes-version.txt` (captures); ops version
+  appears in logs as `ops <X> up and running.` — one line per hook
+  process.
+- Derive topology. Determine **whether a router is in the path** — many
+  "database" symptoms are router symptoms and vice versa: look for a
+  `mysql-router` app related via `backend-database` (in `juju status`
+  output, or the captured `juju-status.yaml`/`db-dump.yaml`), for
+  `mysqlrouter`/`charmed_router` log mentions, and remember router
+  chains (router below router) are known-buggy territory.
+- Read the code **of the branch/revision that was deployed**, not your
+  checkout: `git show origin/8.0/edge:<path>` / `git show <charm>/revNNN:<path>`.
+  Revision↔tag mapping is in the `mysql-operators-source` skill.
+- **8.0 vs 8.4 divergence**: the same lib file ships on both branches with
+  diverging refactors and renamed databag keys. Grep the branch that
+  matches the deployed revision. The `kubernetes/` and `machines/` copies
+  of shared libs are kept byte-identical — a fix must usually touch both.
+- **Consecutive Charmhub revision numbers are often arch/channel pairs**,
+  not feature revisions (e.g. 747=arm64, 748=amd64 of the same code).
 - **Read app status AND unit status separately.** They are set by
   different code paths. App `blocked` with unit `active` (e.g. app-level
   relation blocks) and app `maintenance` + unit `active "Primary"` are
-  both real and mean different things than either alone.
+  both real and mean different things than either alone. App status is
+  rebuilt only by the leader in specific handlers — app `maintenance` +
+  unit `active` is typically a *stale app status from a lost event*, not
+  a second broken unit.
 - The unit message "Primary" means *local Group Replication primary*,
   not cluster-set primary.
 - Statuses are the charm's *opinion*: derived on update-status, lagging
   reality by up to the update-status interval, and masking each other
-  (blocked overwritten within one interval — see Gotchas). Never time
+  (blocked overwritten within one interval). A blocked status that
+  "healed itself" after ~40s–5min was masked, not fixed. Never time
   anything against `juju status` — poll actions (step 2) instead.
+- **`update-status-hook-interval`** is a legitimate observation dial (e.g.
+  `juju model-config update-status-hook-interval=15s` to see masking
+  happen, or 30m to freeze reactions during experiments) — remember to
+  restore it.
 - A unit parked in **`unknown`** right after deploy means its hooks never
   completed. On K8s the classic cause is a deploy without `--trust` (the
   RBAC race — the charm service account can't read `nodes` at cluster
   scope); the log signature and fix are in the `juju-cli` skill's Deploy
   section.
 
-### 2. Get cluster truth from actions
+For offline debugging / autopsy, know what each file can and cannot prove.
+Full file map, grep cookbook, and `db-dump.yaml` parsing:
+[bundle-anatomy.md](references/bundle-anatomy.md).
+
+| Evidence | Proves | Cannot prove |
+|---|---|---|
+| `pod/<unit>.log` | charm hook execution, juju-log lines, full tracebacks | workload-side (mysqld) internals |
+| `debug-log.txt` | uniter operations, hook lifecycle, controller view | (often truncated — check window) |
+| `status-log/*.yaml` | exact status/message transition timestamps | *why* a status was set |
+| `db-dump.yaml` | relation databags, secret metadata, permissions | charm-side timing |
+| `juju-status.txt` | final state snapshot | history |
+| workload `error.log` | mysqld/GR server-side truth | charm behavior |
+
+For live deployments, you can verify what is deployed as follows:
+juju ssh -m <model> mysql-k8s/0 \
+  "grep -n '<marker string>' /var/lib/juju/agents/unit-mysql-k8s-0/charm/src/charm.py"
+```
+
+- Deployed source lives at `/var/lib/juju/agents/unit-<app>-<n>/charm/`
+  (`src/`, `lib/`, `venv/`). A local `.charm` file can be months stale —
+  check mtime and `unzip -p <charm-file> <path> | grep <marker>` before
+  deploying it for verification.
+- Behavior that "should exist" in current git but doesn't appear in logs
+  is often just an older deployed revision. For revision↔tag mapping and
+  reading source at a deployed revision, see the `mysql-operators-source`
+  skill.
+
+### 2. Get cluster status from actions
 
 ```bash
 juju run -m <model> mysql-k8s/0 get-cluster-status           # cluster view
@@ -130,9 +193,41 @@ Running while its mysqld is dead — check pebble + a SQL probe, not pod state.
 **Router presence check**: if a `mysql-router` charm app is related to the
 database (via `backend-database`), client connectivity issues may be router
 issues — check the router app/unit statuses and its logs before blaming
-mysqld. Router chaining (router below router) is known-problematic.
+mysqld. Router chaining (router below router) is legal but
+known-problematic territory.
 
-### 4. Credentials
+### 4. Reconstruct the failure (from evidence)
+
+Load [hook-forensics.md](references/hook-forensics.md) for the full
+pattern catalog. Highlights:
+
+- Issue reports and AI-generated triages are **leads, not facts** —
+  verify every causal claim cheaply (revision A/B, git archaeology)
+  before building on it; premises like "this is a regression in rev X"
+  or "the hook never ran" have repeatedly been refuted.
+- Group log lines by **hook-context UUID** to reconstruct single hook
+  invocations; a Juju retry of a failed hook carries a different UUID.
+- Read tracebacks by **frame shape**: which lines belong to the charm vs
+  `ops/model.py` vs site-packages. A `KeyError` at a charm line with *no
+  ops frame* underneath means a plain-dict operation — frequently the
+  `{}` fallback returned when the peer relation no longer exists.
+- Teardown ordering: once `database-peers-relation-broken` completes,
+  every later hook sees `peers = None`.
+- Count `Deferring ...` vs `Re-emitting deferred event ...` lines; a
+  deferral with no final re-emission — or a handler that returned without
+  deferring — means a lost state transition (classic cause of stale app
+  statuses).
+- If the failure is about agent busyness/idle timeouts, parse the uniter
+  operation lifecycle with `scripts/parse_uniter_ops.py`.
+- Distinguish expected noise from symptoms (e.g. a charm related to
+  `data-integrator` blocks until configured — by design; see
+  [failure-taxonomy.md](references/failure-taxonomy.md)).
+- Anchor deployed tracebacks by **line content, not number** — line
+  numbers drift between the deployed revision and current branches.
+- If a log line has no hit in the charm repo, search dependency code under
+  the charm's venv/site-packages (e.g. `mysql_shell` library ERROR strings).
+
+### 5. Credentials
 
 ```bash
 juju run -m <model> mysql-k8s/0 get-password username=serverconfig
@@ -146,7 +241,7 @@ juju run -m <model> mysql-k8s/0 get-password username=serverconfig
 - **Re-fetch after every refresh/redeploy** — passwords rotate. `Access
   denied` on a known-good recipe means "check deployment freshness" first.
 
-### 5. Logs
+### 6. MySQL logs
 
 Workload-side (mysqld, audit):
 
@@ -156,25 +251,14 @@ juju ssh -m <model> --container mysql mysql-k8s/0 \
 # error.log may be empty between rotations; recent history is in archive_error/*.gz (zcat)
 ```
 
-Charm-side (hooks, events, tracebacks):
-
-```bash
-juju debug-log -m <model> --ms --level DEBUG --include unit-mysql-k8s-0 --replay --no-tail
-juju debug-log -m <model> -i unit-mysql-k8s-0 -n 0          # replay all + follow
-```
-
-- Every hook process starts with `ops <version> up and running.` — use as
-  a process-start marker when correlating.
 - Scheduled dispatches appear as `Emitting Juju event rotate_mysql_logs.`
   (per minute) and `heal_mysql_cluster.` (every ~2m) — normal, not errors.
-- On controllers where kubectl works, `kubectl logs <pod> -c charm` gives
-  the same content fresher (but is lost on container restart); juju
-  debug-log survives restarts (model logging config permitting — check
-  `juju model-config logging-config`).
+- Charm-side (hooks, events, tracebacks): `juju debug-log` — see the
+  `juju-cli` skill ("Logs, logging levels, logging config").
 
-### 6. Direct SQL and mysqlsh
+### 7. Direct SQL and mysqlsh
 
-Quick SQL probe via the mysql client (credentials from step 4; on K8s
+Quick SQL probe via the mysql client (credentials from step 5; on K8s
 run inside the workload container):
 
 ```bash
@@ -213,7 +297,7 @@ Switch interactively with `\sql`, `\js`, `\py`.
   (`serverconfig:$PW@localhost:33062`), or use `--password=$PW`. The URI
   scheme also selects the protocol (`mysqlx://…` vs `mysql://…`).
   Remember: `serverconfig` works on the admin port 33062;
-  `clusteradmin` cannot (no `SERVICE_CONNECTION_ADMIN` — step 4).
+  `clusteradmin` cannot (no `SERVICE_CONNECTION_ADMIN` — step 5).
 - **Protocol changes behavior**: auto-detect prefers X Protocol, which is
   fine for dba/cluster operations, but roles are not auto-activated over
   X (`CURRENT_ROLE()` → `NONE`) — force `--mysql` when session roles or
@@ -241,54 +325,23 @@ Switch interactively with `\sql`, `\js`, `\py`.
   PATH in the workload container; on machines deployments it ships with
   the charmed-mysql snap (`charmed-mysql.mysqlsh` — see
   [machines-topology.md](references/machines-topology.md)).
-
-### 7. Verify what is deployed
-
-Cheap and decisive before deep debugging:
-
-```bash
-juju ssh -m <model> mysql-k8s/0 \
-  "grep -n '<marker string>' /var/lib/juju/agents/unit-mysql-k8s-0/charm/src/charm.py"
-```
-
-- Deployed source lives at `/var/lib/juju/agents/unit-<app>-<n>/charm/`
-  (`src/`, `lib/`, `venv/`). A local `.charm` file can be months stale —
-  check mtime and `unzip -p <charm-file> <path> | grep <marker>` before
-  deploying it for verification.
-- Behavior that "should exist" in current git but doesn't appear in logs
-  is often just an older deployed revision. For revision↔tag mapping and
-  reading source at a deployed revision, see the `mysql-operators-source`
-  skill.
+- **mysqlsh refusals are contracts**: "Cannot perform operation on an
+  healthy cluster because it can only be used to restore a cluster from
+  quorum loss" is Group Replication's safety guard, not a bug.
 
 ### 8. Report
 
 Summarize: cluster topology (members, roles, states), charm/juju/MySQL
 versions, statuses with their *timestamps* (use `status-log` or debug-log
 ordering when staleness matters), suspected root cause, and the next
-probe. For signature-level interpretation, load the
-`charmed-mysql-log-autopsy` skill's `references/failure-taxonomy.md`.
-
-## Gotchas
-
-- **juju CLI mechanics**: options before the target, remote commands as
-  one quoted string, the snap's `/tmp` restriction, `juju exec --unit`
-  limits, model/controller selection — all live in the `juju-cli` skill;
-  do not re-derive them here.
-- **kubectl may be unusable** (API unreachable from your workstation).
-  Everything above is achievable via juju ssh/exec/actions.
-- **`get-password` vs secrets**: `get-password` on any unit returns the
-  app-wide user passwords (they are app-level secrets), fine for
-  interrogation.
-- **`juju status` statuses are opinions**: unit status derives from
-  peer-databag `member-state`/`member-role` on update-status; blocked
-  statuses set by other handlers get overwritten within one interval.
-  A "blocked that healed itself" was masked, not fixed.
-- **`update-status-hook-interval`** is a legitimate observation dial (e.g.
-  `juju model-config update-status-hook-interval=15s` to see masking
-  happen, or 30m to freeze reactions during experiments) — remember to
-  restore it.
+probe. Separate the *trigger* (often transient) from the *defects* that
+made it visible, state your confidence (verified / likely / hypothesis)
+and what evidence would settle it. For signature-level interpretation,
+load [failure-taxonomy.md](references/failure-taxonomy.md).
 
 ## References
+
+Load on demand (all paths relative to this skill):
 
 - [references/k8s-topology.md](references/k8s-topology.md) — step 3: full
   K8s container/path/port/secret map, FQDN scheme, control-plane vs member
@@ -296,5 +349,18 @@ probe. For signature-level interpretation, load the
 - [references/machines-topology.md](references/machines-topology.md) — the
   VM charm: snap layout, systemd/journalctl, paths, and how they differ
   from K8s.
-- [references/charm-users.md](references/charm-users.md) — step 4/6:
+- [references/charm-users.md](references/charm-users.md) — steps 5/7:
   user/role/privilege map and ready-made reproducer users.
+- [references/bundle-anatomy.md](references/bundle-anatomy.md) — step 1
+  (offline): file map of Test Observer bundles and crashdumps, grep
+  cookbook, `db-dump.yaml` and `status-log` parsing.
+- [references/hook-forensics.md](references/hook-forensics.md) — step 4:
+  hook-context reconstruction, traceback frame analysis, retry/teardown
+  semantics, deferred-event and uniter-operation analysis.
+- [references/failure-taxonomy.md](references/failure-taxonomy.md) —
+  steps 4/8: signature → cause → confirmation tables.
+- `scripts/parse_uniter_ops.py` — step 4: measure uniter operation
+  durations/gaps from `debug-log.txt` (`--help` for usage).
+- `mysql-operators-source` skill — revision↔tag mapping, source reading at
+  a deployed revision, branch selection, ops-version pinning (its
+  `references/version-archaeology.md`).

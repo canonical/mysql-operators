@@ -150,7 +150,7 @@ setsid juju debug-log -m <model> -i unit-app-0 -n 0 > t0.log 2>&1 < /dev/null &
 while true; do date >> samples.log; juju status -m <model> --format json >> samples.log; sleep 10; done &
 ```
 
-Then analyze the uniter lifecycle from `t0.log` with the log-autopsy
+Then analyze the uniter lifecycle from `t0.log` with the juju-inspect
 skill's `scripts/parse_uniter_ops.py` (durations, gaps, busy fraction).
 Compare per-operation durations between environments before concluding —
 durations scale with the rig, cadence does not.

@@ -24,8 +24,8 @@ Deliberately breaking a live Charmed MySQL deployment to create
 **controlled failure states**. This skill is about *injection* — choosing
 a primitive and producing the exact target state, then observing the
 designed recovery paths — not about diagnosing a failure that already
-happened (for that: the `charmed-mysql-juju-inspect` skill to gather
-evidence, the `charmed-mysql-log-autopsy` skill to root-cause it). The core
+happened (for that: the `charmed-mysql-juju-inspect` skill — it gathers
+live evidence and root-causes from artifacts). The core
 discipline: **state the target cluster state first, then choose the
 primitive by the post-kill dynamics** — the same intent ("kill mysqld")
 produces healthy, degraded-quorate, or NO_QUORUM clusters depending on
@@ -183,8 +183,8 @@ For failures that are not member death:
 For each experiment: target state → primitive used → observed state at
 each checkpoint (with timestamps) → whether the recovery matched the
 designed path → deviations. Preserve models/logs until the post-mortem is
-done. See the `charmed-mysql-log-autopsy` skill for interpreting what you
-captured.
+done. See the `charmed-mysql-juju-inspect` skill for interpreting what
+you captured.
 
 ## Gotchas (dead ends — do not retry blind)
 

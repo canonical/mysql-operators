@@ -1,7 +1,7 @@
 # Failure taxonomy — signature → likely cause → confirmation
 
 Quick-reference tables distilled from real Charmed MySQL debugging cases.
-Use in `charmed-mysql-log-autopsy` step 7 (and as a triage shortcut in
+Use in `charmed-mysql-juju-inspect` steps 4/8 (and as a triage shortcut in
 `charmed-mysql-nightly-triage`). Read the row, confirm with the listed
 evidence, then apply the corresponding forensics reference.
 

@@ -1,6 +1,7 @@
 # Bundle anatomy — evidence sources and how to read them
 
-Reference for `charmed-mysql-log-autopsy` step 3. Covers the two common
+Reference for `charmed-mysql-juju-inspect` step 1, offline part (evidence
+mapping). Covers the two common
 capture formats: **Test Observer log bundles** (charm QA) and
 **juju-crashdumps** (`juju crashdump` / controller crashdumps attached to
 issues).

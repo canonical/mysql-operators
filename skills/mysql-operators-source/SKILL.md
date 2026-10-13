@@ -22,8 +22,8 @@ How to get from "I need to see the charm code that produced this" to the
 right file, at the right revision, without wasted detours. Read this once,
 then use [version-archaeology.md](references/version-archaeology.md) for
 the revision/tag deep-dives. Pairs naturally with the
-`charmed-mysql-log-autopsy` skill (evidence → source mapping) and the
-`charmed-mysql-juju-inspect` skill (live evidence gathering).
+`charmed-mysql-juju-inspect` skill (live evidence gathering, offline
+autopsy).
 
 ## Monorepo layout
 

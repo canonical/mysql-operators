@@ -6,22 +6,15 @@ https://github.com/canonical/mysql-operators (the `mysql` VM charm and the
 `mysql-k8s` Kubernetes charm). The knowledge is distilled from real
 debugging case studies.
 
-All skills are diagnosis-oriented: they end at a root-cause analysis and
-suggested fix directions. The live-access skills do modify what they are
-pointed at — `charmed-mysql-fault-injection` on purpose — and carry
-explicit safety rules: scope to the named model, prefer a scratch model
-for destructive experiments, and verify state after every action.
-
 ## Skills
 
 | Skill | Use it for | Needs live access |
 |---|---|---|
-| `juju-cli` | Getting the Juju CLI itself right: deploy with trust, `juju ssh/exec` into the right k8s container, charm actions vs shell commands and their client-side wait timeouts, config-key discovery, destroy-model with storage, controller/model confusion, background status samplers. | Yes |
+| `juju-cli` | Getting the Juju CLI itself right: deploy with trust, `juju ssh/exec` into the right k8s container, charm actions vs shell commands and their client-side wait timeouts, config-key discovery, destroy-model with storage, controller/model confusion, leftover background status samplers. | Yes |
 | `mysql-operators-source` | Navigating the canonical/mysql-operators source: monorepo layout (`mysql` vs `mysql-k8s`), fetching the source for a deployed revision, grep cookbook for tracing errors to call sites and tests, charm config vs mysqld configuration. | No |
-| `charmed-mysql-log-autopsy` | Static diagnosis from logs, Test Observer bundles, juju crashdumps, `db-dump.yaml`, pasted tracebacks, or issue reports. Fingerprints versions, reconstructs hook timelines, maps evidence to source code, classifies the failure via a taxonomy. Includes a script to parse Juju uniter operation lifecycles. | No |
+| `charmed-mysql-juju-inspect` | Diagnosing Charmed MySQL failures both ways. Live: interrogating a misbehaving deployment through Juju — reading `juju status` correctly (app vs unit, agent vs workload), cluster truth via actions, containers/ports/pebble topology, credentials, logs, direct SQL. Offline: static diagnosis from logs, Test Observer bundles, juju crashdumps, `db-dump.yaml`, pasted tracebacks, or issue reports — fingerprints versions, reconstructs hook timelines, maps evidence to source code, classifies the failure via a taxonomy, judges whether a reported regression is credible (git archaeology). Includes a script to parse Juju uniter operation lifecycles. | Both (live or offline) |
 | `charmed-mysql-nightly-triage` | Triaging failed CI: nightly runs, PR integration failures, Test Observer executions. Classifies failures (deterministic bug / flake / infra / test-plan bug), exonerates innocent PRs, produces structured summaries. | No |
-| `charmed-mysql-juju-inspect` | Interrogating a live, misbehaving deployment through Juju: reading `juju status` correctly (app vs unit, agent vs workload), cluster truth via actions, containers/ports/pebble topology, credentials, logs, direct SQL. | Yes |
-| `charmed-mysql-fault-injection` | Reproducing failures on a live deployment: the member-death / quorum-loss kill taxonomy, Group Replication guardrails, deterministic repro of race-conditional bugs, model and experiment hygiene. | Yes |
+| `charmed-mysql-fault-injection` | Reproducing failures on a live deployment: the member-death / quorum-loss kill taxonomy, Group Replication guardrails, deterministic repro of race-conditional bugs, model and experiment hygiene (works on a scratch model it owns and tears down). | Yes |
 
 Each skill directory contains a `SKILL.md` (workflow + gotchas) and
 `references/` with the detailed material, loaded on demand.

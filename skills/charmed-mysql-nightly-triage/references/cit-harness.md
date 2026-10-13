@@ -76,7 +76,7 @@ The logs bundle (from Test Observer `relevant_links`) is a juju-crashdump:
   which message).
 - `juju-status.txt` — final snapshot.
 
-For bundle internals and grep cookbook, see the log-autopsy skill's
+For bundle internals and grep cookbook, see the juju-inspect skill's
 `references/bundle-anatomy.md`.
 
 ## Wait-condition fingerprints in `JujuWaitTimeoutError`
