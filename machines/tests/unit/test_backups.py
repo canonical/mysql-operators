@@ -359,6 +359,26 @@ Juju Version: 0.0.0
         self.assertFalse(success)
         self.assertEqual(error_message, "Cluster is not in a healthy state")
 
+    @patch("mysql_vm_helpers.MySQL.get_cluster_status")
+    def test_can_cluster_perform_backup_single_unit(self, _get_cluster_status):
+        """Test that a healthy single-unit cluster can perform backups without force.
+
+        A single-unit cluster is reported as OK_NO_TOLERANCE by MySQL Shell (no
+        failure tolerance), which should not block backups.
+        """
+        _get_cluster_status.return_value = {"defaultReplicaSet": {"status": "OK_NO_TOLERANCE"}}
+
+        # default harness deploys a single unit (planned_units == 1)
+        success, error_message = self.mysql_backups._can_cluster_perform_backup()
+        self.assertTrue(success)
+        self.assertIsNone(error_message)
+
+        # a degraded multi-unit cluster reporting OK_NO_TOLERANCE is still rejected
+        self.harness.add_relation_unit(self.peer_relation_id, "mysql/1")
+        success, error_message = self.mysql_backups._can_cluster_perform_backup()
+        self.assertFalse(success)
+        self.assertEqual(error_message, "Cluster is not in a healthy state")
+
     @patch("mysql_vm_helpers.MySQL.offline_mode_and_hidden_instance_exists", return_value=False)
     @patch("mysql_vm_helpers.MySQL.get_member_state", return_value="ONLINE")
     @patch("mysql_vm_helpers.MySQL.get_member_role", return_value="SECONDARY")
