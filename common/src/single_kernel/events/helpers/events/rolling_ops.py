@@ -113,7 +113,6 @@ class RollingHelper:
             logger.debug("Skipping instance restart: there ware waiting ops")
             return OperationResult.RETRY_RELEASE
 
-
         self._restart_instance()
         self._recover_instance()
         return OperationResult.RELEASE
