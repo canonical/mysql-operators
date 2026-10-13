@@ -58,7 +58,8 @@ class RollingManager:
             return
 
         with self._clients.build_cluster_client(primary_host) as client:
-            client.rejoin_instance(
-                instance_label=instance_label,
-                instance_host=instance_host,
-            )
+            if instance_label not in client.fetch_instances():
+                return
+
+            client.rejoin_instance(instance_label, instance_host)
+            logger.info(f"Succeeded to rejoin instance {instance_label}")
