@@ -77,6 +77,11 @@ class ClusterManager:
         # due the difference between the time we test for locks and acquire them
         time.sleep(random.uniform(0, 1.5))
 
+        # Stop replication on the joining instance before asking the primary to add it.
+        # If a juju unit is bootstrapped preserving its PVC, MySQL data directory keeps
+        # the old InnoDB Cluster metadata, so MySQL attempts to join the previous cluster
+        self._clients.instance.stop_replication()
+
         with self._clients.build_cluster_client(primary_host) as client:
             if instance_label in client.fetch_instances():
                 client.remove_instance(instance_label, instance_host)

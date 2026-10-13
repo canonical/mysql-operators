@@ -205,5 +205,4 @@ class SelfHealingEventHandler(Object):
             case InstanceState.UNREACHABLE, False:
                 self._recover_from_unreachable_follower()
 
-        self._manager.update_state()
         self._helpers.update_database_endpoints()
