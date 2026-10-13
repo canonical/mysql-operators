@@ -2,9 +2,10 @@
 # See LICENSE file for licensing details.
 
 import unittest
-from unittest.mock import PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+from charmlibs.rollingops import OperationResult
 from charms.mysql.v0.mysql import (
     MySQLConfigureInstanceError,
     MySQLConfigureMySQLUsersError,
@@ -382,3 +383,51 @@ class TestCharm(unittest.TestCase):
         _get_cluster_primary_address.assert_not_called()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
+
+    def test_restart_does_not_preemptively_switch_primary(self):
+        """Restart leaves the primary election to Group Replication.
+
+        _restart() used to preemptively switch the primary to
+        ``self.peers.units.pop()`` before restarting mysqld. That crashed the
+        restart hook with ``KeyError: 'pop from an empty set'`` in the
+        scale-up window (planned units are counted before the new units
+        appear on the database-peers relation), and the switchover was
+        dropped in review: Group Replication elects a new primary on its own
+        when the old one stops. The peers-present case is the strongest
+        witness here, as it is where the old preemptive switch actually ran.
+
+        The update-status tail of _restart is unrelated machinery (volume
+        checks, ports) for this regression and is patched out to keep the
+        test hermetic.
+        """
+        self.harness.set_planned_units(3)
+        self.harness.update_relation_data(
+            self.peer_relation_id,
+            self.charm.app.name,
+            {"cluster-name": "test_cluster", "cluster-set-domain-name": "test_cluster_set"},
+        )
+
+        mock_mysql = MagicMock()
+        mock_mysql.get_primary_label.return_value = self.charm.unit_label
+        mock_mysql.cluster_metadata_exists.return_value = True
+        peers = MagicMock()
+        peers.units = {MagicMock()}
+
+        with (
+            patch.object(
+                MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
+            ),
+            patch.object(
+                MySQLOperatorCharm, "peers", new_callable=PropertyMock, return_value=peers
+            ),
+            patch("charm.MySQLOperatorCharm.recover_unit_after_restart"),
+            patch.object(MySQLOperatorCharm, "_on_update_status"),
+            patch("charm.sleep"),
+        ):
+            result = self.charm._restart()
+
+        self.assertEqual(result, OperationResult.RELEASE)
+        # no preemptive primary switchover
+        mock_mysql.set_cluster_primary.assert_not_called()
+        # but mysqld itself is still restarted
+        mock_mysql.restart_mysqld.assert_called_once()
