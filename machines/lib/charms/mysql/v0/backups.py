@@ -371,7 +371,13 @@ class MySQLBackups(Object):
             return False, "Cluster status unknown"
 
         cluster_status = cluster_status["defaultReplicaSet"]["status"]
-        if cluster_status not in [ClusterStatus.OK, ClusterStatus.OK_PARTIAL]:
+        # A single-unit cluster is fully online with quorum, but MySQL Shell
+        # reports it as OK_NO_TOLERANCE (no failure tolerance). Backups are
+        # allowed without `force` in that case, as the unit is healthy.
+        can_perform_backup = cluster_status in [ClusterStatus.OK, ClusterStatus.OK_PARTIAL] or (
+            cluster_status == ClusterStatus.OK_NO_TOLERANCE and self.charm.app.planned_units() == 1
+        )
+        if not can_perform_backup:
             return False, "Cluster is not in a healthy state"
 
         return True, None
