@@ -197,14 +197,26 @@ class MySQLInstanceClient:
 
     def fetch_role(self) -> str | None:
         """Fetch the instance role."""
-        if state := self._client.get_instance_replication_role():
+        try:
+            state = self._client.get_instance_replication_role()
+        except ExecutionError:
+            logger.warning("Failed to fetch instance role")
+            return None
+
+        if state:
             return state.value
         else:
             return None
 
     def fetch_state(self) -> str | None:
         """Fetch the instance state."""
-        if state := self._client.get_instance_replication_state():
+        try:
+            state = self._client.get_instance_replication_state()
+        except ExecutionError:
+            logger.warning("Failed to fetch instance state")
+            return None
+
+        if state:
             return state.value
         else:
             return None

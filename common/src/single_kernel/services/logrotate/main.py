@@ -2,19 +2,26 @@
 # See LICENSE file for licensing details.
 
 import argparse
+import logging
 import subprocess
 import time
+
+logger = logging.getLogger(__name__)
 
 
 def _dispatch_event(operator_unit: str, operator_path: str) -> None:
     """Dispatch the `rotate-mysql-logs` event."""
-    dispatch_path = f"JUJU_DISPATCH_PATH=hooks/log_rotation"
+    dispatch_path = "JUJU_DISPATCH_PATH=hooks/log_rotation"
     operator_path = f"{operator_path}/dispatch"
 
-    subprocess.run(
-        ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
-        check=True,
-    )
+    try:
+        subprocess.run(
+            ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        # failed dispatch must not kill the log-rotation loop.
+        logger.error(f"Failed to dispatch the log-rotation event: {e}")
 
 
 def _sleep_minute(start_time: float) -> None:

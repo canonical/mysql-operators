@@ -12,13 +12,18 @@ logger = logging.getLogger(__name__)
 
 def _dispatch_event(operator_unit: str, operator_path: str) -> None:
     """Dispatch the `ip-address-change` event."""
-    dispatch_path = f"JUJU_DISPATCH_PATH=hooks/address_changed"
+    dispatch_path = "JUJU_DISPATCH_PATH=hooks/address_changed"
     operator_path = f"{operator_path}/dispatch"
 
-    subprocess.run(
-        ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
-        check=True,
-    )
+    try:
+        subprocess.run(
+            ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        # Since check=True, we should ensure a failed dispatch doesn't kill address-resolution,
+        # as it is precisely when the unit is unhealthy that healing is most needed.
+        logger.error(f"Failed to dispatch the address-changed event: {e}")
 
 
 def _resolve_local_address() -> str:
