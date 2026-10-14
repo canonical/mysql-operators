@@ -105,10 +105,10 @@ class SelfHealingEventHandler(Object):
             self._manager.recover_cluster_quorum()
         except RuntimeError as e:
             logger.error(f"Failed to recover cluster quorum: {e}")
-            self._charm.unit.status = BlockedStatus("Unable to recover cluster")
+            self._charm.set_unit_status(BlockedStatus("Unable to recover cluster"))
         else:
-            self._charm.unit.status = self._helpers.build_unit_status()
-            self._charm.app.status = self._helpers.build_app_status()
+            self._charm.set_unit_status(self._helpers.build_unit_status())
+            self._charm.set_app_status(self._helpers.build_app_status())
 
     def _recover_from_online_follower(self) -> None:
         """Recover the cluster from an ONLINE follower."""
@@ -117,7 +117,7 @@ class SelfHealingEventHandler(Object):
             return
 
         self._manager.stop_replication()
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
 
     def _recover_from_offline_leader(self) -> None:
         """Recover the cluster from an OFFLINE leader."""
@@ -145,8 +145,8 @@ class SelfHealingEventHandler(Object):
             logger.warning(f"Failed to recover cluster quorum: {e}")
             self._manager.recreate_cluster(self._charm.get_unit_label(self._charm.unit))
         else:
-            self._charm.unit.status = self._helpers.build_unit_status()
-            self._charm.app.status = self._helpers.build_app_status()
+            self._charm.set_unit_status(self._helpers.build_unit_status())
+            self._charm.set_app_status(self._helpers.build_app_status())
 
     def _recover_from_offline_follower(self) -> None:
         """Recover the cluster from an OFFLINE follower."""

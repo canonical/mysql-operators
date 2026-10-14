@@ -143,10 +143,10 @@ class LifecycleEventHandler(Object):
         """Update the unit state depending on the unit role."""
         if self._charm.unit.is_leader():
             self._manager.update_state("PRIMARY", "ONLINE")
-            self._charm.unit.status = ActiveStatus("Primary")
+            self._charm.set_unit_status(ActiveStatus("Primary"))
         else:
             self._manager.update_state("SECONDARY", "waiting")
-            self._charm.unit.status = WaitingStatus("Waiting to join the cluster")
+            self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
 
         try:
             self._charm.unit.set_ports(self._charm.service_server.port)
@@ -160,9 +160,9 @@ class LifecycleEventHandler(Object):
             self._charm.service_server.install()
             self._charm.service_exporter.install()
         except Exception:
-            self._charm.unit.status = BlockedStatus("Failed to install MySQL")
+            self._charm.set_unit_status(BlockedStatus("Failed to install MySQL"))
         else:
-            self._charm.unit.status = WaitingStatus("Waiting to start MySQL")
+            self._charm.set_unit_status(WaitingStatus("Waiting to start MySQL"))
 
     def _on_start(self, event: StartEvent) -> None:
         """Event handler for the start event."""
@@ -181,7 +181,7 @@ class LifecycleEventHandler(Object):
         # runtime issues (e.g. a missing `juju trust`) surface before the workload is initialized.
         if self._charm.unit.is_leader():
             if not self._charm.create_app_services():
-                self._charm.unit.status = BlockedStatus("Run `juju trust <app-name>`")
+                self._charm.set_unit_status(BlockedStatus("Run `juju trust <app-name>`"))
                 event.defer()
                 return
 
@@ -220,7 +220,8 @@ class LifecycleEventHandler(Object):
 
         self._manager.update_state()
         self._charm.update_app_labels()
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
+        self._charm.set_app_status(self._helpers.build_app_status())
 
     def _on_storage_detaching(self, _: StorageDetachingEvent) -> None:
         """Event handler for the storage-detaching event."""

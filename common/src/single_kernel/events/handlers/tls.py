@@ -103,7 +103,7 @@ class TLSEventHandler(Object, ABC):
             event.defer()
             return
 
-        self._charm.unit.status = MaintenanceStatus("Enabling TLS")
+        self._charm.set_unit_status(MaintenanceStatus("Enabling TLS"))
         ca, cert, key = self._get_tls_data()
 
         try:
@@ -118,27 +118,27 @@ class TLSEventHandler(Object, ABC):
         try:
             self._manager.enable(str(ca_path), str(cert_path), str(key_path))
         except RuntimeError as e:
-            self._charm.unit.status = BlockedStatus("Failed to enable TLS")
+            self._charm.set_unit_status(BlockedStatus("Failed to enable TLS"))
             logger.error(e)
             return
 
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
 
     def _on_relation_broken(self, _: RelationBrokenEvent) -> None:
         """Event handler for the relation-broken event."""
-        self._charm.unit.status = MaintenanceStatus("Disabling TLS")
+        self._charm.set_unit_status(MaintenanceStatus("Disabling TLS"))
 
         try:
             self._manager.disable()
         except RuntimeError as e:
-            self._charm.unit.status = BlockedStatus("Failed to disable TLS")
+            self._charm.set_unit_status(BlockedStatus("Failed to disable TLS"))
             logger.error(e)
             return
 
         if self._charm.unit.is_leader():
             self._manager.delete_private_key_uri()
 
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
 
 
 class TLSClientEventHandler(TLSEventHandler):
