@@ -90,12 +90,6 @@ class RollingHelper:
             logger.debug("Skipping replication restart: there are waiting ops")
             return OperationResult.RETRY_RELEASE
 
-        # NOTE:
-        # This method used to contain a preemptive switch-over to any other application unit
-        # guarded by an `self._charm.app.planned_units() > 1` clause in this specific spot.
-        # However, recent reports show race conditions around scale up / down scenarios,
-        # therefore we decided to remove it in Charmed MySQL 8.0.
-
         logger.info("Restarting replication")
         self._manager.restart_instance_replication(
             instance_label=self._charm.get_unit_label(self._charm.unit),
@@ -118,12 +112,6 @@ class RollingHelper:
         if self._manager.is_cluster_primary and self._check_instance_waiting_ops(peers_relation):
             logger.debug("Skipping instance restart: there ware waiting ops")
             return OperationResult.RETRY_RELEASE
-
-        # NOTE:
-        # This method used to contain a preemptive switch-over to any other application unit
-        # guarded by an `self._charm.app.planned_units() > 1` clause in this specific spot.
-        # However, recent reports show race conditions around scale up / down scenarios,
-        # therefore we decided to remove it in Charmed MySQL 8.0.
 
         self._restart_instance()
         self._recover_instance()

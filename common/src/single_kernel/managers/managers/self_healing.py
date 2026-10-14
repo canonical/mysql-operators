@@ -5,7 +5,7 @@ import logging
 import random
 import time
 
-from mysql_shell.models import ClusterStatus, InstanceState
+from mysql_shell.models import InstanceState
 
 from ...state import PeerState
 from ...workload import BaseSystem
@@ -27,27 +27,13 @@ class SelfHealingManager:
         """Fetch the cluster members."""
         return self._clients.instance.count_cluster_members(states=[InstanceState.ONLINE])
 
-    def check_members_unreachable(self) -> bool:
-        """Check whether there are cluster members in UNREACHABLE state."""
-        states = [InstanceState.UNREACHABLE]
-        unreachable = self._clients.instance.count_cluster_members(states=states)
-        return unreachable > 0
-
-    def fetch_cluster_state(self) -> str:
+    def fetch_cluster_state(self) -> str | None:
         """Fetch the cluster state."""
-        state = self._clients.cluster.fetch_state()
-        if not state:
-            state = ClusterStatus.UNREACHABLE
+        return self._clients.cluster.fetch_state()
 
-        return state
-
-    def fetch_instance_state(self) -> str:
+    def fetch_instance_state(self) -> str | None:
         """Fetch the instance state."""
-        state = self._clients.instance.fetch_state()
-        if not state:
-            state = InstanceState.UNREACHABLE
-
-        return state
+        return self._clients.instance.fetch_state()
 
     def rejoin_instance(self, instance_label: str, instance_host: str, addrs: list[str]) -> None:
         """Rejoin the instance back into the cluster.
@@ -75,7 +61,7 @@ class SelfHealingManager:
         """Recover the cluster quorum."""
         # Group replication quorum recovery must not run when a peer is UNREACHABLE.
         # That scenario indicates a network partition where the remote side may be healthy.
-        if self.check_members_unreachable():
+        if self._clients.instance.count_cluster_members(states=[InstanceState.UNREACHABLE]) > 0:
             logger.warning("Skipping quorum recovery: there are unreachable instances")
             return
 
