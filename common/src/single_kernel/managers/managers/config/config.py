@@ -61,6 +61,8 @@ class ConfigManager:
             "bind_address": "0.0.0.0",
             "admin_address": instance_address,
             "report_host": instance_address,
+            "enforce_gtid_consistency": "ON",
+            "gtid_mode": "ON",
             "general_log": "OFF",
             "general_log_file": str(self._system.paths.mysql_logs / "general.log"),
             "log_bin": str(self._system.paths.mysql_logs / "binlog"),
