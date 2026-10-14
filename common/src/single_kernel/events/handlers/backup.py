@@ -102,7 +102,7 @@ class BackupEventHandler(Object, ABC):
             )
 
             try:
-                _________ = self._charm.unit.status = MaintenanceStatus("Creating backup")
+                _________ = self._charm.set_unit_status(MaintenanceStatus("Creating backup"))
                 output, _ = self._manager.create_backup(backup_path, username, password)
             except (OSError, RuntimeError) as e:
                 logger.error(f"Failed to create backup: {e}")
@@ -166,7 +166,7 @@ class BackupEventHandler(Object, ABC):
         buffer_pool = self._helpers.config.calculate_buffer_pool()
 
         try:
-            ____________ = self._charm.unit.status = MaintenanceStatus("Downloading backup")
+            ____________ = self._charm.set_unit_status(MaintenanceStatus("Downloading backup"))
             output, path = self._manager.download_backup(backup_id)
             ____________ = self._manager.prepare_backup(path, buffer_pool)
         except RuntimeError as e:
@@ -174,7 +174,7 @@ class BackupEventHandler(Object, ABC):
             event.fail(f"Failed to download backup: {e}")
             return
 
-        self._charm.unit.status = MaintenanceStatus("Restoring backup")
+        self._charm.set_unit_status(MaintenanceStatus("Restoring backup"))
         self._charm.service_server.stop()
 
         try:
@@ -188,7 +188,7 @@ class BackupEventHandler(Object, ABC):
             return
 
         self._charm.service_server.start()
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
 
         try:
             self._manager.recreate_cluster(self._charm.get_unit_label(self._charm.unit))

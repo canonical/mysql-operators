@@ -13,7 +13,7 @@ from mysql_shell_contrib.builders import (
     CharmLoggingQueryBuilder,
 )
 from ops.charm import CharmBase
-from ops.model import Unit
+from ops.model import StatusBase, Unit
 from pydantic.main import BaseModel
 
 from ...core import (
@@ -167,6 +167,20 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     def secret_store(self) -> SecretStore:
         """Return the secret store."""
         return SecretStore(self.model)
+
+    def set_app_status(self, status: StatusBase) -> None:
+        """Set the application status."""
+        if not self.unit.is_leader():
+            return
+
+        self.app.status = status
+
+    def set_unit_status(self, status: StatusBase) -> None:
+        """Set the unit status."""
+        if self.refreshing:
+            return
+
+        self.unit.status = status
 
     def _build_mysql_connection(self) -> ConnectionDetails:
         """Build the MySQL Shell connection details."""

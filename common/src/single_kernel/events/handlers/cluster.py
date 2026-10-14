@@ -221,8 +221,8 @@ class ClusterEventHandler(Object):
 
         try:
             self._manager.recreate_cluster(instance_label, cluster_set_name)
-            self._charm.unit.status = self._helpers.build_unit_status()
-            self._charm.app.status = self._helpers.build_app_status()
+            self._charm.set_unit_status(self._helpers.build_unit_status())
+            self._charm.set_app_status(self._helpers.build_app_status())
         except RuntimeError as e:
             event.fail(f"Failed to recreate cluster: {e}")
             return
@@ -264,7 +264,7 @@ class ClusterEventHandler(Object):
             addrs=peers_addresses,
         )
 
-        self._charm.unit.status = self._helpers.build_unit_status()
+        self._charm.set_unit_status(self._helpers.build_unit_status())
 
     def _on_relation_departed(self, _: RelationDepartedEvent) -> None:
         """Event handler for the relation-departed event."""

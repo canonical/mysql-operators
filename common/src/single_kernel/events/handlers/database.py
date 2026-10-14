@@ -115,10 +115,10 @@ class DatabaseEventHandler(Object):
             self._set_database_user(relation_id, database, extra_roles)
             self._set_database_version(relation_id)
         except RuntimeError:
-            self._charm.unit.status = BlockedStatus("Failed to create database")
+            self._charm.set_unit_status(BlockedStatus("Failed to create database"))
             return
 
-        self._charm.unit.status = ActiveStatus()
+        self._charm.set_unit_status(ActiveStatus())
         self._charm.update_app_labels()
         self.update_database_endpoints(relation_id)
 
