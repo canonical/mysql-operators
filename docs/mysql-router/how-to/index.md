@@ -4,9 +4,9 @@
 ```{toctree}
 :titlesonly:
 
-deploy
-scale
-integrate
+Deploy <deploy>
+Scale <scale>
+Integrate <integrate>
 ```
 
 ```{toctree}
