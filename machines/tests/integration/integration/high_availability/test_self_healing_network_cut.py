@@ -15,8 +15,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from constants import REPLICATION_USERNAME
-
+from ...constants import REPLICATION_USERNAME
 from ...helpers import (
     generate_random_string,
     is_connection_possible,
