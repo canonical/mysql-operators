@@ -12,8 +12,7 @@ import jubilant
 import pytest
 from jubilant import Juju
 
-from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
-
+from ..constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 from ..helpers import execute_queries_on_unit, generate_random_string
 from ..helpers_ha import (
     CHARM_METADATA,
