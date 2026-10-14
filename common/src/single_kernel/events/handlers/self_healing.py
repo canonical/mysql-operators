@@ -100,6 +100,13 @@ class SelfHealingEventHandler(Object):
             logger.debug("Skipping cluster self-healing: cluster has quorum")
             return
 
+        if self._manager.check_members_unreachable():
+            # The instance is on the minority side of a network partition.
+            # Stopping replication here would preclude GR auto-rejoin once
+            # connectivity is restored.
+            logger.warning("Skipping cluster self-healing: there are unreachable instances")
+            return
+
         try:
             self._manager.stop_replication()
             self._manager.recover_cluster_quorum()
@@ -114,6 +121,13 @@ class SelfHealingEventHandler(Object):
         """Recover the cluster from an ONLINE follower."""
         if not self._manager.fetch_cluster_state() == ClusterStatus.NO_QUORUM:
             logger.debug("Skipping cluster self-healing: cluster has quorum")
+            return
+
+        if self._manager.check_members_unreachable():
+            # The instance is on the minority side of a network partition.
+            # Stopping replication here would preclude GR auto-rejoin once
+            # connectivity is restored.
+            logger.warning("Skipping cluster self-healing: there are unreachable instances")
             return
 
         self._manager.stop_replication()
@@ -157,6 +171,16 @@ class SelfHealingEventHandler(Object):
             self._rejoin_instance()
             return
 
+    def _recover_from_unreachable(self) -> None:
+        """Recover the unit from an UNREACHABLE state.
+
+        The server process is running but group replication is not (e.g. it
+        could not re-join after a network partition). Restarting the server
+        re-triggers GR start-on-boot.
+        """
+        self._charm.service_server.stop()
+        self._charm.service_server.start()
+
     def _on_self_healing(self, _: SelfHealingEvent) -> None:
         """Event handler for the self-healing event."""
         if not self._charm.service_server.running:
@@ -173,14 +197,19 @@ class SelfHealingEventHandler(Object):
         state = self._manager.fetch_instance_state()
         leader = self._charm.unit.is_leader()
 
+        if state is None:
+            # The server is running but group replication is not.
+            self._recover_from_unreachable()
+            return
+
         match state, leader:
             case InstanceState.ONLINE, True:
                 self._recover_from_online_leader()
             case InstanceState.ONLINE, False:
                 self._recover_from_online_follower()
-            case InstanceState.OFFLINE, True:
+            case InstanceState.OFFLINE | InstanceState.ERROR, True:
                 self._recover_from_offline_leader()
-            case InstanceState.OFFLINE, False:
+            case InstanceState.OFFLINE | InstanceState.ERROR, False:
                 self._recover_from_offline_follower()
 
         self._helpers.update_database_endpoints()

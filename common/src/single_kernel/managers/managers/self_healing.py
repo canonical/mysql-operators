@@ -27,6 +27,12 @@ class SelfHealingManager:
         """Fetch the cluster members."""
         return self._clients.instance.count_cluster_members(states=[InstanceState.ONLINE])
 
+    def check_members_unreachable(self) -> bool:
+        """Check whether there are cluster members in UNREACHABLE state."""
+        states = [InstanceState.UNREACHABLE]
+        unreachable = self._clients.instance.count_cluster_members(states=states)
+        return unreachable > 0
+
     def fetch_cluster_state(self) -> str | None:
         """Fetch the cluster state."""
         return self._clients.cluster.fetch_state()
@@ -61,7 +67,7 @@ class SelfHealingManager:
         """Recover the cluster quorum."""
         # Group replication quorum recovery must not run when a peer is UNREACHABLE.
         # That scenario indicates a network partition where the remote side may be healthy.
-        if self._clients.instance.count_cluster_members(states=[InstanceState.UNREACHABLE]) > 0:
+        if self.check_members_unreachable():
             logger.warning("Skipping quorum recovery: there are unreachable instances")
             return
 
