@@ -212,5 +212,5 @@ def wait_for_unit_network(juju: Juju, app_name: str, unit_name: str) -> None:
     output = task.stdout.strip()
 
     unit_ip = get_unit_ip(juju, app_name, unit_name)
-    if unit_ip in output:
-        raise Exception()
+    if unit_ip not in output:
+        raise Exception(f"Unit {unit_name} address {unit_ip} not yet restored")
