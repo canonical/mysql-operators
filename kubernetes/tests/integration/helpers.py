@@ -18,10 +18,9 @@ from .connector import MySQLConnector
 
 def generate_random_password(length: int) -> str:
     """Generate a random password of the provided length."""
-    choices = string.ascii_letters + string.digits
-
     while True:
-        password = "".join([secrets.choice(choices) for _ in range(length)])
+        password = generate_random_string(length)
+
         if all((
             any(c.islower() for c in password),
             any(c.isupper() for c in password),
