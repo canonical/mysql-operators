@@ -12,19 +12,19 @@ Integrate <integrate>
 ```{toctree}
 :titlesonly:
 
-enable-tls
-external-access
+Enable TLS <enable-tls>
+External network access <external-access/index>
 ```
 
 ```{toctree}
 :titlesonly:
 
-monitoring/index
+Monitoring (COS) <monitoring/index>
 ```
 
 ```{toctree}
 :titlesonly:
 
-upgrade/index
+Refresh (upgrade) <upgrade/index>
 ```
 
