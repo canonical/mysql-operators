@@ -28,7 +28,7 @@ To learn about other types of deployment environments and methods (e.g. bootstra
 
 (create-multipass-vm)=
 ### Create a Multipass VM
-
+<!--start:multipass-vm-->
 Multipass is a quick and easy way to launch virtual machines running Ubuntu. It uses the [cloud-init](https://cloud-init.io/) standard to install and configure all the necessary parts automatically.
 
 Install Multipass from the [snap store](https://snapcraft.io/multipass):
@@ -68,12 +68,14 @@ Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-63-generic x86_64)
 ```
 
 ```{tip}
-All necessary components have been pre-installed inside VM already, like LXD, MicroK8s and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details. 
+All necessary components have been pre-installed inside VM already, like LXD, MicroK8s and Juju. The files `/var/log/cloud-init.log` and `/var/log/cloud-init-output.log` contain all low-level installation details.
 ```
+<!--end:multipass-vm-->
 
 ### Set up Juju
+<!--start:set-up-juju-->
 
-Since `my-vm` already has Juju, LXD and MicroK8s installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/). 
+Since `my-vm` already has Juju, LXD and MicroK8s installed, we can go ahead and [bootstrap](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/bootstrap/#details) a cloud. In this tutorial, we will use a local LXD [controller](https://documentation.ubuntu.com/juju/3.6/reference/controller/).
 
 We will call our new controller “overlord”, but you can give it any name you’d like:
 
@@ -108,9 +110,9 @@ The controller can work with different [Juju models](https://juju.is/docs/juju/m
 :host: my-vm
 
 juju add-model tutorial
-``` 
+```
 
-You can now view the model you created by running the command [`juju status`](https://juju.is/docs/juju/juju-status). 
+You can now view the model you created by running the command [`juju status`](https://juju.is/docs/juju/juju-status).
 
 `````{tab-set}
 ````{tab-item} VM
@@ -145,6 +147,7 @@ Model "admin/tutorial" is empty.
 ```
 ````
 `````
+<!--end:set-up-juju-->
 
 ## Deploy Charmed MySQL
 
