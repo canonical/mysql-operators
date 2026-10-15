@@ -37,8 +37,8 @@ To remove a relation:
 
 See compatible charms for integration on the MySQL Router Charmhub pages:
 
-* [MySQL Router VM integrations](https://charmhub.io/mysql-router/integrations)
-* [MySQL Router K8s integrations](https://charmhub.io/mysql-router-k8s/integrations)
+* [MySQL Router VM integrations](https://charmhub.io/mysql-router/integrations?channel=8.4/stable)
+* [MySQL Router K8s integrations](https://charmhub.io/mysql-router-k8s/integrations?channel=8.4/stable)
 
 ## Internal operator user
 

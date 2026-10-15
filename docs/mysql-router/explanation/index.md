@@ -4,6 +4,6 @@
 ```{toctree}
 :titlesonly:
 
-interfaces
-legacy-charm
+Interfaces and endpoints <interfaces>
+Legacy charm <legacy-charm>
 ```
