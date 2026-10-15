@@ -14,10 +14,10 @@ MySQL Router is part of InnoDB Cluster, and is lightweight middleware that provi
 
 This documentation contains practical information about installing and operating Charmed MySQL Router. It covers instructions for both VM and K8s substrates.
 
-* **Get started**: {ref}`tutorial` • {ref}`deploy`
-* **How-to guides for common operations**: {ref}`enable-tls` • {ref}`integrate` • {ref}`upgrade`
-* **Reference**: {ref}`release-notes` • {ref}`system-requirements`
-* **Explanations and technical context**: {ref}`legacy-charm` • {ref}`interfaces`
+* **Get started**: {ref}`tutorial-router` • {ref}`deploy-router`
+* **How-to guides for common operations**: {ref}`enable-tls-router` • {ref}`integrate-router` • {ref}`upgrade-router`
+* **Reference**: {ref}`release-notes-router` • {ref}`system-requirements-router`
+* **Explanations and technical context**: {ref}`legacy-charm-router` • {ref}`interfaces-router`
 
 ## Project and community
 
