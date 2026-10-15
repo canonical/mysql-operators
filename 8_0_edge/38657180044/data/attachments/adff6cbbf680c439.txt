@@ -1,0 +1,16 @@
+Oct 15 00:18:11 [32mINFO    [0m jubilant:_juju.py:316 cli: juju version --format json
+Oct 15 00:18:11 [32mINFO    [0m httpx:_client.py:1026 HTTP Request: GET https://10.1.0.252:16443/api/v1/nodes "HTTP/1.1 200 OK"
+Oct 15 00:18:11 [32mINFO    [0m root:helpers_proxy.py:138 Kubernetes node address is 10.1.0.252
+Oct 15 00:18:11 [32mINFO    [0m root:helpers_proxy.py:151 Cluster pod CIDR is 10.1.0.0/16, service CIDR is 10.152.183.0/24
+Oct 15 00:18:11 [32mINFO    [0m root:helpers_proxy.py:163 Squid is already installed on the test runner
+Oct 15 00:18:11 [32mINFO    [0m root:helpers_proxy.py:169 Allowing ['10.1.0.0/16', '10.1.0.252/32'] through squid
+Oct 15 00:18:43 [32mINFO    [0m root:helpers_proxy.py:180 Squid is listening on port 3128
+Oct 15 00:18:43 [32mINFO    [0m root:helpers_proxy.py:232 Setting the model proxy to http://10.1.0.252:3128 (no proxy: 127.0.0.1,localhost,::1,10.1.0.0/16,10.152.183.0/24,10.1.0.252)
+Oct 15 00:18:43 [32mINFO    [0m jubilant:_juju.py:316 cli: juju model-config --model testing juju-http-proxy=http://10.1.0.252:3128 juju-https-proxy=http://10.1.0.252:3128 juju-no-proxy=127.0.0.1,localhost,::1,10.1.0.0/16,10.152.183.0/24,10.1.0.252
+Oct 15 00:18:43 [32mINFO    [0m root:helpers_proxy.py:209 Dropping direct egress from namespace testing
+Oct 15 00:18:43 [32mINFO    [0m httpx:_client.py:1026 HTTP Request: PATCH https://10.1.0.252:16443/apis/networking.k8s.io/v1/namespaces/testing/networkpolicies/proxy-egress-only?fieldManager=mysql-integration-tests "HTTP/1.1 201 Created"
+Oct 15 00:18:43 [32mINFO    [0m root:test_proxied_deployment.py:77 Deploying MySQL cluster
+Oct 15 00:18:43 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql-k8s_ubuntu@22.04-amd64.charm mysql-k8s --base ubuntu@22.04 --config profile=testing --num-units 3 --resource mysql-image=ghcr.io/canonical/charmed-mysql@sha256:824b302484f83dbbd2cf4506f620a48e53f20053f6ff3c57aa6123e121705bfc --trust
+Oct 15 00:18:49 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing mysql-test-app mysql-test-app --base ubuntu@22.04 --channel latest/edge --config sleep_interval=500 --constraints arch=amd64
+Oct 15 00:18:50 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql-k8s:database mysql-test-app:database
+Oct 15 00:18:51 [32mINFO    [0m root:test_proxied_deployment.py:102 Wait for applications to become active
