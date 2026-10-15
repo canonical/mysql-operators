@@ -10,11 +10,10 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 from jubilant import Juju
 
-from constants import (
+from ..constants import (
     TLS_CLIENT_RELATION,
     TLS_PEER_RELATION,
 )
-
 from ..helpers import is_connection_possible
 from ..helpers_ha import (
     CHARM_METADATA,

@@ -78,12 +78,12 @@ class MySQLClusterSetClient:
         """Fetch the MySQL cluster-set primary host."""
         status = self._client.fetch_cluster_set_status(extended=False)
 
-        cluster = status["primaryCluster"]
-        cluster_state = status["clusters"][cluster]["globalStatus"]
-        cluster_address = status["clusters"][cluster]["primary"]
+        cluster_name = status["primaryCluster"]
+        cluster_state = status["clusters"][cluster_name]["globalStatus"]
+        cluster_address = status["clusters"][cluster_name]["primary"]
 
-        if cluster_state == ClusterGlobalState.INVALIDATED:
-            logger.warning("Cluster-set does not have quorum")
+        if not cluster_address:
+            logger.warning(f"Cluster-set primary address unavailable ({cluster_state})")
             return None
 
         return cluster_address.split(":")[0]
