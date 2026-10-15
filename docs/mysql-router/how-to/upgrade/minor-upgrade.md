@@ -36,7 +36,7 @@ To summarize:
 3. **Prepare** "Charmed MySQL K8s" Juju application for the in-place upgrade. See the step description below for all technical details executed by charm here.
 4. **Upgrade**: Once started, only one unit of the app will be upgraded. In case of failure, roll back with `juju refresh`.
 5. **Resume** upgrade: If the new unit is OK after the refresh, the upgrade can be resumed. All units in an app will be executed sequentially from highest to lowest unit number.
-6. (optional) Consider {ref}`rolling back <minor-rollback>` in case of disaster. Please [inform and include us](https://chat.charmhub.io/charmhub/channels/data-platform) in your case scenario troubleshooting to trace the source of the issue and prevent it in the future.
+6. (optional) Consider {ref}`rolling back <minor-rollback>` in case of disaster. Please [inform and include us](https://matrix.to/#/#charmhub-data-platform:ubuntu.com) in your case scenario troubleshooting to trace the source of the issue and prevent it in the future.
 7. (optional) **Scale back**: Remove no longer necessary K8s units created in step 2 (if any).
 8. **Post-upgrade check**: Make sure all units are in the proper state and the cluster is healthy.
 

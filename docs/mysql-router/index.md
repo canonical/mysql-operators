@@ -30,7 +30,7 @@ Charmed MySQL Router is an open-source project that welcomes community contribut
 * [Discourse forum](https://discourse.charmhub.io/tag/mysql)
 * [Public Matrix channel](https://matrix.to/#/#charmhub-data-platform:ubuntu.com)
 * [Report an issue](https://github.com/canonical/mysql-router-operators/issues/new/choose)
-* [Contribute](https://github.com/canonical/mysql-router-operators/blob/main/CONTRIBUTING.md)
+* [Contribute](https://github.com/canonical/mysql-router-operators/blob/8.4/edge/CONTRIBUTING.md)
 
 ### Governance and policies
 

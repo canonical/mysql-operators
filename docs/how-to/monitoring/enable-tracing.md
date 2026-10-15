@@ -24,7 +24,7 @@ First, switch to the Kubernetes controller where the COS model is deployed:
 juju switch <k8s_controller_name>:<cos_model_name>
 ```
 
-Then, deploy the dependencies of Tempo following [this tutorial](https://discourse.charmhub.io/t/tutorial-deploy-tempo-ha-on-top-of-cos-lite/15489). 
+Then, deploy the dependencies of Tempo following [this tutorial](https://discourse.charmhub.io/t/tutorial-deploy-tempo-ha-on-top-of-cos-lite/15489).
 
 To summarize:
 * Deploy the MinIO charm

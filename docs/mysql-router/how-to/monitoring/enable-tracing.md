@@ -54,7 +54,7 @@ In particular, we would want to:
 - Add a bucket in minio using a python script
 - Configure s3 integrator with the minio credentials
 
-Finally, deploy and integrate with Tempo HA in a monolithic setup by following [this tutorial](https://discourse.charmhub.io/t/tutorial-deploy-tempo-ha-on-top-of-cos-lite/15489#heading--deploy-monolithic-setup).
+Finally, deploy and integrate with Tempo HA in a monolithic setup by following the "Monolithic deployment mode for testing and dev" section of the [Tempo tutorial](https://discourse.charmhub.io/t/tutorial-deploy-tempo-ha-on-top-of-cos-lite/15489).
 ```
 ````
 
