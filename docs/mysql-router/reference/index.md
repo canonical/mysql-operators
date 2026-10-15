@@ -16,6 +16,7 @@ release-notes/index
 ```{toctree}
 :titlesonly:
 
+charm-statuses
 testing
 ```
 

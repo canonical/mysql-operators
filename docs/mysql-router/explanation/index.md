@@ -5,6 +5,5 @@
 :titlesonly:
 
 interfaces
-charm-statuses
 legacy-charm
 ```
