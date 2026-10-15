@@ -147,10 +147,11 @@ class EventHelpers:
 
         cluster_role = self._clients.cluster.fetch_role()
         cluster_state = self._clients.cluster.fetch_state()
-        if cluster_role == ClusterRole.PRIMARY:
+
+        if cluster_state and cluster_role == ClusterRole.PRIMARY:
             return ActiveStatus(f"Primary")
-        if cluster_role == ClusterRole.REPLICA:
-            return ActiveStatus(f"Standby ({cluster_state})")
+        if cluster_state and cluster_role == ClusterRole.REPLICA:
+            return ActiveStatus(f"Standby ({cluster_state.value})")
 
         return MaintenanceStatus("Unknown")
 
