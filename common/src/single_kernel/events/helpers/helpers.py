@@ -103,12 +103,12 @@ class EventHelpers:
             if info["status"] == InstanceState.ONLINE and info["mode"] == "R/O":
                 ro_addresses.append(unit_address)
             if info["status"] == InstanceState.ONLINE and info["mode"] == "R/W":
-                rw_addresses.append(unit_address) if cluster_role == ClusterRole.PRIMARY else None
+                rw_addresses.append(unit_address)
 
         # Replica return global primary address
         if cluster_role == ClusterRole.REPLICA:
             rw_address = self._clients.cluster_set.fetch_primary_host()
-            rw_addresses.append(rw_address)
+            rw_addresses.append(rw_address) if rw_address else None
 
         return (
             [f"{address}:{self._charm.service_server.port}" for address in rw_addresses],
