@@ -1,4 +1,4 @@
-(how-to)=
+(how-to-router)=
 # How-to guides
 
 ```{toctree}

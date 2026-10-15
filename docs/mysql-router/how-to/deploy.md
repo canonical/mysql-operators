@@ -1,4 +1,4 @@
-(deploy)=
+(deploy-router)=
 # How to deploy
 
 For more thorough, guided instructions on setting up your environment and deploying MySQL Router, see the {ref}`tutorial`.
@@ -94,5 +94,3 @@ Example output of `juju status --watch 1s` with a deployment in a local MicroK8s
     wordpress-k8s/0*     active    idle
 ```
 ````
-
-See {ref}`testing` for guidance on how to test your deployment.

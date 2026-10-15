@@ -1,4 +1,4 @@
-(reference)=
+(reference-router)=
 # Reference
 
 ```{toctree}
@@ -17,6 +17,5 @@ release-notes/index
 :titlesonly:
 
 charm-statuses
-testing
 ```
 

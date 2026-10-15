@@ -45,10 +45,10 @@ Information for making your application compatible with MySQL.
 
 This documentation uses the [Diátaxis documentation structure](https://diataxis.fr/):
 
-* The {ref}`tutorial` provides step-by-step guidance for a beginner through the basics of a deployment in a local machine.
-* {ref}`how-to` are more focused, and assume you already have basic familiarity with the product.
-* {ref}`reference` contains structured information for quick lookup, such as system requirements and configuration parameters
-* {ref}`explanation` gives more background and context about key topics
+* The {ref}`tutorial-router` provides step-by-step guidance for a beginner through the basics of a deployment in a local machine.
+* {ref}`how-to-router` are more focused, and assume you already have basic familiarity with the product.
+* {ref}`reference-router` contains structured information for quick lookup, such as system requirements and configuration parameters
+* {ref}`explanation-router` gives more background and context about key topics
 
 ## Project and community
 

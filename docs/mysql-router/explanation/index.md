@@ -1,4 +1,4 @@
-(explanation)=
+(explanation-router)=
 # Explanation
 
 ```{toctree}
