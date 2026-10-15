@@ -10,7 +10,7 @@ The MySQL Router Operator delivers automated operations management from [day 0 t
 
 ![image|690x424](upload://vpevillwv3S9C44LDFBxkGCxpGq.png)
 
-MySQL Router is part of InnoDB Cluster, and is lightweight middleware that provides transparent routing between your application and back-end MySQL Servers. It can be used for a wide variety of use cases, such as providing high availability and scalability by effectively routing database traffic to appropriate back-end MySQL Servers. The pluggable architecture also enables developers to extend MySQL Router for custom use cases.
+MySQL Router is part of InnoDB Cluster, and is lightweight middleware that provides transparent routing between your application and back-end MySQL Servers. It can be used for a wide variety of use cases, such as providing high availability and scalability by effectively routing database traffic to appropriate back-end MySQL Servers. Its modular architecture also enables developers to extend MySQL Router for custom use cases.
 
 ## In this documentation
 
