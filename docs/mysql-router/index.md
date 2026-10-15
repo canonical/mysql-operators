@@ -35,13 +35,3 @@ Charmed MySQL Router is an open-source project that welcomes community contribut
 ### Governance and policies
 
 * [Code of Conduct](https://ubuntu.com/community/code-of-conduct)
-
-```{toctree}
-:caption: MySQL Router
-:hidden:
-
-Tutorial <tutorial>
-How-to guides <how-to/index>
-Reference <reference/index>
-Explanation <explanation/index>
-```

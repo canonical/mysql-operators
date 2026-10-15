@@ -82,4 +82,8 @@ Explanation <explanation/index>
 :hidden:
 
 Home <mysql-router/index>
+Tutorial <mysql-router/tutorial>
+How-to guides <mysql-router/how-to/index>
+Reference <mysql-router/reference/index>
+Explanation <mysql-router/explanation/index>
 ```
