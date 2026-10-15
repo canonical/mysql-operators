@@ -1,4 +1,4 @@
-(legacy-charm)=
+(legacy-charm-router)=
 # Legacy MySQL Router charm
 
 This page contains explanations regarding the legacy version of this charm. This includes clarification about Charmhub tracks, supported endpoints and interfaces, config options, and other important information.
