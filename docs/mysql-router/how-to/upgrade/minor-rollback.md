@@ -1,4 +1,4 @@
-(minor-rollback)=
+(minor-rollback-router)=
 # How to perform a minor rollback
 
 **Example**: MySQL Router 8.4.8 -> MySQL Router 8.4.7 (including simple charm revision bump: from revision YY to revision XX)

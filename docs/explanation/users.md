@@ -90,7 +90,7 @@ mysql> select Host,User,account_locked from mysql.user where User like 'relation
 2 row in set (0.00 sec)
 ```
 
-The extra user(s) will be created for relation with the MySQL Router charm ([VM](https://?channel=8.4/stable) | [K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable)) to provide necessary users for applications related via the `mysql-router` (or `mysql-router-k8s`) app:
+The extra user(s) will be created for relation with the MySQL Router charm ([VM](https://charmhub.io/mysql-router?channel=8.4/stable) | [K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable)) to provide necessary users for applications related via the `mysql-router` (or `mysql-router-k8s`) app:
 
 ```shell
 mysql> select Host,User,account_locked from mysql.user where User like 'mysql_router%';

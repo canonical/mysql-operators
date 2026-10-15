@@ -1,4 +1,4 @@
-(upgrade)=
+(upgrade-router)=
 # How to upgrade
 
 **In-place upgrades/rollbacks are not possible for major versions.**
@@ -7,9 +7,9 @@
 
 For instructions on carrying out **minor version upgrades**, see the following guides:
 
-* {ref}`Minor upgrade <minor-upgrade>`, e.g. MySQL Router 8.4.7 -> MySQL Router 8.4.8<br/>
+* {ref}`Minor upgrade <minor-upgrade-router>`, e.g. MySQL Router 8.4.7 -> MySQL Router 8.4.8<br/>
 (including charm revision bump XX -> YY).
-* {ref}`Minor rollback <minor-rollback>`, e.g. MySQL Router 8.4.8 -> MySQL Router 8.4.7<br/>
+* {ref}`Minor rollback <minor-rollback-router>`, e.g. MySQL Router 8.4.8 -> MySQL Router 8.4.7<br/>
 (including charm revision return YY -> XX).
 
 ```{toctree}

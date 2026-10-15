@@ -1,4 +1,4 @@
-(interfaces)=
+(interfaces-router)=
 # Charm interfaces and endpoints
 
 MySQL Router supports modern ['mysql_client'](https://github.com/canonical/charm-relation-interfaces) interface. Applications can easily connect MySQL using ['data_interfaces'](https://charmhub.io/data-platform-libs/libraries/data_interfaces) library from ['data-platform-libs'](https://github.com/canonical/data-platform-libs/).

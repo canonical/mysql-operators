@@ -1,4 +1,4 @@
-(scale)=
+(scale-router)=
 # How to scale units
 
 To deploy MySQL Router with multiple units, use the `-n` option:

@@ -1,4 +1,4 @@
-(enable-monitoring)=
+(enable-monitoring-router)=
 # Enable monitoring
 
 This guide goes over the steps to integrate your MySQL Router deployment with COS to enable monitoring in Grafana.

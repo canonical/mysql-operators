@@ -38,8 +38,8 @@ Deploy and integrate your client application with MySQL Router.
 ```{note}
 If your client application is not a charm, you'll need to use `data-integrator`. See:
 
-* {ref}`integrate`
-* {ref}`external-access`
+* {ref}`integrate-router`
+* {ref}`external-access-router`
 ```
 
 ````{tab-set}

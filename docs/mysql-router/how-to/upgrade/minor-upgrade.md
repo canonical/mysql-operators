@@ -1,4 +1,4 @@
-(minor-upgrade)=
+(minor-upgrade-router)=
 # How to perform a minor upgrade
 
 **Example**: MySQL Router 8.4.7 -> MySQL Router 8.4.8 (including simple charm revision bump: from revision XX to revision YY)
@@ -36,7 +36,7 @@ To summarize:
 3. **Prepare** "Charmed MySQL K8s" Juju application for the in-place upgrade. See the step description below for all technical details executed by charm here.
 4. **Upgrade**: Once started, only one unit of the app will be upgraded. In case of failure, roll back with `juju refresh`.
 5. **Resume** upgrade: If the new unit is OK after the refresh, the upgrade can be resumed. All units in an app will be executed sequentially from highest to lowest unit number.
-6. (optional) Consider {ref}`rolling back <minor-rollback>` in case of disaster. Please [inform and include us](https://matrix.to/#/#charmhub-data-platform:ubuntu.com) in your case scenario troubleshooting to trace the source of the issue and prevent it in the future.
+6. (optional) Consider {ref}`rolling back <minor-rollback-router>` in case of disaster. Please [inform and include us](https://matrix.to/#/#charmhub-data-platform:ubuntu.com) in your case scenario troubleshooting to trace the source of the issue and prevent it in the future.
 7. (optional) **Scale back**: Remove no longer necessary K8s units created in step 2 (if any).
 8. **Post-upgrade check**: Make sure all units are in the proper state and the cluster is healthy.
 
@@ -73,7 +73,7 @@ For this example, the current revision is `99` for MySQL K8s and `69` for Router
 
 Optionally, it is recommended to scale the application up by one unit before starting the upgrade process.
 
-The new unit will be the first one to be updated, and it will assert that the upgrade is possible. In case of failure, having the extra unit will ease the {ref}`rollback procedure <minor-rollback>`, without disrupting service.
+The new unit will be the first one to be updated, and it will assert that the upgrade is possible. In case of failure, having the extra unit will ease the {ref}`rollback procedure <minor-rollback-router>`, without disrupting service.
 
 ```shell
 juju scale-application mysql-k8s <current_units_count+1>
@@ -154,7 +154,7 @@ mysql-test-app/0*    active       idle   10.1.12.57
 
 ### Step 6: Rollback (optional)
 
-If the upgrade was incompatible, it’s important to roll back the charm to a previous revision so that an update can be later attempted after a further inspection of the failure. See {ref}`minor-rollback`.
+If the upgrade was incompatible, it’s important to roll back the charm to a previous revision so that an update can be later attempted after a further inspection of the failure. See {ref}`minor-rollback-router`.
 
 ### Step 7: Scale-back
 

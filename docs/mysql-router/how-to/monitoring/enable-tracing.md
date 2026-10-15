@@ -1,4 +1,4 @@
-(enable-tracing)=
+(enable-tracing-router)=
 # How to enable tracing
 
 This guide contains the steps to enable tracing with [Grafana Tempo](https://grafana.com/docs/tempo/latest/) for your MySQL Router application.

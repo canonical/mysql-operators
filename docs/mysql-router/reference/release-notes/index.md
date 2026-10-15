@@ -1,4 +1,4 @@
-(release-notes)=
+(release-notes-router)=
 # Release notes
 
 ```{note}

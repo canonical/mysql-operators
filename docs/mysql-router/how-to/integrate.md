@@ -1,4 +1,4 @@
-(integrate)=
+(integrate-router)=
 # How to integrate with other applications
 
 ## Modern `mysql_client` interface:
