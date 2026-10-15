@@ -172,6 +172,8 @@ class BaseCharm(CharmBase, Generic[T], ABC):
         """Set the application status."""
         if not self.unit.is_leader():
             return
+        if self.refreshing:
+            return
 
         self.app.status = status
 
