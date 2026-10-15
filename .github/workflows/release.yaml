@@ -63,31 +63,6 @@ jobs:
     permissions: {}
     cache-mode: none
 
-# TODO: Uncomment when MySQL 8.4/stable channel has releases
-#  release-test:
-#    name: Release tests
-#    needs:
-#      - build
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        path:
-#          - kubernetes
-#          - machines
-#    uses: $/.github/workflows/release_test.yaml
-#    with:
-#      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-#      path-to-charm-directory: ${{ matrix.path }}
-#    secrets:
-#      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
-#      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
-#      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
-#      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
-#      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
-#      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
-#      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
-#    permissions: {}
-#    cache-mode: none
 
   # NOTE: a matrix job has a single set of outputs, so the per-charm `charm-revisions` values
   # would overwrite each other. One job per charm keeps both readable by `collect-revisions`.
@@ -97,7 +72,6 @@ jobs:
       - tag
       - build
       - integration-test
-      # - release-test
     uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
     with:
       track: ${{ needs.tag.outputs.track }}
@@ -115,7 +89,6 @@ jobs:
       - tag
       - build
       - integration-test
-      # - release-test
     uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
     with:
       track: ${{ needs.tag.outputs.track }}
