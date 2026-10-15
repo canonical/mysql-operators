@@ -9,8 +9,8 @@ This page contains explanations regarding the legacy version of this charm. This
 
 There are two types of charms stored under the same charm name `mysql-router`:
 
-1. [Reactive](https://juju.is/docs/sdk/charm-taxonomy#heading--reactive)  charm in the channel `latest/stable`, `8.0/stable` (called `legacy`)
-2. [Ops-based](https://juju.is/docs/sdk/ops) charm in the channel `dpe/candidate`, `8.4/stable` (called `modern`)
+1. **Reactive** charm in the channel `latest/stable`, `8.0/stable` (called `legacy`)
+2. **Ops-based** charm in the channel `dpe/candidate`, `8.4/stable` (called `modern`)
 
 Both legacy and modern charms are **subordinated**. <!--TODO: update links to juju taxonomy-->.
 

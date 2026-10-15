@@ -9,8 +9,6 @@ In order to relate with Charmed MySQL, **every table created by the client appli
 This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.4/en/group-replication-requirements.html) enabled in this charm.
 ```
 
-See also: [Juju relations (integrations)](https://juju.is/docs/olm/relations).
-
 ## Modern `mysql_client` interface (`database` endpoint):
 
 Adding a relation is accomplished with `juju integrate` via endpoint `database`.
