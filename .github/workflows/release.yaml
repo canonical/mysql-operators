@@ -77,25 +77,124 @@ jobs:
     permissions: {}
     cache-mode: none
 
-  release:
-    name: Release charm | ${{ matrix.path }}
+  # NOTE: a matrix job has a single set of outputs, so the per-charm `charm-revisions` values
+  # would overwrite each other. One job per charm keeps both readable by `collect-revisions`.
+  release-kubernetes:
+    name: Release charm | kubernetes
     needs:
       - build
       - integration-test
       - release-test
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
     uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
     with:
       track: '8.0'
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-      path-to-charm-directory: ${{ matrix.path }}
+      path-to-charm-directory: kubernetes
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
       contents: write  # Needed to create git tags
+    cache-mode: none
+
+  release-machines:
+    name: Release charm | machines
+    needs:
+      - build
+      - integration-test
+      - release-test
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
+    with:
+      track: '8.0'
+      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+      path-to-charm-directory: machines
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      contents: write  # Needed to create git tags
+    cache-mode: none
+
+  collect-revisions:
+    name: Collect released revisions
+    needs:
+      - release-kubernetes
+      - release-machines
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Merge per-charm revisions
+        id: collect
+        run: |
+          revisions=$(jq -nc \
+            --argjson mysql "$MYSQL" \
+            --argjson mysql_k8s "$MYSQL_K8S" \
+            '{
+              "mysql": $mysql,
+              "mysql-k8s": $mysql_k8s
+            }')
+          echo "Collected revisions: $revisions"
+          echo "charm-revisions=$revisions" >> "$GITHUB_OUTPUT"
+        env:
+          MYSQL: ${{ needs.release-machines.outputs.charm-revisions }}
+          MYSQL_K8S: ${{ needs.release-kubernetes.outputs.charm-revisions }}
+      # 8.0 has no charm refresh compatibility version (no `v*/*` git tag), so identify the
+      # release by its commit instead
+      - name: Get release version
+        id: version
+        run: |
+          version="8.0/${GITHUB_SHA::7}"
+          echo "Version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+    outputs:
+      charm-revisions: ${{ steps.collect.outputs.charm-revisions }}
+      version: ${{ steps.version.outputs.version }}
+    permissions:
+      contents: read
+    cache-mode: none
+
+  trigger-release-ci:
+    name: Trigger release CI
+    needs:
+      - collect-revisions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Airflow DAG
+        run: |
+          body=$(jq -nc \
+            --arg dag_run_id "promote-${RUN_ID}" \
+            --arg logical_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg version "$VERSION" \
+            --argjson charm_revisions "$CHARM_REVISIONS" \
+            '{
+              dag_run_id: $dag_run_id,
+              logical_date: $logical_date,
+              conf: {
+                version: $version,
+                charm_revisions: $charm_revisions
+              }
+            }')
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://airflow.data-platform.ps7.canonical.com/api/v2/dags/mysql_8.0/dagRuns" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${AIRFLOW_TOKEN}" \
+            -d "$body")
+          http_code=$(echo "$response" | tail -n1)
+          resp_body=$(echo "$response" | sed '$d')
+          echo "$resp_body"
+          if echo "$resp_body" | grep -q '"detail":"Token Expired"'
+          then
+            echo "::error::Airflow API token has expired"
+            exit 1
+          fi
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]
+          then
+            echo "::error::Airflow API request failed with status $http_code"
+            exit 1
+          fi
+        env:
+          CHARM_REVISIONS: ${{ needs.collect-revisions.outputs.charm-revisions }}
+          VERSION: ${{ needs.collect-revisions.outputs.version }}
+          RUN_ID: ${{ github.run_id }}
+          AIRFLOW_TOKEN: ${{ secrets.AIRFLOW_API_TOKEN }}
+    permissions: {}
     cache-mode: none
