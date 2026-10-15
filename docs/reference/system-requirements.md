@@ -16,6 +16,7 @@ The following are the minimum software and hardware requirements to run Charmed 
 :sync: vm
 
 * Ubuntu 26.04 LTS (Resolute) or later
+* Juju 3.6 or later
 ```
 
 ```{tab-item} K8s
@@ -24,13 +25,15 @@ The following are the minimum software and hardware requirements to run Charmed 
 * Ubuntu 26.04 LTS (Resolute) or later
 * Kubernetes 1.34+
 * Canonical MicroK8s 1.34+
-  * snap channel `1.34-strict/stable` and newer
+  * snap channel `1.34-strict/stable` and later
+* Juju 3.6 or later
 ```
 ````
 
-### Juju
-
 Always check the {ref}`release notes <release-notes>` to find the minimum Juju version for your deployment.
+
+<!--
+### Juju
 
 ````{tab-set}
 ```{tab-item} VM
@@ -49,6 +52,7 @@ Always check the {ref}`release notes <release-notes>` to find the minimum Juju v
 |         |      |      |      |
 ```
 ````
+-->
 
 ### MySQL group replication requirements
 
@@ -66,7 +70,7 @@ Make sure your machine meets the following requirements:
 ```{tab-item} VM
 :sync: vm
 
-The charm is based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysql). 
+The charm is based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysql).
 
 It currently supports:
 * `amd64`
@@ -77,7 +81,7 @@ It currently supports:
 ```{tab-item} K8s
 :sync: k8s
 
-The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/charmed-mysql-rock), which is recursively based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysql). 
+The charm is based on the [charmed-mysql ROCK OCI](https://github.com/canonical/charmed-mysql-rock), which is recursively based on the [charmed-mysql snap](https://snapcraft.io/charmed-mysql).
 
 It currently supports:
 * `amd64`
