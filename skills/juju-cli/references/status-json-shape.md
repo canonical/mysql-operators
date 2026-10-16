@@ -21,28 +21,28 @@ controller     — {timestamp}
 applications.<app>.units.<app>/<N>
 ```
 
-A trimmed but faithful example (one-unit mysql-k8s, active/Primary):
+A trimmed but faithful example (one-unit app `app-k8s`, active):
 
 ```json
 {
   "applications": {
-    "mysql-k8s": {
-      "charm": "mysql-k8s",
+    "app-k8s": {
+      "charm": "app-k8s",
       "charm-rev": 423,
       "charm-channel": "8.0/stable",
       "scale": 1,
       "application-status": {"current": "active", "since": "..."},
       "relations": {
-        "database-peers": [{"related-application": "mysql-k8s",
-                            "interface": "mysql_peers", "scope": "global"}],
-        "restart": [{"related-application": "mysql-k8s",
+        "app-peers": [{"related-application": "app-k8s",
+                       "interface": "app_peers", "scope": "global"}],
+        "restart": [{"related-application": "app-k8s",
                      "interface": "rolling_op", "scope": "global"}],
-        "upgrade": [{"related-application": "mysql-k8s",
+        "upgrade": [{"related-application": "app-k8s",
                      "interface": "upgrade", "scope": "global"}]
       },
       "units": {
-        "mysql-k8s/0": {
-          "workload-status": {"current": "active", "message": "Primary"},
+        "app-k8s/0": {
+          "workload-status": {"current": "active", "message": "running"},
           "juju-status": {"current": "idle", "version": "3.6.29"},
           "leader": true,
           "address": "10.1.0.73"
@@ -55,11 +55,11 @@ A trimmed but faithful example (one-unit mysql-k8s, active/Primary):
 
 ## Parsing traps (all observed in practice)
 
-- **`units` is nested.** `d["units"]["mysql-k8s/0"]` raises KeyError —
+- **`units` is nested.** `d["units"]["app-k8s/0"]` raises KeyError —
   use `d["applications"][app]["units"]`.
-- **Scoping does not flatten.** `juju status mysql-k8s/0 --format json`
+- **Scoping does not flatten.** `juju status app-k8s/0 --format json`
   keeps the same nesting (units still under `applications.<app>`).
-- **Peer relations appear as self-relations**: `database-peers`,
+- **Peer relations appear as self-relations**: `app-peers`,
   `restart`, `upgrade` all list `related-application` = the same app.
   This is how you confirm a peer relation exists and its interface name.
 - **Workload status vs agent status** are different keys on the unit:

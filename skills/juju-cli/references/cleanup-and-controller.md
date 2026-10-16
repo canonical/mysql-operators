@@ -36,10 +36,11 @@ Notes:
 - **`setsid` escapes process-group kills.** Killing the parent's PGID does
   not reap loops that called `setsid` internally — sweep by pattern, not by
   process group.
-- Verify afterwards that only the expected mysqlds remain on the host:
-  `pgrep -c mysqld` (3 for a healthy 3-unit `testing` model). More than that
+- Verify afterwards that only the expected workload processes remain on
+  the host, e.g. `pgrep -c <workload-process>` (3 for a healthy 3-unit
+  `testing` model of a k8s charm). More than that
   = leftover experiment models; reconcile with force-destroys, not by
-  killing mysqld directly.
+  killing workload processes directly.
 
 ## What can and cannot be killed from the agent sandbox
 
@@ -72,26 +73,30 @@ Under host CPU/RAM saturation, juju's connection to the k8s API degrades
 - Action tasks stall far past their usual durations; agent hooks queue.
 
 If loopback TLS handshakes are timing out, **suspect the host first**:
-check `uptime` (load vs cores), `free -h`, and stray processes (`pgrep -c
-mysqld`, the sweep patterns above). Don't debug juju or redeploy while the
+check `uptime` (load vs cores), `free -h`, and stray processes (`pgrep
+-c <workload-process>`, the sweep patterns above). Don't debug juju or
 host is thrashing — fix load, then re-verify.
 
 ## Rebuilding a sick model (and when to)
 
 After aggressive model cleanup the controller's state can be left
 inconsistent; debugging controller internals (mongod, pebble, jujud) is
-rarely worth it compared to:
+rarely worth it compared to a model rebuild. (If it is the **controller
+itself** that is sick — every juju command hangs with no output — a
+model rebuild is pointless; see `sick-controller.md` for the
+controller-pod restart playbook.)
 
 ```bash
 juju destroy-model <model> --destroy-storage --no-prompt --force
 juju add-model <model>
-juju deploy mysql-k8s --channel 8.0/stable -n 3 --trust
+juju deploy <charm> --channel <channel> -n 3 --trust
 ```
 
 Then **re-baseline**: the fresh deployment is the new known-state baseline
 (no prior state, no prior experiments). Verify before use: 3/3 units
-active+idle, `get-cluster-status` → all members online, single-primary
-topology, and `get-password` works (this also proves charm RBAC via
+active+idle, the charm's health action reports all members healthy
+(e.g. a database charm's `get-cluster-status`), and a representative
+charm action runs cleanly (this also proves charm RBAC via
 `--trust` is in place).
 
 Rebuild (instead of repair) is the right call when: models were destroyed

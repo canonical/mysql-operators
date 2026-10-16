@@ -46,3 +46,24 @@ Keep `jujuc-vm-36-27` (or whichever you use most) as the active controller, and 
 - `juju switch` reference: https://documentation.ubuntu.com/juju/latest/reference/juju-cli/list-of-juju-cli-commands/switch/
 - `juju` environment variables: https://documentation.ubuntu.com/juju/latest/reference/juju-cli/juju-environment-variables/
 - juju/juju issues: https://github.com/juju/juju/issues/
+
+## Hazards observed with multiple controllers (2026-10 incidents)
+
+- **`juju bootstrap` auto-flips the current controller** to the newly
+  created one in `~/.local/share/juju/controllers.yaml` — subsequent
+  commands default to the new controller whether you meant it or not.
+  Check/re-set the pointer after any bootstrap:
+  `grep current-controller ~/.local/share/juju/controllers.yaml`.
+- **A wedged *current* controller poisons every juju command** — even
+  `-c <other-controller>` calls hang, because the client contacts the
+  current controller during startup. `juju switch <healthy>` is instant
+  client-side first aid; if hangs persist after switching, the wedge is
+  server-side — see `sick-controller.md` (controller-pod restart).
+- **Stale registrations attract investigation.** A dead controller left
+  in `controllers.yaml` gets discovered by later sessions/scripts, which
+  hang on its dead API and may flip the pointer in the process. Clean up
+  dead registrations (`juju unregister` or destroy) promptly.
+- In tool-using agent setups, shell tool calls typically run with the
+  **real `$HOME`** — only the tool process's own config is sandboxed.
+  Agent-side juju commands therefore mutate the shared client config
+  (including the pointer above).

@@ -1,20 +1,21 @@
 ---
-name: mysql-operators-source
+name: mysql-charms-source
 description: >
-  Navigates the canonical/mysql-operators charm source: monorepo layout
-  (mysql = machines/, mysql-k8s = kubernetes/, shared
-  lib/charms/mysql/v0/), Charmhub revision to git tag mapping, and reading
-  the source of a deployed revision without checking it out. Use when the
-  charm code behind a behavior, traceback, or log message is needed, or
-  when comparing Charmhub revisions.
+  Navigates the charm source of the mysql charm family —
+  canonical/mysql-operators (charms mysql and mysql-k8s) and
+  canonical/mysql-router-operators (mysql-router, mysql-router-k8s;
+  same monorepo layout). Charmhub revision to git tag mapping, and
+  reading the source of a deployed revision without checking it out.
+  Use when the charm code behind a behavior, traceback, or log message
+  is needed, or when comparing Charmhub revisions.
 license: Apache-2.0
 metadata:
   author: canonical-data-platform
-  version: "0.4.0"
-  upstream-repo: canonical/mysql-operators
+  version: "0.6.0"
+  upstream-repos: "canonical/mysql-operators, canonical/mysql-router-operators"
 ---
 
-# mysql-operators source navigation
+# mysql charm-family source navigation
 
 ## Overview
 
@@ -23,12 +24,28 @@ right file, at the right revision, without wasted detours. Read this once,
 then use [version-archaeology.md](references/version-archaeology.md) for
 the revision/tag deep-dives. Pairs naturally with the
 `charmed-mysql-juju-inspect` skill (live evidence gathering, offline
-autopsy).
+autopsy) and with the `juju-cli` skill (everything on the live side —
+deploying a revision, acting on a model, per-unit commands).
 
 ## Monorepo layout
 
-The monorepo `canonical/mysql-operators` builds **two charms**, not two
-directories named after the charms:
+Two monorepos ship this family and they share the SAME layout — charm
+sources in `machines/` and `kubernetes/`, Charmhub revisions mapped to
+git tags of the shape `<charm>/rev<N>`:
+`canonical/mysql-operators` (charms `mysql`, `mysql-k8s`) and
+`canonical/mysql-router-operators` (charms `mysql-router`,
+`mysql-router-k8s`). Everything below illustrates the pattern with
+`canonical/mysql-operators`; apply it verbatim to the router monorepo —
+swap the tag prefix for `mysql-router-k8s/rev<N>` etc.
+
+When a task needs several charms from this family deployed together
+(e.g. router + mysql + a log sink), pin ALL of their revisions in one
+pass — one Charmhub query batch (`juju info <charm>` / one curl per
+charm, back to back) — before deploying anything. Do not re-query
+per charm mid-deploy; revision lookups interleaved with deploy waits
+are how pinned-revision work drifts.
+
+In `canonical/mysql-operators`:
 
 - `mysql` — the VM charm: source in `machines/`, ships the snap
   `charmed-mysql`.
@@ -90,6 +107,13 @@ unzip -p ./mysql-k8s.charm src/charm.py                  # source inside
 `unzip` (not `tar`) — `.charm` files are zip archives. Architecture lives
 only in `manifest.yaml` — the one build-level fact git cannot tell you.
 
+**From reading to acting.** Everything after the source is read happens
+on the live side — deploying the exact revision, verifying a source
+finding against a running model, inspecting a unit's containers — and
+that is juju/pebble territory: read the `juju-cli` skill before running
+any juju or pebble command (it also covers revision-pinned deploys and
+the `juju download` mechanics used above).
+
 ## Where things live: the grep cookbook
 
 Charm errors and statuses are raised from a small, greppable surface:
@@ -143,3 +167,6 @@ keys that do not exist:
   revision↔tag mapping in depth: pickaxe searches, branch selection,
   consecutive-revision arch/channel pairs, ops/library version pinning,
   publish-date vs merge-date reasoning, cheap A/B revision comparisons.
+- Cross-skill: `juju-cli` — the live-side workflow. Deploy the revision
+  under study, verify source findings on a live model, run commands in
+  units (pebble), read status/debug-log.
