@@ -1,25 +1,18 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-name: Promote charm
+name: Promote charms
 
 on:
   workflow_dispatch:
     inputs:
-      path-to-charm:
-        description: Promote charm in this path
+      revisions:
+        description: |
+          Comma-separated list of git revision tags to promote.
+          These must match the tags created by canonical/data-platform-workflows release_charm_edge.yaml
+
+          Example: 'mysql/rev123,mysql/rev124,mysql-k8s/rev125,mysql-k8s/rev126'
         required: true
-        type: choice
-        options:
-          - kubernetes
-          - machines
-      from-risk:
-        description: Promote from this Charmhub risk
-        required: true
-        type: choice
-        options:
-          - edge
-          - beta
-          - candidate
+        type: string
       to-risk:
         description: Promote to this Charmhub risk
         required: true
@@ -31,13 +24,12 @@ on:
 
 jobs:
   promote:
-    name: Promote charm
-    uses: canonical/data-platform-workflows/.github/workflows/_promote_charm_legacy_1.yaml@v53
+    name: Promote charms
+    uses: canonical/data-platform-workflows/.github/workflows/_promote_charms.yaml@v53
     with:
       track: '8.0'
-      from-risk: ${{ inputs.from-risk }}
+      revisions: ${{ inputs.revisions }}
       to-risk: ${{ inputs.to-risk }}
-      path-to-charm-directory: ${{ inputs.path-to-charm }}
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
