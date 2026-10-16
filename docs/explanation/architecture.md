@@ -126,11 +126,11 @@ services:
             DATA_SOURCE_NAME: user:password@unix(/var/run/mysqld/mysqld.sock)/
         user: mysql
         group: mysql
-    mysqld_safe:
+    mysqld:
         summary: MySQL daemon,
         override: replace,
-        command: /usr/sbin/mysqld,
-        startup: enabled,
+        command: /usr/sbin/mysqld ...,
+        startup: enabled,                    <= MySQL is up and running
         user: mysql
         group: mysql
         after: <logs>,
@@ -140,8 +140,6 @@ services:
             "MYSQLD_PARENT_PID": 1,
             ...
 ```
-
-The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
 
 The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge) deployments.
 
