@@ -166,6 +166,9 @@ class SelfHealingEventHandler(Object):
         if not self._helpers.initialized:
             logger.debug("Skipping cluster self-healing: charm is not initialized")
             return
+        if not self._charm.replication.idle:
+            logger.debug("Skipping cluster self-healing: replication not idle")
+            return
         if self._charm.refreshing:
             logger.debug("Skipping cluster self-healing: charm is refreshing")
             return

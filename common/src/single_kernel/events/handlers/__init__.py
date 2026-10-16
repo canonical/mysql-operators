@@ -7,6 +7,6 @@ from .cluster import ClusterEventHandler
 from .database import DatabaseEventHandler
 from .lifecycle import LifecycleEventHandler
 from .log_rotation import LogRotationEventHandler
-from .replication import BaseReplicationEventHandler
+from .replication import ReplicationEventHandler
 from .self_healing import SelfHealingEventHandler
 from .tls import TLSClientEventHandler, TLSPeerEventHandler

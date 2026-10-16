@@ -75,45 +75,6 @@ class ClusterEventHandler(Object):
 
         return peer_addresses
 
-    def _promote_instance(self, event: ActionEvent, force: bool) -> None:
-        """Promote the MySQL instance to be cluster primary."""
-        logger.info("Setting instance as cluster primary")
-
-        try:
-            self._manager.promote_instance(self._charm.get_unit_address(self._charm.unit), force)
-        except RuntimeError as e:
-            logger.error(f"Failed to promote instance: {e}")
-            event.fail(f"Failed to promote instance: {e}")
-            raise
-
-        event.set_results({"message": "Instance is now primary"})
-
-    def _promote_cluster(self, event: ActionEvent, force: bool) -> None:
-        """Promote the MySQL cluster to be cluster-set primary."""
-        if not self._charm.unit.is_leader():
-            event.fail("The action can only be run on the leader unit")
-            return
-
-        if self._manager.is_cluster_set_primary:
-            event.fail("The action can only be run on a replica cluster")
-            return
-
-        peers_relation = self._charm.model.get_relation(RELATION_PEERS)
-        if not peers_relation:
-            event.fail("The action can only be run when the peer relation exists")
-            return
-
-        logger.info("Setting cluster as cluster-set primary")
-
-        try:
-            self._manager.promote_cluster(self._charm.cluster_name, force)
-        except RuntimeError as e:
-            logger.error(f"Failed to promote cluster: {e}")
-            event.fail(f"Failed to promote cluster: {e}")
-            raise
-
-        event.set_results({"message": "Cluster is now primary"})
-
     def _update_password(self, key: str, val: str) -> None:
         """Update the application password."""
         content = self._charm.secret_store.get_content(secret_label=self._charm.secret_label)
@@ -193,15 +154,21 @@ class ClusterEventHandler(Object):
         scope = event.params.get("scope", "")
         force = event.params.get("force", False)
 
-        match scope:
-            case "cluster":
-                self._promote_cluster(event, force)
-            case "unit":
-                self._promote_instance(event, force)
-                self._manager.update_state()
-            case _:
-                event.fail(f"The action cannot be run for scope {scope}")
-                return
+        if scope != "unit":
+            return
+
+        logger.info("Setting instance as cluster primary")
+
+        try:
+            self._manager.promote_instance(self._charm.get_unit_address(self._charm.unit), force)
+        except RuntimeError as e:
+            logger.error(f"Failed to promote instance: {e}")
+            event.fail(f"Failed to promote instance: {e}")
+            return
+        else:
+            event.set_results({"message": "Instance is now primary"})
+
+        self._manager.update_state()
 
     def _on_recreate_cluster(self, event: ActionEvent) -> None:
         """Event handler for the recreate-cluster action."""

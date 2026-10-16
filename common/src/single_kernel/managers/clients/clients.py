@@ -90,6 +90,15 @@ class Clients:
 
         return None
 
+    def refresh_password(self, password: str) -> None:
+        """Update the operator password in the shared executor connection details.
+
+        All three clients share the same executor object, so a single write is
+        sufficient. Required after syncing the operator password so subsequent
+        MySQL operations within the same hook execution use the new credentials.
+        """
+        self._instance_client._executor._conn_details.password = password
+
     def configure_instance(self, username: str = "", password: str = "") -> None:
         """Configure the MySQL instance."""
         self._cluster_client.set_instance_config(username, password)

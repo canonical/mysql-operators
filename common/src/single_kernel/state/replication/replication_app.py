@@ -8,6 +8,7 @@ class ReplicationAppState:
     """Class to deal with the replication application state."""
 
     cluster_name_key = "cluster-name"
+    cluster_set_name_key = "cluster-set-name"
     cluster_version_key = "cluster-version"
     instance_address_key = "instance-address"
     instance_label_key = "instance-label"
@@ -24,6 +25,14 @@ class ReplicationAppState:
     def get_cluster_name(self) -> str | None:
         """Get the offering / consuming cluster name."""
         name = self._data.get(self.cluster_name_key)
+        if not name:
+            return None
+
+        return name
+
+    def get_cluster_set_name(self) -> str | None:
+        """Get the offering cluster-set name."""
+        name = self._data.get(self.cluster_set_name_key)
         if not name:
             return None
 
@@ -88,6 +97,10 @@ class ReplicationAppState:
     def set_cluster_name(self, name: str) -> None:
         """Set the offering / consuming cluster name."""
         self._data.update({self.cluster_name_key: str(name)})
+
+    def set_cluster_set_name(self, name: str) -> None:
+        """Set the offering cluster-set name."""
+        self._data.update({self.cluster_set_name_key: str(name)})
 
     def set_cluster_version(self, version: str) -> None:
         """Set the offering cluster version."""

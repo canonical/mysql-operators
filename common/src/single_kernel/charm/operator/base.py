@@ -19,6 +19,8 @@ from pydantic.main import BaseModel
 from ...core import (
     PASSWORD_KEY_OPERATOR,
     RELATION_PEERS,
+    RELATION_RPL_CONSUMER,
+    RELATION_RPL_OFFERER,
     ROLENAME_BACKUPS,
     ROLENAME_DBA,
     ROLENAME_DDL,
@@ -31,6 +33,7 @@ from ...core import (
 from ...events import (
     CustomEvents,
     DatabaseEventHandler,
+    ReplicationEventHandler,
 )
 from ...managers.clients import Clients
 from ...managers.clients.mysql_server import (
@@ -42,6 +45,8 @@ from ...state import (
     PeerState,
     PeerStateApp,
     PeerStateUnit,
+    ReplicationAppState,
+    ReplicationState,
 )
 from ...workload import (
     BaseExporterService,
@@ -68,6 +73,12 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @abstractmethod
     def database(self) -> DatabaseEventHandler:
         """Return the operator database handler."""
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def replication(self) -> ReplicationEventHandler:
+        """Return the operator replication handler."""
         raise NotImplementedError()
 
     @property
@@ -255,3 +266,33 @@ class BaseCharm(CharmBase, Generic[T], ABC):
             PeerStateApp(app_data),
             PeerStateUnit(unit_data),
         )
+
+    def _build_offer_state(self) -> ReplicationState:
+        """Build the local app state on the offer-side relation endpoint."""
+        offer_relation = self.model.get_relation(RELATION_RPL_OFFERER)
+        offer_data = offer_relation.data[self.model.app] if offer_relation else {}
+        return ReplicationState(ReplicationAppState(offer_data))
+
+    def _build_offer_remote_state(self) -> ReplicationState:
+        """Build the remote app state as seen from the offer-side relation endpoint."""
+        offer_relation = self.model.get_relation(RELATION_RPL_OFFERER)
+        remote_data = (
+            offer_relation.data[offer_relation.app] if offer_relation and offer_relation.app else {}
+        )
+        return ReplicationState(ReplicationAppState(remote_data))
+
+    def _build_consumer_state(self) -> ReplicationState:
+        """Build the local app state on the consumer-side relation endpoint."""
+        consumer_relation = self.model.get_relation(RELATION_RPL_CONSUMER)
+        consumer_data = consumer_relation.data[self.model.app] if consumer_relation else {}
+        return ReplicationState(ReplicationAppState(consumer_data))
+
+    def _build_consumer_remote_state(self) -> ReplicationState:
+        """Build the remote app state as seen from the consumer-side relation endpoint."""
+        consumer_relation = self.model.get_relation(RELATION_RPL_CONSUMER)
+        remote_data = (
+            consumer_relation.data[consumer_relation.app]
+            if consumer_relation and consumer_relation.app
+            else {}
+        )
+        return ReplicationState(ReplicationAppState(remote_data))

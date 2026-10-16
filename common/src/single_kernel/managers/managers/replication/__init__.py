@@ -2,5 +2,6 @@
 # See LICENSE file for licensing details.
 
 from .base import BaseReplicationManager
-from .replication_consumer import ConsumingReplicationManager
-from .replication_offering import OfferingReplicationManager
+from .replication_consumer import ReplicationConsumingManager
+from .replication_offering import ReplicationOfferingManager
+from .replication_status import ReplicationStatus
