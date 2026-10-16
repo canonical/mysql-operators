@@ -48,7 +48,7 @@ mysql> SELECT host, user FROM mysql.user;
 +-----------+------------------+
 ```
 
-Additionally, the role `charmed_router` is available to ease the integration with Charmed MySQL Router ([VM](https://charmhub.io/mysql-router) | [K8s](https://charmhub.io/mysql-router-k8s)).
+Additionally, the role `charmed_router` is available to ease the integration with Charmed MySQL Router ([VM](https://charmhub.io/mysql-router?channel=8.4/stable) | [K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable)).
 
 This role contains all the necessary permissions for a MySQL Router relation user to operate.
 

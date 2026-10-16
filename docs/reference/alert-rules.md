@@ -10,9 +10,8 @@ myst:
 This page contains a markdown version of the alert rules described in the `mysql-operators` repository.
 
 GitHub source:
-
-* Machine charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.4/edge/machines/src/alert_rules/prometheus/)
-* Kubernetes charm: [`prometheus_alert_rules/`](https://github.com/canonical/mysql-operators/blob/8.4/edge/kubernetes/src/alert_rules/prometheus/)
+* [General alert rules](https://github.com/canonical/mysql-operators/blob/8.4/edge/common/src/single_kernel/resources/observability/prometheus_rules/general_rules.yaml)
+* [Replication rules](https://github.com/canonical/mysql-operators/blob/8.4/edge/common/src/single_kernel/resources/observability/prometheus_rules/replication_rules.yaml)
 
 ## MySQL General Alerts
 
