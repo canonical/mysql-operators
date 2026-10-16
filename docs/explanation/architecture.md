@@ -127,13 +127,18 @@ services:
         user: mysql
         group: mysql
     mysqld_safe:
-        summary: mysqld safe
-        startup: enabled                    <= MySQL is up and running
-        override: replace
-        command: mysqld_safe
+        summary: MySQL daemon,
+        override: replace,
+        command: /usr/sbin/mysqld,
+        startup: enabled,
         user: mysql
         group: mysql
-        kill-delay: 24h0m0s
+        after: <logs>,
+        requires: <logs>,
+        kill-delay: 24h,
+        environment: {
+            "MYSQLD_PARENT_PID": 1,
+            ...
 ```
 
 The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
