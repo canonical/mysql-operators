@@ -19,6 +19,8 @@ from pydantic.main import BaseModel
 from ...core import (
     PASSWORD_KEY_OPERATOR,
     RELATION_PEERS,
+    RELATION_REPL_CONSUMER,
+    RELATION_REPL_OFFERER,
     ROLENAME_BACKUPS,
     ROLENAME_DBA,
     ROLENAME_DDL,
@@ -31,6 +33,7 @@ from ...core import (
 from ...events import (
     CustomEvents,
     DatabaseEventHandler,
+    ReplicationEventHandler,
 )
 from ...managers.clients import Clients
 from ...managers.clients.mysql_server import (
@@ -42,6 +45,9 @@ from ...state import (
     PeerState,
     PeerStateApp,
     PeerStateUnit,
+    ReplicationAppState,
+    ReplicationState,
+    ReplicationUnitState,
 )
 from ...workload import (
     BaseExporterService,
@@ -68,6 +74,12 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @abstractmethod
     def database(self) -> DatabaseEventHandler:
         """Return the operator database handler."""
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def replication(self) -> ReplicationEventHandler:
+        """Return the operator replication handler."""
         raise NotImplementedError()
 
     @property
@@ -133,7 +145,7 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @property
     def cluster_name(self) -> str:
         """Return the cluster name."""
-        state = self._build_state()
+        state = self._build_peer_state()
         name = state.app.get_cluster_name()
         if not name:
             logger.warning("Failed to fetch the cluster name: not yet available")
@@ -144,7 +156,7 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @property
     def cluster_set_name(self) -> str:
         """Return the cluster-set name."""
-        state = self._build_state()
+        state = self._build_peer_state()
         name = state.app.get_cluster_set_name()
         if not name:
             logger.warning("Failed to fetch the cluster-set name: not yet available")
@@ -240,18 +252,82 @@ class BaseCharm(CharmBase, Generic[T], ABC):
 
         return Clients(instance_client, cluster_client, cluster_set_client)
 
-    def _build_state(self) -> PeerState:
+    def _build_peer_state(self) -> PeerState:
         """Build a peer relation state."""
         peer_relation = self.model.get_relation(RELATION_PEERS)
 
-        if not peer_relation:
-            app_data = {}
-            unit_data = {}
-        else:
+        if peer_relation:
             app_data = peer_relation.data[self.model.app]
             unit_data = peer_relation.data[self.model.unit]
+        else:
+            app_data = {}
+            unit_data = {}
 
         return PeerState(
             PeerStateApp(app_data),
             PeerStateUnit(unit_data),
+        )
+
+    def _build_replication_offer_local_state(self) -> ReplicationState:
+        """Build the replication-offer relation local state."""
+        replication_relation = self.model.get_relation(RELATION_REPL_OFFERER)
+
+        if replication_relation:
+            app_data = replication_relation.data[self.model.app]
+            unit_data = replication_relation.data[self.model.unit]
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
+        )
+
+    def _build_replication_offer_remote_state(self) -> ReplicationState:
+        """Build the replication-offer relation remote state."""
+        replication_relation = self.model.get_relation(RELATION_REPL_OFFERER)
+
+        if replication_relation and replication_relation.app:
+            app_data = replication_relation.data[replication_relation.app]
+            unit_data = {}
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
+        )
+
+    def _build_replication_consumer_local_state(self) -> ReplicationState:
+        """Build the replication relation local state."""
+        replication_relation = self.model.get_relation(RELATION_REPL_CONSUMER)
+
+        if replication_relation:
+            app_data = replication_relation.data[self.model.app]
+            unit_data = replication_relation.data[self.model.unit]
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
+        )
+
+    def _build_replication_consumer_remote_state(self) -> ReplicationState:
+        """Build the replication relation remote state."""
+        replication_relation = self.model.get_relation(RELATION_REPL_CONSUMER)
+
+        if replication_relation and replication_relation.app:
+            app_data = replication_relation.data[replication_relation.app]
+            unit_data = {}
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
         )
