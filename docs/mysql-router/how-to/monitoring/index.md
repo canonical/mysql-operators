@@ -1,4 +1,4 @@
-(monitoring)=
+(monitoring-router)=
 # How to set up monitoring with COS
 
 ```{toctree}
