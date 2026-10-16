@@ -24,7 +24,7 @@ The operator uses the following internal database users:
 * `mysql_innodb_cluster_#######` - the [internal recovery users](https://dev.mysql.com/doc/mysql-shell/8.4/en/innodb-cluster-user-accounts.html#mysql-innodb-cluster-users-created) which enable connections between the servers in the cluster. Dedicated user created for each Juju unit/InnoDB Cluster member.
 * `mysql_innodb_cs_#######` - the internal recovery user which enable connections between MySQl InnoDB Clusters in ClusterSet. One user is created for entire MySQL ClusterSet.
 
-The full list of internal users is available in charm's source code ([VM](https://github.com/canonical/mysql-operators/blob/8.4/edge/machines/src/constants.py) | [K8s](https://github.com/canonical/mysql-operators/blob/8.4/edge/kubernetes/src/constants.py)).
+The full list of internal users is available in charm's source code in [`constants.py`](https://github.com/canonical/mysql-operators/blob/8.4/edge/common/src/single_kernel/core/constants.py).
 
 ```{caution}
 It is forbidden to manage internal users, as they are dedicated to the operator’s logic.
