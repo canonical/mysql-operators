@@ -1,8 +1,6 @@
 (external-access-router)=
 # External network access
 
-<!--TODO: Temporary separation of VM & K8s pages due to large divergence. Will be united and possibly integrated with server docs.-->
-
 For the VM charm:
 * {ref}`external-access-vm`
 

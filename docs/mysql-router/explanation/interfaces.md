@@ -21,7 +21,7 @@ Example:
 
     # Deploy Charmed MySQL and MySQL Router clusters
     juju deploy mysql -n 3
-    juju deploy mysql-router -n 3 --channel dpe/edge
+    juju deploy mysql-router -n 3 --channel 8.4/stable
 
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app
@@ -46,7 +46,7 @@ See all the charm interfaces on the [MySQL Router VM Charmhub page](https://char
 
     # Deploy Charmed MySQL K8s and MySQL Router K8s clusters with 3 nodes each
     juju deploy mysql-k8s -n 3 --trust
-    juju deploy mysql-router-k8s -n 3 --trust --channel 8.4
+    juju deploy mysql-router-k8s -n 3 --trust --channel 8.4/stable
 
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app

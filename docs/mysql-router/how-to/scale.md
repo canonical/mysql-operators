@@ -3,12 +3,11 @@
 
 To deploy MySQL Router with multiple units, use the `-n` option:
 
-<!--TODO: channel for vm? -->
 ````{tab-set}
 ```{tab-item} VM
 :sync: vm
 
-    juju deploy mysql-router --channel dpe/edge -n <number of units>
+    juju deploy mysql-router --channel 8.4/stable -n <number of units>
 ```
 ```{tab-item} K8s
 :sync: k8s

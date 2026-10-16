@@ -22,7 +22,7 @@ After a `juju refresh`, case there any version incompatibilities in charm revisi
 
 Although the underlying MySQL Cluster and MySQL Router continue to work, it’s important to rollback the charm to previous revision so an update can be later attempted after a further inspection of the failure.
 
-To execute a rollback we take the same procedure as the upgrade, the difference being the charm revision to upgrade to. In this example, we refresh the charm back to revision `X`:
+To execute a rollback we take the same procedure as the upgrade, the difference being the charm revision to upgrade to. In this example, we refresh the charm back to revision `88`:
 
 When using charm from charmhub:
 
@@ -30,7 +30,7 @@ When using charm from charmhub:
 ```{tab-item} VM
 :sync: vm
 
-    juju refresh mysql-router --revision=X
+    juju refresh mysql-router --revision=88
 
 If deploying from local charm file, one need to have the previous revision charm file and the `mysql-image` resource, then run:
 
@@ -43,7 +43,7 @@ The biggest ordinal unit will be rolled out and should rejoin the cluster after 
 ```{tab-item} K8s
 :sync: k8s
 
-    juju refresh mysql-router-k8s --revision=X --trust
+    juju refresh mysql-router-k8s --revision=88 --trust
 
 When deploying from a local charm file, you need to have the previous revision's `.charm` file and the `mysql-image` resource. Then, run:
 

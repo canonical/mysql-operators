@@ -26,12 +26,12 @@ Integration provider                   Requirer                               In
 data-integrator:data-integrator-peers  data-integrator:data-integrator-peers  data-integrator-peers  peer
 mysql-k8s:database                     mysql-router-k8s:backend-database      mysql_client           regular
 mysql-k8s:database-peers               mysql-k8s:database-peers               mysql_peers            peer
-mysql-k8s:restart                      mysql-k8s:restart                      rolling_op             peer
-mysql-k8s:upgrade                      mysql-k8s:upgrade                      upgrade                peer
+mysql-k8s:rolling-ops                  mysql-k8s:rolling-ops                  rolling_op             peer
+mysql-k8s:refresh-v-three              mysql-k8s:refresh-v-three              refresh                peer
 mysql-router-k8s:cos                   mysql-router-k8s:cos                   cos                    peer
 mysql-router-k8s:database              data-integrator:mysql                  mysql_client           regular
 mysql-router-k8s:mysql-router-peers    mysql-router-k8s:mysql-router-peers    mysql_router_peers     peer
-mysql-router-k8s:upgrade-version-a     mysql-router-k8s:upgrade-version-a     upgrade                peer
+mysql-router-k8s:refresh-v-three       mysql-router-k8s:refresh-v-three       refresh                peer
 ```
 
 When `expose-external=false`, the following shows the endpoints returned to the client:
