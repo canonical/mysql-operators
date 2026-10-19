@@ -192,7 +192,8 @@ linkcheck_ignore = [
     "https://dev.mysql.com/*",
     "https://www.mysql.com/*",
     "https://www.terraform.io/*",
-    "https://asciinema.org/*"
+    "https://asciinema.org/*",
+    "https://charmhub.io/mysql/docs/*" # temporarily excluding broken charmhub links
 ]
 
 # A regex list of URLs where anchors are ignored by 'make linkcheck'

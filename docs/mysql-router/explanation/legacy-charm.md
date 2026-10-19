@@ -12,7 +12,7 @@ There are [two types of charms](https://juju.is/docs/sdk/charm-taxonomy#heading-
 
 Both legacy and modern charms are [**subordinated**](https://juju.is/docs/sdk/charm-taxonomy#heading--subordinate-charms).
 
-The legacy charm provided SQL endpoints `shared-db` (for the interface `mysql-shared`). The modern charm provides those old endpoint and a new endpoint `database` (for the interface `mysql_client`). Read more details about the available endpoints and interfaces [here](https://charmhub.io/mysql-router/docs/e-interfaces?channel=dpe/candidate).
+The legacy charm provided SQL endpoints `shared-db` (for the interface `mysql-shared`). The modern charm provides those old endpoint and a new endpoint `database` (for the interface `mysql_client`). See: {ref}`interfaces-router`.
 
 **Note**: Please choose one endpoint to use. No need to relate all of them simultaneously!
 

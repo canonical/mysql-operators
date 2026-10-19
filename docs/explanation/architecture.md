@@ -99,7 +99,7 @@ The Charmed MySQL K8s (`workload` container) based on the `mysql-image` resource
 
 The charm supports Juju deployment to all Kubernetes environments: [MicroK8s](https://microk8s.io/), [Charmed Kubernetes](https://ubuntu.com/kubernetes/charmed-k8s), [GKE](https://charmhub.io/mysql-k8s/docs/h-deploy-gke), [Amazon EKS](https://aws.amazon.com/eks/), ...
 
-The OCI/ROCK ships the following components based on the [`charmed-mysql` snap](https://canonical-charmed-mysql.readthedocs-hosted.com/explanation/architecture):
+The OCI/ROCK ships the following components based on the [`charmed-mysql` snap](https://github.com/canonical/charmed-mysql-snap):
 
 * MySQL Community Edition
 * MySQL Router

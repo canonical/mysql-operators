@@ -70,7 +70,7 @@ juju config mysql-router/0 vip=<your_virtual_ip>
 
 Alternatively, you can integrate with the [HACluster charm](https://charmhub.io/hacluster) if you would like a Virtual IP that is generated and maintained for you.
 
-HACluster is a collection of solutions by [ClusterLabs](https://clusterlabs.org/) designed to create and manage resources. The creation of resources like Virtual IPs is handled by [Pacemaker](https://clusterlabs.org/pacemaker/), whereas the management of these resources is handled by [Corosync](https://clusterlabs.org/corosync.html). 
+HACluster is a collection of solutions by [ClusterLabs](https://clusterlabs.org/) designed to create and manage resources. The creation of resources like Virtual IPs is handled by [Pacemaker](https://clusterlabs.org/pacemaker/), whereas the management of these resources is handled by [Corosync](https://corosync.github.io/corosync/). 
 
 Pacemaker will create and attach a Virtual IP to one of your Data Integrator nodes (that is related to MySQL Router), while Corosync will ensure automatic failover if the node with the Virtual IP faces connectivity or other issues. **This setup requires at least 3 Data Integrator nodes, each related to both MySQL Router and HACluster.**
 

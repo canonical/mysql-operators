@@ -61,7 +61,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 Charmed MySQL K8s is an official distribution of MySQL. It’s an open-source project that welcomes community contributions, suggestions, fixes and constructive feedback.
 
 * [Read our Code of Conduct](https://ubuntu.com/community/code-of-conduct)
-* [Join the Discourse forum](https://discourse.charmhub.io/tag/mysql-k8s)
+* [Join the Discourse forum](https://discourse.charmhub.io/)
 * [Contribute](https://github.com/canonical/mysql-k8s-operator/blob/main/CONTRIBUTING.md) and report [issues](https://github.com/canonical/mysql-k8s-operator/issues/new/choose)
 * Explore all [Canonical Data Fabric solutions](https://canonical.com/data)
 * [Contact us](https://charmhub.io/mysql-k8s/docs/r-contacts) for all further questions
