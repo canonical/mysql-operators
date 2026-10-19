@@ -63,7 +63,7 @@ Example output of `juju status --watch 1s` with a deployment in a local LXD clou
 
     Unit               Workload  Agent  Machine  Public address  Ports           Message
     mysql-test-app/0*  active    idle   1        10.3.217.209
-    mysql-router/0*  active    idle            10.3.217.209
+    mysql-router/0*    active    idle            10.3.217.209
     mysql/0*           active    idle   0        10.3.217.119    3306,33060/tcp  Primary
 
     Machine  State    Address       Inst id        Base          AZ  Message
