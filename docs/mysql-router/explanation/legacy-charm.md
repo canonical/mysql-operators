@@ -80,7 +80,7 @@ Currently, the modern charm supports:
 
 ### Report issues
 
-The "legacy charm" (from `latest/stable`) is stored on [Launchpad](TODO). Report legacy charm issues [here](TODO).
+The "legacy charm" (from `latest/stable`) is stored on Launchpad.
 
 The "modern charm" (from `dpe/candidate`) is stored on [GitHub](https://github.com/canonical/mysql-router-operator). Report modern charm issues [here](https://github.com/canonical/mysql-router-operator/issues/new/choose).
 

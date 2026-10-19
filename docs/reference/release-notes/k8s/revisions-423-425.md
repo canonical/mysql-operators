@@ -51,7 +51,7 @@ OCI image resources:
 * [DPE-9791] Handle stale primary on crash when joining peer by @paulomach in https://github.com/canonical/mysql-operators/pull/233
 * [fix] Add robustness to peer address resolution by @paulomach in https://github.com/canonical/mysql-operators/pull/209
 * [MISC] [VM] Raise error properly if initialization fails (8.0) by @astrojuanlu in https://github.com/canonical/mysql-operators/pull/244
-* [MISC] fix forcefull promotion to primary (force quorum) by @paulomach in https://github.com/canonical/mysql-operators/pull/262
+* [MISC] fix forceful promotion to primary (force quorum) by @paulomach in https://github.com/canonical/mysql-operators/pull/262
 * [MISC] 8.0 - Cleanup K8s legacy permissions fix [revert] by @sinclert-canonical in https://github.com/canonical/mysql-operators/pull/287
 * [MISC] More FQDN resolution fixes by @astrojuanlu in https://github.com/canonical/mysql-operators/pull/292
 * [MISC] Fix release test runner selectors. by @sinclert-canonical in https://github.com/canonical/mysql-operators/pull/296
