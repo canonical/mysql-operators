@@ -1,0 +1,30 @@
+Oct 19 00:37:18 [32mINFO    [0m root:test_upgrade.py:115 Removing pre-existing direct relation to mysql-test-app
+Oct 19 00:37:18 [32mINFO    [0m jubilant:_juju.py:316 cli: juju remove-relation --model testing mysql:database mysql-test-app:database
+Oct 19 00:37:18 [32mINFO    [0m root:test_upgrade.py:121 Waiting for mysql-test-app to be blocked (no database)
+Oct 19 00:37:28 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:37:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:37:31 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:37:31 [32mINFO    [0m root:test_upgrade.py:134 Deploying mysql-router
+Oct 19 00:37:31 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing mysql-router mysql-router --base ubuntu@22.04 --channel dpe/edge --trust
+Oct 19 00:37:33 [32mINFO    [0m root:test_upgrade.py:144 Relating mysql and mysql-test-app through the router
+Oct 19 00:37:33 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql:database mysql-router:backend-database
+Oct 19 00:37:33 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing mysql-test-app:database mysql-router:database
+Oct 19 00:37:34 [32mINFO    [0m root:test_upgrade.py:154 Waiting for all applications to become active
+Oct 19 00:39:49 [32mINFO    [0m root:test_upgrade.py:165 Ensure continuous writes are incrementing through the router
+Oct 19 00:39:49 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:39:49 [32mINFO    [0m root:helpers_ha.py:660 Clearing continuous writes
+Oct 19 00:39:49 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-test-app/0 clear-continuous-writes
+Oct 19 00:39:52 [32mINFO    [0m root:helpers_ha.py:662 Starting continuous writes
+Oct 19 00:39:52 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-test-app/0 start-continuous-writes
+Oct 19 00:39:53 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:39:54 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpu7ieqret
+Oct 19 00:39:57 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/1 get-password --params /root/snap/juju/common/tmp6tku95ue
+Oct 19 00:40:00 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:40:00 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/0 get-password --params /root/snap/juju/common/tmp2fd0tn68
+Oct 19 00:40:03 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:40:03 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/1 get-password --params /root/snap/juju/common/tmpep4e67ec
+Oct 19 00:40:06 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:40:06 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql/2 get-password --params /root/snap/juju/common/tmpwf3hod3o
+Oct 19 00:40:09 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Oct 19 00:40:09 [32mINFO    [0m root:helpers_ha.py:667 Clearing continuous writes
+Oct 19 00:40:09 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json mysql-test-app/0 clear-continuous-writes
