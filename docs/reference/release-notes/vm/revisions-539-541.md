@@ -46,7 +46,7 @@ independently from juju `update-status` hook.
 * Fix cluster not initialized by @almeidaraul in https://github.com/canonical/mysql-operators/pull/119
 * Handle stale primary on crash when joining peer by @paulomach in https://github.com/canonical/mysql-operators/pull/233
 * Raise error properly if initialization fails by @astrojuanlu in https://github.com/canonical/mysql-operators/pull/244
-* Fix forcefull promotion to primary (force quorum) by @paulomach in https://github.com/canonical/mysql-operators/pull/262
+* Fix forceful promotion to primary (force quorum) by @paulomach in https://github.com/canonical/mysql-operators/pull/262
 * Fix Terraform expose block by @sinclert-canonical in https://github.com/canonical/mysql-operators/pull/312
 * Anchor logs_retention_period validator regex by @paulomach in https://github.com/canonical/mysql-operators/pull/325
 * Return after BlockedStatus when primary address missing in legacy relations by @paulomach in https://github.com/canonical/mysql-operators/pull/324

@@ -59,6 +59,6 @@ Canonical Data issues are now public on both [Jira](https://warthogs.atlassian.n
 
 ## How to reach us
 
-If you would like to chat with us about your use-cases or ideas, you can reach us at [Canonical Mattermost public channel](https://chat.charmhub.io/charmhub/channels/data-platform) or [Discourse](https://discourse.charmhub.io/). Check all other contact details [here](https://charmhub.io/mysql-k8s/docs/r-contacts).
+If you would like to chat with us about your use-cases or ideas, contact the Canonical Data Platform team through our [Matrix](https://matrix.to/#/#charmhub-data-platform:ubuntu.com) channel.
 
-Consider [opening a GitHub issue](https://github.com/canonical/mysql-k8s-operator/issues) if you want to open a bug report.<br/>[Contribute](https://github.com/canonical/mysql-k8s-operator/blob/main/CONTRIBUTING.md) to the project!
+See: {ref}`contacts`

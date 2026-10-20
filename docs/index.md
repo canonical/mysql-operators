@@ -65,7 +65,6 @@ Charmed MySQL is an open-source project that welcomes community contributions, s
 
 * [Code of Conduct](https://ubuntu.com/community/code-of-conduct)
 
-
 ```{toctree}
 :titlesonly:
 :maxdepth: 2
@@ -76,4 +75,15 @@ tutorial
 How-to guides <how-to/index>
 Reference <reference/index>
 Explanation <explanation/index>
+```
+
+```{toctree}
+:caption: MySQL Router
+:hidden:
+
+Home <mysql-router/index>
+Tutorial <mysql-router/tutorial>
+How-to guides <mysql-router/how-to/index>
+Reference <mysql-router/reference/index>
+Explanation <mysql-router/explanation/index>
 ```

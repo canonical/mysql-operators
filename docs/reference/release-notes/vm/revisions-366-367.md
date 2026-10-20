@@ -40,7 +40,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 
 This section contains some technical details about the charm's contents and dependencies. 
 
-If you are jumping over several stable revisions, check [previous release notes](https://canonical-charmed-mysql.readthedocs-hosted.com/reference/releases/) before upgrading.
+If you are jumping over several stable revisions, check {ref}`previous release notes <release-notes-vm>` before upgrading.
 
 ### Requirements and compatibility
 
