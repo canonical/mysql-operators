@@ -196,6 +196,7 @@ class ClusterEventHandler(Object):
         match scope:
             case "cluster":
                 self._promote_cluster(event, force)
+                self._manager.update_state()
             case "unit":
                 self._promote_instance(event, force)
                 self._manager.update_state()
