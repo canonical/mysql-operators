@@ -31,6 +31,7 @@ from ...core import (
 from ...events import (
     CustomEvents,
     DatabaseEventHandler,
+    ReplicationEventHandler,
 )
 from ...managers.clients import Clients
 from ...managers.clients.mysql_server import (
@@ -42,6 +43,9 @@ from ...state import (
     PeerState,
     PeerStateApp,
     PeerStateUnit,
+    ReplicationAppState,
+    ReplicationState,
+    ReplicationUnitState,
 )
 from ...workload import (
     BaseExporterService,
@@ -68,6 +72,12 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @abstractmethod
     def database(self) -> DatabaseEventHandler:
         """Return the operator database handler."""
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def replication(self) -> ReplicationEventHandler:
+        """Return the operator replication handler."""
         raise NotImplementedError()
 
     @property
@@ -133,7 +143,7 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @property
     def cluster_name(self) -> str:
         """Return the cluster name."""
-        state = self._build_state()
+        state = self._build_peer_state()
         name = state.app.get_cluster_name()
         if not name:
             logger.warning("Failed to fetch the cluster name: not yet available")
@@ -144,7 +154,7 @@ class BaseCharm(CharmBase, Generic[T], ABC):
     @property
     def cluster_set_name(self) -> str:
         """Return the cluster-set name."""
-        state = self._build_state()
+        state = self._build_peer_state()
         name = state.app.get_cluster_set_name()
         if not name:
             logger.warning("Failed to fetch the cluster-set name: not yet available")
@@ -240,18 +250,50 @@ class BaseCharm(CharmBase, Generic[T], ABC):
 
         return Clients(instance_client, cluster_client, cluster_set_client)
 
-    def _build_state(self) -> PeerState:
+    def _build_peer_state(self) -> PeerState:
         """Build a peer relation state."""
         peer_relation = self.model.get_relation(RELATION_PEERS)
 
-        if not peer_relation:
-            app_data = {}
-            unit_data = {}
-        else:
+        if peer_relation:
             app_data = peer_relation.data[self.model.app]
             unit_data = peer_relation.data[self.model.unit]
+        else:
+            app_data = {}
+            unit_data = {}
 
         return PeerState(
             PeerStateApp(app_data),
             PeerStateUnit(unit_data),
+        )
+
+    def _build_replication_local_state(self, relation_name: str) -> ReplicationState:
+        """Build the provided replication relation local state."""
+        relation = self.model.get_relation(relation_name)
+
+        if relation:
+            app_data = relation.data[self.model.app]
+            unit_data = relation.data[self.model.unit]
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
+        )
+
+    def _build_replication_remote_state(self, relation_name: str) -> ReplicationState:
+        """Build the provided replication relation remote state."""
+        relation = self.model.get_relation(relation_name)
+
+        if relation and relation.app:
+            app_data = relation.data[relation.app]
+            unit_data = {}
+        else:
+            app_data = {}
+            unit_data = {}
+
+        return ReplicationState(
+            ReplicationAppState(app_data),
+            ReplicationUnitState(unit_data),
         )
