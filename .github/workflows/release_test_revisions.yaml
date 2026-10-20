@@ -1,0 +1,117 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Release tests (Charmhub revisions)
+
+on:
+  workflow_dispatch:
+    inputs:
+      revisions:
+        description: |
+          Comma-separated list of git revision tags to test.
+          These must match the tags created by canonical/data-platform-workflows release_charm_edge.yaml
+
+          Example: 'mysql/rev123,mysql/rev124,mysql-k8s/rev125,mysql-k8s/rev126'
+        required: true
+        type: string
+
+jobs:
+  download:
+    name: Download charm(s) | ${{ matrix.path }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - path: kubernetes
+            charm: mysql-k8s
+          - path: machines
+            charm: mysql
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Set up environment
+        run: |
+          sudo snap install juju --channel 3.6/stable
+      - name: Download charm revisions from Charmhub
+        shell: bash
+        run: |
+          mkdir "${VAR_PATH}"
+          # .empty file required to preserve directory structure in artifact
+          # (Same layout as canonical/data-platform-workflows build_charm.yaml)
+          touch .empty
+
+          found=false
+          IFS=',' read -ra tags <<< "${VAR_REVISIONS// /}"
+          for tag in "${tags[@]}"
+          do
+            # Example `tag`: "mysql-k8s/rev123"
+            if [[ ! "${tag}" =~ ^([a-z0-9-]+)/rev([0-9]+)$ ]]
+            then
+              echo "Invalid revision tag: ${tag}"
+              exit 1
+            fi
+            if [[ "${BASH_REMATCH[1]}" != "${VAR_CHARM}" ]]
+            then
+              continue
+            fi
+            revision="${BASH_REMATCH[2]}"
+
+            juju download "${VAR_CHARM}" --revision "${revision}" --no-progress --filepath "rev${revision}.charm"
+            # Same file name as `charmcraft pack`, which the `charm` pytest fixture expects
+            # Example: "mysql_ubuntu@26.04-amd64.charm"
+            platform=$(unzip -p "rev${revision}.charm" manifest.yaml | yq '.bases[0] | .name + "@" + .channel + "-" + .architectures[0]')
+            path="${VAR_PATH}/${VAR_CHARM}_${platform}.charm"
+            if [[ -e "${path}" ]]
+            then
+              echo "Multiple ${VAR_CHARM} revisions for ${platform}"
+              exit 1
+            fi
+            mv "rev${revision}.charm" "${path}"
+            echo "Downloaded ${VAR_CHARM} rev${revision} to ${path}"
+            found=true
+          done
+
+          if [[ "${found}" != true ]]
+          then
+            echo "No ${VAR_CHARM} revisions in '${VAR_REVISIONS}'"
+            exit 1
+          fi
+        env:
+          VAR_CHARM: ${{ matrix.charm }}
+          VAR_PATH: ${{ matrix.path }}
+          VAR_REVISIONS: ${{ inputs.revisions }}
+      - name: Upload charm packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: charmhub-charm-${{ matrix.path }}
+          path: |
+            ${{ matrix.path }}/*.charm
+            .empty
+          include-hidden-files: true  # For `.empty`
+          if-no-files-found: error
+    cache-mode: none
+
+  release-test:
+    name: Release tests
+    needs:
+      - download
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - kubernetes
+          - machines
+    uses: $/.github/workflows/release_test.yaml
+    with:
+      artifact-prefix: charmhub-charm
+      path-to-charm-directory: ${{ matrix.path }}
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
+    permissions: {}
+    cache-mode: none
