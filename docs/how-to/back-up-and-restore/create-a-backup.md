@@ -45,8 +45,20 @@ If you have a cluster of one unit, you can run the `create-backup` action on the
 
 To find the primary, see `juju status` or run `get-cluster-status` on the leader to find the primary unit.
 
+````{warning}
+Single-unit clusters suffer downtime during backups
+
+In a single-unit cluster the backup is taken directly from the primary unit while it
+continues to serve client traffic. This can render your database **unavailable or severely
+degraded** for the entire duration of the backup, which grows with the size of your data.
+
+It is preferred to scale the cluster to three units to have a cluster with partition
+tolerance, and to run backups from a non-primary unit.
+````
+
 The `create-backup` action validates that the unit in charge of the backup is healthy, by:
-- Checking that the MySQL cluster is in a valid state (`OK` or `OK_PARTIAL` from the InnoDB [cluster status](https://dev.mysql.com/doc/mysql-shell/8.0/en/monitoring-innodb-cluster.html))
+- Checking that the MySQL cluster is in a valid state (`OK`, `OK_PARTIAL`, or
+  `OK_NO_TOLERANCE` for single-unit clusters from the InnoDB [cluster status](https://dev.mysql.com/doc/mysql-shell/8.0/en/monitoring-innodb-cluster.html))
 - Checking that the MySQL instance is in a valid state (`ONLINE` from Replication [member states](https://dev.mysql.com/doc/refman/8.0/en/group-replication-server-states.html).
 
 In order to override these precautions, use the `force` flag:
