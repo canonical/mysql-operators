@@ -8,6 +8,7 @@ class ReplicationAppState:
     """Class to deal with the replication application state."""
 
     cluster_name_key = "cluster-name"
+    cluster_set_name_key = "cluster-set-name"
     cluster_version_key = "cluster-version"
     instance_address_key = "instance-address"
     instance_label_key = "instance-label"
@@ -16,6 +17,7 @@ class ReplicationAppState:
     replica_key = "replica-state"
     secret_key = "secret-id"
     switchover_key = "switchover"
+    user_data_key = "user-data-found"
 
     def __init__(self, data: MutableMapping[str, str]):
         """Initialize the class attributes."""
@@ -24,6 +26,14 @@ class ReplicationAppState:
     def get_cluster_name(self) -> str | None:
         """Get the offering / consuming cluster name."""
         name = self._data.get(self.cluster_name_key)
+        if not name:
+            return None
+
+        return name
+
+    def get_cluster_set_name(self) -> str | None:
+        """Get the offering / consuming cluster-set name."""
+        name = self._data.get(self.cluster_set_name_key)
         if not name:
             return None
 
@@ -85,9 +95,21 @@ class ReplicationAppState:
 
         return int(count)
 
+    def get_user_data_flag(self) -> bool | None:
+        """Get the offering cluster user data flag."""
+        flag = self._data.get(self.user_data_key)
+        if not flag:
+            return None
+
+        return flag == "true"
+
     def set_cluster_name(self, name: str) -> None:
         """Set the offering / consuming cluster name."""
         self._data.update({self.cluster_name_key: str(name)})
+
+    def set_cluster_set_name(self, name: str) -> None:
+        """Set the offering / consuming cluster-set name."""
+        self._data.update({self.cluster_set_name_key: str(name)})
 
     def set_cluster_version(self, version: str) -> None:
         """Set the offering cluster version."""
@@ -120,6 +142,10 @@ class ReplicationAppState:
     def set_switchover_count(self, count: int) -> None:
         """Set the offering / consuming cluster switchover count."""
         self._data.update({self.switchover_key: str(count)})
+
+    def set_user_data_flag(self, flag: bool) -> None:
+        """Set the consumer cluster user data flag."""
+        self._data.update({self.user_data_key: str(flag).lower()})
 
     def delete_replication_ready_flag(self) -> None:
         """Delete the offering cluster ready flag."""
