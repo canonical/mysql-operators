@@ -91,13 +91,13 @@ class DatabaseEventHandler(Object):
 
     def _on_database_requested(self, event: DatabaseRequestedEvent) -> None:
         """Event handler for the database-requested event."""
+        if not self._charm.unit.is_leader():
+            logger.debug("Skipping database creation: unit is not leader")
+            return
+
         if not self._helpers.initialized:
             logger.debug("Deferring database creation: charm not initialized")
             event.defer()
-            return
-
-        if not self._charm.unit.is_leader():
-            logger.debug("Skipping database creation: unit is not leader")
             return
 
         database = event.database
