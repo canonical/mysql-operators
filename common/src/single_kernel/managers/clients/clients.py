@@ -46,10 +46,21 @@ class Clients:
         return self._instance_client
 
     @contextmanager
-    def build_cluster_client(self, instance_host: str) -> Iterator[MySQLClusterClient]:
-        """Build a cluster client for the given host."""
+    def build_cluster_client(
+        self,
+        instance_host: str | None = None,
+        instance_user: str | None = None,
+        instance_pass: str | None = None,
+    ) -> Iterator:
+        """Build a cluster client for the given host or password."""
         client = copy.deepcopy(self._cluster_client)
-        client._executor._conn_details.host = instance_host
+
+        if instance_host:
+            client._executor._conn_details.host = instance_host
+        if instance_user:
+            client._executor._conn_details.username = instance_user
+        if instance_pass:
+            client._executor._conn_details.password = instance_pass
 
         try:
             yield client
@@ -58,10 +69,21 @@ class Clients:
             raise
 
     @contextmanager
-    def build_cluster_set_client(self, instance_host: str) -> Iterator[MySQLClusterSetClient]:
-        """Build a cluster-set client for the given host."""
+    def build_cluster_set_client(
+        self,
+        instance_host: str | None = None,
+        instance_user: str | None = None,
+        instance_pass: str | None = None,
+    ) -> Iterator:
+        """Build a cluster-set client for the given host or password."""
         client = copy.deepcopy(self._cluster_set_client)
-        client._executor._conn_details.host = instance_host
+
+        if instance_host:
+            client._executor._conn_details.host = instance_host
+        if instance_user:
+            client._executor._conn_details.username = instance_user
+        if instance_pass:
+            client._executor._conn_details.password = instance_pass
 
         try:
             yield client
@@ -70,10 +92,21 @@ class Clients:
             raise
 
     @contextmanager
-    def build_instance_client(self, instance_host: str) -> Iterator[MySQLInstanceClient]:
+    def build_instance_client(
+        self,
+        instance_host: str | None = None,
+        instance_user: str | None = None,
+        instance_pass: str | None = None,
+    ) -> Iterator:
         """Build a cluster client for the given host."""
         client = copy.deepcopy(self._instance_client)
-        client._executor._conn_details.host = instance_host
+
+        if instance_host:
+            client._executor._conn_details.host = instance_host
+        if instance_user:
+            client._executor._conn_details.username = instance_user
+        if instance_pass:
+            client._executor._conn_details.password = instance_pass
 
         try:
             yield client
@@ -112,12 +145,12 @@ class Clients:
 
     def recreate_cluster(self, instance_label: str) -> None:
         """Recreate the MySQL cluster."""
-        self._cluster_client.init_locks_table()
-
         try:
             self._cluster_client.create(instance_label)
             self._cluster_set_client.create(self._cluster_client._cluster)
-            self._cluster_client.rescan()
         except ExecutionError:
             logging.error(f"Failed to recreate cluster from {instance_label}")
             raise
+
+        self._cluster_client.rescan()
+        self._cluster_client.init_locks_table()
