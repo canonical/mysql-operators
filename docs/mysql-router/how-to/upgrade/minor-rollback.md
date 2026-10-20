@@ -48,9 +48,7 @@ When using charm from charmhub:
 
 If deploying from local charm file, one need to have the previous revision charm file and the `mysql-image` resource, then run:
 
-    juju refresh mysql-router --path=./mysql-router_ubuntu-22.04-amd64.charm
-
-Where `mysql-router_ubuntu-22.04-amd64.charm` is the previous revision charm file.
+    juju refresh mysql-router --path=<path_to_charm_file>
 
 The biggest ordinal unit will be rolled out and should rejoin the cluster after settling down. After the refresh command, the juju controller revision for the application will be back in sync with the running MySQL Router revision.
 ```

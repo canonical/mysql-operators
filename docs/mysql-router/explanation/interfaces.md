@@ -6,7 +6,7 @@ MySQL Router supports modern ['mysql_client'](https://github.com/canonical/charm
 ```{attention}
 In order to relate with Charmed MySQL, **every table created by the client application must have a primary key.**
 
-This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.4/en/group-replication-requirements.html) enabled in this charm.
+This is required by the [group replication plugin](https://dev.mysql.com/doc/refman/8.0/en/group-replication-requirements.html) enabled in this charm.
 ```
 
 ## Modern `mysql_client` interface (`database` endpoint):
@@ -21,7 +21,7 @@ Example:
 
     # Deploy Charmed MySQL and MySQL Router clusters
     juju deploy mysql -n 3
-    juju deploy mysql-router -n 3 --channel dpe/edge
+    juju deploy mysql-router -n 3 --channel dpe/candidate
     
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app
@@ -46,7 +46,7 @@ See all the charm interfaces on the [MySQL Router VM Charmhub page](https://char
 
     # Deploy Charmed MySQL K8s and MySQL Router K8s clusters with 3 nodes each
     juju deploy mysql-k8s -n 3 --trust
-    juju deploy mysql-router-k8s -n 3 --trust --channel 8.0
+    juju deploy mysql-router-k8s -n 3 --trust --channel 8.0/stable
     
     # Deploy the relevant charms, e.g. mysql-test-app
     juju deploy mysql-test-app

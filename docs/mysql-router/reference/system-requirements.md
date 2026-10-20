@@ -1,7 +1,7 @@
 (system-requirements-router)=
 # System requirements
 
-The following are the minimum software and hardware requirements to run Charmed MySQL Router alongside Charmed MySQL 8.4.
+The following are the minimum software and hardware requirements to run Charmed MySQL Router alongside Charmed MySQL 8.0.
 
 ## Software
 
