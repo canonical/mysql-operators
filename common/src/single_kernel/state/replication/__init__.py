@@ -2,3 +2,4 @@
 # See LICENSE file for licensing details.
 
 from .replication_app import ReplicationAppState
+from .replication_unit import ReplicationUnitState
