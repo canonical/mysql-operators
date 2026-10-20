@@ -185,6 +185,35 @@ def test_backup(juju: Juju, cloud_configs_aws) -> None:
     verify_mysql_test_data(juju, DATABASE_APP_NAME, TABLE_NAME, value_after_backup)
 
 
+def test_backup_single_unit(juju: Juju, cloud_configs_aws) -> None:
+    """Test that create-backup succeeds on a single-unit cluster without force.
+
+    A single-unit cluster is reported as OK_NO_TOLERANCE by MySQL Shell, which
+    should be considered healthy for backups.
+    See: https://github.com/canonical/mysql-operators/issues/509
+    """
+    logger.info("Scaling mysql to a single unit")
+    scale_app_units(juju, DATABASE_APP_NAME, 1)
+
+    logger.info("Waiting for the single-unit cluster to become active")
+    juju.wait(
+        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
+        timeout=TIMEOUT,
+    )
+
+    unit_name = get_app_units(juju, DATABASE_APP_NAME)[0]
+
+    logger.info("Creating backup on single-unit cluster without force")
+    results = juju.run(unit_name, "create-backup", wait=5 * MINUTE_SECS).results
+    single_unit_backup_id = results["backup-id"]
+
+    logger.info("Listing backup ids to ensure new backup id exists")
+    results = juju.run(unit_name, "list-backups").results
+    output = results["backups"]
+    backup_ids = [line.split("|")[0].strip() for line in output.split("\n")[2:]]
+    assert single_unit_backup_id in backup_ids
+
+
 def test_restore_on_same_cluster(juju: Juju, cloud_configs_aws) -> None:
     """Test to restore a backup to the same mysql cluster."""
     cloud_configs, cloud_credentials = cloud_configs_aws
@@ -408,32 +437,3 @@ def test_restore_on_new_cluster(juju: Juju, charm, cloud_configs_aws) -> None:
         ),
         timeout=TIMEOUT,
     )
-
-
-def test_backup_single_unit(juju: Juju, cloud_configs_aws) -> None:
-    """Test that create-backup succeeds on a single-unit cluster without force.
-
-    A single-unit cluster is reported as OK_NO_TOLERANCE by MySQL Shell, which
-    should be considered healthy for backups.
-    See: https://github.com/canonical/mysql-operators/issues/509
-    """
-    logger.info("Scaling mysql to a single unit")
-    scale_app_units(juju, DATABASE_APP_NAME, 1)
-
-    logger.info("Waiting for the single-unit cluster to become active")
-    juju.wait(
-        ready=wait_for_apps_status(jubilant_backports.all_active, DATABASE_APP_NAME),
-        timeout=TIMEOUT,
-    )
-
-    unit_name = get_app_units(juju, DATABASE_APP_NAME)[0]
-
-    logger.info("Creating backup on single-unit cluster without force")
-    results = juju.run(unit_name, "create-backup", wait=5 * MINUTE_SECS).results
-    single_unit_backup_id = results["backup-id"]
-
-    logger.info("Listing backup ids to ensure new backup id exists")
-    results = juju.run(unit_name, "list-backups").results
-    output = results["backups"]
-    backup_ids = [line.split("|")[0].strip() for line in output.split("\n")[2:]]
-    assert single_unit_backup_id in backup_ids
