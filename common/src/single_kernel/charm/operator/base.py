@@ -252,11 +252,11 @@ class BaseCharm(CharmBase, Generic[T], ABC):
 
     def _build_peer_state(self) -> PeerState:
         """Build a peer relation state."""
-        peer_relation = self.model.get_relation(RELATION_PEERS)
+        relation = self.model.get_relation(RELATION_PEERS)
 
-        if peer_relation:
-            app_data = peer_relation.data[self.model.app]
-            unit_data = peer_relation.data[self.model.unit]
+        if relation:
+            app_data = relation.data[self.model.app]
+            unit_data = relation.data[self.model.unit]
         else:
             app_data = {}
             unit_data = {}

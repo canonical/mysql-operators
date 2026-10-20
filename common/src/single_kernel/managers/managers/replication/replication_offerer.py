@@ -51,10 +51,6 @@ class ReplicationOffererManager:
         """Set the replication ready flag."""
         self._repl_state_local.app.set_replication_ready_flag(flag)
 
-    def delete_replication_ready_flag(self) -> None:
-        """Delete the replication ready flag."""
-        self._repl_state_local.app.delete_replication_ready_flag()
-
     def is_primary_cluster(self) -> bool:
         """Return whether the MySQL cluster is the primary."""
         return self._clients.cluster.fetch_role() == ClusterRole.PRIMARY
@@ -91,18 +87,6 @@ class ReplicationOffererManager:
                     return ReplicationStatus.RECOVERING
 
         return ReplicationStatus.RECOVERING
-
-    def check_cluster_rejoin(self, cluster_name: str) -> bool:
-        """Check whether the cluster can rejoin the cluster-set."""
-        clusters = self._clients.cluster_set.fetch_clusters()
-        state = self._clients.cluster_set.fetch_cluster_state(cluster_name)
-
-        if cluster_name not in clusters.keys():
-            return False
-        if state != ClusterGlobalStatus.INVALIDATED:
-            return False
-
-        return True
 
     def create_cluster_replica(self, donor: str | None) -> None:
         """Create a cluster replica."""
@@ -152,10 +136,6 @@ class ReplicationOffererManager:
                 force = False
 
         self._clients.cluster_set.remove_replica_cluster(cluster_name, force=force)
-
-    def rejoin_cluster_replica(self, cluster_name: str) -> None:
-        """Rejoin a MySQL cluster replica."""
-        self._clients.cluster_set.rejoin_replica_cluster(cluster_name)
 
     def save_cluster_info(self, secret_id: str, replication_name: str) -> None:
         """Save the cluster information into the databag."""

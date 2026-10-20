@@ -26,6 +26,7 @@ from ...managers import (
     ReplicationOffererManager,
     ReplicationStatus,
 )
+from ...state import ReplicationAppState
 from ..helpers import EventHelpers
 
 if typing.TYPE_CHECKING:
@@ -54,10 +55,6 @@ class ReplicationEventHandler(Object):
         self.framework.observe(
             self._charm.on.create_replication_action,
             self._on_create_replication,
-        )
-        self.framework.observe(
-            self._charm.on.rejoin_cluster_action,
-            self._on_rejoin_cluster,
         )
 
         # Events emitted by the offerer and observed by the consumer
@@ -294,28 +291,6 @@ class ReplicationEventHandler(Object):
             replication_name=event.params.get("name", "default"),
         )
 
-    def _on_rejoin_cluster(self, event: ActionEvent) -> None:
-        """Event handler for the rejoin-cluster action."""
-        cluster = event.params.get("cluster-name", "")
-        if not cluster:
-            event.fail("Skipping cluster rejoin: missing cluster name")
-            logger.warning("Skipping cluster rejoin: missing cluster name")
-            return
-
-        if not self._manager_offerer.check_cluster_rejoin(cluster):
-            event.fail("Skipping cluster rejoin: cluster not in cluster-set")
-            logger.warning("Skipping cluster rejoin: cluster not in cluster-set")
-            return
-
-        try:
-            self._manager_offerer.rejoin_cluster_replica(cluster)
-        except RuntimeError as e:
-            logger.error(f"Failed to rejoin cluster {cluster}: {e}")
-            event.fail(f"Failed to rejoin cluster {cluster}: {e}")
-            return
-
-        event.set_results({"message": "Cluster is rejoined"})
-
     def _on_offer_relation_created(self, event: RelationCreatedEvent) -> None:
         """Event handler for the relation-created event."""
         if not self._charm.unit.is_leader():
@@ -372,13 +347,12 @@ class ReplicationEventHandler(Object):
             self._charm.secret_store.delete(secret_id=secret_id)
 
         # By the time the relation-broken event is received, the remote databag
-        # is no longer accessible. Therefore, we must build the state out of the
-        # event relation data.
-        remote_data = event.relation.data.get(event.relation.app, {})
-        cluster_name = remote_data.get("cluster-name")
+        # is no longer accessible. The state must be built from the event data
+        remote_app_data = event.relation.data[event.relation.app]
+        remote_app_state = ReplicationAppState(remote_app_data)
+        cluster_name = remote_app_state.get_cluster_name()
 
         self._manager_offerer.remove_cluster_replica(cluster_name)
-        self._manager_offerer.delete_replication_ready_flag()
 
         self._charm.update_app_labels()
         self._charm.set_unit_status(self._helpers.build_unit_status())
