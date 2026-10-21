@@ -52,21 +52,22 @@ jobs:
           . .venv/bin/activate
           cd "${OPERATOR}"
           poetry install
+          # Restore poetry's own poetry-core, which may be downgraded by the
+          # charm-libs install (8.0 pins poetry-core 1.x, breaking poetry 2.x)
+          pip install --force-reinstall poetry
 
       - name: Run coverage tests
         env:
           OPERATOR: ${{ inputs.operator }}
         run: |
-          tox -e unit -c "${OPERATOR}/tox.ini" || true
+          tox -e unit -c "${OPERATOR}/tox.ini"
 
       - name: Coverage reports for TICS
         env:
           OPERATOR: ${{ inputs.operator }}
         run: |
           mkdir -p "${OPERATOR}/.cover"
-          if [ -f "${OPERATOR}/coverage.xml" ]; then
-            cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
-          fi
+          cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
 
       - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v4
