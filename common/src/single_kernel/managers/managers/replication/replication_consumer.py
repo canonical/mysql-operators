@@ -100,6 +100,10 @@ class ReplicationConsumerManager:
 
     def check_instance_databases(self) -> bool:
         """Check whether the instance has databases."""
+        if self.is_returning_cluster():
+            logger.warning("Skipping database check: cluster is returning")
+            return False
+
         num_databases = len(self._clients.instance.fetch_databases())
         has_databases = bool(num_databases)
 

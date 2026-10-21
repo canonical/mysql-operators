@@ -145,7 +145,7 @@ class ReplicationAppState:
 
     def set_user_data_flag(self, flag: bool) -> None:
         """Set the consumer cluster user data flag."""
-        self._data.update({self.replica_key: str(flag).lower()})
+        self._data.update({self.user_data_key: str(flag).lower()})
 
     def delete_replication_ready_flag(self) -> None:
         """Delete the offering cluster ready flag."""

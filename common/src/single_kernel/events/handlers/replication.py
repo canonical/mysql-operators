@@ -368,10 +368,12 @@ class ReplicationEventHandler(Object):
             event.defer()
             return
 
-        if self._manager_consumer.check_instance_databases():
-            logger.warning("Skipping consuming creation: user data found")
-            self._charm.set_unit_status(BlockedStatus("User data found"))
-            self._charm.set_app_status(BlockedStatus("User data found"))
+        if self._helpers.initialized:
+            if self._manager_consumer.check_instance_databases():
+                logger.warning("Skipping consuming creation: user data found")
+                self._charm.set_unit_status(BlockedStatus("User data found"))
+                self._charm.set_app_status(BlockedStatus("User data found"))
+                return
 
         self._charm.set_unit_status(WaitingStatus("Waiting to synchronize data"))
         self._charm.set_app_status(MaintenanceStatus("Waiting for create-replication to be run"))
