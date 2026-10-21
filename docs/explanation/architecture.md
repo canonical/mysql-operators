@@ -52,7 +52,7 @@ charmed-mysql.mysqlrouterd-exporter  disabled  inactive  -
 
 The `mysqld` snap service is a main MySQL instance which is normally up and running right after the charm deployment.
 
-The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/edge) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql?channel=8.4/edge) deployments.
+The `mysql-router` snap service used in [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/stable) only and should be stopped on [Charmed MySQL](https://charmhub.io/mysql?channel=8.4/edge) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
@@ -126,19 +126,22 @@ services:
             DATA_SOURCE_NAME: user:password@unix(/var/run/mysqld/mysqld.sock)/
         user: mysql
         group: mysql
-    mysqld_safe:
-        summary: mysqld safe
-        startup: enabled                    <= MySQL is up and running
-        override: replace
-        command: mysqld_safe
+    mysqld:
+        summary: MySQL daemon,
+        override: replace,
+        command: /usr/sbin/mysqld ...,
+        startup: enabled,                    <= MySQL is up and running
         user: mysql
         group: mysql
-        kill-delay: 24h0m0s
+        after: <logs>,
+        requires: <logs>,
+        kill-delay: 24h,
+        environment: {
+            "MYSQLD_PARENT_PID": 1,
+            ...
 ```
 
-The `mysqld_safe` is a main MySQL wrapper which is normally up and running right after the charm deployment.
-
-The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/edge) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s) deployments.
+The `mysql-router` used in [Charmed MySQL Router K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable) only and should be stopped on [Charmed MySQL K8s](https://charmhub.io/mysql-k8s?channel=8.4/edge) deployments.
 
 All `exporter` services are activated only after relating with {ref}`COS <enable-monitoring>`.
 
@@ -163,7 +166,7 @@ The `xtrabackup (xbcloud+xbstream)` is used only to store {ref}`backups <create-
 
 ### MySQL Router
 
-[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.4/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The MySQL Router charm ([VM](https://charmhub.io/mysql-router) | [K8s](https://charmhub.io/mysql-router-k8s)) is an independent charm that can be related with MySQL.
+[MySQL Router](https://dev.mysql.com/doc/mysql-router/8.4/en/) is part of MySQL InnoDB Cluster, and is lightweight middle-ware that provides transparent routing between your application and back-end MySQL Servers. The MySQL Router charm ([VM](https://charmhub.io/mysql-router?channel=8.4/stable) | [K8s](https://charmhub.io/mysql-router-k8s?channel=8.4/stable)) is an independent charm that can be related with MySQL.
 
 ### TLS Certificates Operator
 

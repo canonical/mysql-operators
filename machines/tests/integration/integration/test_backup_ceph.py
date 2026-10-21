@@ -21,8 +21,7 @@ import pytest
 from jubilant import Juju
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from constants import OPERATOR_USERNAME, REPLICATION_USERNAME
-
+from ..constants import OPERATOR_USERNAME, REPLICATION_USERNAME
 from ..helpers import generate_random_string
 from ..helpers_ha import (
     MINUTE_SECS,

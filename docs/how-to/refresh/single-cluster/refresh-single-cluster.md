@@ -19,7 +19,7 @@ To upgrade Juju, see {ref}`upgrade-juju`
 
 **Create and test a backup of your data before running any type of refresh.** See {ref}`create-a-backup`.
 
-**It is recommended to integrate your application with [Charmed MySQL Router](https://charmhub.io/mysql-router).** This will ensure minimal service disruption, if any.
+**It is recommended to integrate your application with [Charmed MySQL Router](https://charmhub.io/mysql-router?channel=8.4/stable).** This will ensure minimal service disruption, if any.
 
 ```{admonition} Refresh MySQL Router first
 :class: tip
@@ -32,9 +32,9 @@ Run the router `juju refresh` (and resume/verify each router unit) **before** ru
 ## Step 1: Record revision information
 
 ```{note}
-This step is only valid when deploying from [Charmhub](https://charmhub.io/mysql).
+This step is only valid when deploying from [Charmhub](https://charmhub.io/mysql?channel=8.4/edge).
 
-If a [local charm](https://juju.is/docs/sdk/deploy-a-charm) is deployed (revision is small, e.g. 0-10), make sure the proper/current local revision of the `.charm` file is available BEFORE going further. You might need it for a rollback.
+If a local charm is deployed (revision is small, e.g. 0-10), make sure the proper/current local revision of the `.charm` file is available BEFORE going further. You might need it for a rollback.
 ```
 
 The first step is to record the revision of the running application as a safety measure for a rollback action. To accomplish this, run the `juju status` command and look for the deployed Charmed MySQL revision in the command output.

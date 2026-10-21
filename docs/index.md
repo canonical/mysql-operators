@@ -15,7 +15,7 @@ Charmed MySQL includes features such as cluster-to-cluster replication, TLS encr
 
 ## In this documentation
 
-This documentation contains practical information about installing and operate Charmed MySQL. It covers instructions for both VM and K8s substrates.  
+This documentation contains practical information about installing and operating Charmed MySQL. It covers instructions for both VM and K8s substrates.
 
 ### Get started
 
@@ -45,10 +45,10 @@ Information for making your application compatible with MySQL.
 
 This documentation uses the [Diátaxis documentation structure](https://diataxis.fr/):
 
-* The {ref}`tutorial` provides step-by-step guidance for a beginner through the basics of a deployment in a local machine.
-* {ref}`how-to` are more focused, and assume you already have basic familiarity with the product.
-* {ref}`reference` contains structured information for quick lookup, such as system requirements and configuration parameters
-* {ref}`explanation` gives more background and context about key topics
+* The {ref}`tutorial-router` provides step-by-step guidance for a beginner through the basics of a deployment in a local machine.
+* {ref}`how-to-router` are more focused, and assume you already have basic familiarity with the product.
+* {ref}`reference-router` contains structured information for quick lookup, such as system requirements and configuration parameters
+* {ref}`explanation-router` gives more background and context about key topics
 
 ## Project and community
 
@@ -68,7 +68,6 @@ Charmed MySQL is an open-source project that welcomes community contributions, s
 
 ```{toctree}
 :titlesonly:
-:maxdepth: 2
 :hidden:
 
 Home <self>
@@ -76,4 +75,15 @@ tutorial
 How-to guides <how-to/index>
 Reference <reference/index>
 Explanation <explanation/index>
+```
+
+```{toctree}
+:caption: MySQL Router
+:hidden:
+
+Home <mysql-router/index>
+Tutorial <mysql-router/tutorial>
+How-to guides <mysql-router/how-to/index>
+Reference <mysql-router/reference/index>
+Explanation <mysql-router/explanation/index>
 ```

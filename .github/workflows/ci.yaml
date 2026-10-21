@@ -14,10 +14,18 @@ on:
       - '.github/renovate.json5'
 
 jobs:
-  lint:
-    name: Lint | ${{ matrix.path }}
+  lint-workflows:
+    name: Lint workflows
+    uses: canonical/data-platform-workflows/.github/workflows/lint_workflows.yaml@v53
+    permissions:
+      contents: read
+    cache-mode: none
+
+  lint-terraform:
+    name: Lint terraform | ${{ matrix.path }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     strategy:
       fail-fast: false
       matrix:
@@ -27,9 +35,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install terraform
         run: |
           sudo snap install terraform --classic
+      - name: Install tox
+        run: |
+          pipx install tox
+      - name: Run linters
+        working-directory: ${{ matrix.path }}
+        run: |
+          tox run -e lint-terraform
+    cache-mode: none
+
+  lint:
+    name: Lint | ${{ matrix.path }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - common
+          - kubernetes
+          - machines
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install tox & poetry
         run: |
           pipx install tox
@@ -38,54 +74,7 @@ jobs:
         working-directory: ${{ matrix.path }}
         run: |
           tox run -e lint
-          tox run -e lint-terraform
-
-  unit-test:
-    name: Unit test | ${{ matrix.path }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Install tox & poetry
-        run: |
-          pipx install tox
-          pipx install poetry
-      - name: Run tests
-        working-directory: ${{ matrix.path }}
-        run: tox run -e unit
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          directory: ${{ matrix.path }}
-
-  alert-test:
-    name: Test Alert Rules | ${{ matrix.path }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-      - name: Install prometheus snap
-        run: sudo snap install prometheus
-      - name: Check validity of prometheus alert rules
-        working-directory: ${{ matrix.path }}
-        run: promtool check rules src/alert_rules/prometheus/*
-      - name: Run unit tests for prometheus alert rules
-        working-directory: ${{ matrix.path }}
-        run: promtool test rules tests/alerts/*.yaml
+    cache-mode: none
 
   build:
     name: Build charm | ${{ matrix.path }}
@@ -95,17 +84,38 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v52
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v53
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
       contents: read
+    cache-mode: none
+
+  alert-test:
+    name: Test Alert Rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install prometheus snap
+        run: |
+          sudo snap install prometheus
+      - name: Check validity of prometheus alert rules
+        run: |
+          promtool check rules common/src/single_kernel/resources/observability/prometheus_rules/*
+      - name: Run validations for prometheus alert rules
+        run: |
+          promtool test rules common/tests/alerts/*.yaml
+    cache-mode: none
 
   integration-test:
     name: Integration tests
     needs:
       - lint
-      - unit-test
       - build
     strategy:
       fail-fast: false
@@ -113,8 +123,17 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: ./.github/workflows/integration_test.yaml
+    uses: $/.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
+    permissions: {}
+    cache-mode: none

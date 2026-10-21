@@ -14,11 +14,12 @@ on:
 jobs:
   tag:
     name: Create charm refresh tag
-    uses: canonical/data-platform-workflows/.github/workflows/tag_charm_edge.yaml@v52
+    uses: canonical/data-platform-workflows/.github/workflows/tag_charm_edge.yaml@v53
     with:
       track: '8.4'
     permissions:
       contents: write  # Needed to create git tag
+    cache-mode: none
 
   build:
     name: Build charm | ${{ matrix.path }}
@@ -30,11 +31,12 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v52
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm.yaml@v53
     with:
       path-to-charm-directory: ${{ matrix.path }}
     permissions:
       contents: read
+    cache-mode: none
 
   integration-test:
     name: Integration tests
@@ -46,49 +48,150 @@ jobs:
         path:
           - kubernetes
           - machines
-    uses: ./.github/workflows/integration_test.yaml
+    uses: $/.github/workflows/integration_test.yaml
     with:
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
       path-to-charm-directory: ${{ matrix.path }}
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      GCP_ACCESS_KEY: ${{ secrets.GCP_ACCESS_KEY }}
+      GCP_SECRET_KEY: ${{ secrets.GCP_SECRET_KEY }}
+      UBUNTU_PRO_TOKEN: ${{ secrets.UBUNTU_PRO_TOKEN }}
+      LANDSCAPE_ACCOUNT_NAME: ${{ secrets.LANDSCAPE_ACCOUNT_NAME }}
+      LANDSCAPE_REGISTRATION_KEY: ${{ secrets.LANDSCAPE_REGISTRATION_KEY }}
     permissions: {}
+    cache-mode: none
 
-# TODO: Uncomment when MySQL 8.4/stable channel has releases
-#  release-test:
-#    name: Release tests
-#    needs:
-#      - build
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        path:
-#          - kubernetes
-#          - machines
-#    uses: ./.github/workflows/release_test.yaml
-#    with:
-#      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-#      path-to-charm-directory: ${{ matrix.path }}
-#    secrets: inherit
 
-  release:
-    name: Release charm | ${{ matrix.path }}
+  # NOTE: a matrix job has a single set of outputs, so the per-charm `charm-revisions` values
+  # would overwrite each other. One job per charm keeps both readable by `collect-revisions`.
+  release-kubernetes:
+    name: Release charm | kubernetes
     needs:
       - tag
       - build
       - integration-test
-      # - release-test
-    strategy:
-      fail-fast: false
-      matrix:
-        path:
-          - kubernetes
-          - machines
-    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v52
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
     with:
       track: ${{ needs.tag.outputs.track }}
       artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
-      path-to-charm-directory: ${{ matrix.path }}
+      path-to-charm-directory: kubernetes
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
       contents: write  # Needed to create git tags
+    cache-mode: none
+
+  release-machines:
+    name: Release charm | machines
+    needs:
+      - tag
+      - build
+      - integration-test
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm_edge.yaml@v53
+    with:
+      track: ${{ needs.tag.outputs.track }}
+      artifact-prefix: ${{ needs.build.outputs.artifact-prefix }}
+      path-to-charm-directory: machines
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      contents: write  # Needed to create git tags
+    cache-mode: none
+
+  collect-revisions:
+    name: Collect released revisions
+    needs:
+      - release-kubernetes
+      - release-machines
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Merge per-charm revisions
+        id: collect
+        run: |
+          revisions=$(jq -nc \
+            --argjson mysql "$MYSQL" \
+            --argjson mysql_k8s "$MYSQL_K8S" \
+            '{
+              "mysql": $mysql,
+              "mysql-k8s": $mysql_k8s
+            }')
+          echo "Collected revisions: $revisions"
+          echo "charm-revisions=$revisions" >> "$GITHUB_OUTPUT"
+        env:
+          MYSQL: ${{ needs.release-machines.outputs.charm-revisions }}
+          MYSQL_K8S: ${{ needs.release-kubernetes.outputs.charm-revisions }}
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # Needed to find the charm refresh compatibility version
+          persist-credentials: false
+      # Mirrors `get_release_tag_for_commit` in canonical/data-platform-workflows
+      - name: Get charm refresh compatibility version
+        id: version
+        run: |
+          git fetch --tags --force
+          version="$(git tag --list 'v*/*' --points-at HEAD)"
+          if [ -z "$version" ] || [ "$(echo "$version" | wc -l)" -ne 1 ]
+          then
+            echo "::error::Expected exactly 1 'v*/*' tag on HEAD, got: ${version:-none}"
+            exit 1
+          fi
+          echo "Version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+    outputs:
+      charm-revisions: ${{ steps.collect.outputs.charm-revisions }}
+      version: ${{ steps.version.outputs.version }}
+    permissions:
+      contents: read
+    cache-mode: none
+
+  trigger-release-ci:
+    name: Trigger release CI
+    needs:
+      - collect-revisions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Airflow DAG
+        run: |
+          body=$(jq -nc \
+            --arg dag_run_id "promote-${RUN_ID}" \
+            --arg logical_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg version "$VERSION" \
+            --argjson charm_revisions "$CHARM_REVISIONS" \
+            '{
+              dag_run_id: $dag_run_id,
+              logical_date: $logical_date,
+              conf: {
+                version: $version,
+                charm_revisions: $charm_revisions
+              }
+            }')
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://airflow.data-platform.ps7.canonical.com/api/v2/dags/mysql_8.4/dagRuns" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${AIRFLOW_TOKEN}" \
+            -d "$body")
+          http_code=$(echo "$response" | tail -n1)
+          resp_body=$(echo "$response" | sed '$d')
+          echo "$resp_body"
+          if echo "$resp_body" | grep -q '"detail":"Token Expired"'
+          then
+            echo "::error::Airflow API token has expired"
+            exit 1
+          fi
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]
+          then
+            echo "::error::Airflow API request failed with status $http_code"
+            exit 1
+          fi
+        env:
+          CHARM_REVISIONS: ${{ needs.collect-revisions.outputs.charm-revisions }}
+          VERSION: ${{ needs.collect-revisions.outputs.version }}
+          RUN_ID: ${{ github.run_id }}
+          AIRFLOW_TOKEN: ${{ secrets.AIRFLOW_API_TOKEN }}
+    permissions: {}
+    cache-mode: none

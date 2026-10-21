@@ -7,8 +7,7 @@ import os
 import jubilant
 from jubilant import Juju
 
-from constants import OPERATOR_USERNAME
-
+from ...constants import OPERATOR_USERNAME
 from ...helpers import is_connection_possible
 from ...helpers_ha import (
     check_mysql_units_writes_increment,
