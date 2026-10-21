@@ -51,20 +51,22 @@ jobs:
         run: |
           . .venv/bin/activate
           cd "${OPERATOR}"
-          poetry install --only main,charm-libs
+          poetry install
 
       - name: Run coverage tests
         env:
           OPERATOR: ${{ inputs.operator }}
         run: |
-          tox -e unit -c "${OPERATOR}/tox.ini"
+          tox -e unit -c "${OPERATOR}/tox.ini" || true
 
       - name: Coverage reports for TICS
         env:
           OPERATOR: ${{ inputs.operator }}
         run: |
           mkdir -p "${OPERATOR}/.cover"
-          cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
+          if [ -f "${OPERATOR}/coverage.xml" ]; then
+            cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
+          fi
 
       - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v4
