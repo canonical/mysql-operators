@@ -96,10 +96,8 @@ class TLSEventHandler(Object, ABC):
 
     def _on_certificate_available(self, event: CertificateAvailableEvent) -> None:
         """Event handler for the certificate-available event."""
-        try:
-            self._manager.check_instance()
-        except RuntimeError as e:
-            logger.warning(f"Deferring TLS configuration: {e}")
+        if not self._charm.service_server.running:
+            logger.warning(f"Deferring TLS enabling: server is not running")
             event.defer()
             return
 
@@ -124,8 +122,13 @@ class TLSEventHandler(Object, ABC):
 
         self._charm.set_unit_status(self._helpers.build_unit_status())
 
-    def _on_relation_broken(self, _: RelationBrokenEvent) -> None:
+    def _on_relation_broken(self, event: RelationBrokenEvent) -> None:
         """Event handler for the relation-broken event."""
+        if not self._charm.service_server.running:
+            logger.warning(f"Deferring TLS disabling: server is not running")
+            event.defer()
+            return
+
         self._charm.set_unit_status(MaintenanceStatus("Disabling TLS"))
 
         try:
