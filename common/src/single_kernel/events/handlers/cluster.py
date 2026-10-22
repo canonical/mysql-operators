@@ -84,7 +84,7 @@ class ClusterEventHandler(Object):
         except RuntimeError as e:
             logger.error(f"Failed to promote instance: {e}")
             event.fail(f"Failed to promote instance: {e}")
-            raise
+            return
 
         event.set_results({"message": "Instance is now primary"})
 
@@ -110,7 +110,7 @@ class ClusterEventHandler(Object):
         except RuntimeError as e:
             logger.error(f"Failed to promote cluster: {e}")
             event.fail(f"Failed to promote cluster: {e}")
-            raise
+            return
 
         event.set_results({"message": "Cluster is now primary"})
 
