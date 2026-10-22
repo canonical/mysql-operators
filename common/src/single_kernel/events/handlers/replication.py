@@ -361,8 +361,10 @@ class ReplicationEventHandler(Object):
     def _on_consumer_relation_created(self, event: RelationCreatedEvent) -> None:
         """Event handler for the relation-created event."""
         if not self._charm.unit.is_leader():
-            logger.debug("Skipping consuming creation: unit is not leader")
+            logger.debug("Setting non-leader state to 'waiting'")
+            self._manager_consumer.update_state(state="waiting")
             return
+
         if not self._charm.service_server.running:
             logger.debug("Deferring consuming creation: server is not running")
             event.defer()

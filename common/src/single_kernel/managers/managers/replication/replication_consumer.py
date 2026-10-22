@@ -159,10 +159,12 @@ class ReplicationConsumerManager:
 
         self._peer_state.app.set_cluster_set_name(domain)
 
-    def update_state(self) -> None:
+    def update_state(self, role: str | None = None, state: str | None = None) -> None:
         """Update the operator state."""
-        role = self._clients.instance.fetch_role()
-        state = self._clients.instance.fetch_state()
+        if not role:
+            role = self._clients.instance.fetch_role()
+        if not state:
+            state = self._clients.instance.fetch_state()
 
         logger.info(f"Instance member-role is {role}")
         logger.info(f"Instance member-state is {state}")
