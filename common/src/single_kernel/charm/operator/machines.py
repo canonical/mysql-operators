@@ -14,6 +14,8 @@ from ... import resources
 from ...core import (
     RELATION_DATABASE,
     RELATION_PEERS,
+    RELATION_REPL_CONSUMER,
+    RELATION_REPL_OFFERER,
     RELATION_TRACING,
     EndpointRole,
 )
@@ -24,6 +26,7 @@ from ...events.handlers import (
     DatabaseEventHandler,
     LifecycleEventHandler,
     LogRotationEventHandler,
+    ReplicationEventHandler,
     SelfHealingEventHandler,
     TLSClientEventHandler,
     TLSPeerEventHandler,
@@ -38,6 +41,8 @@ from ...managers.managers import (
     LifecycleManager,
     LogrotateManager,
     PeerTLSManager,
+    ReplicationConsumerManager,
+    ReplicationOffererManager,
     S3BackupManager,
     SelfHealingManager,
 )
@@ -82,7 +87,7 @@ class VMCharm(BaseCharm):
         self._service_exporter = VMExporterService(self._system)
         self._service_server = VMServerService(self._system)
 
-        self._state = self._build_state()
+        self._state = self._build_peer_state()
         self._clients = self._build_mysql_clients(self._build_executor())
         self._helpers = EventHelpers(self, self._clients)
 
@@ -120,6 +125,24 @@ class VMCharm(BaseCharm):
             service=LogrotateService(self._state, self._system),
             relation="cos-agent",
         )
+        self._handler_replication = ReplicationEventHandler(
+            charm=self,
+            helpers=self._helpers,
+            manager_consumer=ReplicationConsumerManager(
+                repl_state_local=self._build_replication_local_state(RELATION_REPL_CONSUMER),
+                repl_state_remote=self._build_replication_remote_state(RELATION_REPL_CONSUMER),
+                peer_state=self._state,
+                system=self._system,
+                clients=self._clients,
+            ),
+            manager_offerer=ReplicationOffererManager(
+                repl_state_local=self._build_replication_local_state(RELATION_REPL_OFFERER),
+                repl_state_remote=self._build_replication_remote_state(RELATION_REPL_OFFERER),
+                peer_state=self._state,
+                system=self._system,
+                clients=self._clients,
+            ),
+        )
         self._handler_self_healing = SelfHealingEventHandler(
             charm=self,
             helpers=self._helpers,
@@ -148,6 +171,11 @@ class VMCharm(BaseCharm):
     def database(self) -> DatabaseEventHandler:
         """Return the operator database handler."""
         return self._handler_database
+
+    @property
+    def replication(self) -> ReplicationEventHandler:
+        """Return the operator replication handler."""
+        return self._handler_replication
 
     @property
     def refreshing(self) -> bool:
