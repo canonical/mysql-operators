@@ -29,7 +29,6 @@ import ops
 from charms.mysql.v0.mysql import (
     MySQLKillSessionError,
     MySQLTLSSetupError,
-    MySQLUnableToGetMemberStateError,
 )
 from charms.tls_certificates_interface.v2.tls_certificates import (
     CertificateAvailableEvent,
@@ -46,7 +45,6 @@ from constants import (
     TLS_SSL_CERT_FILE,
     TLS_SSL_KEY_FILE,
 )
-from mysql_shell.models import InstanceState
 from ops.charm import ActionEvent
 from ops.framework import Object
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
@@ -128,15 +126,8 @@ class MySQLTLS(Object):
                 return
             logger.info("Updating TLS certificate (CA rotation detected).")
 
-        try:
-            state = self.charm._mysql.get_member_state()
-        except MySQLUnableToGetMemberStateError:
-            logger.error("Unit is not initialized yet, deferring client TLS configuration.")
-            event.defer()
-            return
-
-        if state != InstanceState.ONLINE:
-            logger.debug("Unit is not healthy, deferring TLS configuration.")
+        if not self.charm._mysql.is_mysqld_running():
+            logger.error("MySQL is not running yet, deferring client TLS configuration.")
             event.defer()
             return
 
