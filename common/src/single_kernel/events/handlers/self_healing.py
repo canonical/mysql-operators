@@ -43,7 +43,7 @@ class SelfHealingEventHandler(Object):
 
         self.framework.observe(self._charm.on.self_healing, self._on_self_healing)
 
-        if self._helpers.initialized:
+        if self._charm.service_server.running:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
     def _collect_peer_addresses(self) -> list[str]:

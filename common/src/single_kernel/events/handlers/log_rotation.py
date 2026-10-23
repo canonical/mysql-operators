@@ -46,7 +46,7 @@ class LogRotationEventHandler(Object):
         self.framework.observe(self._charm.on[relation].relation_created, self._on_relation_created)
         self.framework.observe(self._charm.on[relation].relation_broken, self._on_relation_broken)
 
-        if self._helpers.initialized:
+        if self._charm.service_server.running:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
     @cached_property
