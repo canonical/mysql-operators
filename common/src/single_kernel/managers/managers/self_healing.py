@@ -5,7 +5,7 @@ import logging
 import random
 import time
 
-from mysql_shell.models import InstanceState
+from mysql_shell.models import ClusterStatus, InstanceState
 
 from ...state import PeerState
 from ...workload import BaseSystem
@@ -27,13 +27,21 @@ class SelfHealingManager:
         """Fetch the cluster members."""
         return self._clients.instance.count_cluster_members(states=[InstanceState.ONLINE])
 
-    def fetch_cluster_state(self) -> str | None:
+    def fetch_cluster_state(self) -> str:
         """Fetch the cluster state."""
-        return self._clients.cluster.fetch_state()
+        state = self._clients.cluster.fetch_state()
+        if not state:
+            return ClusterStatus.UNREACHABLE
 
-    def fetch_instance_state(self) -> str | None:
+        return state
+
+    def fetch_instance_state(self) -> str:
         """Fetch the instance state."""
-        return self._clients.instance.fetch_state()
+        state = self._clients.instance.fetch_state()
+        if not state:
+            return InstanceState.UNREACHABLE
+
+        return state
 
     def rejoin_instance(self, instance_label: str, instance_host: str, addrs: list[str]) -> None:
         """Rejoin the instance back into the cluster.
@@ -76,3 +84,16 @@ class SelfHealingManager:
     def stop_replication(self) -> None:
         """Stop the instance replication."""
         self._clients.instance.stop_replication()
+
+    def update_state(self, role: str | None = None, state: str | None = None) -> None:
+        """Update the operator state."""
+        if not role:
+            role = self._clients.instance.fetch_role()
+        if not state:
+            state = self._clients.instance.fetch_state()
+
+        logger.info(f"Instance member-role is {role}")
+        logger.info(f"Instance member-state is {state}")
+
+        self._state.unit.set_instance_role(role)
+        self._state.unit.set_instance_state(state)
