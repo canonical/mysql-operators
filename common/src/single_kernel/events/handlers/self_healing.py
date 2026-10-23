@@ -161,6 +161,7 @@ class SelfHealingEventHandler(Object):
         """Recover the cluster from an UNREACHABLE instance."""
         self._charm.service_server.stop()
         self._charm.service_server.start()
+        self._manager.update_state()
 
     def _on_self_healing(self, _: SelfHealingEvent) -> None:
         """Event handler for the self-healing event."""

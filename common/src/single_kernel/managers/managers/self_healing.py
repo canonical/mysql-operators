@@ -84,3 +84,16 @@ class SelfHealingManager:
     def stop_replication(self) -> None:
         """Stop the instance replication."""
         self._clients.instance.stop_replication()
+
+    def update_state(self, role: str | None = None, state: str | None = None) -> None:
+        """Update the operator state."""
+        if not role:
+            role = self._clients.instance.fetch_role()
+        if not state:
+            state = self._clients.instance.fetch_state()
+
+        logger.info(f"Instance member-role is {role}")
+        logger.info(f"Instance member-state is {state}")
+
+        self._state.unit.set_instance_role(role)
+        self._state.unit.set_instance_state(state)
