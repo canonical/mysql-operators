@@ -907,8 +907,6 @@ class MySQLCharmBase(CharmBase, ABC):
     def get_cluster_endpoints(self, relation_name: str) -> tuple[str, str, str]:
         """Return (rw, ro, offline) endpoints tuple names or IPs."""
         repl_topology = self._mysql.get_cluster_topology()
-        repl_cluster = self._mysql.is_cluster_replica()
-
         if not repl_topology:
             raise MySQLGetClusterEndpointsError("Failed to get endpoints from cluster topology")
 
@@ -935,13 +933,8 @@ class MySQLCharmBase(CharmBase, ABC):
                 no_endpoints.add(address)
             if v["status"] == InstanceState.ONLINE and v["mode"] == "R/O":
                 ro_endpoints.add(address)
-            if v["status"] == InstanceState.ONLINE and v["mode"] == "R/W" and not repl_cluster:
+            if v["status"] == InstanceState.ONLINE and v["mode"] == "R/W":
                 rw_endpoints.add(address)
-
-        # Replica return global primary address
-        if repl_cluster:
-            primary_address = f"{self._mysql.get_cluster_global_primary_address()}:3306"
-            rw_endpoints.add(primary_address)
 
         return ",".join(rw_endpoints), ",".join(ro_endpoints), ",".join(no_endpoints)
 
