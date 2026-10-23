@@ -197,24 +197,39 @@ class MySQLInstanceClient:
 
     def fetch_role(self) -> str | None:
         """Fetch the instance role."""
-        if state := self._client.get_instance_replication_role():
-            return state.value
-        else:
-            return None
+        try:
+            role = self._client.get_instance_replication_role()
+        except ExecutionError:
+            role = None
+
+        if role:
+            role = role.value
+
+        return role
 
     def fetch_state(self) -> str | None:
         """Fetch the instance state."""
-        if state := self._client.get_instance_replication_state():
-            return state.value
-        else:
-            return None
+        try:
+            state = self._client.get_instance_replication_state()
+        except ExecutionError:
+            state = None
+
+        if state:
+            state = state.value
+
+        return state
 
     def fetch_version(self) -> str:
         """Fetch the instance version."""
-        if version := self._client.get_instance_version():
-            return version
-        else:
-            return ""
+        try:
+            version = self._client.get_instance_version()
+        except ExecutionError:
+            version = ""
+
+        if not version:
+            version = ""
+
+        return version
 
     def fetch_cluster_labels(self) -> list[str]:
         """Fetch the instance cluster labels."""
