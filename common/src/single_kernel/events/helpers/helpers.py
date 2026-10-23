@@ -74,7 +74,6 @@ class EventHelpers:
     def build_cluster_endpoints(self, relation: str) -> tuple[list, list, list]:
         """Return the MySQL cluster endpoints."""
         cluster_instances = self._clients.cluster.fetch_instances()
-        cluster_role = self._clients.cluster.fetch_role()
 
         unit_labels = {self._charm.get_unit_label(unit): unit for unit in self._charm.units}
 
@@ -104,11 +103,6 @@ class EventHelpers:
                 ro_addresses.append(unit_address)
             if info["status"] == InstanceState.ONLINE and info["mode"] == "R/W":
                 rw_addresses.append(unit_address)
-
-        # Replica return global primary address
-        if cluster_role == ClusterRole.REPLICA:
-            rw_address = self._clients.cluster_set.fetch_primary_host()
-            rw_addresses.append(rw_address) if rw_address else None
 
         return (
             [f"{address}:{self._charm.service_server.port}" for address in rw_addresses],
