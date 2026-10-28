@@ -220,7 +220,14 @@ class LifecycleEventHandler(Object):
 
         self._manager.update_state()
         self._charm.update_app_labels()
-        self._charm.set_unit_status(self._helpers.build_unit_status())
+
+        # A blocked status set by a failed database relation setup must not be
+        # silently cleared: it stays until the relation is set up completely.
+        if self._charm.database.has_incomplete_setup():
+            self._charm.set_unit_status(BlockedStatus("Failed to create database"))
+        else:
+            self._charm.set_unit_status(self._helpers.build_unit_status())
+
         self._charm.set_app_status(self._helpers.build_app_status())
 
     def _on_storage_detaching(self, _: StorageDetachingEvent) -> None:
