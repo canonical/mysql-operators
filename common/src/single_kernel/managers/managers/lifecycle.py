@@ -108,8 +108,13 @@ class LifecycleManager:
             return
 
         with self._clients.build_cluster_client(primary_host) as client:
-            if instance_label in client.fetch_instances():
+            instances = client.fetch_instances()
+            if len(instances) == 1:
+                client.destroy()
+                return
+            if instance_label in instances:
                 client.remove_instance(instance_label, instance_host)
+                return
 
     def recreate_cluster(self, instance_label: str) -> None:
         """Recreate cluster."""

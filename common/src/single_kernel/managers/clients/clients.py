@@ -112,12 +112,12 @@ class Clients:
 
     def recreate_cluster(self, instance_label: str) -> None:
         """Recreate the MySQL cluster."""
-        self._cluster_client.init_locks_table()
-
         try:
             self._cluster_client.create(instance_label)
             self._cluster_set_client.create(self._cluster_client._cluster)
-            self._cluster_client.rescan()
         except ExecutionError:
             logging.error(f"Failed to recreate cluster from {instance_label}")
             raise
+
+        self._cluster_client.rescan()
+        self._cluster_client.init_locks_table()
