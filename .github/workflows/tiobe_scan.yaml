@@ -51,13 +51,24 @@ jobs:
         run: |
           . .venv/bin/activate
           cd "${OPERATOR}"
-          poetry install --only main,charm-libs
+          poetry install
+          # Restore poetry's own poetry-core, which may be downgraded by the
+          # charm-libs install (8.0 pins poetry-core 1.x, breaking poetry 2.x)
+          pip install --force-reinstall poetry
+          # Install single-kernel (common) dependencies if present
+          if [ -f "../common/pyproject.toml" ]; then
+            cd ../common
+            poetry install
+          fi
 
       - name: Run coverage tests
         env:
           OPERATOR: ${{ inputs.operator }}
         run: |
           tox -e unit -c "${OPERATOR}/tox.ini"
+          if [ -f "common/tox.ini" ]; then
+            tox -e unit -c "common/tox.ini"
+          fi
 
       - name: Coverage reports for TICS
         env:
@@ -65,6 +76,10 @@ jobs:
         run: |
           mkdir -p "${OPERATOR}/.cover"
           cp "${OPERATOR}/coverage.xml" "${OPERATOR}/.cover/cobertura.xml"
+          if [ -f "common/coverage.xml" ]; then
+            mkdir -p "common/.cover"
+            cp "common/coverage.xml" "common/.cover/cobertura.xml"
+          fi
 
       - name: TICS GitHub Action
         uses: tiobe/tics-github-action@v4
