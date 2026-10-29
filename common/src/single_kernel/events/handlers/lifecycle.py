@@ -4,6 +4,7 @@
 import logging
 import typing
 
+from mysql_shell.models import InstanceState
 from ops.charm import (
     ConfigChangedEvent,
     InstallEvent,
@@ -63,6 +64,40 @@ class LifecycleEventHandler(Object):
         self.framework.observe(self._charm.on.logs_storage_detaching, self._on_storage_detaching)
         self.framework.observe(self._charm.on.temp_storage_detaching, self._on_storage_detaching)
 
+    def _collect_peer_states(self) -> list[str]:
+        """Collect all peer unit states."""
+        peer_states = []
+
+        peers_relation = self._charm.model.get_relation(RELATION_PEERS)
+        if not peers_relation:
+            return peer_states
+
+        for unit in peers_relation.units:
+            unit_state = PeerStateUnit(peers_relation.data[unit])
+            peer_state = unit_state.get_instance_state()
+            peer_states.append(peer_state)
+
+        return peer_states
+
+    def _create_cluster(self) -> None:
+        """Create the MySQL Server cluster."""
+        if self._helpers.initialized:
+            self._manager.update_state("SECONDARY", "waiting")
+            self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+            return
+
+        instance_label = self._charm.get_unit_label(self._charm.unit)
+        instance_states = self._collect_peer_states()
+
+        if self._charm.unit.is_leader() and InstanceState.ONLINE not in instance_states:
+            self._manager.recreate_cluster(instance_label)
+            self._manager.update_state("PRIMARY", "ONLINE")
+            self._charm.set_unit_status(ActiveStatus("Primary"))
+            return
+
+        self._manager.update_state("SECONDARY", "waiting")
+        self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+
     def _create_passwords(self) -> None:
         """Create the application passwords."""
         password_keys = USERNAME_TO_PASSWORD_KEY.values()
@@ -103,12 +138,21 @@ class LifecycleEventHandler(Object):
         else:
             self._manager.install_system_components([])
 
+    def _set_ports(self) -> None:
+        """Update the unit ports."""
+        try:
+            self._charm.unit.set_ports(self._charm.service_server.port)
+        except ModelError as e:
+            logger.warning(f"Failed to open the unit ports: {e}")
+            return
+
     def _start_server_service(self, passwords: dict[str, str]) -> None:
         """Start the MySQL Server workload service."""
         logger.info("Starting MySQL Server service")
         if self._charm.service_server.initialized:
             self._charm.service_server.start()
             self._init_server_service()
+            self._create_cluster()
             return
 
         self._charm.service_server.setup(USERNAME_OPERATOR, passwords[PASSWORD_KEY_OPERATOR])
@@ -122,37 +166,15 @@ class LifecycleEventHandler(Object):
             SystemUser(USERNAME_MONITOR, passwords[PASSWORD_KEY_MONITOR], [ROLENAME_MONITOR]),
         ])
 
-        replication_label = self._charm.get_unit_label(self._charm.unit)
-        replication_username = USERNAME_REPLICATION
-        replication_password = passwords[PASSWORD_KEY_REPLICATION]
-
         logger.info("Configuring MySQL Server cluster options")
-        if self._charm.unit.is_leader():
-            self._manager.configure_instance(replication_username, replication_password)
-            self._manager.recreate_cluster(replication_label)
-        else:
-            self._manager.configure_instance(replication_username, replication_password)
+        self._manager.configure_instance(USERNAME_REPLICATION, passwords[PASSWORD_KEY_REPLICATION])
+        self._create_cluster()
 
     def _start_exporter_service(self, passwords: dict[str, str]) -> None:
         """Start the MySQL Exporter workload service."""
         logger.info("Starting MySQL Exporter service")
         self._charm.service_exporter.setup(USERNAME_MONITOR, passwords[PASSWORD_KEY_MONITOR])
         self._charm.service_exporter.start()
-
-    def _update_state(self) -> None:
-        """Update the unit state depending on the unit role."""
-        if self._charm.unit.is_leader():
-            self._manager.update_state("PRIMARY", "ONLINE")
-            self._charm.set_unit_status(ActiveStatus("Primary"))
-        else:
-            self._manager.update_state("SECONDARY", "waiting")
-            self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
-
-        try:
-            self._charm.unit.set_ports(self._charm.service_server.port)
-        except ModelError as e:
-            logger.warning(f"Failed to open the unit ports: {e}")
-            return
 
     def _on_install(self, _: InstallEvent) -> None:
         """Event handler for the install event."""
@@ -188,7 +210,7 @@ class LifecycleEventHandler(Object):
         self._helpers.config.save_config()
         self._start_server_service(passwords)
         self._start_exporter_service(passwords)
-        self._update_state()
+        self._set_ports()
 
     def _on_leader_elected(self, _: LeaderElectedEvent) -> None:
         """Event handler for the leader-elected event."""
