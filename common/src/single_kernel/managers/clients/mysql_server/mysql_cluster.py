@@ -136,6 +136,13 @@ class MySQLClusterClient:
             options={"label": instance_label},
         )
 
+    def destroy(self) -> None:
+        """Destroy the MySQL cluster."""
+        self._client.destroy_cluster(
+            cluster_name=self._cluster,
+            options={"force": True},
+        )
+
     def drop_metadata(self) -> None:
         """Drop the replication schema."""
         self._executor.execute_py("dba.drop_metadata_schema()")
