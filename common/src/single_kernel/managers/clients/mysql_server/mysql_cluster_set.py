@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+from typing import Any
 
 from mysql_shell.clients import ClusterClient
 from mysql_shell.executors import BaseExecutor
@@ -107,7 +108,7 @@ class MySQLClusterSetClient:
         state = ClusterGlobalState(state)
         return state
 
-    def fetch_status(self) -> dict[str, dict]:
+    def fetch_status(self) -> dict[str, Any]:
         """Fetch a MySQL cluster-set cluster status."""
         return self._client.fetch_cluster_set_status(extended=False)
 
