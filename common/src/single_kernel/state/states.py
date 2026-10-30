@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 from .peers import PeerStateApp, PeerStateUnit
-from .replication import ReplicationAppState
+from .replication import ReplicationAppState, ReplicationUnitState
 
 
 class PeerState:
@@ -27,11 +27,17 @@ class PeerState:
 class ReplicationState:
     """Class to deal with the replication state."""
 
-    def __init__(self, app_state: ReplicationAppState):
+    def __init__(self, app_state: ReplicationAppState, unit_state: ReplicationUnitState):
         """Initialize the class attributes."""
         self._app_state = app_state
+        self._unit_state = unit_state
 
     @property
     def app(self) -> ReplicationAppState:
         """Return the app state."""
         return self._app_state
+
+    @property
+    def unit(self) -> ReplicationUnitState:
+        """Return the unit state."""
+        return self._unit_state
