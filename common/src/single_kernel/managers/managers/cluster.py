@@ -5,7 +5,7 @@ import logging
 import random
 import time
 
-from mysql_shell.models import ClusterRole, InstanceState
+from mysql_shell.models import ClusterGlobalStatus, ClusterRole, InstanceState
 
 from ...state import PeerState
 from ...workload import BaseSystem
@@ -34,6 +34,18 @@ class ClusterManager:
     def create_system_password(self) -> str:
         """Create a MySQL instance system password."""
         return self._clients.instance.create_password()
+
+    def check_cluster_rejoin(self, cluster_name: str) -> bool:
+        """Check whether the cluster can rejoin the cluster-set."""
+        clusters = self._clients.cluster_set.fetch_clusters()
+        state = self._clients.cluster_set.fetch_cluster_state(cluster_name)
+
+        if cluster_name not in clusters.keys():
+            return False
+        if state != ClusterGlobalStatus.INVALIDATED:
+            return False
+
+        return True
 
     def check_instance_join_cluster(self, cluster_name: str, instance_label: str) -> bool:
         """Check whether the MySQL instance can join a cluster."""
@@ -100,6 +112,17 @@ class ClusterManager:
         self._state.app.set_cluster_set_name(cluster_set_name)
         self._state.app.delete_cluster_removed_flag()
         self._clients.recreate_cluster(instance_label)
+
+    def rejoin_cluster(self, cluster_name: str) -> None:
+        """Rejoin a MySQL cluster."""
+        primary_host = self._clients.cluster_set.fetch_primary_host()
+        if not primary_host:
+            logger.error("Failed to fetch cluster-set primary: no quorum")
+            return
+
+        with self._clients.build_cluster_set_client(primary_host) as client:
+            client.rejoin_replica_cluster(cluster_name)
+            logger.info(f"Succeeded to rejoin cluster {cluster_name}")
 
     def update_cluster_user(self, username: str, password: str) -> None:
         """Update a MySQL instance user password."""
