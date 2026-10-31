@@ -91,8 +91,8 @@ class DatabaseEventHandler(Object):
 
     def _on_database_requested(self, event: DatabaseRequestedEvent) -> None:
         """Event handler for the database-requested event."""
-        if not self._helpers.initialized:
-            logger.debug("Deferring database creation: charm not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Deferring database creation: cluster not initialized")
             event.defer()
             return
 

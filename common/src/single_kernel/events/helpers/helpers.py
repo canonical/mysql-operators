@@ -41,7 +41,7 @@ class EventHelpers:
         return self._rolling
 
     @property
-    def initialized(self) -> bool:
+    def cluster_initialized(self) -> bool:
         """Return whether the operator is initialized."""
         if not self._charm.service_server.running:
             logger.debug(f"Failed to connect to MySQL Server: server is not running")
@@ -67,7 +67,7 @@ class EventHelpers:
         _______ = self._config.apply_config(config_old, config_new)
         restart = self._config.check_restart(config_old, config_new)
 
-        if self.initialized and restart:
+        if self.cluster_initialized and restart:
             logger.info("Configuration change requires restart")
             self._rolling.callbacks.request_async_lock(callback_id="restart")
 
@@ -157,7 +157,7 @@ class EventHelpers:
         there are scale-up / scale-down / self-healing operations on a `database`
         related application, and only the leader can update certain fields.
         """
-        if not self.initialized:
+        if not self.cluster_initialized:
             return
         if not self._charm.unit.is_leader():
             return

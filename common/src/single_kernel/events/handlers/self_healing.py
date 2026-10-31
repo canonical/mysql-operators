@@ -43,7 +43,7 @@ class SelfHealingEventHandler(Object):
 
         self.framework.observe(self._charm.on.self_healing, self._on_self_healing)
 
-        if self._helpers.initialized:
+        if self._helpers.cluster_initialized:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
     def _collect_peer_addresses(self) -> list[str]:
@@ -99,6 +99,9 @@ class SelfHealingEventHandler(Object):
         if not self._manager.fetch_cluster_state() == ClusterStatus.NO_QUORUM:
             logger.debug("Skipping cluster self-healing: cluster has quorum")
             return
+        if self._manager.count_unreachable_members() > 0:
+            logger.debug("Skipping cluster self-healing: cluster has unreachable members")
+            return
 
         try:
             self._manager.stop_replication()
@@ -135,7 +138,11 @@ class SelfHealingEventHandler(Object):
         )):
             return
 
-        if self._manager.fetch_cluster_members() > 0:
+        if self._manager.count_online_members() > 0:
+            logger.debug("Skipping cluster self-healing: cluster has online members")
+            return
+        if self._manager.count_unreachable_members() > 0:
+            logger.debug("Skipping cluster self-healing: cluster has unreachable members")
             return
 
         try:
@@ -163,8 +170,8 @@ class SelfHealingEventHandler(Object):
             self._charm.service_server.start()
             return
 
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Skipping cluster self-healing: cluster not initialized")
             return
         if self._charm.refreshing:
             logger.debug("Skipping cluster self-healing: charm is refreshing")
