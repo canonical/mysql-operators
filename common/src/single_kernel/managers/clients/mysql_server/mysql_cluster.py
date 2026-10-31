@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Any, Iterator
 
 import tenacity
@@ -269,10 +269,14 @@ class MySQLClusterClient:
         This function can only be executed from the cluster-set primary.
         Only the MySQL cluster primary can remove other instances.
         """
-        if self.fetch_primary_host() == instance_host:
-            return
+        primary_host = self.fetch_primary_host()
 
-        with self._locking(instance_label, self._builder_lock.INSTANCE_REMOVAL_TASK):
+        if primary_host == instance_host:
+            context = nullcontext()
+        else:
+            context = self._locking(instance_label, self._builder_lock.INSTANCE_REMOVAL_TASK)
+
+        with context:
             self._client.detach_instance(
                 cluster_name=self._cluster,
                 instance_host=instance_host,

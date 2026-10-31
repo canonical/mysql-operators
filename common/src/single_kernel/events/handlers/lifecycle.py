@@ -81,6 +81,11 @@ class LifecycleEventHandler(Object):
 
     def _create_cluster(self) -> None:
         """Create the MySQL Server cluster."""
+        if self._helpers.initialized:
+            self._manager.update_state("SECONDARY", "waiting")
+            self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+            return
+
         instance_label = self._charm.get_unit_label(self._charm.unit)
         instance_states = self._collect_peer_states()
 
