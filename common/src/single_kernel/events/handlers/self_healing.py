@@ -43,7 +43,7 @@ class SelfHealingEventHandler(Object):
 
         self.framework.observe(self._charm.on.self_healing, self._on_self_healing)
 
-        if self._helpers.initialized:
+        if self._helpers.cluster_initialized:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
     def _collect_peer_addresses(self) -> list[str]:
@@ -170,8 +170,8 @@ class SelfHealingEventHandler(Object):
             self._charm.service_server.start()
             return
 
-        if not self._helpers.initialized:
-            logger.debug("Skipping cluster self-healing: charm is not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Skipping cluster self-healing: cluster not initialized")
             return
         if self._charm.refreshing:
             logger.debug("Skipping cluster self-healing: charm is refreshing")

@@ -81,9 +81,9 @@ class LifecycleEventHandler(Object):
 
     def _create_cluster(self) -> None:
         """Create the MySQL Server cluster."""
-        if self._helpers.initialized:
-            self._manager.update_state("SECONDARY", "waiting")
-            self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
+        if self._helpers.cluster_initialized:
+            self._manager.update_state()
+            self._charm.set_unit_status(self._helpers.build_unit_status())
             return
 
         instance_label = self._charm.get_unit_label(self._charm.unit)
@@ -236,8 +236,8 @@ class LifecycleEventHandler(Object):
 
     def _on_update_status(self, _: UpdateStatusEvent) -> None:
         """Event handler for the update-status event."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping update status: charm not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Skipping update status: cluster not initialized")
             return
 
         self._manager.update_state()
@@ -247,8 +247,8 @@ class LifecycleEventHandler(Object):
 
     def _on_storage_detaching(self, _: StorageDetachingEvent) -> None:
         """Event handler for the storage-detaching event."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping storage detaching: charm is not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Skipping storage detaching: cluster not initialized")
             return
 
         leader_unit = self._find_leader_unit()
