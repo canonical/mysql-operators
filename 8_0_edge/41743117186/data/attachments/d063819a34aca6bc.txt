@@ -1,0 +1,32 @@
+Nov 04 00:37:14 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:295 Deploying a new mysql cluster
+Nov 04 00:37:14 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql_ubuntu@22.04-amd64.charm another-mysql --base ubuntu@22.04 --config cluster-name=test_cluster --config profile=testing
+Nov 04 00:39:58 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing another-mysql s3-integrator
+Nov 04 00:40:13 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:326 Rotating all mysql credentials
+Nov 04 00:40:13 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:40:13 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp0t1o8e3w
+Nov 04 00:40:15 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:40:15 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpzfktqt0q
+Nov 04 00:40:19 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmp3ckrjdgd
+Nov 04 00:40:22 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpiff1mbe3
+Nov 04 00:40:27 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmp761g7mni
+Nov 04 00:40:29 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:342 Syncing credentials
+Nov 04 00:40:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju config --model testing s3-integrator endpoint=https://storage.googleapis.com bucket=data-charms-testing path=mysql/d7319ac0-ab3b-4ad7-88ac-fa20f74a5958 region=us-east-1
+Nov 04 00:40:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:40:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json s3-integrator/0 sync-s3-credentials --params /root/snap/juju/common/tmpeij3vcz_
+Nov 04 00:40:33 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:359 Waiting for blocked application status with another cluster S3 repository
+Nov 04 00:41:55 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:369 Restoring backup_id='2026-11-04T00:28:57Z'
+Nov 04 00:41:55 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 restore --params /root/snap/juju/common/tmpanjh9io8
+Nov 04 00:42:28 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:374 Ensuring that the pre-backup inserted value exists in database, while post-backup inserted value does not
+Nov 04 00:42:28 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:388 Inserting value after restore
+Nov 04 00:42:28 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp6xmr88yn
+Nov 04 00:42:31 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpi6bvdj90
+Nov 04 00:42:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:34 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpkbkeyosl
+Nov 04 00:42:36 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 04 00:42:36 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:393 Ensuring that pre-backup and post-restore values exist in the database
+Nov 04 00:42:36 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:403 Waiting for blocked application status after restore
+Nov 04 00:42:39 [32mINFO    [0m integration.integration.test_backup_gcp:test_backup_gcp.py:62 Cleaning backups from cloud buckets
