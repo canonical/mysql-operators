@@ -1,0 +1,32 @@
+Nov 08 00:39:23 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:477 Deploying a new mysql cluster
+Nov 08 00:39:23 [32mINFO    [0m jubilant:_juju.py:316 cli: juju deploy --model testing ./mysql_ubuntu@22.04-amd64.charm another-mysql --base ubuntu@22.04 --config cluster-name=test_cluster --config profile=testing
+Nov 08 00:41:56 [32mINFO    [0m jubilant:_juju.py:316 cli: juju integrate --model testing another-mysql s3-integrator
+Nov 08 00:42:11 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:509 Rotating all mysql credentials
+Nov 08 00:42:11 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:42:12 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp86m1bml6
+Nov 08 00:42:13 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:42:13 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpopor47z2
+Nov 08 00:42:17 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpbr2dvyq3
+Nov 08 00:42:21 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmp7zvksbx9
+Nov 08 00:42:26 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpqky34hj1
+Nov 08 00:42:29 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:525 Syncing credentials
+Nov 08 00:42:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju config --model testing s3-integrator endpoint=https://10.1.0.215 bucket=testbucket path=mysql region=default tls-ca-chain=LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURqekNDQW5lZ0F3SUJBZ0lVZW10WnRlVGhqaEhwU21EbWlqYXY5UERoSGdNd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1Z6RUxNQWtHQTFVRUJoTUNWVk14RHpBTkJnTlZCQWdNQmtSbGJtbGhiREVVTUJJR0ExVUVCd3dMVTNCeQphVzVuWm1sbGJHUXhEREFLQmdOVkJBb01BMFJwY3pFVE1CRUdBMVVFQXd3S01UQXVNUzR3TGpJeE5UQWVGdzB5Ck5qRXhNRGd3TURJeU1UbGFGdzB5T1RBNE1qZ3dNREl5TVRsYU1GY3hDekFKQmdOVkJBWVRBbFZUTVE4d0RRWUQKVlFRSURBWkVaVzVwWVd3eEZEQVNCZ05WQkFjTUMxTndjbWx1WjJacFpXeGtNUXd3Q2dZRFZRUUtEQU5FYVhNeApFekFSQmdOVkJBTU1DakV3TGpFdU1DNHlNVFV3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURuaE5aRFdFeEUvWGh3T0JuNlRkVk5oS3ZCNmtEQ3h5ZFY0OUI3czBDUEVUVjVUTjlyZnZCMisyUnAKSHZMU1dsOERJeUUwMmxGaGxhQkJESCtJczZBWG1Tcnc1akpYWmZOTmpMc0JPUFdId3AzRk1WUzhSTGNrRWxyYgpJV1c3T05aUVBYZnhBWndIVVlkeExEYXpvb2Y5U01OVkw5ZjhGd2JhQjJLT3RVOFdlcWpCUDZudEMxMVdWUlc1CkxMT2NBT0U5b1V5dGZNdk1lU0RrMW9wT2VQK0hXYVZjUmFvMWlNeFFWL3Q5MU43a1p5RmJKcVVNM3hXbUlqc0kKUk1OMDRCTWtVMDFRc29iOU5qRTZIZmJOTXBlZ2JxcU9TbmZ1YTQzc3ZzZWoxd0p2MytFM1VtaW5SaFhhcEJUWApxbmU1NDhoV3RWei9yeEREVm95TlhCTmt5WjI3QWdNQkFBR2pVekJSTUIwR0ExVWREZ1FXQkJTeHpYaGIrb0g4ClhuZjkrWVZ0blV4cDlMY3NhakFmQmdOVkhTTUVHREFXZ0JTeHpYaGIrb0g4WG5mOStZVnRuVXhwOUxjc2FqQVAKQmdOVkhSTUJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJuUnJtc2dpYW1PV25uQTNvbgpwZUtlUWd1UWo3Vi9aTkZTd1ptaVUyV0krYWZEMk0ySUZGeDIvSldRZ1o1WXZFeU51NWZKSzRNYVd2dGtrVzZNClVqT0pCcENpUytOZmdJZnNjVGRqTFNtWHJRMFMwam9vWXpoS21YckVpdFhVM0JWOUVtcmd6VG5BZEoyV01wZHMKVnh6K1FJN3dmZXRROUliWGV1clJHQ0ZjSHVobEJYVHNtYWtVQ3V4c0lIWVoyanVnUDJYUEhNb092d0FRNnhXagorN0lldjhISTBiSVBGZThiSlpMYUoyTWQyM2EzQWRHVmY5aitxL3d1cmQ3Y0lqWlNnTmtmcmVadUtzODZQNVZTCjNDUTdnZ29BU3dGWVJkTTZjZlhiNEtRS1B3V0c0WVpsNytXT0QwQWZMRHZlVFdSZG94ZjV2bWYyazlvdHY0SFIKK3NRYwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+Nov 08 00:42:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:42:29 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json s3-integrator/0 sync-s3-credentials --params /root/snap/juju/common/tmp_csiw1wn
+Nov 08 00:42:32 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:542 Waiting for blocked application status with another cluster S3 repository
+Nov 08 00:43:53 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:552 Restoring backup_id='2026-11-08T00:31:59Z'
+Nov 08 00:43:53 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 restore --params /root/snap/juju/common/tmp1u64iv3z
+Nov 08 00:44:24 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:557 Ensuring that the pre-backup inserted value exists in database, while post-backup inserted value does not
+Nov 08 00:44:24 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:571 Inserting value after restore
+Nov 08 00:44:24 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:24 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:24 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpyn6f5a5z
+Nov 08 00:44:27 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpqxa4pojl
+Nov 08 00:44:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:30 [32mINFO    [0m jubilant:_juju.py:316 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpiscj4aef
+Nov 08 00:44:32 [32mINFO    [0m jubilant:_juju.py:316 cli: juju status --model testing --format json
+Nov 08 00:44:32 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:576 Ensuring that pre-backup and post-restore values exist in the database
+Nov 08 00:44:32 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:586 Waiting for blocked application status after restore
+Nov 08 00:44:35 [32mINFO    [0m integration.integration.test_backup_ceph:test_backup_ceph.py:240 Cleaning backups from cloud buckets
