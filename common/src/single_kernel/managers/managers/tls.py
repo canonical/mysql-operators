@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from charmlibs.interfaces.tls_certificates import PrivateKey
 from charmlibs.pathops import PathProtocol
 from mysql_shell.executors.errors import ExecutionError
-from mysql_shell.models import InstanceState
 
 from ...state import PeerState
 from ...workload import BaseSystem
@@ -59,11 +58,6 @@ class BaseTLSManager(ABC):
     def delete_private_key_uri(self) -> None:
         """Delete the TLS private key secret URI."""
         return self._state.app.delete_private_key_uri(self.type)
-
-    def check_instance(self) -> None:
-        """Check the MySQL instance health."""
-        if self._clients.instance.fetch_state() != InstanceState.ONLINE:
-            raise RuntimeError("Instance is not healthy")
 
     def parse_private_key(self, private_key: str) -> PrivateKey | None:
         """Parse and validate a TLS private key."""

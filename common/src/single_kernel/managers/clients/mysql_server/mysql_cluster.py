@@ -191,7 +191,7 @@ class MySQLClusterClient:
         state = ClusterState(state)
         return state
 
-    def fetch_status(self) -> dict[str, dict]:
+    def fetch_status(self) -> dict[str, Any]:
         """Fetch the MySQL cluster status."""
         return self._client.fetch_cluster_status(self._cluster)
 
