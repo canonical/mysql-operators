@@ -59,8 +59,8 @@ class BackupEventHandler(Object, ABC):
         if not self._charm.model.get_relation(RELATION_BACKUPS):
             event.fail(f"Skipping backup creation: relation {RELATION_BACKUPS} missing")
             return
-        if not self._helpers.initialized:
-            event.fail(f"Skipping backup creation: charm is not initialized")
+        if not self._charm.service_server.running:
+            event.fail(f"Skipping backup creation: server is not running")
             return
         if self._charm.refreshing:
             event.fail(f"Skipping backup creation: charm is refreshing")
@@ -140,8 +140,8 @@ class BackupEventHandler(Object, ABC):
         if not self._charm.model.get_relation(RELATION_BACKUPS):
             event.fail(f"Skipping backup restoration: relation {RELATION_BACKUPS} missing")
             return
-        if not self._helpers.initialized:
-            event.fail(f"Skipping backup restoration: charm is not initialized")
+        if not self._charm.service_server.running:
+            event.fail(f"Skipping backup restoration: server is not running")
             return
         if self._charm.refreshing:
             event.fail(f"Skipping backup restoration: charm is refreshing")
