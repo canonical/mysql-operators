@@ -8,6 +8,11 @@ from .config import ConfigManager
 from .database import DatabaseManager
 from .lifecycle import LifecycleManager
 from .logrotate import LogrotateManager
+from .replication import (
+    ReplicationConsumerManager,
+    ReplicationOffererManager,
+    ReplicationStatus,
+)
 from .rolling_ops import RollingManager
 from .self_healing import SelfHealingManager
 from .tls import (

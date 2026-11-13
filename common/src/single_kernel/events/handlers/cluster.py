@@ -43,6 +43,7 @@ class ClusterEventHandler(Object):
         self.framework.observe(self._charm.on.set_password_action, self._on_set_password)
         self.framework.observe(self._charm.on.promote_to_primary_action, self._on_promote_primary)
         self.framework.observe(self._charm.on.recreate_cluster_action, self._on_recreate_cluster)
+        self.framework.observe(self._charm.on.rejoin_cluster_action, self._on_rejoin_cluster)
 
         self.framework.observe(
             self._charm.on[RELATION_PEERS].relation_created,
@@ -196,6 +197,7 @@ class ClusterEventHandler(Object):
         match scope:
             case "cluster":
                 self._promote_cluster(event, force)
+                self._manager.update_state()
             case "unit":
                 self._promote_instance(event, force)
                 self._manager.update_state()
@@ -226,6 +228,25 @@ class ClusterEventHandler(Object):
         except RuntimeError as e:
             event.fail(f"Failed to recreate cluster: {e}")
             return
+
+    def _on_rejoin_cluster(self, event: ActionEvent) -> None:
+        """Event handler for the rejoin-cluster action."""
+        cluster = event.params.get("cluster-name", "")
+        if not cluster:
+            event.fail("The action cannot be run: missing cluster-name")
+            return
+
+        if not self._manager.check_cluster_rejoin(cluster):
+            event.fail("The cluster is not in the cluster-set")
+            return
+
+        try:
+            self._manager.rejoin_cluster(cluster)
+        except RuntimeError as e:
+            event.fail(f"Failed to rejoin cluster {cluster}: {e}")
+            return
+
+        event.set_results({"message": "Cluster is rejoined"})
 
     def _on_relation_created(self, _: RelationCreatedEvent) -> None:
         """Event handler for the relation-created event."""
