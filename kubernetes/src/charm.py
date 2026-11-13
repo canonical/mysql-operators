@@ -630,7 +630,7 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
         """Wait for unit recovery/rejoin after restart."""
         recovery_attempts = 30
         logger.info("Recovering unit")
-        if self.app.planned_units() == 1:
+        if self._mysql.get_cluster_node_count() == 1:
             self._mysql.reboot_from_complete_outage()
         else:
             try:
