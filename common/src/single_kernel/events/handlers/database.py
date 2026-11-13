@@ -160,6 +160,32 @@ class DatabaseEventHandler(Object):
         except RuntimeError as e:
             logger.error(f"Failed to remove router from {event.app.name} app: {e}")
 
+    def has_incomplete_setup(self) -> bool:
+        """Check if any database relation setup is incomplete.
+
+        A relation setup can fail midway: the requirer has already requested a
+        database, but the provider never published credentials for it, as
+        `set_credentials` only runs after the user creation succeeds.
+        """
+        if not self._charm.unit.is_leader():
+            logger.debug("Skipping incomplete setup check: unit is not leader")
+            return False
+
+        for relation in self._charm.model.relations[RELATION_DATABASE]:
+            if self._provider.fetch_relation_field(relation.id, "database") is None:
+                logger.debug(
+                    f"Skipping incomplete setup check: relation {relation.id} has no request"
+                )
+                continue
+
+            if self._provider.fetch_my_relation_field(relation.id, "username") is None:
+                logger.warning(
+                    f"Relation {relation.id} setup is incomplete: no credentials were set"
+                )
+                return True
+
+        return False
+
     def update_database_endpoints(self, relation_id: int) -> None:
         """Create + set the requested database endpoints."""
         endpoints = self._charm.build_database_endpoints()
