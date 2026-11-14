@@ -689,10 +689,12 @@ class TestCharm(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=2)
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_recover_unit_after_restart_restarts_group_replication(
         self,
         _get_unit_address,
+        _get_cluster_node_count,
         _hold_if_recovering,
         _is_instance_in_cluster,
         _restart_group_replication_if_stopped,
@@ -703,8 +705,6 @@ class TestCharm(unittest.TestCase):
         leave OFFLINE, so restarting on the first poll would churn the group
         membership on every roll.
         """
-        self.harness.set_planned_units(2)
-
         with (
             patch("charm.wait_fixed", return_value=wait_fixed(0)),
             patch("charm.stop_after_attempt", return_value=stop_after_attempt(4)),
@@ -719,17 +719,17 @@ class TestCharm(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=2)
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_recover_unit_after_restart_leaves_early_attempts_alone(
         self,
         _get_unit_address,
+        _get_cluster_node_count,
         _hold_if_recovering,
         _is_instance_in_cluster,
         _restart_group_replication_if_stopped,
     ):
         """Group Replication is left alone while it is still expected to come up."""
-        self.harness.set_planned_units(2)
-
         with (
             patch("charm.wait_fixed", return_value=wait_fixed(0)),
             patch("charm.stop_after_attempt", return_value=stop_after_attempt(2)),
@@ -739,6 +739,30 @@ class TestCharm(unittest.TestCase):
             self.charm.recover_unit_after_restart()
 
         _restart_group_replication_if_stopped.assert_not_called()
+
+    @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster")
+    @patch("mysql_k8s_helpers.MySQL.reboot_from_complete_outage")
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=1)
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_recover_unit_after_restart_single_member_during_scale_up(
+        self,
+        _get_unit_address,
+        _get_cluster_node_count,
+        _reboot_from_complete_outage,
+        _is_instance_in_cluster,
+    ):
+        """A single member cluster is rebooted even when more units are planned.
+
+        Juju counts planned units before the new units join the cluster, so a
+        restart racing a scale-up must not wait for the sole member to rejoin
+        a group that has no other member to rejoin.
+        """
+        self.harness.set_planned_units(3)
+
+        self.charm.recover_unit_after_restart()
+
+        _reboot_from_complete_outage.assert_called_once()
+        _is_instance_in_cluster.assert_not_called()
 
     def test_restart_does_not_preemptively_switch_primary(self):
         """Restart leaves the primary election to Group Replication.
