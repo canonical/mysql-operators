@@ -14,7 +14,7 @@ from charms.mysql.v0.mysql import (
 )
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.testing import Harness
-from tenacity import Retrying, stop_after_attempt
+from tenacity import RetryError, Retrying, stop_after_attempt, wait_fixed
 
 from charm import MySQLOperatorCharm
 from constants import MYSQL_PORT, MYSQL_X_PORT
@@ -383,6 +383,47 @@ class TestCharm(unittest.TestCase):
         _get_cluster_primary_address.assert_not_called()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
+
+    def test_recover_unit_after_restart_single_member_during_scale_up(self):
+        """A single member cluster is rebooted even when more units are planned.
+
+        Juju counts planned units before the new units join the cluster, so a
+        restart racing a scale-up must not wait for the sole member to rejoin
+        a group that has no other member to rejoin.
+        """
+        self.harness.set_planned_units(3)
+
+        mock_mysql = MagicMock()
+        mock_mysql.get_cluster_node_count.return_value = 1
+
+        with patch.object(
+            MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
+        ):
+            self.charm.recover_unit_after_restart()
+
+        mock_mysql.reboot_from_complete_outage.assert_called_once()
+        mock_mysql.is_instance_in_cluster.assert_not_called()
+
+    def test_recover_unit_after_restart_multi_member_waits_rejoin(self):
+        """A multi member cluster member waits to rejoin instead of rebooting."""
+        self.harness.set_planned_units(1)
+
+        mock_mysql = MagicMock()
+        mock_mysql.get_cluster_node_count.return_value = 2
+        mock_mysql.is_instance_in_cluster.return_value = False
+
+        with (
+            patch.object(
+                MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
+            ),
+            patch("charm.wait_fixed", return_value=wait_fixed(0)),
+            patch("charm.stop_after_attempt", return_value=stop_after_attempt(2)),
+            self.assertRaises(RetryError),
+        ):
+            self.charm.recover_unit_after_restart()
+
+        mock_mysql.reboot_from_complete_outage.assert_not_called()
+        self.assertEqual(mock_mysql.is_instance_in_cluster.call_count, 2)
 
     def test_restart_does_not_preemptively_switch_primary(self):
         """Restart leaves the primary election to Group Replication.
