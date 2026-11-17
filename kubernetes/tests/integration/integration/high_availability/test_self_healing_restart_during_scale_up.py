@@ -16,6 +16,7 @@ from ...helpers_ha import (
     remove_mysql_test_data,
     verify_mysql_test_data,
     wait_for_apps_status,
+    wait_for_unit_status,
 )
 
 MYSQL_APP_NAME = "mysql-k8s"
@@ -91,6 +92,16 @@ def test_rolling_restart_multi_unit(juju: Juju) -> None:
     logging.info("Changing a restart-requiring config")
     juju.config(MYSQL_APP_NAME, {AUDIT_STRATEGY_CONFIG: "async"})
 
+    logging.info("Wait rolling restart")
+    juju.wait(
+        ready=lambda status: any((
+            *(
+                wait_for_unit_status(MYSQL_APP_NAME, unit_name, "maintenance")(status)
+                for unit_name in status.get_units(MYSQL_APP_NAME)
+            ),
+        )),
+        timeout=5 * MINUTE_SECS,
+    )
     juju.wait(
         ready=wait_for_apps_status(jubilant_backports.all_active, MYSQL_APP_NAME),
         error=jubilant_backports.any_blocked,
