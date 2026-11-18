@@ -28,7 +28,11 @@ class EventHelpers:
         self._clients = clients
 
         self._config = ConfigHelper(charm, ConfigManager(None, charm.system, clients))
-        self._rolling = RollingHelper(charm, RollingManager(None, charm.system, clients))
+        self._rolling = RollingHelper(
+            charm,
+            RollingManager(None, charm.system, clients),
+            self.build_unit_status,
+        )
 
     @property
     def config(self) -> ConfigHelper:
@@ -143,7 +147,7 @@ class EventHelpers:
         cluster_state = self._clients.cluster.fetch_state()
 
         if cluster_state and cluster_role == ClusterRole.PRIMARY:
-            return ActiveStatus(f"Primary")
+            return ActiveStatus("Primary")
         if cluster_state and cluster_role == ClusterRole.REPLICA:
             return ActiveStatus(f"Standby ({cluster_state.value})")
 

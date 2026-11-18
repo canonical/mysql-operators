@@ -3,16 +3,17 @@
 
 import logging
 import typing
+from collections.abc import Callable
 
 from charmlibs.pathops import LocalPath
 from charmlibs.rollingops import OperationResult, RollingOpsManager
-from ops.model import Relation
+from ops.model import MaintenanceStatus, Relation, StatusBase
 
 from ....core import RELATION_OPS, RELATION_PEERS
 from ....managers import RollingManager
 
 if typing.TYPE_CHECKING:
-    from ....charm import BaseCharm
+    from ....charm.operator import BaseCharm
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +24,16 @@ class RollingHelper:
     cluster_callback = "replication"
     instance_callback = "restart"
 
-    def __init__(self, charm: BaseCharm, manager: RollingManager):
+    def __init__(
+        self,
+        charm: BaseCharm,
+        manager: RollingManager,
+        build_unit_status: Callable[[], StatusBase],
+    ):
         """Initialize the class attributes."""
         self._charm = charm
         self._manager = manager
+        self._build_unit_status = build_unit_status
 
         self._callbacks = RollingOpsManager(
             charm=charm,
@@ -113,6 +120,8 @@ class RollingHelper:
             logger.debug("Skipping instance restart: there ware waiting ops")
             return OperationResult.RETRY_RELEASE
 
+        self._charm.set_unit_status(MaintenanceStatus("Restarting instance"))
         self._restart_instance()
         self._recover_instance()
+        self._charm.set_unit_status(self._build_unit_status())
         return OperationResult.RELEASE
