@@ -63,7 +63,7 @@ class RollingHelper:
         """Recover the instance after a restart."""
         logger.info("Recovering instance")
 
-        if self._charm.app.planned_units() == 1:
+        if self._manager.is_single_instance_cluster(self._charm.cluster_name):
             self._manager.recover_cluster()
             return
 
