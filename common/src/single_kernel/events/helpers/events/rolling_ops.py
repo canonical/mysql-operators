@@ -9,7 +9,7 @@ from charmlibs.pathops import LocalPath
 from charmlibs.rollingops import OperationResult, RollingOpsManager
 from ops.model import MaintenanceStatus, Relation, StatusBase
 
-from ....core import RELATION_OPS, RELATION_PEERS
+from ....core import RELATION_OPS
 from ....managers import RollingManager
 
 if typing.TYPE_CHECKING:
@@ -88,12 +88,12 @@ class RollingHelper:
             logger.debug("Skipping replication restart: server is not running")
             return OperationResult.RETRY_RELEASE
 
-        peers_relation = self._charm.model.get_relation(RELATION_PEERS)
-        if not peers_relation:
+        ops_relation = self._charm.model.get_relation(RELATION_OPS)
+        if not ops_relation:
             logger.debug("Skipping replication restart: relation missing")
             return OperationResult.RETRY_RELEASE
 
-        if self._manager.is_cluster_primary and self._check_cluster_waiting_ops(peers_relation):
+        if self._manager.is_cluster_primary and self._check_cluster_waiting_ops(ops_relation):
             logger.debug("Skipping replication restart: there are waiting ops")
             return OperationResult.RETRY_RELEASE
 
@@ -111,12 +111,12 @@ class RollingHelper:
             logger.debug("Skipping replication restart: server is not running")
             return OperationResult.RETRY_RELEASE
 
-        peers_relation = self._charm.model.get_relation(RELATION_PEERS)
-        if not peers_relation:
+        ops_relation = self._charm.model.get_relation(RELATION_OPS)
+        if not ops_relation:
             logger.debug("Skipping instance restart: relation missing")
             return OperationResult.RETRY_RELEASE
 
-        if self._manager.is_cluster_primary and self._check_instance_waiting_ops(peers_relation):
+        if self._manager.is_cluster_primary and self._check_instance_waiting_ops(ops_relation):
             logger.debug("Skipping instance restart: there ware waiting ops")
             return OperationResult.RETRY_RELEASE
 
