@@ -1992,6 +1992,20 @@ class TestMySQLBase(unittest.TestCase):
         count = self.mysql.get_cluster_node_count()
         self.assertEqual(count, 0)
 
+    def test_get_cluster_instance_count(self):
+        """Test get_cluster_instance_count."""
+        self.mock_executor.execute_sql.return_value = [
+            {"instance_name": "mysql-0"},
+            {"instance_name": "mysql-1"},
+        ]
+
+        count = self.mysql.get_cluster_instance_count()
+        self.assertEqual(count, 2)
+
+        self.mock_executor.execute_sql.side_effect = ExecutionError
+        count = self.mysql.get_cluster_instance_count()
+        self.assertEqual(count, 0)
+
     def test_get_cluster_global_primary_address(self):
         """Test get_cluster_set_global_primary."""
         self.mock_executor.execute_py.return_value = (

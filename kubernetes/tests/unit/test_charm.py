@@ -689,12 +689,12 @@ class TestCharm(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
-    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=2)
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_instance_count", return_value=2)
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_recover_unit_after_restart_restarts_group_replication(
         self,
         _get_unit_address,
-        _get_cluster_node_count,
+        _get_cluster_instance_count,
         _hold_if_recovering,
         _is_instance_in_cluster,
         _restart_group_replication_if_stopped,
@@ -719,12 +719,12 @@ class TestCharm(unittest.TestCase):
     @patch("charm.MySQLOperatorCharm._restart_group_replication_if_stopped")
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster", return_value=False)
     @patch("mysql_k8s_helpers.MySQL.hold_if_recovering")
-    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=2)
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_instance_count", return_value=2)
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_recover_unit_after_restart_leaves_early_attempts_alone(
         self,
         _get_unit_address,
-        _get_cluster_node_count,
+        _get_cluster_instance_count,
         _hold_if_recovering,
         _is_instance_in_cluster,
         _restart_group_replication_if_stopped,
@@ -742,12 +742,12 @@ class TestCharm(unittest.TestCase):
 
     @patch("mysql_k8s_helpers.MySQL.is_instance_in_cluster")
     @patch("mysql_k8s_helpers.MySQL.reboot_from_complete_outage")
-    @patch("mysql_k8s_helpers.MySQL.get_cluster_node_count", return_value=1)
+    @patch("mysql_k8s_helpers.MySQL.get_cluster_instance_count", return_value=1)
     @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
     def test_recover_unit_after_restart_single_member_during_scale_up(
         self,
         _get_unit_address,
-        _get_cluster_node_count,
+        _get_cluster_instance_count,
         _reboot_from_complete_outage,
         _is_instance_in_cluster,
     ):

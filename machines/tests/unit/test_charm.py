@@ -394,7 +394,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_planned_units(3)
 
         mock_mysql = MagicMock()
-        mock_mysql.get_cluster_node_count.return_value = 1
+        mock_mysql.get_cluster_instance_count.return_value = 1
 
         with patch.object(
             MySQLOperatorCharm, "_mysql", new_callable=PropertyMock, return_value=mock_mysql
@@ -409,7 +409,7 @@ class TestCharm(unittest.TestCase):
         self.harness.set_planned_units(1)
 
         mock_mysql = MagicMock()
-        mock_mysql.get_cluster_node_count.return_value = 2
+        mock_mysql.get_cluster_instance_count.return_value = 2
         mock_mysql.is_instance_in_cluster.return_value = False
 
         with (
