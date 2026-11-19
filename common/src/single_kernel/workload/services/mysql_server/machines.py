@@ -9,8 +9,9 @@ from ...systems import VMSystem
 from .base import BaseServerService
 
 try:
-    from charmlibs.pathops import LocalPath
-    from charmlibs.snap import SnapCache, SnapError, SnapState
+    import charmlibs.pathops as pathops
+    import charmlibs.snap as snap
+    import charmlibs.systemd as systemd
 except ImportError:
     pass
 
@@ -25,16 +26,11 @@ class VMServerService(BaseServerService):
     def __init__(self, system: VMSystem):
         """Initialize the class attributes."""
         self._system = system
-        self._cache = SnapCache()
 
     @property
     def running(self) -> bool:
         """Return whether the service is running."""
-        snap = self._cache[self.snap_name]
-        if not snap.present:
-            return False
-
-        return snap.services[self.name]["active"]
+        return systemd.service_running(f"snap.{self.snap_name}.{self.name}")
 
     @property
     def initialized(self) -> bool:
@@ -105,7 +101,7 @@ class VMServerService(BaseServerService):
         try:
             self.start()
             self.stop()
-        except SnapError as e:
+        except snap.APIError as e:
             logger.error(f"Failed to restart service {self.snap_name}.{self.name}: {e}")
             raise
         finally:
@@ -114,17 +110,15 @@ class VMServerService(BaseServerService):
 
     def install(self, revision: str | None = None) -> None:
         """Install the service binaries."""
-        snap = self._cache[self.snap_name]
-
         if revision is None:
-            version_file = LocalPath("refresh_versions.toml")
+            version_file = pathops.LocalPath("refresh_versions.toml")
             version_data = tomllib.loads(version_file.read_text())
             revision = version_data["snap"]["revisions"][platform.machine()]
 
         try:
             logger.debug("Installing service snap")
-            snap.ensure(state=SnapState.Present, revision=revision)
-            snap.hold()
+            snap.ensure_installed(snap=self.snap_name, revision=revision)
+            snap.hold(snap=self.snap_name)
 
             for binary in [
                 "mysql",
@@ -136,7 +130,7 @@ class VMServerService(BaseServerService):
                 "xtrabackup",
             ]:
                 snap.alias(binary)
-        except SnapError as e:
+        except snap.APIError as e:
             logger.error(f"Failed to install snap {self.snap_name}: {e}")
             raise
 
@@ -148,14 +142,15 @@ class VMServerService(BaseServerService):
 
     def start(self) -> None:
         """Start the service."""
-        snap = self._cache[self.snap_name]
-        if not snap.present:
+        try:
+            snap.list_one(self.snap_name)
+        except snap.NotInstalledError:
             raise RuntimeError(f"Snap {self.snap_name} not installed")
 
         try:
             logger.info(f"Starting service {self.snap_name}.{self.name}")
-            snap.start(services=[self.name], enable=True)
-        except SnapError as e:
+            snap.start(snap=self.snap_name, services=[self.name], enable=True)
+        except snap.APIError as e:
             logger.error(f"Failed to start service {self.snap_name}.{self.name}: {e}")
             raise
         else:
@@ -163,13 +158,14 @@ class VMServerService(BaseServerService):
 
     def stop(self) -> None:
         """Stop the service."""
-        snap = self._cache[self.snap_name]
-        if not snap.present:
+        try:
+            snap.list_one(self.snap_name)
+        except snap.NotInstalledError:
             raise RuntimeError(f"Snap {self.snap_name} not installed")
 
         try:
             logger.info(f"Stopping service {self.snap_name}.{self.name}")
-            snap.stop(services=[self.name], disable=True)
-        except SnapError as e:
+            snap.stop(snap=self.snap_name, services=[self.name], disable=True)
+        except snap.APIError as e:
             logger.error(f"Failed to stop service {self.snap_name}.{self.name}: {e}")
             raise

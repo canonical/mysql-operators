@@ -53,6 +53,7 @@ from ..secrets import SecretStore
 logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("charmlibs").setLevel(logging.WARNING)
 
 T = TypeVar("T", bound=BaseModel)
 
