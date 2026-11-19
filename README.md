@@ -59,11 +59,13 @@ juju relate mysql:database mysql-test-app:database
 
 ## Contributing
 
-To build the charms, use [charmcraftlocal](https://github.com/canonical/charmcraftlocal#charmcraftlocal):
+To build the charms, use [charmcraft](https://snapcraft.io/charmcraft):
 
 ```shell
-(cd kubernetes && charmcraftlocal pack)
-(cd machines && charmcraftlocal pack)
+export CHARMCRAFT_EXPERIMENTAL_MONOREPO=1
+
+(cd kubernetes && charmcraft pack)
+(cd machines && charmcraft pack)
 ```
 
 Please see the [Juju SDK docs](https://juju.is/docs/sdk) for guidelines on
