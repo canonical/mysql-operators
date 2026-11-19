@@ -133,7 +133,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 102
+LIBPATCH = 103
 
 PYDEPS = ["mysql-shell-client[contrib] ~= 1.0"]
 
@@ -293,6 +293,10 @@ class MySQLUnableToGetMemberStateError(Error):
 
 class MySQLGetClusterEndpointsError(Error):
     """Exception raised when there is an issue getting cluster endpoints."""
+
+
+class MySQLResetApplierRelayLogError(Error):
+    """Exception raised when there is an error resetting the applier relay log."""
 
 
 class MySQLRebootFromCompleteOutageError(Error):
@@ -2424,6 +2428,37 @@ class MySQLBase(ABC):
         """Start Group replication on the instance."""
         with suppress(ExecutionError):
             self._instance_client_tcp.start_instance_replication()
+
+    def is_applier_relay_log_corrupted(self) -> bool:
+        """Check whether the GR applier stopped on a relay log read failure.
+
+        An unclean shutdown (e.g. power loss) can leave a torn event at the tail
+        of the applier relay log, which prevents the instance from ever joining.
+        """
+        query = (
+            "SELECT 1 FROM performance_schema.replication_applier_status_by_coordinator"
+            " WHERE CHANNEL_NAME = 'group_replication_applier'"
+            # ER_REPLICA_RELAY_LOG_READ_FAILURE
+            " AND LAST_ERROR_NUMBER = 13121"
+        )
+        executor = self._build_instance_tcp_executor(self.instance_address)
+        try:
+            return bool(executor.execute_sql(query))
+        except ExecutionError:
+            logger.warning("Failed to check the group replication applier status")
+            return False
+
+    def reset_applier_relay_log(self) -> None:
+        """Stop Group Replication and discard the applier relay log.
+
+        Unapplied transactions are fetched again through distributed recovery.
+        """
+        executor = self._build_instance_tcp_executor(self.instance_address)
+        self.stop_group_replication()
+        try:
+            executor.execute_sql("RESET REPLICA FOR CHANNEL 'group_replication_applier'")
+        except ExecutionError as e:
+            raise MySQLResetApplierRelayLogError() from e
 
     def is_cluster_in_no_quorum(self) -> bool:
         """Check whether the cluster has lost quorum as seen from this instance."""
