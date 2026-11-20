@@ -138,12 +138,15 @@ class LifecycleEventHandler(Object):
         else:
             self._manager.install_system_components([])
 
-    def _set_ports(self) -> None:
-        """Update the unit ports."""
+    def _setup_unit(self) -> None:
+        """Set up the unit information."""
+        version = self._manager.fetch_instance_version()
+
         try:
             self._charm.unit.set_ports(self._charm.service_server.port)
+            self._charm.unit.set_workload_version(version)
         except ModelError as e:
-            logger.warning(f"Failed to open unit ports: {e}")
+            logger.warning(f"Failed to setup unit information: {e}")
             return
 
     def _start_server_service(self, passwords: dict[str, str]) -> None:
@@ -210,7 +213,7 @@ class LifecycleEventHandler(Object):
         self._helpers.config.save_config()
         self._start_server_service(passwords)
         self._start_exporter_service(passwords)
-        self._set_ports()
+        self._setup_unit()
 
     def _on_leader_elected(self, _: LeaderElectedEvent) -> None:
         """Event handler for the leader-elected event."""
