@@ -47,6 +47,7 @@ from charms.mysql.v0.mysql import (
     MySQLLockAcquisitionError,
     MySQLRebootFromCompleteOutageError,
     MySQLRejoinInstanceToClusterError,
+    MySQLResetApplierRelayLogError,
     MySQLServiceNotRunningError,
     MySQLSetClusterPrimaryError,
     MySQLUnableToGetMemberStateError,
@@ -976,6 +977,20 @@ class MySQLOperatorCharm(MySQLCharmBase, TypedCharmBase[CharmConfig]):
             logger.error("Error getting member state. Avoiding potential cluster crash recovery")
             self.unit.status = MaintenanceStatus("Unable to get member state")
             return True
+
+        # A torn relay log (e.g. after power loss) makes the applier abort on
+        # every join attempt, so neither rejoin nor reboot can ever succeed.
+        if (
+            state in (InstanceState.OFFLINE, InstanceState.ERROR)
+            and self._mysql.is_applier_relay_log_corrupted()
+        ):
+            logger.warning("Group replication applier relay log is corrupted. Resetting it")
+            try:
+                self._mysql.reset_applier_relay_log()
+            except MySQLResetApplierRelayLogError:
+                logger.error("Failed to reset the group replication applier relay log")
+                return True
+            state = InstanceState.OFFLINE.value
 
         logger.info(f"Unit workload member-state is {state} with member-role {role}")
 

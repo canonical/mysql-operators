@@ -628,6 +628,41 @@ class TestCharm(unittest.TestCase):
         self.assertTrue(self.charm.wait_until_unit_address_is_local())
         _resolve_addresses.assert_not_called()
 
+    @patch("charm.MySQLOperatorCharm._execute_manual_rejoin")
+    @patch("mysql_k8s_helpers.MySQL.is_cluster_auto_rejoin_ongoing", return_value=False)
+    @patch("mysql_k8s_helpers.MySQL.reset_applier_relay_log")
+    @patch("mysql_k8s_helpers.MySQL.is_applier_relay_log_corrupted", return_value=True)
+    @patch("mysql_k8s_helpers.MySQL.get_member_state", return_value="ERROR")
+    @patch("mysql_k8s_helpers.MySQL.get_member_role", return_value="UNKNOWN")
+    @patch("charm.MySQLOperatorCharm.cluster_initialized", new_callable=PropertyMock)
+    @patch("mysql_k8s_helpers.MySQL.is_mysqld_running", return_value=True)
+    @patch("charm.MySQLOperatorCharm.get_unit_address", return_value=UNIT_FQDN)
+    def test_crash_scenario_resets_corrupted_applier_relay_log(
+        self,
+        _get_unit_address,
+        _is_mysqld_running,
+        _cluster_initialized,
+        _get_member_role,
+        _get_member_state,
+        _is_applier_relay_log_corrupted,
+        _reset_applier_relay_log,
+        _is_cluster_auto_rejoin_ongoing,
+        _execute_manual_rejoin,
+    ):
+        """A member stuck on a torn relay log is reset and reported as offline."""
+        _cluster_initialized.return_value = True
+        self.harness.update_relation_data(
+            self.peer_relation_id, f"{APP_NAME}/0", {"member-role": "secondary"}
+        )
+        self.harness.update_relation_data(
+            self.peer_relation_id, f"{APP_NAME}/1", {"member-state": "online"}
+        )
+
+        self.charm._handle_potential_cluster_crash_scenario()
+
+        _reset_applier_relay_log.assert_called_once()
+        self.assertEqual(self.charm.unit_peer_data["member-state"], "offline")
+
     @patch("mysql_k8s_helpers.MySQL.start_group_replication")
     @patch("mysql_k8s_helpers.MySQL.stop_group_replication")
     @patch("mysql_k8s_helpers.MySQL.get_member_state", return_value="OFFLINE")
