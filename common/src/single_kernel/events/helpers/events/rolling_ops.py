@@ -3,17 +3,16 @@
 
 import logging
 import typing
-from collections.abc import Callable
 
 from charmlibs.pathops import LocalPath
 from charmlibs.rollingops import OperationResult, RollingOpsManager
-from ops.model import MaintenanceStatus, Relation, StatusBase
+from ops.model import Relation
 
 from ....core import RELATION_OPS
 from ....managers import RollingManager
 
 if typing.TYPE_CHECKING:
-    from ....charm.operator import BaseCharm
+    from ....charm import BaseCharm
 
 logger = logging.getLogger(__name__)
 
@@ -24,16 +23,10 @@ class RollingHelper:
     cluster_callback = "replication"
     instance_callback = "restart"
 
-    def __init__(
-        self,
-        charm: BaseCharm,
-        manager: RollingManager,
-        build_unit_status: Callable[[], StatusBase],
-    ):
+    def __init__(self, charm: BaseCharm, manager: RollingManager):
         """Initialize the class attributes."""
         self._charm = charm
         self._manager = manager
-        self._build_unit_status = build_unit_status
 
         self._callbacks = RollingOpsManager(
             charm=charm,
@@ -108,7 +101,7 @@ class RollingHelper:
     def restart_instance(self) -> OperationResult:
         """Restart the instance."""
         if not self._charm.service_server.running:
-            logger.debug("Skipping replication restart: server is not running")
+            logger.debug("Skipping instance restart: server is not running")
             return OperationResult.RETRY_RELEASE
 
         ops_relation = self._charm.model.get_relation(RELATION_OPS)
@@ -117,11 +110,9 @@ class RollingHelper:
             return OperationResult.RETRY_RELEASE
 
         if self._manager.is_cluster_primary and self._check_instance_waiting_ops(ops_relation):
-            logger.debug("Skipping instance restart: there ware waiting ops")
+            logger.debug("Skipping instance restart: there were waiting ops")
             return OperationResult.RETRY_RELEASE
 
-        self._charm.set_unit_status(MaintenanceStatus("Restarting instance"))
         self._restart_instance()
         self._recover_instance()
-        self._charm.set_unit_status(self._build_unit_status())
         return OperationResult.RELEASE

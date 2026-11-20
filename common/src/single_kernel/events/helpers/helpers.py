@@ -28,11 +28,7 @@ class EventHelpers:
         self._clients = clients
 
         self._config = ConfigHelper(charm, ConfigManager(None, charm.system, clients))
-        self._rolling = RollingHelper(
-            charm,
-            RollingManager(None, charm.system, clients),
-            self.build_unit_status,
-        )
+        self._rolling = RollingHelper(charm, RollingManager(None, charm.system, clients))
 
     @property
     def config(self) -> ConfigHelper:
@@ -59,14 +55,14 @@ class EventHelpers:
 
         return self._charm.cluster_name in cluster_labels
 
-    def apply_config(self) -> None:
-        """Apply the MySQL instance config."""
+    def apply_config(self) -> bool:
+        """Apply the MySQL instance config, returning whether a restart was requested."""
         try:
             config_old = self._config.load_config()
             config_new = self._config.save_config()
         except FileNotFoundError as e:
             logger.debug(f"Skipping configuration: {e}")
-            return
+            return False
 
         _______ = self._config.apply_config(config_old, config_new)
         restart = self._config.check_restart(config_old, config_new)
@@ -74,6 +70,9 @@ class EventHelpers:
         if self.initialized and restart:
             logger.info("Configuration change requires restart")
             self._rolling.callbacks.request_async_lock(callback_id="restart")
+            return True
+
+        return False
 
     def build_cluster_endpoints(self, relation: str) -> tuple[list, list, list]:
         """Return the MySQL cluster endpoints."""
