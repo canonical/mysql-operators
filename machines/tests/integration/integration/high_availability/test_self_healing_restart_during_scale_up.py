@@ -6,6 +6,7 @@ import logging
 import jubilant_backports
 from jubilant_backports import Juju
 
+from ... import markers
 from ...helpers import generate_random_string
 from ...helpers_ha import (
     check_mysql_instances_online,
@@ -30,6 +31,11 @@ AUDIT_STRATEGY_VALUES = {
 }
 
 MINUTE_SECS = 60
+
+# The rolling ops worker dispatches the lock granted hook through `juju-exec`,
+# which is `juju-run` on Juju 2.9, so restarts only run on the next hook there
+# https://github.com/canonical/charmlibs/issues/814
+pytestmark = markers.juju3
 
 
 def test_deploy_single_unit(juju: Juju, charm: str) -> None:
