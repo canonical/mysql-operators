@@ -77,9 +77,9 @@ class EventHelpers:
 
         unit_labels = {self._charm.get_unit_label(unit): unit for unit in self._charm.units}
 
-        rw_addresses = []
-        ro_addresses = []
-        no_addresses = []
+        primary_addresses = []
+        replica_addresses = []
+        offline_addresses = []
 
         for label, info in cluster_instances.items():
             # When the instance is still catching up with the primary instance,
@@ -98,16 +98,16 @@ class EventHelpers:
                 continue
 
             if info["status"] != InstanceState.ONLINE:
-                no_addresses.append(unit_address)
-            if info["status"] == InstanceState.ONLINE and info["mode"] == "R/O":
-                ro_addresses.append(unit_address)
-            if info["status"] == InstanceState.ONLINE and info["mode"] == "R/W":
-                rw_addresses.append(unit_address)
+                offline_addresses.append(unit_address)
+            if info["status"] == InstanceState.ONLINE and info["memberRole"] == "SECONDARY":
+                replica_addresses.append(unit_address)
+            if info["status"] == InstanceState.ONLINE and info["memberRole"] == "PRIMARY":
+                primary_addresses.append(unit_address)
 
         return (
-            [f"{address}:{self._charm.service_server.port}" for address in rw_addresses],
-            [f"{address}:{self._charm.service_server.port}" for address in ro_addresses],
-            [f"{address}:{self._charm.service_server.port}" for address in no_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in primary_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in replica_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in offline_addresses],
         )
 
     def build_app_status(self) -> StatusBase:
