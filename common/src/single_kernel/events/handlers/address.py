@@ -58,7 +58,7 @@ class AddressEventHandler(Object):
             self._on_relation_event,
         )
 
-        if self._helpers.initialized:
+        if self._helpers.cluster_initialized:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
     def _collect_peer_hostnames(self) -> list[dict]:

@@ -191,8 +191,8 @@ class VMCharm(BaseCharm):
     def _build_cos_agent(self) -> COSAgentProvider:
         """Builds the COS agent object."""
         resources_dir = importlib.resources.files(resources)
-        metrics_rules = resources_dir / "observability" / "prometheus_rules"
-        logging_rules = resources_dir / "observability" / "loki_rules"
+        metrics_rules = resources_dir / "observability" / "metrics_rules"
+        logging_rules = resources_dir / "observability" / "logging_rules"
 
         return COSAgentProvider(
             self,

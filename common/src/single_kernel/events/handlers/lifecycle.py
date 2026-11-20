@@ -81,7 +81,7 @@ class LifecycleEventHandler(Object):
 
     def _create_cluster(self) -> None:
         """Create the MySQL Server cluster."""
-        if self._helpers.initialized:
+        if self._helpers.cluster_initialized:
             self._manager.update_state("SECONDARY", "waiting")
             self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
             return
@@ -138,12 +138,15 @@ class LifecycleEventHandler(Object):
         else:
             self._manager.install_system_components([])
 
-    def _set_ports(self) -> None:
-        """Update the unit ports."""
+    def _setup_unit(self) -> None:
+        """Set up the unit information."""
+        version = self._manager.fetch_instance_version()
+
         try:
             self._charm.unit.set_ports(self._charm.service_server.port)
+            self._charm.unit.set_workload_version(version)
         except ModelError as e:
-            logger.warning(f"Failed to open unit ports: {e}")
+            logger.warning(f"Failed to setup unit information: {e}")
             return
 
     def _start_server_service(self, passwords: dict[str, str]) -> None:
@@ -210,7 +213,7 @@ class LifecycleEventHandler(Object):
         self._helpers.config.save_config()
         self._start_server_service(passwords)
         self._start_exporter_service(passwords)
-        self._set_ports()
+        self._setup_unit()
 
     def _on_leader_elected(self, _: LeaderElectedEvent) -> None:
         """Event handler for the leader-elected event."""
@@ -232,12 +235,24 @@ class LifecycleEventHandler(Object):
             logger.debug("Skipping config change: charm is refreshing")
             return
 
-        self._helpers.apply_config()
+        try:
+            config_old = self._helpers.config.load_config()
+            config_new = self._helpers.config.save_config()
+        except FileNotFoundError as e:
+            logger.debug(f"Skipping configuration: {e}")
+            return
+
+        _______ = self._helpers.config.apply_config(config_old, config_new)
+        restart = self._helpers.config.check_restart(config_old, config_new)
+
+        if self._helpers.cluster_initialized and restart:
+            logger.info("Configuration change requires restart")
+            self._helpers.rolling.callbacks.request_async_lock(callback_id="restart")
 
     def _on_update_status(self, _: UpdateStatusEvent) -> None:
         """Event handler for the update-status event."""
-        if not self._helpers.initialized:
-            logger.debug("Skipping update status: charm not initialized")
+        if not self._helpers.cluster_initialized:
+            logger.debug("Skipping update status: charm is not initialized")
             return
 
         self._manager.update_state()
@@ -247,7 +262,7 @@ class LifecycleEventHandler(Object):
 
     def _on_storage_detaching(self, _: StorageDetachingEvent) -> None:
         """Event handler for the storage-detaching event."""
-        if not self._helpers.initialized:
+        if not self._helpers.cluster_initialized:
             logger.debug("Skipping storage detaching: charm is not initialized")
             return
 
