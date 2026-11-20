@@ -133,7 +133,7 @@ LIBID = "8c1428f06b1b4ec8bf98b7d980a38a8c"
 
 # Increment this major API version when introducing breaking changes
 LIBAPI = 0
-LIBPATCH = 102
+LIBPATCH = 103
 
 PYDEPS = ["mysql-shell-client[contrib] ~= 1.0"]
 
@@ -2093,6 +2093,27 @@ class MySQLBase(ABC):
             return 0
         else:
             return len(status)
+
+    def get_cluster_instance_count(self, from_instance: str | None = None) -> int:
+        """Retrieve the count of instances registered in the cluster metadata.
+
+        Unlike the replication group members, the metadata keeps every cluster
+        instance, even when the group replication is not running on them.
+        """
+        from_instance = from_instance if from_instance else self.instance_address
+
+        client = InstanceClient(
+            executor=self._build_instance_tcp_executor(from_instance),
+            quoter=self._quoter,
+        )
+
+        try:
+            labels = client.get_cluster_instance_labels(self.cluster_name)
+        except ExecutionError:
+            logger.warning("Failed to get cluster instance count")
+            return 0
+        else:
+            return len(labels)
 
     @retry(
         retry=retry_if_exception_type(MySQLLockAcquisitionError),

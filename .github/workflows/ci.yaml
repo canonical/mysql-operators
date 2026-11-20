@@ -67,10 +67,18 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          # Match the charm base (ubuntu@22.04) Python version
+          python-version: "3.10"
       - name: Install tox & poetry
+        env:
+          PYTHON_PATH: ${{ steps.setup-python.outputs.python-path }}
         run: |
-          pipx install tox
-          pipx install poetry
+          pipx install tox --python "$PYTHON_PATH"
+          pipx install poetry --python "$PYTHON_PATH"
       - name: Run tests
         working-directory: ${{ matrix.path }}
         run: tox run -e unit
