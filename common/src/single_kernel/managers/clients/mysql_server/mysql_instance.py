@@ -300,6 +300,37 @@ class MySQLInstanceClient:
             logger.error(f"Failed to setup group TLS: {e}")
             raise
 
+    def is_applier_relay_log_corrupted(self) -> bool:
+        """Check whether the replication applier stopped on a relay log read failure.
+
+        An unclean shutdown (e.g. power loss) can leave a torn event at the tail
+        of the applier relay log, which prevents the instance from ever joining.
+        """
+        query = (
+            "SELECT 1 FROM performance_schema.replication_applier_status_by_coordinator"
+            " WHERE CHANNEL_NAME = 'group_replication_applier'"
+            # ER_REPLICA_RELAY_LOG_READ_FAILURE
+            " AND LAST_ERROR_NUMBER = 13121"
+        )
+
+        try:
+            rows = self._executor.execute_sql(query)
+        except ExecutionError:
+            logger.warning("Failed to check the replication applier status")
+            return False
+        else:
+            return bool(rows)
+
+    def reset_applier_relay_log(self) -> None:
+        """Stop the replication and discard the applier relay log.
+
+        Unapplied transactions are fetched again through distributed recovery.
+        """
+        self.stop_replication()
+
+        query = "RESET REPLICA FOR CHANNEL 'group_replication_applier'"
+        _____ = self._executor.execute_sql(query)
+
     def stop_replication(self) -> None:
         """Stop the replication if enabled."""
         with suppress(ExecutionError):
