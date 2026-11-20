@@ -15,7 +15,14 @@ from ops.charm import (
     UpdateStatusEvent,
 )
 from ops.framework import Object
-from ops.model import ActiveStatus, BlockedStatus, ModelError, Unit, WaitingStatus
+from ops.model import (
+    ActiveStatus,
+    BlockedStatus,
+    MaintenanceStatus,
+    ModelError,
+    Unit,
+    WaitingStatus,
+)
 
 from ...core import (
     PASSWORD_KEY_BACKUPS,
@@ -232,7 +239,8 @@ class LifecycleEventHandler(Object):
             logger.debug("Skipping config change: charm is refreshing")
             return
 
-        self._helpers.apply_config()
+        if self._helpers.apply_config():
+            self._charm.set_unit_status(MaintenanceStatus("Waiting to restart"))
 
     def _on_update_status(self, _: UpdateStatusEvent) -> None:
         """Event handler for the update-status event."""

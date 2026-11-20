@@ -241,6 +241,16 @@ class MySQLInstanceClient:
         query = "TRUNCATE TABLE performance_schema.host_cache"
         _____ = self._executor.execute_sql(query)
 
+    def count_cluster_instances(self, cluster_name: str) -> int:
+        """Count the number of instances registered in the cluster metadata."""
+        try:
+            labels = self._client.get_cluster_instance_labels(cluster_name)
+        except ExecutionError:
+            logger.warning("Failed to count cluster instances")
+            return 0
+        else:
+            return len(labels)
+
     def count_cluster_members(self, states: Sequence[InstanceState] | None = None) -> int:
         """Count the number of cluster members in the provided states."""
         try:

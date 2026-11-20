@@ -55,14 +55,14 @@ class EventHelpers:
 
         return self._charm.cluster_name in cluster_labels
 
-    def apply_config(self) -> None:
-        """Apply the MySQL instance config."""
+    def apply_config(self) -> bool:
+        """Apply the MySQL instance config, returning whether a restart was requested."""
         try:
             config_old = self._config.load_config()
             config_new = self._config.save_config()
         except FileNotFoundError as e:
             logger.debug(f"Skipping configuration: {e}")
-            return
+            return False
 
         _______ = self._config.apply_config(config_old, config_new)
         restart = self._config.check_restart(config_old, config_new)
@@ -70,6 +70,9 @@ class EventHelpers:
         if self.initialized and restart:
             logger.info("Configuration change requires restart")
             self._rolling.callbacks.request_async_lock(callback_id="restart")
+            return True
+
+        return False
 
     def build_cluster_endpoints(self, relation: str) -> tuple[list, list, list]:
         """Return the MySQL cluster endpoints."""
@@ -143,7 +146,7 @@ class EventHelpers:
         cluster_state = self._clients.cluster.fetch_state()
 
         if cluster_state and cluster_role == ClusterRole.PRIMARY:
-            return ActiveStatus(f"Primary")
+            return ActiveStatus("Primary")
         if cluster_state and cluster_role == ClusterRole.REPLICA:
             return ActiveStatus(f"Standby ({cluster_state.value})")
 

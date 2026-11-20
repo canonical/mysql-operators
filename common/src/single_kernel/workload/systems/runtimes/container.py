@@ -260,12 +260,11 @@ class ContainerRuntime(BaseRuntime):
         In case of failure, it must not leak the lightkube exception.
         That way we can reduce the coupling with the lightkube package.
         """
-        try:
-            pod = self._client.get(Pod, name=name)
-            if pod.metadata and pod.metadata.labels:
-                pod.metadata.labels.update(labels)
+        # Patch only the labels, so no resource version conflicts with concurrent updates
+        patch = {"metadata": {"labels": dict(labels)}}
 
-            self._client.patch(Pod, name=name, obj=pod)
+        try:
+            self._client.patch(Pod, name=name, obj=patch)
         except ApiError as e:
             message = str(e)
             if e.status.code == 403:

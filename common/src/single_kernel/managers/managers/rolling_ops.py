@@ -27,6 +27,14 @@ class RollingManager:
         """Return whether the MySQL instance is the primary."""
         return self._clients.instance.fetch_role() == InstanceRole.PRIMARY
 
+    def is_single_instance_cluster(self, cluster_name: str) -> bool:
+        """Return whether the cluster metadata only registers one instance.
+
+        The metadata is used instead of the replication group members, as an
+        instance whose group replication is not running only sees itself.
+        """
+        return self._clients.instance.count_cluster_instances(cluster_name) == 1
+
     def prepare_cluster(self, instance_host: str) -> None:
         """Prepare the MySQL cluster for a rolling operation."""
         self._clients.cluster.promote_instance(instance_host, force=False)
