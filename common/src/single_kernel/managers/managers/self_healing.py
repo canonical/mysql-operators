@@ -5,6 +5,7 @@ import logging
 import random
 import time
 
+from mysql_shell.executors.errors import ExecutionError
 from mysql_shell.models import InstanceState
 
 from ...state import PeerState
@@ -72,6 +73,24 @@ class SelfHealingManager:
         """Recreate the cluster."""
         self._clients.cluster.drop_metadata()
         self._clients.recreate_cluster(instance_label)
+
+    def recover_applier_relay_log(self) -> bool:
+        """Reset the applier relay log when corrupted.
+
+        Returns:
+            whether the relay log was reset.
+        """
+        if not self._clients.instance.is_applier_relay_log_corrupted():
+            return False
+
+        logger.warning("Replication applier relay log is corrupted. Resetting it")
+        try:
+            self._clients.instance.reset_applier_relay_log()
+        except ExecutionError as e:
+            logger.error(f"Failed to reset the applier relay log: {e}")
+            return False
+
+        return True
 
     def stop_replication(self) -> None:
         """Stop the instance replication."""
