@@ -65,6 +65,10 @@ class LifecycleManager:
         """Fetch the MySQL cluster instances."""
         return self._clients.cluster.fetch_instances()
 
+    def fetch_instance_version(self) -> str:
+        """Fetch the MySQL instance version."""
+        return self._clients.instance.fetch_version()
+
     def create_system_password(self) -> str:
         """Create a MySQL instance system password."""
         return self._clients.instance.create_password()
