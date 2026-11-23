@@ -232,7 +232,19 @@ class LifecycleEventHandler(Object):
             logger.debug("Skipping config change: charm is refreshing")
             return
 
-        self._helpers.apply_config()
+        try:
+            config_old = self._helpers.config.load_config()
+            config_new = self._helpers.config.save_config()
+        except FileNotFoundError as e:
+            logger.debug(f"Skipping configuration: {e}")
+            return
+
+        _______ = self._helpers.config.apply_config(config_old, config_new)
+        restart = self._helpers.config.check_restart(config_old, config_new)
+
+        if self._helpers.initialized and restart:
+            logger.info("Configuration change requires restart")
+            self._helpers.rolling.callbacks.request_async_lock(callback_id="restart")
 
     def _on_update_status(self, _: UpdateStatusEvent) -> None:
         """Event handler for the update-status event."""
