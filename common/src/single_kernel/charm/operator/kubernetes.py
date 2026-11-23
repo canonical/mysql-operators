@@ -220,10 +220,14 @@ class K8sCharm(BaseCharm):
 
     def _build_cos_logging(self) -> LogProxyConsumer:
         """Builds the COS logging object."""
+        resources_dir = importlib.resources.files(resources)
+        logging_rules = resources_dir / "observability" / "loki_rules"
+
         return LogProxyConsumer(
             charm=self,
             relation_name="logging",
             log_files=[str(self._system.paths.mysql_logs / log) for log in TextLogs],
+            alert_rules_path=logging_rules,
             container_name=self._container.name,
         )
 
