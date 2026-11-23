@@ -41,7 +41,7 @@ class EventHelpers:
         return self._rolling
 
     @property
-    def initialized(self) -> bool:
+    def cluster_initialized(self) -> bool:
         """Return whether the operator is initialized."""
         if not self._charm.service_server.running:
             logger.debug(f"Failed to connect to MySQL Server: server is not running")
@@ -141,7 +141,7 @@ class EventHelpers:
         there are scale-up / scale-down / self-healing operations on a `database`
         related application, and only the leader can update certain fields.
         """
-        if not self.initialized:
+        if not self.cluster_initialized:
             return
         if not self._charm.unit.is_leader():
             return
