@@ -251,6 +251,9 @@ class LifecycleEventHandler(Object):
         if not self._helpers.cluster_initialized:
             logger.debug("Skipping update status: charm is not initialized")
             return
+        if not self._charm.replication.idle:
+            logger.debug("Skipping update status: charm is setting up replication")
+            return
 
         self._manager.update_state()
         self._charm.update_app_labels()
