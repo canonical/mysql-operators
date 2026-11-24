@@ -129,7 +129,7 @@ class VMServerService(BaseServerService):
                 "xbstream",
                 "xtrabackup",
             ]:
-                snap.alias(binary)
+                snap.alias(snap=self.snap_name, app=binary, alias=binary)
         except snap.APIError as e:
             logger.error(f"Failed to install snap {self.snap_name}: {e}")
             raise

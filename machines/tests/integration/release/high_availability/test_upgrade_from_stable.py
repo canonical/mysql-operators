@@ -126,7 +126,7 @@ def refresh_from_stable(juju: Juju, charm: str) -> None:
     try:
         logging.info("Wait for refresh to start")
         juju.wait(
-            ready=wait_for_apps_status(jubilant.all_blocked, MYSQL_APP_NAME),
+            ready=wait_for_apps_status(jubilant.any_blocked, MYSQL_APP_NAME),
             timeout=5 * MINUTE_SECS,
         )
 

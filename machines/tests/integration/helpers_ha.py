@@ -675,7 +675,7 @@ def refresh_mysql_server(juju: Juju, app_name: str, charm_path: str) -> None:
     try:
         logging.info("Wait for refresh to start")
         juju.wait(
-            ready=wait_for_apps_status(jubilant.all_blocked, app_name),
+            ready=wait_for_apps_status(jubilant.any_blocked, app_name),
             timeout=5 * MINUTE_SECS,
         )
 

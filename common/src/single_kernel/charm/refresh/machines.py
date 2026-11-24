@@ -33,5 +33,7 @@ class VMRefreshHandler(BaseRefreshHandler, CharmSpecificMachines):
 
         logger.info(f"Installing snap revision {snap_revision}")
         self._charm.service_server.install(snap_revision)
+        refresh.update_snap_revision()
+
         self._charm.service_server.start()
         self._charm.service_exporter.start()

@@ -41,7 +41,7 @@ class EventHelpers:
         return self._rolling
 
     @property
-    def initialized(self) -> bool:
+    def cluster_initialized(self) -> bool:
         """Return whether the operator is initialized."""
         if not self._charm.service_server.running:
             logger.debug(f"Failed to connect to MySQL Server: server is not running")
@@ -55,31 +55,15 @@ class EventHelpers:
 
         return self._charm.cluster_name in cluster_labels
 
-    def apply_config(self) -> None:
-        """Apply the MySQL instance config."""
-        try:
-            config_old = self._config.load_config()
-            config_new = self._config.save_config()
-        except FileNotFoundError as e:
-            logger.debug(f"Skipping configuration: {e}")
-            return
-
-        _______ = self._config.apply_config(config_old, config_new)
-        restart = self._config.check_restart(config_old, config_new)
-
-        if self.initialized and restart:
-            logger.info("Configuration change requires restart")
-            self._rolling.callbacks.request_async_lock(callback_id="restart")
-
     def build_cluster_endpoints(self, relation: str) -> tuple[list, list, list]:
         """Return the MySQL cluster endpoints."""
         cluster_instances = self._clients.cluster.fetch_instances()
 
         unit_labels = {self._charm.get_unit_label(unit): unit for unit in self._charm.units}
 
-        rw_addresses = []
-        ro_addresses = []
-        no_addresses = []
+        primary_addresses = []
+        replica_addresses = []
+        offline_addresses = []
 
         for label, info in cluster_instances.items():
             # When the instance is still catching up with the primary instance,
@@ -98,16 +82,16 @@ class EventHelpers:
                 continue
 
             if info["status"] != InstanceState.ONLINE:
-                no_addresses.append(unit_address)
-            if info["status"] == InstanceState.ONLINE and info["mode"] == "R/O":
-                ro_addresses.append(unit_address)
-            if info["status"] == InstanceState.ONLINE and info["mode"] == "R/W":
-                rw_addresses.append(unit_address)
+                offline_addresses.append(unit_address)
+            if info["status"] == InstanceState.ONLINE and info["memberRole"] == "SECONDARY":
+                replica_addresses.append(unit_address)
+            if info["status"] == InstanceState.ONLINE and info["memberRole"] == "PRIMARY":
+                primary_addresses.append(unit_address)
 
         return (
-            [f"{address}:{self._charm.service_server.port}" for address in rw_addresses],
-            [f"{address}:{self._charm.service_server.port}" for address in ro_addresses],
-            [f"{address}:{self._charm.service_server.port}" for address in no_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in primary_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in replica_addresses],
+            [f"{address}:{self._charm.service_server.port}" for address in offline_addresses],
         )
 
     def build_app_status(self) -> StatusBase:
@@ -157,7 +141,7 @@ class EventHelpers:
         there are scale-up / scale-down / self-healing operations on a `database`
         related application, and only the leader can update certain fields.
         """
-        if not self.initialized:
+        if not self.cluster_initialized:
             return
         if not self._charm.unit.is_leader():
             return
