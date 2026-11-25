@@ -6,7 +6,7 @@ import os
 
 import jubilant_backports
 from jubilant_backports import Juju
-from tenacity import Retrying, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from constants import MYSQL_DATA_DIR
 
@@ -29,8 +29,7 @@ from ...helpers_ha import (
 MYSQL_APP_NAME = "mysql"
 MYSQL_TEST_APP_NAME = "mysql-test-app"
 
-# ER_REPLICA_RELAY_LOG_READ_FAILURE
-RELAY_LOG_READ_FAILURE = 13121
+RELAY_LOG_RESET_MESSAGE = "Group replication applier relay log is corrupted. Resetting it"
 
 
 def test_deploy_highly_available_cluster(juju: Juju, charm: str) -> None:
@@ -82,31 +81,20 @@ def test_full_cluster_crash_with_corrupted_relay_log(juju: Juju, continuous_writ
 
     mysql_units = get_app_units(juju, MYSQL_APP_NAME)
 
-    # Keep update-status from healing the cluster before the fault is asserted
-    with update_interval(juju, "60m"):
-        logging.info("Killing all instances")
-        for unit_name in mysql_units:
-            force_kill_mysql_process(juju, unit_name)
+    logging.info("Killing all instances")
+    for unit_name in mysql_units:
+        force_kill_mysql_process(juju, unit_name)
 
-        logging.info("Corrupting the applier relay log on all instances")
-        for unit_name in mysql_units:
-            corrupt_applier_relay_log(juju, unit_name)
+    logging.info("Corrupting the applier relay log on all instances")
+    for unit_name in mysql_units:
+        corrupt_applier_relay_log(juju, unit_name)
 
-        logging.info("Starting all instances")
-        for unit_name in mysql_units:
-            start_mysql_process_gracefully(juju, unit_name)
+    logging.info("Starting all instances")
+    for unit_name in mysql_units:
+        start_mysql_process_gracefully(juju, unit_name)
 
-        logging.info("Checking the applier fails reading the relay log on all instances")
-        for unit_name in mysql_units:
-            for attempt in Retrying(
-                reraise=True,
-                stop=stop_after_delay(5 * MINUTE_SECS),
-                wait=wait_fixed(10),
-            ):
-                with attempt:
-                    error_number = get_applier_last_error_number(juju, unit_name)
-                    assert error_number == RELAY_LOG_READ_FAILURE
-
+    # The charm self-healing loop may reset the relay log at any time after start,
+    # so the corruption is asserted through the charm logs once recovered
     with update_interval(juju, "10s"):
         logging.info("Waiting units to enter maintenance")
         juju.wait(
@@ -125,8 +113,9 @@ def test_full_cluster_crash_with_corrupted_relay_log(juju: Juju, continuous_writ
     logging.info("Check that all units are online")
     assert check_mysql_instances_online(juju, MYSQL_APP_NAME, mysql_units)
 
-    logging.info("Check the applier relay log error is cleared on all instances")
+    logging.info("Check the applier relay log was reset on all instances")
     for unit_name in mysql_units:
+        assert RELAY_LOG_RESET_MESSAGE in get_unit_warning_logs(juju, unit_name)
         assert get_applier_last_error_number(juju, unit_name) == 0
 
     # Ensure continuous writes still incrementing for all units
@@ -153,6 +142,13 @@ def corrupt_applier_relay_log(juju: Juju, unit_name: str) -> None:
             'head -c 512 /dev/urandom >> "$relay_log"\''
         ),
         target=unit_name,
+    )
+
+
+def get_unit_warning_logs(juju: Juju, unit_name: str) -> str:
+    """Return the full warning (and above) debug log of a unit."""
+    return juju.cli(
+        "debug-log", "--replay", "--no-tail", "--level=WARNING", f"--include={unit_name}"
     )
 
 
