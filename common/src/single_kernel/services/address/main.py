@@ -48,20 +48,21 @@ def main():
     parser.add_argument("operator_path", help="path to the operator directory")
     arguments = parser.parse_args()
 
-    previous_address = None
+    previous_address = _resolve_local_address()
 
     while True:
-        address = _resolve_local_address()
+        current_address = _resolve_local_address()
+        if current_address == previous_address:
+            time.sleep(30)
+            continue
 
-        if not previous_address:
-            logger.info(f"Setting initial address to {address}")
-            previous_address = address
-        elif previous_address != address:
-            logger.info(f"Detected address change to {address}")
-            previous_address = address
-            _dispatch_event(arguments.operator_unit, arguments.operator_path)
+        logger.info(f"Detected address change to {current_address}")
 
-        time.sleep(30)
+        if _dispatch_event(arguments.operator_unit, arguments.operator_path):
+            previous_address = current_address
+            time.sleep(30)
+        else:
+            time.sleep(30)
 
 
 if __name__ == "__main__":
