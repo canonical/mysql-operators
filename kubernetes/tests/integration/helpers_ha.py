@@ -724,10 +724,6 @@ def refresh_mysql_server(juju: Juju, app_name: str, charm_path: str) -> None:
         ready=wait_for_apps_status(jubilant.any_blocked, app_name),
         timeout=5 * MINUTE_SECS,
     )
-    juju.wait(
-        ready=wait_for_unit_status(app_name, mysql_units[-1], "blocked"),
-        timeout=5 * MINUTE_SECS,
-    )
 
     mysql_status = juju.status().apps[app_name]
     upgrade_unit_message = mysql_status.units[mysql_units[-1]].workload_status.message
