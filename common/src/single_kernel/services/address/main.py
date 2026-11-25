@@ -10,15 +10,17 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def _dispatch_event(operator_unit: str, operator_path: str) -> None:
-    """Dispatch the `ip-address-change` event."""
+def _dispatch_event(operator_unit: str, operator_path: str) -> bool:
+    """Dispatch the `address-changed` event."""
     dispatch_path = f"JUJU_DISPATCH_PATH=hooks/address_changed"
     operator_path = f"{operator_path}/dispatch"
 
-    subprocess.run(
+    process = subprocess.run(
         ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
-        check=True,
+        check=False,
     )
+
+    return process.returncode == 0
 
 
 def _resolve_local_address() -> str:

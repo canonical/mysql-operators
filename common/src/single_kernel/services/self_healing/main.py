@@ -6,15 +6,17 @@ import subprocess
 import time
 
 
-def _dispatch_event(operator_unit: str, operator_path: str) -> None:
-    """Dispatch the `heal-mysql-cluster` event."""
+def _dispatch_event(operator_unit: str, operator_path: str) -> bool:
+    """Dispatch the `self-healing` event."""
     dispatch_path = f"JUJU_DISPATCH_PATH=hooks/self_healing"
     operator_path = f"{operator_path}/dispatch"
 
-    subprocess.run(
+    process = subprocess.run(
         ["/usr/bin/juju-exec", "-u", operator_unit, dispatch_path, operator_path],
-        check=True,
+        check=False,
     )
+
+    return process.returncode == 0
 
 
 def main():
