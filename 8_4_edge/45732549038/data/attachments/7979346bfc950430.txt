@@ -1,0 +1,28 @@
+Nov 26 02:56:35 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:260 Deploying a new mysql cluster
+Nov 26 02:56:35 [32mINFO    [0m jubilant:_juju.py:308 cli: juju deploy --model testing ./mysql_ubuntu@26.04-amd64.charm another-mysql --base ubuntu@26.04 --config cluster-name=test_cluster --config profile=testing
+Nov 26 02:59:02 [32mINFO    [0m jubilant:_juju.py:308 cli: juju integrate --model testing another-mysql s3-integrator
+Nov 26 02:59:22 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:283 Rotating all mysql credentials
+Nov 26 02:59:22 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 02:59:22 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmp3kq83m80
+Nov 26 02:59:26 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 02:59:26 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmpl8kugmix
+Nov 26 02:59:33 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 set-password --params /root/snap/juju/common/tmptwzyzw2g
+Nov 26 02:59:39 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpt_5os7wn
+Nov 26 02:59:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju add-secret --model testing ea31fc0f --file /root/snap/juju/common/tmpivaa6lms
+Nov 26 02:59:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju grant-secret --model testing secret:e51fehbp6g2jg2uv8geg s3-integrator
+Nov 26 02:59:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju config --model testing s3-integrator credentials=secret:e51fehbp6g2jg2uv8geg endpoint=https://s3.amazonaws.com bucket=data-charms-testing path=mysql/a16f36c0-d58e-440a-83b5-c19519bb827d region=us-east-1
+Nov 26 02:59:59 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:303 Restoring backup_id='2026-11-26T02:45:20Z'
+Nov 26 02:59:59 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 restore --params /root/snap/juju/common/tmp896vu70p
+Nov 26 03:00:36 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:307 Ensuring that the pre-backup inserted value exists in database, while post-backup inserted value does not
+Nov 26 03:00:36 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:321 Inserting value after restore
+Nov 26 03:00:36 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:36 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:37 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-cluster-status --wait 300s --params /root/snap/juju/common/tmpxg9lyiqw
+Nov 26 03:00:40 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpz_f4lzak
+Nov 26 03:00:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:44 [32mINFO    [0m jubilant:_juju.py:308 cli: juju run --model testing --format json another-mysql/0 get-password --params /root/snap/juju/common/tmpjbvun8xl
+Nov 26 03:00:48 [32mINFO    [0m jubilant:_juju.py:308 cli: juju status --model testing --format json
+Nov 26 03:00:48 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:326 Ensuring that pre-backup and post-restore values exist in the database
+Nov 26 03:00:48 [32mINFO    [0m integration.integration.test_backup_aws:test_backup_aws.py:58 Cleaning backups from cloud buckets
