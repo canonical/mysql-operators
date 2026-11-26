@@ -81,7 +81,11 @@ class LifecycleEventHandler(Object):
 
     def _create_cluster(self) -> None:
         """Create the MySQL Server cluster."""
-        if self._helpers.cluster_initialized:
+        # A new unit with pre-existing cluster metadata means the app is
+        # scaling out from zero units, reusing the storage of the scale-down
+        cluster_initialized = self._helpers.cluster_initialized
+
+        if cluster_initialized and not self._manager.is_new_unit:
             self._manager.update_state("SECONDARY", "waiting")
             self._charm.set_unit_status(WaitingStatus("Waiting to join the cluster"))
             return
@@ -90,7 +94,7 @@ class LifecycleEventHandler(Object):
         instance_states = self._collect_peer_states()
 
         if self._charm.unit.is_leader() and InstanceState.ONLINE not in instance_states:
-            self._manager.recreate_cluster(instance_label)
+            self._manager.recreate_cluster(instance_label, drop_metadata=cluster_initialized)
             self._manager.update_state("PRIMARY", "ONLINE")
             self._charm.set_unit_status(ActiveStatus("Primary"))
             return
