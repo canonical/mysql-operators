@@ -52,13 +52,16 @@ class ConfigHelper:
         """Save the instance configuration, returning the new configuration."""
         self._manager.toggle_audit_plugin(self._charm.config.plugin_audit_enabled)
 
+        unit_address = self._charm.get_unit_label(self._charm.unit)
+        unit_hostname = self._charm.system.runtime.get_hostname(unit_address)
+
         logger.info("Building instance configuration")
         config = self._manager.build_server_config(
             audit_format=AuditFormat.JSON,
             audit_policy=self._charm.config.logs_audit_policy,
             audit_strategy=self._charm.config.plugin_audit_strategy,
             binlog_retention_days=self._charm.config.binlog_retention_days,
-            instance_address=self._charm.get_unit_address(self._charm.unit),
+            instance_address=unit_hostname,
             memory_profile=self._charm.config.profile,
             memory_limit=self._charm.config.profile_limit_memory,
             max_connections=self._charm.config.max_connections,
