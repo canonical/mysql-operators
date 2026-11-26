@@ -2,13 +2,12 @@
 # See LICENSE file for licensing details.
 
 import logging
-import socket
 import typing
 
 from ops.charm import RelationEvent
 from ops.framework import EventBase, Object
 
-from ...core import RELATION_PEERS
+from ...core import RELATION_DATABASE, RELATION_PEERS
 from ...managers import AddressResolutionManager, MachineHost
 from ...services import AddressResolutionService
 from ...state import PeerStateUnit
@@ -61,7 +60,7 @@ class AddressEventHandler(Object):
         if self._charm.service_server.running:
             self._service.start(self._charm.unit.name, self._charm.charm_dir)
 
-    def _collect_peer_hostnames(self) -> list[dict]:
+    def _collect_peer_hostnames(self) -> list[MachineHost]:
         """Collect all peer unit hostnames."""
         peer_hostnames = []
 
@@ -72,21 +71,19 @@ class AddressEventHandler(Object):
         for unit in peers_relation.units:
             unit_state = PeerStateUnit(peers_relation.data[unit])
             if peer_hostname := unit_state.get_address_hostname():
+                peer_hostname = MachineHost.from_dict(peer_hostname)
                 peer_hostnames.append(peer_hostname)
 
         return peer_hostnames
 
-    def _update_hostname(self) -> None:
-        """Update the hostname details."""
-        host = MachineHost(
-            address=self._charm.get_unit_address(self._charm.unit),
-            names=[
-                socket.gethostname(),
-                socket.getfqdn(),
-            ],
-        )
+    def _update_hostnames(self) -> None:
+        """Update the unit hostname entries."""
+        unit_hostname = self._helpers.build_unit_hostname()
+        peer_hostnames = self._collect_peer_hostnames()
 
-        self._manager.set_hostname(host)
+        self._manager.cleanup_hosts()
+        self._manager.update_hosts([unit_hostname, *peer_hostnames])
+        self._manager.set_hostname(unit_hostname)
 
     def _on_address_change(self, event: AddressChangeEvent) -> None:
         """Event handler for the address-changed event."""
@@ -95,7 +92,10 @@ class AddressEventHandler(Object):
             event.defer()
             return
 
-        self._update_hostname()
+        self._charm.set_unit_address(self._charm.unit, RELATION_PEERS)
+        self._charm.set_unit_address(self._charm.unit, RELATION_DATABASE)
+        self._update_hostnames()
+
         self._charm.service_server.stop()
         self._charm.service_server.start()
 
@@ -110,10 +110,4 @@ class AddressEventHandler(Object):
             logger.debug("Skipping /etc/hosts update: system not ready")
             return
 
-        peer_hostnames = self._collect_peer_hostnames()
-        if not peer_hostnames:
-            logger.debug("Skipping /etc/hosts update: no hostname in peer databags")
-            return
-
-        self._manager.cleanup_hosts()
-        self._manager.update_hosts([MachineHost.from_dict(host) for host in peer_hostnames])
+        self._update_hostnames()

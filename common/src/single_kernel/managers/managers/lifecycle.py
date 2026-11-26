@@ -11,7 +11,7 @@ from mysql_shell.models import InstanceRole
 from ...state import PeerState
 from ...workload import BaseSystem
 from ..clients import Clients
-from ..models import SystemUser
+from ..models import MachineHost, SystemUser
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +120,16 @@ class LifecycleManager:
     def recreate_cluster(self, instance_label: str) -> None:
         """Recreate cluster."""
         self._clients.recreate_cluster(instance_label)
+
+    def update_hostname(self, machine_host: MachineHost) -> None:
+        """Update the operator hostname."""
+        logger.info("Updating /etc/hosts")
+
+        self._system.runtime.remove_hosts()
+        self._system.runtime.update_hosts(
+            address=machine_host.address,
+            names=machine_host.names,
+        )
 
     def update_state(self, role: str | None = None, state: str | None = None) -> None:
         """Update the operator state."""

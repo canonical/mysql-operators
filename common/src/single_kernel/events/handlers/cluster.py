@@ -279,11 +279,15 @@ class ClusterEventHandler(Object):
         if not self._manager.check_instance_join_cluster(cluster_name, instance_label):
             return
 
-        self._manager.join_instance(
-            instance_label=instance_label,
-            instance_host=instance_host,
-            addrs=peers_addresses,
-        )
+        try:
+            self._manager.join_instance(
+                instance_label=instance_label,
+                instance_host=instance_host,
+                addrs=peers_addresses,
+            )
+        except RuntimeError as e:
+            logger.error(f"Failed to join instance {instance_label}: {e}")
+            return
 
         self._charm.set_unit_status(self._helpers.build_unit_status())
 

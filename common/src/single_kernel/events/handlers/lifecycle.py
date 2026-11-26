@@ -207,7 +207,10 @@ class LifecycleEventHandler(Object):
                 event.defer()
                 return
 
-        self._helpers.config.save_config()
+        ________ = self._helpers.config.save_config()
+        hostname = self._helpers.build_unit_hostname()
+
+        self._manager.update_hostname(hostname)
         self._start_server_service(passwords)
         self._start_exporter_service(passwords)
         self._set_ports()

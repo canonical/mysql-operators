@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import logging
+import socket
 import typing
 
 from mysql_shell.executors.errors import ExecutionError
@@ -11,6 +12,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, StatusBase
 from ...core import RELATION_DATABASE
 from ...managers.clients import Clients
 from ...managers.managers import ConfigManager, RollingManager
+from ...managers.models import MachineHost
 from .events import ConfigHelper, RollingHelper
 
 if typing.TYPE_CHECKING:
@@ -132,6 +134,16 @@ class EventHelpers:
             return ActiveStatus(f"Standby ({cluster_state.value})")
 
         return MaintenanceStatus("Unknown")
+
+    def build_unit_hostname(self) -> MachineHost:
+        """Build the MySQL cluster unit hostname."""
+        return MachineHost(
+            address=self._charm.get_unit_address(self._charm.unit),
+            names=[
+                socket.gethostname(),
+                socket.getfqdn(),
+            ],
+        )
 
     def update_database_endpoints(self) -> None:
         """Update the endpoints for the database-provider consumers.
