@@ -156,6 +156,10 @@ class ReplicationOffererManager:
 
         self._repl_state_local.app.delete_replication_ready_flag()
 
+    def fetch_instance_state(self) -> str | None:
+        """Fetch the instance state."""
+        return self._clients.instance.fetch_state()
+
     def update_state(self) -> None:
         """Update the operator state."""
         role = self._clients.instance.fetch_role()

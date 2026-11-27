@@ -4,6 +4,7 @@
 import logging
 import typing
 
+from mysql_shell.models import InstanceState
 from ops import BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.charm import (
     ActionEvent,
@@ -95,6 +96,10 @@ class ReplicationEventHandler(Object):
     def idle(self) -> bool:
         """Return whether the replication functionality is idle."""
         if not self._charm.unit.is_leader():
+            return True
+
+        if self._manager_offerer.fetch_instance_state() != InstanceState.ONLINE:
+            logger.debug("Skipping replication idle check: instance is not online")
             return True
 
         units = len(self._charm.units)
