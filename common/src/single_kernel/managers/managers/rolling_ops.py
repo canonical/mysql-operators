@@ -27,10 +27,6 @@ class RollingManager:
         """Return whether the MySQL instance is the primary."""
         return self._clients.instance.fetch_role() == InstanceRole.PRIMARY
 
-    def prepare_cluster(self, instance_host: str) -> None:
-        """Prepare the MySQL cluster for a rolling operation."""
-        self._clients.cluster.promote_instance(instance_host, force=False)
-
     def recover_cluster(self) -> None:
         """Recover the MySQL cluster."""
         self._clients.cluster.reboot()

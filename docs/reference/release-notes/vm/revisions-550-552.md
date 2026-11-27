@@ -14,8 +14,8 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 | Architecture | Charm revision  | MySQL version | Minimum Juju version |
 | ------------ | --------------- |-------------- |----------------------|
 |   `amd64`    | 551             |  8.4.13       |        3.6.0+        |
-|   `arm64`    | 552             |  8.4.13       |        3.6.0+        |
-|   `s390x`    | 550             |  8.4.13       |        3.6.0+        |
+|   `arm64`    | 550             |  8.4.13       |        3.6.0+        |
+|   `s390x`    | 552             |  8.4.13       |        3.6.0+        |
 
 If you are jumping over several stable revisions, make sure to check {ref}`previous release notes <release-notes-vm>` before upgrading to this revision.
 
@@ -26,6 +26,7 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 - Migrated to modern refresh V3 implementation.
 - Migrated to modern TLS V4 charm interface.
 - Migrated to modern ops V3 framework.
+- Migrated to modern OTEL collector integration, instead of Grafana Agent.
 - Hardened security by moving the K8s operator to be rootless.
 - Split operator storage between archive, data, logs and temp.
 - Standardized MySQL Exporter lifecycle: will be enabled at start-up time.
@@ -37,7 +38,8 @@ If you are jumping over several stable revisions, make sure to check {ref}`previ
 - Drop support for Juju 2 environments.
 - Drop support for legacy interfaces:
     - `mysql`
-    - `mysql-root`
+    - `db-router`
+    - `shared-db`
 - Renamed TLS interface:
     - `certificates` -> `client-certificates` / `peer-certificate`
 - Standardized configuration options:
