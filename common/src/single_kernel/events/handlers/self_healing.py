@@ -176,6 +176,12 @@ class SelfHealingEventHandler(Object):
         state = self._manager.fetch_instance_state()
         leader = self._charm.unit.is_leader()
 
+        # A torn relay log (e.g. after power loss) makes the applier abort on
+        # every join attempt, so neither rejoin nor reboot can ever succeed.
+        if state in (InstanceState.OFFLINE, InstanceState.ERROR):
+            if self._manager.recover_applier_relay_log():
+                state = InstanceState.OFFLINE
+
         match state, leader:
             case InstanceState.ONLINE, True:
                 self._recover_from_online_leader()
