@@ -42,7 +42,7 @@ The space `alpha` is default and cannot be removed. To deploy Charmed MySQL oper
 
 ```shell
 juju deploy mysql \
-  --channel 8.4/edge \
+  --channel 8.4/stable \
   --constraints spaces=client,peers \
   --bind "database-peers=peers database=client"
 ```
@@ -80,4 +80,3 @@ The Charmed MySQL operator endpoints are:
 ```{note}
 If using a network space for the backup traffic, the user is responsible for ensuring that the target object storage URL traffic is routed via the specified network space.
 ```
-

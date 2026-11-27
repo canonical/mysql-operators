@@ -13,7 +13,6 @@ The release notes for Charmed MySQL will be published soon in this documentation
 For now, you can see them in the repository's [GitHub Releases page](https://github.com/canonical/mysql-operators/releases).
 ```
 
-<!--
 This page provides a high-level overview of the dependencies and features that are supported by each revision in every stable release of the [MySQL charm for Kubernetes](https://charmhub.io/mysql-k8s).
 
 To learn more about the different release tracks and channels, see the [Juju documentation about channels](https://documentation.ubuntu.com/juju/3.6/reference/charm/#risk).
@@ -30,16 +29,23 @@ All revisions of MySQL described below are built for *Ubuntu 26.04 LTS (Resolute
 
 | Revision (`amd`) | Revision (`arm`) | Revision (`s390x`) | MySQL version | Juju version |
 |:----------------:|:----------------:|:------------------:|:-------------:|:------------:|
-|                  |                  |                    |               |              |
+| [470] | [468] | [469] | 8.4.13 | `3.6.0+` |
 
--->
+
+## Release notes
+
+All release notes for `8.4/stable` revisions of Charmed MySQL 8.4 for K8s:
 
 ```{toctree}
 :titlesonly:
-:hidden:
 
+Revisions 468-470 <revisions-468-470>
 ```
 
+<!-- LINKS -->
+[470]: revisions-468-470.md
+[469]: revisions-468-470.md
+[468]: revisions-468-470.md
 
 <!--BADGES-->
 [check]: https://img.icons8.com/color/20/checkmark--v1.png

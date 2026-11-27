@@ -99,8 +99,8 @@ Wait until the model settles. The following is an example of the `juju status --
     tempo-k8s  active  uk8s   admin/cos.tempo-k8s
 
     App             Version  Status  Scale  Charm           Channel      Rev  Exposed  Message
-    mysql           8.4.10   active      1  mysql           8.4/stable        no
-    mysql-router    8.4.10   active      1  mysql-router    8.4/stable        no
+    mysql           8.4.13   active      1  mysql           8.4/stable        no
+    mysql-router    8.4.13   active      1  mysql-router    8.4/stable        no
     mysql-test-app  0.0.2    active      1  mysql-test-app  latest/edge   46  no       Last written value=54713
 
     Unit               Workload  Agent  Machine  Public address  Ports           Message
@@ -172,8 +172,8 @@ Wait until the model settles. The following is an example of the `juju status --
     tempo  active  k8s         admin/cos.tempo
 
     App                          Version  Status  Scale  Charm                        Channel        Rev  Address         Exposed  Message
-    mysql-k8s                    8.4.10   active      1  mysql-k8s                    8.4/stable          10.152.183.58   no
-    mysql-router-k8s             8.4.10   active      1  mysql-router-k8s             8.4/stable          10.152.183.50   no
+    mysql-k8s                    8.4.13   active      1  mysql-k8s                    8.4/stable          10.152.183.58   no
+    mysql-router-k8s             8.4.13   active      1  mysql-router-k8s             8.4/stable          10.152.183.50   no
     mysql-test-app               0.0.2    active      1  mysql-test-app               latest/stable   51  10.152.183.162  no
     opentelemetry-collector-k8s           active      1  opentelemetry-collector-k8s  2/stable       207  10.152.183.164  no
 

@@ -57,8 +57,8 @@ Example output of `juju status --watch 1s` with a deployment in a local LXD clou
     sample-model  lxd         localhost/localhost  3.6.19   unsupported  11:57:33+02:00
 
     App             Version  Status  Scale  Charm           Channel     Rev  Exposed  Message
-    mysql           8.4.10   active      1  mysql           8.4/stable  196  no
-    mysql-router    8.4.10   active      1  mysql-router    8.4/stable  119  no
+    mysql           8.4.13   active      1  mysql           8.4/stable  196  no
+    mysql-router    8.4.13   active      1  mysql-router    8.4/stable  119  no
     mysql-test-app  0.0.2    active      1  mysql-test-app  stable       26  no
 
     Unit               Workload  Agent  Machine  Public address  Ports           Message
@@ -84,8 +84,8 @@ Example output of `juju status --watch 1s` with a deployment in a local MicroK8s
     sample-model    microk8s    microk8s/localhost  3.6.19   unsupported  14:39:27+02:00
 
     App               Version  Status   Scale  Charm             Channel       Rev  Address         Exposed  Message
-    mysql-k8s         8.4.10   active       1  mysql-k8s         8.4/stable     99  10.152.183.189  no
-    mysql-router-k8s  8.4.10   active       1  mysql-router-k8s  8.4/stable     69  10.152.183.81   no
+    mysql-k8s         8.4.13   active       1  mysql-k8s         8.4/stable     99  10.152.183.189  no
+    mysql-router-k8s  8.4.13   active       1  mysql-router-k8s  8.4/stable     69  10.152.183.81   no
     wordpress-k8s              active       1  wordpress-k8s     latest/stable
 
     Unit                 Workload  Agent  Address     Ports  Message

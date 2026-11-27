@@ -98,8 +98,8 @@ Model     Controller  Cloud/Region         Version  SLA          Timestamp
 tutorial  overlord    localhost/localhost  3.6.19   unsupported  22:33:45+01:00
 
 App               Version  Status   Scale  Charm             Channel     Rev    Exposed  Message
-mysql             8.4.10   active       1  mysql             8.4/stable         no
-mysql-router      8.4.10   blocked      1  mysql-router      8.4/stable         no       Missing relation: backend-database
+mysql             8.4.13   active       1  mysql             8.4/stable         no
+mysql-router      8.4.13   blocked      1  mysql-router      8.4/stable         no       Missing relation: backend-database
 
 Unit              Workload  Agent  Machine  Public address  Ports           Message
 mysql/0*          active    idle            10.234.188.135  3306,33060/tcp  Primary
@@ -116,8 +116,8 @@ Model     Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial  overlord    microk8s/localhost  3.6.19   unsupported  22:33:45+01:00
 
 App               Version  Status   Scale  Charm             Channel     Rev  Address        Exposed  Message
-mysql-k8s         8.4.10   active       1  mysql-k8s         8.4/stable       10.152.183.68  no
-mysql-router-k8s  8.4.10   blocked      1  mysql-router-k8s  8.4/stable       10.152.183.52  no       Missing relation: backend-database
+mysql-k8s         8.4.13   active       1  mysql-k8s         8.4/stable       10.152.183.68  no
+mysql-router-k8s  8.4.13   blocked      1  mysql-router-k8s  8.4/stable       10.152.183.52  no       Missing relation: backend-database
 
 Unit                 Workload  Agent  Address     Ports  Message
 mysql-k8s/0*         active    idle   10.1.12.36         Primary
@@ -353,8 +353,8 @@ tutorial  overlord    microk8s/localhost  3.6.19   unsupported  22:48:57+01:00
 
 App               Version  Status  Scale  Charm             Channel     Rev  Address         Exposed  Message
 data-integrator            active      1  data-integrator   stable       13  10.152.183.142  no
-mysql             8.4.10   active      1  mysql             8.4/stable       10.152.183.68   no
-mysql-router      8.4.10   active      3  mysql-router      8.4/stable       10.152.183.52   no
+mysql             8.4.13   active      1  mysql             8.4/stable       10.152.183.68   no
+mysql-router      8.4.13   active      3  mysql-router      8.4/stable       10.152.183.52   no
 
 Unit                 Workload  Agent  Address     Ports  Message
 data-integrator/0*   active    idle   10.1.12.3
@@ -374,8 +374,8 @@ tutorial  overlord    microk8s/localhost  3.6.19   unsupported  22:48:57+01:00
 
 App               Version  Status  Scale  Charm             Channel     Rev  Address         Exposed  Message
 data-integrator            active      1  data-integrator   stable       13  10.152.183.142  no
-mysql-k8s         8.4.10   active      1  mysql-k8s         8.4/stable       10.152.183.68   no
-mysql-router-k8s  8.4.10   active      3  mysql-router-k8s  8.4/stable       10.152.183.52   no
+mysql-k8s         8.4.13   active      1  mysql-k8s         8.4/stable       10.152.183.68   no
+mysql-router-k8s  8.4.13   active      3  mysql-router-k8s  8.4/stable       10.152.183.52   no
 
 Unit                 Workload  Agent  Address     Ports  Message
 data-integrator/0*   active    idle   10.1.12.3
@@ -489,8 +489,8 @@ Model 	Controller  Cloud/Region     	Version  SLA      	Timestamp
 database  lxd     	localhost/localhost  3.6.19	 unsupported  18:47:51Z
 
 App                   	  Version  Status  Scale  Charm                 	Channel 	Rev  Exposed  Message
-mysql                 	  8.4.10   active  	   1  mysql                     8.4/stable       no
-mysql-router          	  8.4.10   active  	   1  mysql-router              8.4/stable       no
+mysql                 	  8.4.13   active  	   1  mysql                     8.4/stable       no
+mysql-router          	  8.4.13   active  	   1  mysql-router              8.4/stable       no
 mysql-test-app        	  0.0.2    active  	   1  mysql-test-app            stable      36   no
 self-signed-certificates           active  	   1  self-signed-certificates  stable      72   no
 
@@ -515,8 +515,8 @@ Model 	  Controller  Cloud/Region    	  Version  SLA          Timestamp
 database  k8s     	  microk8s/localhost  3.6.19   unsupported  12:10:33Z
 
 App                   	Version  Status  Scale  Charm                 	 Channel 	 Rev  Address     	  Exposed  Message
-mysql-k8s             	8.4.10    active  	1  mysql-k8s             	 8.4/stable       10.152.183.101  no
-mysql-router-k8s      	8.4.10    active  	1  mysql-router-k8s      	 8.4/stable	      10.152.183.92   no
+mysql-k8s             	8.4.13    active  	1  mysql-k8s             	 8.4/stable       10.152.183.101  no
+mysql-router-k8s      	8.4.13    active  	1  mysql-router-k8s      	 8.4/stable	      10.152.183.92   no
 mysql-test-app        	0.0.2    active  	1  mysql-test-app        	 stable   	  36  10.152.183.224  no
 self-signed-certificates         active  	1  self-signed-certificates  stable   	  72  10.152.183.114  no
 
