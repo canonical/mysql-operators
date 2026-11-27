@@ -328,10 +328,10 @@ To identify the primary unit in a cluster, run:
  - MicroK8s: `juju run mysql-k8s/<unit> get-cluster-status`. 
 ```
 
-Once inside the Juju unit, the `serverconfig` user can access MySQL with the following command:
+Once inside the Juju unit, the `charmed-operator` user can access MySQL with the following command:
 
 ```shell
-mysql -h 127.0.0.1 -userverconfig -p<password>
+mysql -h 127.0.0.1 --user=charmed-operator --password=<password>
 ```
 
 As an example, using the password we obtained earlier:
@@ -340,7 +340,7 @@ As an example, using the password we obtained earlier:
 :user: ubuntu
 :host: juju-ff9064-0
 
-mysql -h 127.0.0.1 -userverconfig -pyWJjs2HccOmqFMshyRcwWnjF
+mysql -h 127.0.0.1 --user=charmed-operator --password=yWJjs2HccOmqFMshyRcwWnjF
 
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 56
