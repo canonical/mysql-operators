@@ -15,7 +15,7 @@ See also: {ref}`System requirements <system-requirements>`, {ref}`How to upgrade
 | ------------ | --------------- |-------------- |----------------------|
 |   `amd64`    | 470             |  8.4.13       |        3.6.0+        |
 |   `arm64`    | 468             |  8.4.13       |        3.6.0+        |
-|   `arm64`    | 469             |  8.4.13       |        3.6.0+        |
+|   `s390x`    | 469             |  8.4.13       |        3.6.0+        |
 
 If you are jumping over several stable revisions, make sure to check {ref}`previous release notes <release-notes-k8s>` before upgrading to this revision.
 
@@ -29,6 +29,7 @@ OCI image resources:
 - Migrated to modern refresh V3 implementation.
 - Migrated to modern TLS V4 charm interface.
 - Migrated to modern ops V3 framework.
+- Migrated to modern OTEL collector integration, instead of Grafana Agent.
 - Hardened security by moving the K8s operator to be rootless.
 - Split operator storage between archive, data, logs and temp.
 - Standardized MySQL Exporter lifecycle: will be enabled at start-up time.
