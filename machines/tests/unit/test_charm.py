@@ -267,6 +267,7 @@ class TestCharm(unittest.TestCase):
         self.charm.on.start.emit()
         self.assertTrue(isinstance(self.harness.model.unit.status, BlockedStatus))
 
+    @patch("mysql_vm_helpers.MySQL.is_applier_relay_log_corrupted", return_value=False)
     @patch("mysql_vm_helpers.MySQL.is_cluster_in_no_quorum", return_value=False)
     @patch(
         "charm.MySQLOperatorCharm.cluster_initialized",
@@ -300,6 +301,7 @@ class TestCharm(unittest.TestCase):
         _unit_initialized,
         _cluster_initialized,
         _is_cluster_no_quorum,
+        _is_applier_relay_log_corrupted,
     ):
         self.harness.update_relation_data(
             self.peer_relation_id,
@@ -362,6 +364,7 @@ class TestCharm(unittest.TestCase):
         _reboot_from_complete_outage.assert_called_once()
         _snap_service_operation.assert_called()
         _get_cluster_primary_address.assert_not_called()
+        _is_applier_relay_log_corrupted.assert_called_once()
 
         self.assertTrue(isinstance(self.harness.model.unit.status, MaintenanceStatus))
         # test instance state = unreachable
