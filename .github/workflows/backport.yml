@@ -1,0 +1,444 @@
+name: AI Backport Bot
+
+# AI-assisted backport/forward-port bot driven by bpilot.
+#
+# Prerequisites: the repository must have been bootstrapped with
+# `bpilot init` locally, and the generated `bpilot/skills/` files
+# committed and pushed. Without those skill files, `bpilot port` will
+# fail and the bot will only be able to report the failure back on the
+# PR.
+#
+# Usage (as a comment on a Pull Request):
+#   /port <target-branch>                 # e.g. /port 8.0/edge
+#   /port <commit-hash> <target-branch>   # e.g. /port a1b2c3d4 8.0/edge
+#
+# --- TEMPORARY for testing (#TODO remove once PR comment flow verified) ---
+# The workflow_dispatch trigger lets us run this workflow manually from a
+# branch, with explicit inputs. Dispatch runs skip the PR-comment steps.
+# This is needed in case /port on a PR won't trigger .
+# --------------------------------------------------------------------------------
+#
+# Requires an OPENROUTER_API_KEY repo secret for the LLM calls.
+# Without it bpilot falls back to mechanical cherry-pick only.
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      commit_or_pr:
+        description: "Explicit commit SHA, or a PR number like '#123' to resolve its merge commit"
+        required: false
+      target_branch:
+        description: "Target branch, e.g. 8.0/edge"
+        required: true
+
+jobs:
+  bpilot-port:
+    # For issue_comment: only run on PR comments starting with /port.
+    # For workflow_dispatch: always run (inputs validated below).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null && startsWith(github.event.comment.body, '/port'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # push the backport branch to origin
+      pull-requests: write # open the draft pull request
+      issues: write        # post feedback comments (only for issue_comment runs)
+
+    steps:
+      - name: Authorize actor
+        if: github.event_name == 'issue_comment'
+        env:
+          COMMENT_ASSOC: ${{ github.event.comment.author_association }}
+        run: |
+          ALLOWED="OWNER MEMBER COLLABORATOR"
+          OK=0
+          for a in $ALLOWED; do
+            if [ "$COMMENT_ASSOC" == "$a" ]; then OK=1; fi
+          done
+          if [ "$OK" == "0" ]; then
+            echo "::error::Actor not authorized (association: $COMMENT_ASSOC). Requires one of: $ALLOWED"
+            exit 1
+          fi
+          echo "Authorized: $COMMENT_ASSOC"
+
+      # Note: workflow_dispatch runs skip the explicit authorization step above.
+      # GitHub already enforces that only users with write access can trigger
+      # workflow_dispatch events (via UI, CLI, or API), so an additional check
+      # is redundant and brittle (the collaborators/permission endpoint often
+      # fails with GITHUB_TOKEN on org repos).
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install project-specific CI deps
+        # Tools required by the verification checks bpilot runs during port
+        # (should match bpilot/skills/verification-checks/SKILL.md).
+        run: |
+          pipx install tox
+          pipx install poetry
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Parse and Resolve Inputs
+        id: inputs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_URL: ${{ github.event.issue.pull_request.url }}
+          DISPATCH_COMMIT_OR_PR: ${{ github.event.inputs.commit_or_pr }}
+          DISPATCH_TARGET: ${{ github.event.inputs.target_branch }}
+        run: |
+          COMMIT_HASH=""
+          TARGET_BRANCH=""
+
+          if [ "$EVENT_NAME" == "workflow_dispatch" ]; then
+            # Manual dispatch: target_branch is required; commit_or_pr optional.
+            TARGET_BRANCH="$DISPATCH_TARGET"
+            if [ -n "$DISPATCH_COMMIT_OR_PR" ]; then
+              COMMIT_HASH="$DISPATCH_COMMIT_OR_PR"
+            fi
+          else
+            # issue_comment path: parse the /port command from the comment body.
+            read -r -a args <<< "$COMMENT_BODY"
+            if [ "${#args[@]}" -ge 3 ]; then
+              COMMIT_HASH="${args[1]}"
+              TARGET_BRANCH="${args[2]}"
+            elif [ "${#args[@]}" -eq 2 ]; then
+              TARGET_BRANCH="${args[1]}"
+            else
+              echo "::error::Invalid command format. Use '/port [<commit-hash>] <target-branch>'"
+              exit 1
+            fi
+          fi
+
+          if [ -z "$TARGET_BRANCH" ]; then
+            echo "::error::target_branch is required."
+            exit 1
+          fi
+
+          # Resolve commit hash if not given explicitly.
+          if [ -n "$COMMIT_HASH" ]; then
+            # If it looks like a PR reference (#123 or 123), resolve its merge commit.
+            PR_NUM="${COMMIT_HASH#\#}"
+            if [[ "$PR_NUM" =~ ^[0-9]+$ ]]; then
+              MERGE_COMMIT=$(gh pr view "$PR_NUM" --json mergeCommit --jq '.mergeCommit.oid')
+              if [ -z "$MERGE_COMMIT" ] || [ "$MERGE_COMMIT" == "null" ]; then
+                echo "::error::Could not resolve merge commit for PR $PR_NUM. Ensure the PR is merged."
+                exit 1
+              fi
+              COMMIT_HASH="$MERGE_COMMIT"
+            fi
+          else
+            # Resolve from the issue_comment's PR URL (only available for issue_comment).
+            if [ -z "$PR_URL" ]; then
+              echo "::error::No commit given, and no source PR to resolve. Provide commit_or_pr for dispatch."
+              exit 1
+            fi
+            MERGE_COMMIT=$(gh pr view "$PR_URL" --json mergeCommit --jq '.mergeCommit.oid')
+            if [ -z "$MERGE_COMMIT" ] || [ "$MERGE_COMMIT" == "null" ]; then
+              echo "::error::Could not resolve merge commit. Ensure the PR is merged."
+              exit 1
+            fi
+            COMMIT_HASH="$MERGE_COMMIT"
+          fi
+
+          echo "merge_commit=$COMMIT_HASH" >> $GITHUB_OUTPUT
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+
+          # Fetch the first line of the commit message for a readable PR title.
+          COMMIT_SUBJECT=$(git log -1 --format=%s "$COMMIT_HASH" 2>/dev/null || echo "")
+          echo "commit_subject=$COMMIT_SUBJECT" >> $GITHUB_OUTPUT
+
+      - name: Check for existing backport
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_COMMIT: ${{ steps.inputs.outputs.merge_commit }}
+          TARGET_BRANCH: ${{ steps.inputs.outputs.target_branch }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Compute the deterministic branch name bpilot will use:
+          # backport/<short-sha (max 12)>-to-<target with / as ->
+          SHORT=$(git rev-parse --short "$MERGE_COMMIT")
+          SHORT="${SHORT:0:12}"
+          SAFE_TARGET="${TARGET_BRANCH//\//-}"
+          BRANCH="backport/${SHORT}-to-${SAFE_TARGET}"
+          echo "backport_branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "existing_pr=" >> $GITHUB_OUTPUT
+
+          # 1. Open PR already exists for this branch? -> idempotent success.
+          EXISTING=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url')
+          if [ -n "$EXISTING" ]; then
+            echo "existing_pr=$EXISTING" >> $GITHUB_OUTPUT
+            echo "Backport PR already exists: $EXISTING"
+            if [ "$EVENT_NAME" == "issue_comment" ]; then
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "ℹ️ **Backport already exists:** $EXISTING"
+            fi
+            exit 0
+          fi
+
+          # 2. Remote branch exists but no open PR -> ambiguous; fail with guidance.
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "::error::Remote branch '$BRANCH' already exists but has no open PR. A previous run may have failed before PR creation, or the PR was closed. Delete the branch (git push origin --delete $BRANCH) and re-run, or open a PR from it manually."
+            exit 1
+          fi
+
+      - name: Install bpilot
+        if: steps.check.outputs.existing_pr == ''
+        # bpilot is published on PyPI. pipx is preinstalled on ubuntu-latest
+        run: pipx install bpilot
+
+      - name: Run bpilot
+        if: steps.check.outputs.existing_pr == ''
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bpilot port ${{ steps.inputs.outputs.merge_commit }} ${{ steps.inputs.outputs.target_branch }}
+
+      - name: Push branch and Create Draft PR
+        if: steps.check.outputs.existing_pr == ''
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: ${{ steps.inputs.outputs.target_branch }}
+          MERGE_COMMIT: ${{ steps.inputs.outputs.merge_commit }}
+          COMMIT_SUBJECT: ${{ steps.inputs.outputs.commit_subject }}
+          SOURCE_ISSUE: ${{ github.event.issue.number }}
+        run: |
+          CURRENT_BRANCH=$(git branch --show-current)
+          git push -u origin "$CURRENT_BRANCH"
+
+          if [ -n "$COMMIT_SUBJECT" ]; then
+            TITLE="backport to $TARGET_BRANCH - $COMMIT_SUBJECT"
+          else
+            TITLE="backport to $TARGET_BRANCH - ${MERGE_COMMIT:0:7}"
+          fi
+
+          BODY="Automated backport generated by bpilot."
+          if [ -n "$SOURCE_ISSUE" ]; then
+            BODY="$BODY Triggered by #$SOURCE_ISSUE."
+          fi
+
+          # Embed the bpilot session into the PR body as a hidden HTML comment
+          # so a future `/finalize` run on this PR can reconstruct it.
+          BODY=$(python3 - "$BODY" <<'PY'
+          import json, sys
+          from pathlib import Path
+          body = sys.argv[1]
+          session_file = Path(".bpilot/session.json")
+          if session_file.is_file():
+              data = session_file.read_text()
+              # Compact JSON, embed as hidden comment. Idempotent — we only ever
+              # produce one session per PR body.
+              payload = json.dumps(json.loads(data), separators=(",", ":"))
+              print(f"{body}\n\n<!-- bpilot:session {payload} -->\n")
+          else:
+              print(body)
+          PY
+          )
+
+          NEW_PR_URL=$(gh pr create \
+            --base "$TARGET_BRANCH" \
+            --head "$CURRENT_BRANCH" \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --draft)
+
+          echo "new_pr_url=$NEW_PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Comment backport report on new PR
+        if: success() && steps.check.outputs.existing_pr == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_PR_URL: ${{ steps.create_pr.outputs.new_pr_url }}
+        run: |
+          if [ ! -f BACKPORT_REPORT.md ]; then
+            echo "::notice::BACKPORT_REPORT.md not found; skipping report comment"
+            exit 0
+          fi
+          REPORT=$(cat BACKPORT_REPORT.md)
+          # Post as a collapsible details block so the report doesn't dominate
+          # the PR conversation when long.
+          gh pr comment "$NEW_PR_URL" --body "$(cat <<EOF
+          <details>
+          <summary><b>bpilot backport report</b></summary>
+
+          $REPORT
+
+          </details>
+          EOF
+          )"
+
+      - name: Comment on PR (Success)
+        if: success() && github.event_name == 'issue_comment' && steps.check.outputs.existing_pr == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          NEW_PR_URL: ${{ steps.create_pr.outputs.new_pr_url }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "✅ **Backport successful!** Draft PR created: $NEW_PR_URL"
+
+      - name: Comment on PR (Failure)
+        if: failure() && github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "❌ **Backport failed.** See [Action logs]($RUN_URL) for details."
+
+      - name: Summary
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          MERGE_COMMIT: ${{ steps.inputs.outputs.merge_commit }}
+          TARGET_BRANCH: ${{ steps.inputs.outputs.target_branch }}
+          NEW_PR_URL: ${{ steps.create_pr.outputs.new_pr_url }}
+        run: |
+          echo "## bpilot dispatch summary" >> $GITHUB_STEP_SUMMARY
+          echo "- merge commit: \`$MERGE_COMMIT\`" >> $GITHUB_STEP_SUMMARY
+          echo "- target branch: \`$TARGET_BRANCH\`" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$NEW_PR_URL" ]; then
+            echo "- draft PR: $NEW_PR_URL" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  bpilot-finalize:
+    # Runs on `/finalize` comments on a PR. The comment should be on a bpilot-generated
+    # backport PR (with the embedded session in the body), but this job
+    # validates that defensively and fails with a clear message if not.
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/finalize')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # push the finalize commit to the backport branch
+      pull-requests: read  # read the PR (body, branch)
+      issues: write        # post feedback comments
+
+    steps:
+      - name: Authorize actor
+        env:
+          COMMENT_ASSOC: ${{ github.event.comment.author_association }}
+        run: |
+          ALLOWED="OWNER MEMBER COLLABORATOR"
+          OK=0
+          for a in $ALLOWED; do
+            if [ "$COMMENT_ASSOC" == "$a" ]; then OK=1; fi
+          done
+          if [ "$OK" == "0" ]; then
+            echo "::error::Actor not authorized (association: $COMMENT_ASSOC). Requires one of: $ALLOWED"
+            exit 1
+          fi
+          echo "Authorized: $COMMENT_ASSOC"
+
+      - name: Extract session from PR body
+        id: session
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body')
+          SESSION=$(python3 -c "
+          import re, sys
+          m = re.search(r'<!-- bpilot:session (.*?) -->', '''$BODY''', re.DOTALL)
+          if m:
+              print(m.group(1))
+          ")
+          if [ -z "$SESSION" ]; then
+            echo "::error::No bpilot session found in PR body. This PR was not created by the backport bot (or the session was stripped). Run 'bpilot finalize' locally on the backport branch instead."
+            exit 1
+          fi
+          mkdir -p .bpilot
+          echo "$SESSION" > .bpilot/session.json
+          # Extract branch name for checkout.
+          BRANCH=$(echo "$SESSION" | python3 -c "import json,sys; print(json.load(sys.stdin)['backport_branch'])")
+          echo "backport_branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Extracted session for branch: $BRANCH"
+
+      - name: Checkout backport branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.session.outputs.backport_branch }}
+          fetch-depth: 0
+
+      - name: Restore session file
+        # checkout may have clobbered .bpilot/ (it's gitignored but a fresh
+        # checkout writes a clean tree); rewrite from what we extracted.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body')
+          python3 -c "
+          import re
+          m = re.search(r'<!-- bpilot:session (.*?) -->', '''$BODY''', re.DOTALL)
+          if m:
+              import os
+              os.makedirs('.bpilot', exist_ok=True)
+              open('.bpilot/session.json', 'w').write(m.group(1))
+          "
+          test -f .bpilot/session.json || { echo "::error::session.json missing after restore"; exit 1; }
+
+      - name: Install project-specific CI deps
+        # required by the verification checks that bpilot runs during finalize.
+        run: |
+          pipx install tox
+          pipx install poetry
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install bpilot
+        run: pipx install bpilot
+
+      - name: Run bpilot finalize
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bpilot finalize --yes --commit
+
+      - name: Push finalize commit
+        if: success()
+        run: |
+          BRANCH="${{ steps.session.outputs.backport_branch }}"
+          # Only push if finalize actually committed something.
+          if [ -n "$(git log origin/$BRANCH..HEAD --oneline)" ]; then
+            git push origin "HEAD:$BRANCH"
+            echo "pushed finalize commit(s) to $BRANCH"
+          else
+            echo "no finalize commit to push"
+          fi
+
+      - name: Comment on PR (Success)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "✅ **Finalize complete.** Proposed SKILL.md updates committed to this PR (if any). Review the changes and merge when ready."
+
+      - name: Comment on PR (Failure)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "❌ **Finalize failed.** See [Action logs]($RUN_URL) for details. If this PR lacks an embedded bpilot session, run 'bpilot finalize' locally on the backport branch instead."
