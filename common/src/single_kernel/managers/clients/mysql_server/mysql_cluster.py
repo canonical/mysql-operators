@@ -145,7 +145,7 @@ class MySQLClusterClient:
 
     def drop_metadata(self) -> None:
         """Drop the replication schema."""
-        self._executor.execute_py("dba.drop_metadata_schema()")
+        self._executor.execute_py("dba.drop_metadata_schema({'force': True})")
 
     def fetch_instances(self) -> dict[str, dict]:
         """Fetch the MySQL cluster members."""

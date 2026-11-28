@@ -39,6 +39,11 @@ class LifecycleManager:
         """Return whether the MySQL instance is the primary."""
         return self._clients.instance.fetch_role() == InstanceRole.PRIMARY
 
+    @cached_property
+    def is_new_unit(self) -> bool:
+        """Return whether the unit is in a clean state."""
+        return self._state.unit.get_instance_state() == "UNKNOWN"
+
     def set_leader_flag(self, flag: bool) -> None:
         """Set the unit leader flag."""
         self._state.unit.set_unit_leader_flag(flag)
@@ -113,8 +118,9 @@ class LifecycleManager:
             else:
                 client.remove_instance(instance_label, instance_host)
 
-    def recreate_cluster(self, instance_label: str) -> None:
+    def recreate_cluster(self, instance_label: str, drop_metadata: bool = False) -> None:
         """Recreate cluster."""
+        self._clients.cluster.drop_metadata() if drop_metadata else None
         self._clients.recreate_cluster(instance_label)
 
     def update_hostname(self, machine_host: MachineHost) -> None:
